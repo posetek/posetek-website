@@ -22,9 +22,9 @@ import { loadAthleteBundle } from './data';
 
 beforeEach(() => { f.config = {}; f.reads = []; f.failPersonal = false; });
 describe('coach personal-session rollout reads', () => {
-  it.each([undefined, {}, { personalWorkoutsEnabled: false }, { personalWorkoutsEnabled: 'true' }])('does not query new rules before the literal flag is enabled (%s)', async config => {
+  it.each([undefined, {}, { personalWorkoutsEnabled: false }, { personalWorkoutsEnabled: 'true' }])('reads published historical activity independently of creation flags (%s)', async config => {
     f.config = config; const bundle = await loadAthleteBundle('player');
-    expect(bundle.logs).toHaveLength(1); expect(f.reads).not.toContain('players/player/personalWorkoutLogs');
+    expect(bundle.logs).toHaveLength(2); expect(f.reads).toContain('players/player/personalWorkoutLogs'); expect(f.reads).not.toContain('config/llm');
   });
   it('labels the source by its collection when enabled and preserves assigned sessions', async () => {
     f.config = { personalWorkoutsEnabled: true }; const bundle = await loadAthleteBundle('player');

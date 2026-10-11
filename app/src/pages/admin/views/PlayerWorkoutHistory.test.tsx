@@ -25,7 +25,7 @@ describe('admin recorded workout presentation', () => {
     expect(html).toContain('Saved passing drill'); expect(html).toContain('No ending recorded');
     expect(html).toContain('2 min timer'); expect(html).toContain('Not all completed'); expect(html).toContain('<details open=""');
     expect(html).toContain('tabindex="-1"'); expect(html).toContain('aria-label="Selected workout"');
-    expect(html).toContain('does not update live'); expect(html).not.toContain('Ended ');
+    expect(html).toContain('Checks again each minute'); expect(html).not.toContain('Ended ');
   });
   it('does not select another workout when the exact link is missing', () => {
     const html = renderToStaticMarkup(<PlayerWorkoutHistoryContent playerId="p" load={{ kind: 'ready', logs: [log], checkedAt: Date.now() }}

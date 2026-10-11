@@ -27,9 +27,9 @@ describe('admin player panel boundaries', () => {
     await expect(loadPlayerProfileData(player)).resolves.toEqual({ coach: null, note: null });
     expect(f.reads).toEqual(['coach', 'private-note']);
   });
-  it('reads workout collections and feature config exactly once for the entire Workouts panel', async () => {
+  it('reads each workout collection once and does not gate history on the creation config', async () => {
     const data = await loadPlayerWorkoutsData('p');
-    expect(f.reads).toEqual(['plans', 'players/p/workoutLogs', 'config/llm', 'players/p/personalWorkoutLogs', 'adjustments/p/active']);
+    expect(f.reads).toEqual(['plans', 'players/p/workoutLogs', 'players/p/personalWorkoutLogs', 'adjustments/p/active']);
     expect(data.logs.map(log => log._workoutSource)).toEqual(['workoutLogs', 'personalWorkoutLogs']);
     expect(data.plan?.id).toBe('active');
     expect(f.reads).not.toContain('coach'); expect(f.reads).not.toContain('private-note');

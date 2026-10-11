@@ -51,10 +51,10 @@ describe('exact workout notification links', () => {
 });
 
 describe('admin workout reads', () => {
-  it('keeps feature-gated personal reads out of inactive deployments', async () => {
+  it('keeps recorded personal history available when creating workouts is disabled, without a configuration read', async () => {
     f.enabled = false;
-    expect(await loadPlayerWorkoutHistory('athlete')).toHaveLength(1);
-    expect(f.reads).not.toContain('players/athlete/personalWorkoutLogs');
+    expect(await loadPlayerWorkoutHistory('athlete')).toHaveLength(2);
+    expect(f.reads).toEqual(['players/athlete/workoutLogs', 'players/athlete/personalWorkoutLogs']);
   });
   it('does not replace a failed collection with empty history', async () => {
     f.failPersonal = true;
