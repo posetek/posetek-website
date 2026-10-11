@@ -156,3 +156,15 @@ identity, private mobile artifact delivery, backend dependency release or native
 acceptance was activated. [The release receipt](../../deployment/ADMIN_PROFILE_CONTACTS_PRODUCTION.json)
 records hosted/production checks and the reconciled preservation build. Review
 was explicit local Codex advisory review; the paid hosted coordinator stays inactive.
+
+## Website workout reporting release — October 11, 2026
+
+[PR #48](https://github.com/posetek/posetek_website/pull/48) preserves fresh main
+`995f78e2148e4e9d5fc62c579db89be40dfefc94`, its CI and explicit test-only emulator bootstrap.
+Website `6acbde38a912d2909dd0501a` promotes runtime source
+`a4e8da1e00cabb17b21ef60924d77e98f0038731` from the exact verified candidate.
+[The release receipt](../../deployment/WORKOUT_REPORTING_CONSISTENCY_PRODUCTION.json)
+records production acceptance, unchanged canonical service versions/configuration
+and notification controls, cleanup and the reconciled preservation build. Local
+Codex advisory review is explicit; hosted/paid reviewer activation and pending
+backend dependency/native releases remain outside this website correction.
