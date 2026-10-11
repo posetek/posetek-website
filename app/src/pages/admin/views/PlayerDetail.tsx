@@ -83,6 +83,7 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
   const location = useLocation();
   const [reportRevision, setReportRevision] = useState(0);
   const [summaryBusy, setSummaryBusy] = useState(false);
+  const [workoutEvidence, setWorkoutEvidence] = useState<PlayerWorkoutsData | null>(null);
   const refreshActivity = useCallback(() => setReportRevision(value => value + 1), []);
   const resolvedAge = resolvePlayerAge(player.raw);
   const athlete = useMemo(() => ({ ...player.raw, id: player.id }), [player]);
@@ -117,12 +118,12 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
         </div>
       </section>
 
-      {summary ?? <PlayerSummary player={player} refreshKey={reportRevision} onBusy={setSummaryBusy} onRefresh={panel === 'workouts' ? undefined : refreshActivity} foreground={panel !== 'workouts'} />}
+      {summary ?? <PlayerSummary player={player} refreshKey={reportRevision} workoutEvidence={panel === 'workouts' ? workoutEvidence : null} onBusy={setSummaryBusy} onRefresh={panel === 'workouts' ? undefined : refreshActivity} foreground={panel !== 'workouts'} />}
       <PlayerDetailTabs playerId={player.id} selected={panel} />
       <div role="tabpanel" id={`admin-player-panel-${panel}`} aria-labelledby={`admin-player-tab-${panel}`} tabIndex={0} className="admin-player-panel">
         {children ?? <>
           {panel === 'results' && <AdminResults embedded athlete={athlete} />}
-          {panel === 'workouts' && <PlayerWorkoutsPanel player={player} revision={reportRevision} reportBusy={summaryBusy} onRefresh={refreshActivity} />}
+          {panel === 'workouts' && <PlayerWorkoutsPanel player={player} revision={reportRevision} reportBusy={summaryBusy} onEvidence={setWorkoutEvidence} onRefresh={refreshActivity} />}
           {panel === 'profile' && <PlayerProfilePanel player={player} onSaved={onProfileSaved} />}
           {panel === 'ai-incidents' && <PlayerAiIncidents playerId={player.id} />}
         </>}
@@ -188,10 +189,12 @@ export function PlayerProfileContent({ player, data, onSaved, readOnly = false }
   </>;
 }
 
-function PlayerWorkoutsPanel({ player, revision, reportBusy, onRefresh }: { player: PlayerRow; revision: number; reportBusy: boolean; onRefresh: () => void }) {
+function PlayerWorkoutsPanel({ player, revision, reportBusy, onRefresh, onEvidence }: { player: PlayerRow; revision: number; reportBusy: boolean; onRefresh: () => void; onEvidence: (data: PlayerWorkoutsData | null) => void }) {
   const [query, setQuery] = useSearchParams();
   const loader = useCallback(() => loadPlayerWorkoutsData(player.id), [player.id]);
   const load = useReadOnlyReport({ key: `${player.id}/${player.organizationId || ''}/${player.teamId || ''}`, read: loader, revision, retry: true });
+  useEffect(() => { onEvidence(load.kind === 'ready' ? load.data : null); }, [onEvidence, load.kind, load.data]);
+  useEffect(() => () => onEvidence(null), [onEvidence]);
   const busy = load.refreshing || reportBusy;
   useForegroundReport({ key: player.id, refresh: onRefresh, busy, interval: true });
   if (load.kind !== 'ready') return <PlayerWorkoutHistoryContent playerId={player.id} request={parseWorkoutFocus(query)} refresh={revision}

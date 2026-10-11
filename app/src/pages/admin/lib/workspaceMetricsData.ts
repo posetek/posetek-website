@@ -53,10 +53,14 @@ export function createWorkspaceMetricsTransport(read: WorkspaceReportReader) {
   return {
     observeIdentity,
     clear: () => requests.clear(),
-    async load(uid: string, payload: WorkspaceReportPayload, isCurrent: () => boolean, onRebuild?: () => void) {
+    async load(uid: string, payload: WorkspaceReportPayload, isCurrent: () => boolean, onRebuild?: () => void, validate?: (data: ExpandedInsights) => void) {
       if (!isCurrent()) return null;
       observeIdentity(uid);
-      const data = await completeReport(() => requests.run(JSON.stringify([uid, payload]), () => read(payload)), isCurrent, onRebuild).catch(error => {
+      const data = await completeReport(async () => {
+        const result = await requests.run(JSON.stringify([uid, payload]), () => read(payload));
+        if (isCurrent() && actor === uid) { assertWorkspaceMetrics(result, payload); validate?.(result); }
+        return result;
+      }, isCurrent, onRebuild).catch(error => {
         if (/permission-denied|unauthenticated/.test(String(error?.code || ""))) requests.clear();
         throw error;
       });

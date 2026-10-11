@@ -8,9 +8,9 @@ import { createWorkspaceMetricsTransport, workspaceMetricsPayload, workspacePayl
 import type { WorkspaceReportPayload } from "./workspaceMetricsData";
 
 const transport = createWorkspaceMetricsTransport(payload => clubCall<ExpandedInsights>("getClubInsightsV2", payload));
-export interface WorkspaceMetricsInput { scope: InsightScope | null; search: string; playerIds?: string[]; enabled?: boolean; refreshKey?: number; foreground?: boolean }
+export interface WorkspaceMetricsInput { scope: InsightScope | null; search: string; playerIds?: string[]; enabled?: boolean; refreshKey?: number; foreground?: boolean; validate?: (data: ExpandedInsights) => void }
 
-export function useWorkspaceMetrics({ scope, search, playerIds, enabled = true, refreshKey = 0, foreground = true }: WorkspaceMetricsInput) {
+export function useWorkspaceMetrics({ scope, search, playerIds, enabled = true, refreshKey = 0, foreground = true, validate }: WorkspaceMetricsInput) {
   const key = workspacePayloadKey(enabled && scope ? workspaceMetricsPayload(search, scope, playerIds) : null);
   const payload = useMemo(() => key ? JSON.parse(key) as WorkspaceReportPayload : null, [key]);
   const [revision, setRevision] = useState(0);
@@ -21,8 +21,8 @@ export function useWorkspaceMetrics({ scope, search, playerIds, enabled = true, 
   }, []);
   const reader = useCallback(async (current: () => boolean, onRebuild: () => void) => {
     const uid = auth.currentUser?.uid;
-    return payload && uid ? transport.load(uid, payload, () => current() && auth.currentUser?.uid === uid, onRebuild) : null;
-  }, [payload]);
+    return payload && uid ? transport.load(uid, payload, () => current() && auth.currentUser?.uid === uid, onRebuild, validate) : null;
+  }, [payload, validate]);
   const outcome = useReadOnlyReport({ key, read: reader, revision: revision + refreshKey });
   const refreshing = Boolean(payload && outcome.refreshing);
   const loading = refreshing && !outcome.data;

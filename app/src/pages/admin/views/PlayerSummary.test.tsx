@@ -65,4 +65,10 @@ describe("player activity summary", () => {
     expect(html).toContain('<dt>Completed workouts</dt><dd>0</dd>');
     expect(html).toContain(status === 'stale' ? 'Refresh failed' : 'Updating activity');
   });
+  it('does not label a summary current while it disagrees with the newer saved history', () => {
+    const updating = renderToStaticMarkup(<PlayerSummaryContent data={data} metric={metric} status="refreshing" synchronizing />);
+    expect(updating).toContain('Saved history has changed'); expect(updating).toContain('aria-busy="true"');
+    const stale = renderToStaticMarkup(<PlayerSummaryContent data={data} metric={metric} status="stale" synchronizing />);
+    expect(stale).toContain('still synchronizing'); expect(stale).toContain('use Refresh activity to retry');
+  });
 });

@@ -8,8 +8,10 @@ import { useAccountLoad } from "../lib/useAccountLoad";
 import { minuteText, TESTING_LABELS, WORKOUT_LABELS, workoutDurationText } from "../../insights/lib/expanded";
 import { workoutPacificTime } from '../lib/workoutNotifications';
 import type { ExpandedInsights, ExpandedPlayer } from "../../insights/lib/expanded";
+import type { PlayerWorkoutsData } from '../lib/playerDetailData';
+import { assertPlayerWorkoutsAgree, playerWorkoutsAgree } from '../lib/playerWorkoutConsistency';
 
-export default function PlayerSummary({ player, refreshKey = 0, onBusy, onRefresh, foreground = true }: { player: PlayerRow; refreshKey?: number; onBusy?: (busy: boolean) => void; onRefresh?: () => void; foreground?: boolean }) {
+export default function PlayerSummary({ player, refreshKey = 0, onBusy, onRefresh, foreground = true, workoutEvidence = null }: { player: PlayerRow; refreshKey?: number; onBusy?: (busy: boolean) => void; onRefresh?: () => void; foreground?: boolean; workoutEvidence?: PlayerWorkoutsData | null }) {
   const location = useLocation();
   const request = playerSummaryRequest(player, location.search);
   const organizationId = request.scope?.kind === "organization" ? request.scope.organizationId : null;
@@ -17,23 +19,28 @@ export default function PlayerSummary({ player, refreshKey = 0, onBusy, onRefres
   const organization = useAccountLoad(loader);
   const canonical = Boolean(organizationId && organization.state.kind === "ready" && organization.state.data.kind === "canonical"
     && organization.state.data.organizationId === organizationId);
-  const report = useWorkspaceMetrics({ ...request, playerIds: [player.id], enabled: canonical, refreshKey, foreground });
+  const validate = useCallback((data: ExpandedInsights) => {
+    if (workoutEvidence) assertPlayerWorkoutsAgree(data, player.id, workoutEvidence.logs, workoutEvidence.checkedAt);
+  }, [player.id, workoutEvidence]);
+  const report = useWorkspaceMetrics({ ...request, playerIds: [player.id], enabled: canonical, refreshKey, foreground, ...(workoutEvidence ? { validate } : {}) });
+  const synchronizing = Boolean(report.data && workoutEvidence && !playerWorkoutsAgree(report.data, player.id, workoutEvidence.logs, workoutEvidence.checkedAt));
   useEffect(() => { onBusy?.(organization.state.kind === 'loading' || report.refreshing || report.loading); }, [onBusy, organization.state.kind, report.loading, report.refreshing]);
   const metric = report.data?.rosterMetrics?.find(row => row.playerId === player.id);
   const status = organization.state.kind === "loading" ? "loading" : organization.state.kind === "error" ? "error"
     : organization.state.data.kind === "legacy" ? "legacy" : !canonical ? "unavailable-scope"
-      : report.data && report.stale ? 'stale' : report.data && report.refreshing ? 'refreshing' : report.loading ? report.rebuilding ? "rebuilding" : "loading" : report.error ? "error"
+      : report.data && report.stale ? 'stale' : report.data && (report.refreshing || synchronizing) ? 'refreshing' : report.loading ? report.rebuilding ? "rebuilding" : "loading" : report.error ? "error"
         : metric?.status === "excluded" ? "excluded" : metric?.status === "included" ? "ready" : "unavailable";
   return <PlayerSummaryContent data={report.data} metric={metric?.status === "included" ? metric.player : null}
     status={status} error={organization.state.kind === "error" ? organization.state.message : report.error}
-    onRetry={organization.state.kind === "error" ? organization.refresh : report.refresh} onRefresh={onRefresh} />;
+    onRetry={organization.state.kind === "error" ? organization.refresh : report.refresh} onRefresh={onRefresh} synchronizing={synchronizing} />;
 }
 
-export function PlayerSummaryContent({ data, metric, status, error = "", onRetry, onRefresh }: {
+export function PlayerSummaryContent({ data, metric, status, error = "", onRetry, onRefresh, synchronizing = false }: {
   data: ExpandedInsights | null; metric: ExpandedPlayer | null;
   status: "legacy" | "unavailable-scope" | "loading" | "rebuilding" | "error" | "excluded" | "unavailable" | "ready" | 'refreshing' | 'stale';
   error?: string; onRetry?: () => void;
   onRefresh?: () => void;
+  synchronizing?: boolean;
 }) {
   return <section className="admin-player-summary" aria-label="Player activity summary" aria-busy={['loading', 'rebuilding', 'refreshing'].includes(status)}>
     <div className="admin-player-summary-heading"><h2>Activity at a glance</h2>
@@ -41,8 +48,8 @@ export function PlayerSummaryContent({ data, metric, status, error = "", onRetry
       {onRefresh && <button type="button" className="quiet-button" onClick={onRefresh} disabled={['loading', 'rebuilding', 'refreshing'].includes(status)}>Refresh activity</button>}
     </div>
     {(status === "loading" || status === "rebuilding") && <p role="status">{status === "rebuilding" ? "Refreshing complete activity metrics…" : "Loading activity metrics…"}</p>}
-    {status === 'refreshing' && <p role="status" className="admin-note">Updating activity… Showing the last successful report.</p>}
-    {status === 'stale' && <p role="alert" className="form-message">Refresh failed. These totals are from the last successful report; use Refresh activity to retry.</p>}
+    {status === 'refreshing' && <p role="status" className="admin-note">{synchronizing ? 'Saved history has changed. Updating the reporting summary…' : 'Updating activity… Showing the last successful report.'}</p>}
+    {status === 'stale' && <p role="alert" className="form-message">Refresh failed. {synchronizing ? 'Saved history and this summary are still synchronizing;' : 'These totals are from the last successful report;'} use Refresh activity to retry.</p>}
     {status === "error" && <div><p className="form-message" role="alert">{error || "Activity metrics could not be loaded."}</p>{onRetry && <button type="button" className="quiet-button" onClick={onRetry}>Retry summary</button>}</div>}
     {status === "legacy" && <p className="admin-note">Activity metrics are unavailable for this legacy organization. Recorded results and workouts remain available below.</p>}
     {status === "unavailable-scope" && <p className="admin-note">This profile’s current organization is unavailable for activity reporting. Recorded results and workouts remain available below.</p>}

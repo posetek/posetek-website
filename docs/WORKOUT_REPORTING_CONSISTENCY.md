@@ -20,6 +20,11 @@ not zero. Estimated app use remains separate, and estimates are not combined wit
 timer totals. Previously sent email payloads and delivery evidence stay immutable.
 
 Refresh activity updates an administrator player's summary and history together.
+The selected Workouts panel checks saved completion counts and timer/estimate
+totals against the asynchronous report projection. A new log or timer update can
+arrive before the projection trigger. Mismatched summaries remain visibly updating
+and receive bounded rereads; a persistent mismatch retains the prior summary with
+a synchronization warning. Saved history never replaces the authoritative report.
 Open player workout views check at most once per minute while visible. Reports
 also check on a visible return after a minute; organization reports do not poll.
 Only recognized transient reads and projection-rebuild control signals receive
