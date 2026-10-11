@@ -1,5 +1,24 @@
 # PoseTek website project context
 
+<!-- drill-video-audit-current:start -->
+## Current drill demonstration audit and catalog publication (2026-10-11)
+
+Live catalog `1.0.94` contains 208 records: the website library counts 75 published
+and 133 drafts. All 72 drills with approved uploaded primary demonstrations are
+now library-published. The only matching draft, DRB-010 **Speed dribble with stop
+zone**, was transactionally published after exact-generation Storage verification.
+The count includes 49 legacy records with absent raw status; it is not a count of
+75 executable prescriptions. DRB-010's access-aware personal selection remains
+unavailable pending source-bound space clarification. All 207 other records,
+media, authored content, private authoring/reviews and AI configuration are exact.
+The 80 whole-body drafts still have no uploaded clips and remain pending with
+`mobileVerified: false`; their external filming references do not count as athlete
+demonstrations. Independent readback passed. This data change publishes no new
+website artifact, functions, rules, gateway or native build. Read
+[the audit handoff](docs/DRILL_VIDEO_PUBLICATION_AUDIT.md) and
+[production receipt](deployment/DRILL_VIDEO_PUBLICATION_20261011.json).
+<!-- drill-video-audit-current:end -->
+
 The current production release record below comes from fresh `main`.
 The engineering pipeline remains a separate staged candidate; use
 `docs/engineering/README.md` for its guides, status, and activation limits.
