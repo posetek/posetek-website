@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const f = vi.hoisted(() => ({ panels: [] as string[], loads: 0 }));
 vi.mock('../../../lib/firebase', () => ({ auth: {}, db: {}, cloud: {} }));
+vi.mock('../lib/workspaceMetrics', () => ({ useWorkspaceMetrics: () => ({ data: null, loading: true, error: '', refreshing: false, refresh: vi.fn() }) }));
 vi.mock('../lib/accounts', () => ({
   COACH_NOTE_MAX_CHARS: 500, loadPlayer: vi.fn(), savePlayerProfile: vi.fn(), saveCoachNote: vi.fn(), clearCoachNote: vi.fn(),
   activePlan: vi.fn(), loadCoachNote: vi.fn(), loadCoachOfPlayer: vi.fn(), loadPlanAdjustments: vi.fn(), loadPlayerPlans: vi.fn(),
@@ -12,6 +13,10 @@ vi.mock('../lib/accounts', () => ({
 vi.mock('../lib/useAccountLoad', () => ({ useAccountLoad: () => {
   ++f.loads;
   return { state: { kind: 'ready', data: { coach: null, note: null, plan: null, plans: [], logs: [], adjustments: [], checkedAt: 0 } }, refresh: vi.fn() };
+} }));
+vi.mock('../../../lib/useReadOnlyReport', () => ({ useReadOnlyReport: () => {
+  ++f.loads;
+  return { kind: 'ready', data: { plan: null, plans: [], logs: [], adjustments: [], checkedAt: 0 }, refreshing: false, stale: false };
 } }));
 vi.mock('./AdminResults', () => ({ default: () => { f.panels.push('results'); return <p>Recorded results fixture</p>; } }));
 vi.mock('./PlayerAiIncidents', () => ({ default: () => { f.panels.push('ai-incidents'); return <p>AI incidents fixture</p>; } }));

@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useReadOnlyReport } from '../../lib/useReadOnlyReport';
+import { useForegroundReport } from '../../lib/foreground-report';
 import { auth, db } from "../../lib/firebase";
 import { clubCall } from "../../lib/organization-data";
 import AthleteDetail from "../coach-dashboard/views/AthleteDetail";
 import { loadAthleteBundle } from "../coach-dashboard/lib/data";
 import { athleteSummary } from "../coach-dashboard/lib/logic";
-import type { AthleteSummary } from "../coach-dashboard/lib/logic";
 import { blockDoseLine } from "../../lib/contracts/drillV2";
 import { completeReport } from "./lib/completeReport";
-import { sameScope, scopePayload, expandedFailureMessage } from "./lib/expanded";
+import { sameScope, scopePayload } from "./lib/expanded";
 import CoachPlayerOneScreen from "./CoachPlayerOneScreen";
 import type { InsightScope, ExpandedPlayer, CoachTestScore } from "./lib/expanded";
 import type { ExpandedRequest } from "./lib/expandedQuery";
@@ -56,37 +57,34 @@ export function CoachPercentile({ data }: { data: CoachComparison }) {
   </section>;
 }
 
-export default function CoachPlayer({ uid, scope, request, onName, onPrescribe, onClose }: { uid: string; scope: InsightScope; request: ExpandedRequest; onName: (name: string) => void; onPrescribe: () => void; onClose: () => void }) {
+export default function CoachPlayer({ uid, scope, request, onName, onPrescribe, onClose, visible = true }: { uid: string; scope: InsightScope; request: ExpandedRequest; onName: (name: string) => void; onPrescribe: () => void; onClose: () => void; visible?: boolean }) {
   const [retry, setRetry] = useState(0);
-  const key = JSON.stringify([uid, scope, request.playerId, request.startDate, request.endDate, request.timezone, request.testingWindow, retry]);
-  const [result, setResult] = useState<{ key: string; comparison: CoachComparison; summary: AthleteSummary; personal: any[] } | null>(null);
-  const [failure, setFailure] = useState<{ key: string; message: string } | null>(null);
-  useEffect(() => {
-    let current = true; const valid = () => current && auth.currentUser?.uid === uid;
-    setResult(null); setFailure(null);
-    void (async () => {
-      try {
-        const comparison = await completeReport(() => clubCall<CoachComparison>("getCoachPlayerComparison", { scope: scopePayload(scope), playerId: request.playerId, startDate: request.startDate, endDate: request.endDate, timeZone: request.timezone, testingMode: request.testingWindow }), valid);
-        if (!comparison || !valid()) return;
+  const key = JSON.stringify([uid, scope, request.playerId, request.startDate, request.endDate, request.timezone, request.testingWindow]);
+  const reader = useCallback(async (current: () => boolean, onRebuild: () => void) => {
+        const valid = () => current() && auth.currentUser?.uid === uid;
+        const comparison = await completeReport(() => clubCall<CoachComparison>("getCoachPlayerComparison", { scope: scopePayload(scope), playerId: request.playerId, startDate: request.startDate, endDate: request.endDate, timeZone: request.timezone, testingMode: request.testingWindow }), valid, onRebuild);
+        if (!comparison || !valid()) return null;
         assertCoachComparison(comparison, scope, request);
         const ref = db.collection("players").doc(request.playerId);
-        const [profile, bundle, config] = await Promise.all([ref.get({ source: "server" }), loadAthleteBundle(request.playerId), db.collection("config").doc("llm").get()]);
-        if (!valid()) return;
+        const [profile, bundle, published] = await Promise.all([ref.get({ source: "server" }), loadAthleteBundle(request.playerId), ref.collection('personalWorkouts').get({ source: 'server' })]);
+        if (!valid()) return null;
         if (!profile.exists) throw Object.assign(new Error("Player is unavailable"), { code: "not-found" });
-        const personal = config.data()?.personalWorkoutsEnabled === true ? (await ref.collection("personalWorkouts").get()).docs.map(doc => ({ ...doc.data(), id: doc.id })) : [];
-        if (!valid()) return;
+        const personal: any[] = published.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         const summary = athleteSummary({ ...profile.data(), id: request.playerId }, bundle.reps, bundle.plans, bundle.logs, bundle.provisionalEstimates, bundle.allResultReps);
-        setResult({ key, comparison, summary, personal });
         onName(`${comparison.player.firstName} ${comparison.player.lastName}`.trim() || "Player");
-      } catch (error) { if (valid()) setFailure({ key, message: expandedFailureMessage(error) }); }
-    })();
-    return () => { current = false; };
+        return { comparison, summary, personal };
   // Only the exact selected player and comparison window invalidate these reads.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
-  const ready = result?.key === key ? result : null;
-  if (!ready) return failure?.key === key ? <section className="insights-card" role="alert"><h2>Player could not be loaded</h2><p>{failure.message}</p><button className="quiet-button" onClick={() => setRetry(value => value + 1)}>Retry player</button><button className="quiet-button" onClick={onClose}>Back to roster</button></section> : <p role="status">Loading player and current access…</p>;
+  const state = useReadOnlyReport({ key, read: reader, revision: retry });
+  const refresh = () => setRetry(value => value + 1);
+  useForegroundReport({ key, refresh, busy: state.refreshing, interval: true, enabled: visible });
+  const ready = state.kind === 'ready' ? state.data : null;
+  if (!ready) return state.kind === 'error' ? <section className="insights-card" role="alert"><h2>Player could not be loaded</h2><p>{state.message}</p><button className="quiet-button" onClick={refresh}>Retry player</button><button className="quiet-button" onClick={onClose}>Back to roster</button></section> : <p role="status">Loading player and current access…</p>;
   return <div className="coach-player-panel">
+    <div className="insights-toolbar"><p className="insights-note">Player records checked {new Date(state.checkedAt!).toLocaleString('en-US', { timeZone: request.timezone, dateStyle: 'medium', timeStyle: 'short' })}. Checks again each minute while visible.</p><button type="button" className="quiet-button" disabled={state.refreshing} onClick={refresh}>Refresh activity</button></div>
+    {state.refreshing && <p role="status" className="insights-note">Updating player records… Showing the last successful check.</p>}
+    {state.stale && <p role="alert" className="insights-note">Refresh failed. These player records may be out of date. Refresh activity to retry.</p>}
     <CoachPlayerOneScreen summary={ready.summary} performance={ready.comparison.performance} testScores={ready.comparison.testScores}
       period={ready.comparison.period} generatedAtMillis={ready.comparison.generatedAtMillis} onPrescribe={onPrescribe} />
       <section className="coach-player-more" aria-label="Team comparison and full player records">

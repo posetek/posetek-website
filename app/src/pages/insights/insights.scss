@@ -1,4 +1,11 @@
 .pt-insights {
+  .coach-player-workout-total {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding-block: 16px;
+    border-block: 1px solid var(--admin-line, rgba(255, 255, 255, .1)); margin-bottom: 16px;
+    > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; }
+    strong { font-size: 28px; color: #b7f34a; }
+    p { margin: 0; font-size: 13px; opacity: .7; overflow-wrap: anywhere; }
+  }
   font-size: 14px;
   line-height: 1.5;
 

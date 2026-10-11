@@ -79,16 +79,13 @@ export interface AthleteBundle {
 // excluded — it feeds no metric and Storage listing is slow at roster scale.
 export async function loadAthleteBundle(playerId: string): Promise<AthleteBundle> {
   const player = db.collection("players").doc(playerId);
-  const [repsSnapshot, plansSnapshot, logsSnapshot, config] = await Promise.all([
+  const [repsSnapshot, plansSnapshot, logsSnapshot, personalSnapshot] = await Promise.all([
     cloud.httpsCallable("getAthleteEffectiveResults")({ playerId }),
     player.collection("trainingPlans").get(),
-    player.collection("workoutLogs").get(),
-    db.collection('config').doc('llm').get(),
+    player.collection("workoutLogs").get({ source: 'server' }),
+    player.collection('personalWorkoutLogs').get({ source: 'server' }),
   ]);
-  // Rules and gateway deploy before this flag is enabled. Do not query the new
-  // staff-readable collection while its permission contract is unavailable.
-  const personal = config.data()?.personalWorkoutsEnabled === true
-    ? (await player.collection('personalWorkoutLogs').get()).docs.map(doc => ({ ...doc.data(), id: doc.id, source: 'personal' })) : [];
+  const personal = personalSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, source: 'personal' }));
   const all = ((repsSnapshot.data as any).reps || []).map(normalizeRep);
   const byDrill: Record<string, any[]> = {};
   DRILLS.forEach(drill => { byDrill[drill.key] = all.filter((rep: any) => accepted(rep, drill)); });

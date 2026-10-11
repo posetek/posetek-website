@@ -46,6 +46,8 @@ import PlayerSummary from "./PlayerSummary";
 import { PlayerHierarchyBreadcrumbs } from "./AdminBreadcrumbs";
 import { PlayerWorkoutHistoryContent } from "./PlayerWorkoutHistory";
 import "../player-detail.scss";
+import { useReadOnlyReport } from '../../../lib/useReadOnlyReport';
+import { useForegroundReport } from '../../../lib/foreground-report';
 
 const PlayerDetailPreview = import.meta.env.DEV ? lazy(() => import('./PlayerDetailPreview')) : null;
 export default function PlayerDetail({ preview = false }: { preview?: boolean }) {
@@ -79,6 +81,9 @@ function LivePlayerDetail() {
 
 export function PlayerDetailContent({ player, panel, onProfileSaved, children, summary }: { player: PlayerRow; panel: PlayerDetailPanel; onProfileSaved: () => Promise<void>; children?: ReactNode; summary?: ReactNode }) {
   const location = useLocation();
+  const [reportRevision, setReportRevision] = useState(0);
+  const [summaryBusy, setSummaryBusy] = useState(false);
+  const refreshActivity = useCallback(() => setReportRevision(value => value + 1), []);
   const resolvedAge = resolvePlayerAge(player.raw);
   const athlete = useMemo(() => ({ ...player.raw, id: player.id }), [player]);
   const plannerQuery = new URLSearchParams(location.search);
@@ -112,12 +117,12 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
         </div>
       </section>
 
-      {summary ?? <PlayerSummary player={player} />}
+      {summary ?? <PlayerSummary player={player} refreshKey={reportRevision} onBusy={setSummaryBusy} onRefresh={panel === 'workouts' ? undefined : refreshActivity} foreground={panel !== 'workouts'} />}
       <PlayerDetailTabs playerId={player.id} selected={panel} />
       <div role="tabpanel" id={`admin-player-panel-${panel}`} aria-labelledby={`admin-player-tab-${panel}`} tabIndex={0} className="admin-player-panel">
         {children ?? <>
           {panel === 'results' && <AdminResults embedded athlete={athlete} />}
-          {panel === 'workouts' && <PlayerWorkoutsPanel player={player} />}
+          {panel === 'workouts' && <PlayerWorkoutsPanel player={player} revision={reportRevision} reportBusy={summaryBusy} onRefresh={refreshActivity} />}
           {panel === 'profile' && <PlayerProfilePanel player={player} onSaved={onProfileSaved} />}
           {panel === 'ai-incidents' && <PlayerAiIncidents playerId={player.id} />}
         </>}
@@ -183,21 +188,22 @@ export function PlayerProfileContent({ player, data, onSaved, readOnly = false }
   </>;
 }
 
-function PlayerWorkoutsPanel({ player }: { player: PlayerRow }) {
+function PlayerWorkoutsPanel({ player, revision, reportBusy, onRefresh }: { player: PlayerRow; revision: number; reportBusy: boolean; onRefresh: () => void }) {
   const [query, setQuery] = useSearchParams();
-  const [revision, setRevision] = useState(0);
   const loader = useCallback(() => loadPlayerWorkoutsData(player.id), [player.id]);
-  const { state: load, refresh } = useAccountLoad(loader);
+  const load = useReadOnlyReport({ key: `${player.id}/${player.organizationId || ''}/${player.teamId || ''}`, read: loader, revision, retry: true });
+  const busy = load.refreshing || reportBusy;
+  useForegroundReport({ key: player.id, refresh: onRefresh, busy, interval: true });
   if (load.kind !== 'ready') return <PlayerWorkoutHistoryContent playerId={player.id} request={parseWorkoutFocus(query)} refresh={revision}
-    load={{ kind: load.kind }} onRefresh={refresh} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />;
-  return <PlayerWorkoutsContent player={player} data={load.data} revision={revision} onRefresh={() => { setRevision(value => value + 1); refresh(); }} />;
+    load={{ kind: load.kind }} onRefresh={onRefresh} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />;
+  return <PlayerWorkoutsContent player={player} data={load.data} revision={revision} onRefresh={onRefresh} refreshing={busy} stale={load.stale} />;
 }
 
-export function PlayerWorkoutsContent({ player, data, revision = 0, onRefresh }: { player: PlayerRow; data: PlayerWorkoutsData; revision?: number; onRefresh: () => void }) {
+export function PlayerWorkoutsContent({ player, data, revision = 0, onRefresh, refreshing = false, stale = false }: { player: PlayerRow; data: PlayerWorkoutsData; revision?: number; onRefresh: () => void; refreshing?: boolean; stale?: boolean }) {
   const [query, setQuery] = useSearchParams();
   return <>
     <PlayerWorkoutHistoryContent playerId={player.id} request={parseWorkoutFocus(query)} refresh={revision}
-      load={{ kind: 'ready', logs: data.logs, checkedAt: data.checkedAt }} onRefresh={onRefresh} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />
+      load={{ kind: 'ready', logs: data.logs, checkedAt: data.checkedAt }} refreshing={refreshing} stale={stale} onRefresh={onRefresh} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />
     <PlanSection playerId={player.id} plan={data.plan} plans={data.plans}
       logs={data.logs.filter(log => log._workoutSource === 'workoutLogs')} context={`?${query}`} />
     {data.plan && isV3Plan(data.plan) && <AdjustmentHistory adjustments={data.adjustments} />}

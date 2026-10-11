@@ -24,4 +24,14 @@ describe("complete Insights loading", () => {
     expect(await result).toBeNull(); expect(load).toHaveBeenCalledOnce();
     expect(await completeReport(async () => { current = false; return "private"; }, () => current)).toBeNull();
   });
+  it.each(['insights-rebuild-busy', 'insights-rebuild-continuation-required', 'insights-rebuild-lease-lost'])('retries the explicit concurrent projection control %s', async reason => {
+    vi.useFakeTimers(); const load = vi.fn().mockRejectedValueOnce({ code: 'functions/aborted', details: { reason } }).mockResolvedValue('complete');
+    const result = completeReport(load, () => true); await vi.runAllTimersAsync(); expect(await result).toBe('complete'); expect(load).toHaveBeenCalledTimes(2);
+  });
+  it('retries a provider outage with bounded backoff but not an unrelated aborted request', async () => {
+    vi.useFakeTimers(); const load = vi.fn().mockRejectedValueOnce({ code: 'functions/unavailable' }).mockResolvedValue('complete');
+    const result = completeReport(load, () => true); await vi.runAllTimersAsync(); expect(await result).toBe('complete');
+    const error = { code: 'functions/aborted' }, invalid = vi.fn().mockRejectedValue(error);
+    await expect(completeReport(invalid, () => true)).rejects.toBe(error); expect(invalid).toHaveBeenCalledOnce();
+  });
 });
