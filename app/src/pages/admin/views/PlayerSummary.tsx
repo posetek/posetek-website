@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import type { PlayerRow } from "../lib/accounts";
 import { playerSummaryRequest } from "../lib/playerSummary";
@@ -9,7 +9,8 @@ import { minuteText, TESTING_LABELS, WORKOUT_LABELS, workoutDurationText } from 
 import { workoutPacificTime } from '../lib/workoutNotifications';
 import type { ExpandedInsights, ExpandedPlayer } from "../../insights/lib/expanded";
 import type { PlayerWorkoutsData } from '../lib/playerDetailData';
-import { assertPlayerWorkoutsAgree, playerWorkoutsAgree } from '../lib/playerWorkoutConsistency';
+import { assertPlayerWorkoutTotalsAgree, playerWorkoutTotalsAgree, workoutEvidenceTotals } from '../lib/playerWorkoutConsistency';
+import { expandedRequest } from '../../insights/lib/expandedQuery';
 
 export default function PlayerSummary({ player, refreshKey = 0, onBusy, onRefresh, foreground = true, workoutEvidence = null }: { player: PlayerRow; refreshKey?: number; onBusy?: (busy: boolean) => void; onRefresh?: () => void; foreground?: boolean; workoutEvidence?: PlayerWorkoutsData | null }) {
   const location = useLocation();
@@ -19,11 +20,17 @@ export default function PlayerSummary({ player, refreshKey = 0, onBusy, onRefres
   const organization = useAccountLoad(loader);
   const canonical = Boolean(organizationId && organization.state.kind === "ready" && organization.state.data.kind === "canonical"
     && organization.state.data.organizationId === organizationId);
+  const window = expandedRequest(request.search);
+  // A successful history reread with identical totals must not cancel/restart
+  // the summary's bounded retries. Only a semantic evidence change invalidates it.
+  const evidenceKey = workoutEvidence ? JSON.stringify(workoutEvidenceTotals(workoutEvidence.logs,
+    { startDate: window.startDate, endDate: window.endDate, timeZone: window.timezone } as ExpandedInsights['period'], workoutEvidence.checkedAt)) : '';
+  const expected = useMemo(() => evidenceKey ? JSON.parse(evidenceKey) as ReturnType<typeof workoutEvidenceTotals> : null, [evidenceKey]);
   const validate = useCallback((data: ExpandedInsights) => {
-    if (workoutEvidence) assertPlayerWorkoutsAgree(data, player.id, workoutEvidence.logs, workoutEvidence.checkedAt);
-  }, [player.id, workoutEvidence]);
+    if (expected) assertPlayerWorkoutTotalsAgree(data, player.id, expected);
+  }, [player.id, expected]);
   const report = useWorkspaceMetrics({ ...request, playerIds: [player.id], enabled: canonical, refreshKey, foreground, ...(workoutEvidence ? { validate } : {}) });
-  const synchronizing = Boolean(report.data && workoutEvidence && !playerWorkoutsAgree(report.data, player.id, workoutEvidence.logs, workoutEvidence.checkedAt));
+  const synchronizing = Boolean(report.data && expected && !playerWorkoutTotalsAgree(report.data, player.id, expected));
   useEffect(() => { onBusy?.(organization.state.kind === 'loading' || report.refreshing || report.loading); }, [onBusy, organization.state.kind, report.loading, report.refreshing]);
   const metric = report.data?.rosterMetrics?.find(row => row.playerId === player.id);
   const status = organization.state.kind === "loading" ? "loading" : organization.state.kind === "error" ? "error"
@@ -60,7 +67,7 @@ export function PlayerSummaryContent({ data, metric, status, error = "", onRetry
       <dl className="admin-player-summary-metrics">
         <div><dt>Testing</dt><dd>{metric.testing.exercisesComplete}<span> of 6 exercises</span></dd>
           <dd className="admin-player-summary-detail">{TESTING_LABELS[metric.testing.status] || "Status unavailable"} · {data.testingMode === "cumulative" ? `Recorded through ${data.period.endDate}` : "Selected period"}</dd></div>
-        <div><dt>Completed workouts</dt><dd>{metric.workouts.completed}</dd><dd className="admin-player-summary-detail">Personal + assigned · {WORKOUT_LABELS[metric.workouts.status] || "Status unavailable"}</dd></div>
+        <div><dt>Completed workouts</dt><dd>{metric.workouts.completed}</dd><dd className="admin-player-summary-detail">Personal + assigned + extra · {WORKOUT_LABELS[metric.workouts.status] || "Status unavailable"}</dd></div>
         <div><dt>Estimated active use</dt><dd className={metric.usage.collected ? "" : "missing"}>{minuteText(metric.usage.activeMinutes, metric.usage.collected)}</dd>
           <dd className="admin-player-summary-detail">{metric.usage.collected ? `${metric.usage.activeDays} active ${metric.usage.activeDays === 1 ? "day" : "days"}` : "Usage collection is unavailable"}</dd></div>
       </dl>

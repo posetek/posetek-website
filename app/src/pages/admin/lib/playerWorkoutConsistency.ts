@@ -20,16 +20,23 @@ export function workoutEvidenceTotals(logs: RecordedWorkoutLog[], period: Expand
 }
 
 export function playerWorkoutsAgree(report: ExpandedInsights, playerId: string, logs: RecordedWorkoutLog[], now: number) {
+  return playerWorkoutTotalsAgree(report, playerId, workoutEvidenceTotals(logs, report.period, now));
+}
+
+export function playerWorkoutTotalsAgree(report: ExpandedInsights, playerId: string, expected: ReturnType<typeof workoutEvidenceTotals>) {
   const row = report.rosterMetrics?.find(metric => metric.playerId === playerId);
   // Exclusions and unavailable summaries keep their existing explicit states.
   if (!row || row.status !== 'included') return true;
-  const expected = workoutEvidenceTotals(logs, report.period, now);
   return (Object.keys(expected) as (keyof typeof expected)[]).every(key =>
     Number.isFinite(row.player.workouts[key]) && Math.abs(row.player.workouts[key]! - expected[key]) < 1e-7);
 }
 
 export function assertPlayerWorkoutsAgree(report: ExpandedInsights, playerId: string, logs: RecordedWorkoutLog[], now: number) {
-  if (!playerWorkoutsAgree(report, playerId, logs, now)) throw Object.assign(
+  assertPlayerWorkoutTotalsAgree(report, playerId, workoutEvidenceTotals(logs, report.period, now));
+}
+
+export function assertPlayerWorkoutTotalsAgree(report: ExpandedInsights, playerId: string, expected: ReturnType<typeof workoutEvidenceTotals>) {
+  if (!playerWorkoutTotalsAgree(report, playerId, expected)) throw Object.assign(
     new Error('Saved workout history and the reporting summary are still synchronizing. Refresh activity to retry.'),
     { code: 'unavailable', details: { reason: 'workout-report-synchronizing' } });
 }
