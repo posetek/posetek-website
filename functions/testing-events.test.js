@@ -731,3 +731,32 @@ test("ending incomplete event finalizes existing results and sweeps late uploads
   assert.deepEqual(finalized, ["player-a", "player-a"]);
   assert.equal(db.snapshot(`testingEvents/${eventId}`).status, "closed");
 });
+
+
+test("delayed rep creates and deletes cannot recreate a deleting player's event projections", async () => {
+  const { db, testing, finalized } = harness({ "playerDeletionLocks/player-a": { jobId: "job" } });
+  const source = { testingEventId: "event", testingStationId: "station-1", testingParticipantId: "player-a" };
+  for (const deleting of [false, true]) {
+    assert.equal(await testing.onRepWrite({ before: { data: () => deleting ? source : undefined }, after: { data: () => deleting ? undefined : source } },
+      { params: { playerId: "player-a", repId: "late" } }), false);
+  }
+  assert.equal([...db.docs.keys()].some(path => path.startsWith("testingEvents/")), false);
+  assert.deepEqual(finalized, []);
+});
+
+test("deletion accepted during finalization prevents completion markers from being recreated", async () => {
+  let db;
+  const state = harness({
+    "testingEvents/event": { status: "closed" },
+    "testingEvents/event/projectionDirty/player-a": { revision: 1, pending: true },
+    "testingEvents/event/progress/station-1_player-a": { playerDocId: "player-a", stationId: "station-1", status: "completed", repIds: [], pendingUploadCount: 0 },
+  }, { value: 1000 }, { finalizePlayer: async () => {
+    await db.doc("playerDeletionLocks/player-a").set({ jobId: "job" });
+    await db.doc("testingEvents/event/projectionDirty/player-a").delete();
+    await db.doc("testingEvents/event/projectionFinalizations/player-a").delete();
+  } });
+  db = state.db;
+  await state.testing.reconcileProgress("event", "station-1_player-a");
+  assert.equal(db.snapshot("testingEvents/event/projectionDirty/player-a"), undefined);
+  assert.equal(db.snapshot("testingEvents/event/projectionFinalizations/player-a"), undefined);
+});

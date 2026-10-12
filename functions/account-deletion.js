@@ -287,6 +287,9 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
     if (uid) {
       for (const [collection, fields] of Object.entries(USER_RECORDS)) for (const field of fields) await eraseMatches(collection, field, uid);
       await eraseMatches("socialConnections", "participants", uid, "array-contains");
+      const issueActorKey = require("./user-issue-model").hash(uid);
+      await eraseMatches("userIssueRequestIdentities", "actorKey", issueActorKey);
+      await scan("userIssueDays", day => erase(day.ref.collection("actors").doc(issueActorKey)));
       for (const root of USER_DOCUMENTS) await erase(db.doc(`${root}/${uid}`));
       for (const prefix of [`${uid}/`, `processing_attempts/${uid}/`, `kicking-analysis/${uid}/`, `diagnostics/${uid}/`]) await erasePrefix(prefix);
     }

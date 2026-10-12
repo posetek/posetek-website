@@ -66,6 +66,13 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
       sourceReceivedAtMillis: Number.isSafeInteger(origin.receivedAtMillis) ? origin.receivedAtMillis : null };
     const dayRef = db.doc(`userIssueDays/${M.periodKey(at)}`);
     return db.runTransaction(async tx => {
+      // Background diagnostic adapters use this path as well as callables.
+      // Read tombstones in the write transaction so deletion acceptance and
+      // a delayed source event cannot race to recreate personal issue data.
+      if (typeof who.uid === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(who.uid)
+        && (await tx.get(db.doc(`accountDeletionLocks/${who.uid}`))).exists) return { status: "disabled" };
+      if (typeof who.player?.id === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(who.player.id)
+        && (await tx.get(db.doc(`playerDeletionLocks/${who.player.id}`))).exists) return { status: "disabled" };
       const settings = M.setting((await tx.get(settingsRef)).data(), at);
       if (!settings.enabled || settings.testUids && !settings.testUids.includes(who.uid) || Object.hasOwn(origin, "receivedAtMillis") && (!Number.isFinite(origin.receivedAtMillis) || origin.receivedAtMillis < settings.activatedAtMillis) || origin.isTest && !settings.testUids) return { status: "disabled" };
       const sourceClaim = (await tx.get(sourceClaimRef)).data();

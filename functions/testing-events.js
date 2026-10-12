@@ -818,14 +818,18 @@ function createTestingEvents({
   }
 
   async function markProjectionDirty(eventId, playerId, source) {
-    await eventRef(eventId).collection("projectionDirty").doc(playerId).set({
+    return db.runTransaction(async tx => {
+      if ((await tx.get(db.doc(`playerDeletionLocks/${playerId}`))).exists) return false;
+      tx.set(eventRef(eventId).collection("projectionDirty").doc(playerId), {
       playerId,
       source,
       revision: FieldValue.increment(1),
       pending: true,
       updatedAt: stamp(),
       updatedAtMillis: now(),
-    }, { merge: true });
+      }, { merge: true });
+      return true;
+    });
   }
 
   async function maybeFinalizePlayer(eventId, playerId) {
@@ -836,6 +840,7 @@ function createTestingEvents({
     const dirtyRef = ref.collection("projectionDirty").doc(playerId);
     const finalizationRef = ref.collection("projectionFinalizations").doc(playerId);
     const claimedRevision = await db.runTransaction(async (tx) => {
+      if ((await tx.get(db.doc(`playerDeletionLocks/${playerId}`))).exists) return 0;
       const [dirty, finalization] = await Promise.all([tx.get(dirtyRef), tx.get(finalizationRef)]);
       const dirtyRevision = Number(dirty.data()?.revision || 0);
       const finalizedRevision = Number(finalization.data()?.finalizedRevision || 0);
@@ -853,14 +858,18 @@ function createTestingEvents({
     if (!claimedRevision) return false;
     try {
       await finalizePlayer(playerId, { sourceKind: "testing_event", eventId: `testing-event/${eventId}/${claimedRevision}` });
-      await finalizationRef.set({
-        playerId,
-        status: "completed",
-        finalizedRevision: claimedRevision,
-        completedAt: stamp(),
-        completedAtMillis: now(),
-      }, { merge: true });
+      await db.runTransaction(async tx => {
+        if ((await tx.get(db.doc(`playerDeletionLocks/${playerId}`))).exists) return;
+        tx.set(finalizationRef, {
+          playerId,
+          status: "completed",
+          finalizedRevision: claimedRevision,
+          completedAt: stamp(),
+          completedAtMillis: now(),
+        }, { merge: true });
+      });
       await db.runTransaction(async (tx) => {
+        if ((await tx.get(db.doc(`playerDeletionLocks/${playerId}`))).exists) return;
         const dirty = await tx.get(dirtyRef);
         if (Number(dirty.data()?.revision || 0) <= claimedRevision) {
           tx.set(dirtyRef, { pending: false, finalizedAt: stamp() }, { merge: true });
@@ -868,7 +877,10 @@ function createTestingEvents({
       });
       return true;
     } catch (error) {
-      await finalizationRef.set({ status: "failed", failureMessage: String(error?.message || error), failedAt: stamp() }, { merge: true });
+      await db.runTransaction(async tx => {
+        if ((await tx.get(db.doc(`playerDeletionLocks/${playerId}`))).exists) return;
+        tx.set(finalizationRef, { status: "failed", failureMessage: String(error?.message || error), failedAt: stamp() }, { merge: true });
+      });
       throw error;
     }
   }
@@ -888,7 +900,11 @@ function createTestingEvents({
     if (status === "completedPendingSync" && pendingUploadCount === 0) status = "completed";
     if (status === "completed" && pendingUploadCount > 0) status = "needsAttention";
     if (pendingUploadCount !== Number(row.pendingUploadCount || 0) || status !== row.status) {
-      await progressRef.update({ pendingUploadCount, status, reconciledAt: stamp() });
+      await db.runTransaction(async tx => {
+        if ((await tx.get(db.doc(`playerDeletionLocks/${row.playerDocId}`))).exists) return;
+        const current = await tx.get(progressRef);
+        if (current.exists) tx.update(progressRef, { pendingUploadCount, status, reconciledAt: stamp() });
+      });
     }
     if (status === "completed") await maybeFinalizePlayer(eventId, row.playerDocId);
   }
@@ -900,6 +916,7 @@ function createTestingEvents({
     const drillType = source.testingDrillType;
     const progressRef = eventRef(eventId).collection("progress").doc(`${stationId}_${playerId}`);
     await db.runTransaction(async (tx) => {
+      if ((await tx.get(db.doc(`playerDeletionLocks/${playerId}`))).exists) return;
       const [snapshot, eventDoc, participantDoc] = await Promise.all([
         tx.get(progressRef), tx.get(eventRef(eventId)), tx.get(eventRef(eventId).collection("participants").doc(playerId)),
       ]);
@@ -943,10 +960,13 @@ function createTestingEvents({
     const repId = context?.params?.repId;
     if (!playerSegment(eventId) || !STATIONS.some((station) => station.id === stationId)
         || !playerSegment(playerId) || !playerSegment(repId) || source.testingParticipantId !== playerId) return false;
-    await markProjectionDirty(eventId, playerId, "rep");
+    if (!await markProjectionDirty(eventId, playerId, "rep")) return false;
     const commitRef = eventRef(eventId).collection("committedReps").doc(repId);
     if (Object.keys(after).length) {
-      await commitRef.set({ eventId, stationId, playerId, repId, committedAt: stamp() }, { merge: true });
+      await db.runTransaction(async tx => {
+        if ((await tx.get(db.doc(`playerDeletionLocks/${playerId}`))).exists) return;
+        tx.set(commitRef, { eventId, stationId, playerId, repId, committedAt: stamp() }, { merge: true });
+      });
       await repairProgressFromCommittedRep(eventId, stationId, playerId, repId, after);
     } else {
       await commitRef.delete();

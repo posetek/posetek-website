@@ -41,14 +41,14 @@ test('both reporting callables use the verified caller wrapper and bounded servi
   assert.equal(builders.filter(options => options.timeoutSeconds === 540 && options.memory === '1GB' && options.maxInstances === 10).length, 2);
 });
 
-function triggerFixture(factory = {}) {
+function triggerFixture(factory = {}, db = {}) {
   const fs = require('node:fs'), vm = require('node:vm');
   const calls = [], logs = [];
   const functions = { logger: { info: (...args) => logs.push(['info', ...args]), error: (...args) => logs.push(['error', ...args]) },
     https: { HttpsError: Error }, runWith: () => ({ https: { onCall: handler => handler },
       firestore: { document: () => ({ onWrite: handler => handler }) },
       storage: { bucket: () => ({ object: () => ({ onFinalize: handler => handler, onDelete: handler => handler }) }) } }) };
-  const admin = { firestore: () => ({}), storage: () => ({ bucket: () => ({}) }) };
+  const admin = { firestore: () => db, storage: () => ({ bucket: () => ({}) }) };
   const module = { exports: {} };
   vm.runInNewContext(fs.readFileSync(require.resolve('./insights-entrypoints'), 'utf8'), { module, require: name =>
     name === './insights-v2' ? { createInsightsV2: () => ({
@@ -134,4 +134,16 @@ test('testing finalizer bridge forwards only its server-owned source event and r
   const source = { sourceKind: 'testing_event', eventId: 'testing-event/server-event/7' };
   await service.rebuildInsightPlayer('p', source);
   assert.deepEqual(JSON.parse(JSON.stringify(service.calls)), [['invalidate','p',source],['rebuild','p',source]]);
+});
+
+
+test('delayed storage finalization and deletion cannot recreate locked athlete event markers', async () => {
+  const { FakeFirestore } = require('./test-support/fake-firestore');
+  const db = new FakeFirestore({ 'playerDeletionLocks/p': { jobId: 'job' } });
+  const service = triggerFixture({}, db);
+  const object = { bucket: BUCKET, name: 'p/sprint/session1/kick1/metadata.json', metadata: { posetekTestingEventId: 'event' } };
+  await service.projectInsightArtifacts(object, context());
+  await service.projectInsightArtifactDeletes(object, context());
+  assert.equal(db.snapshot('testingEvents/event/projectionDirty/p'), undefined);
+  assert.equal(service.calls.length, 0);
 });

@@ -227,3 +227,35 @@ test("coach cleanup releases only owned event leases and preserves shared athlet
   assert.equal(h.db.snapshot("testingEventInvites/invite"), undefined);
   assert.ok(h.db.snapshot("testingEventInvites/keep"));
 });
+
+
+test("removes deterministic issue identity records but preserves other daily actors", async () => {
+  const hash = require("./user-issue-model").hash;
+  const h = harness({
+    "userIssueRequestIdentities/owned": { actorKey: hash("athlete"), requestId: "private-request" },
+    "userIssueRequestIdentities/other": { actorKey: hash("other") },
+    "userIssueDays/day": { incidents: 2 },
+    [`userIssueDays/day/actors/${hash("athlete")}`]: { firstAtMillis: 1 },
+    [`userIssueDays/day/actors/${hash("other")}`]: { firstAtMillis: 1 },
+  });
+  await h.api.request(payload, actor()); await h.api.process(h.key());
+  assert.equal(h.db.snapshot("userIssueRequestIdentities/owned"), undefined);
+  assert.equal(h.db.snapshot(`userIssueDays/day/actors/${hash("athlete")}`), undefined);
+  assert.ok(h.db.snapshot("userIssueRequestIdentities/other"));
+  assert.ok(h.db.snapshot(`userIssueDays/day/actors/${hash("other")}`));
+  assert.deepEqual(h.db.snapshot("userIssueDays/day"), { incidents: 2 });
+});
+
+test("an active worker lease prevents overlapping cleanup and an expired lease is recoverable", async () => {
+  const h = harness({}, ["profile/sprint/video.mov"]);
+  await h.api.request(payload, actor());
+  await h.db.doc(`accountDeletionJobs/${h.key()}`).update({ state: "deleting", lease: "old-worker", leaseUntilMillis: baseTime + 600000 });
+  await h.api.process(h.key());
+  assert.deepEqual(h.authActions, []);
+  assert.ok(h.remaining.has("profile/sprint/video.mov"));
+  h.advance(600001);
+  await h.api.process(h.key());
+  assert.equal(h.remaining.size, 0);
+  assert.equal((await h.api.status({ receiptToken: token })).state, "verifying");
+  assert.notEqual(h.db.snapshot(`accountDeletionJobs/${h.key()}`).lease, "old-worker");
+});

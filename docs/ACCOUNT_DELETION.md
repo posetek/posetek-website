@@ -32,3 +32,28 @@ Native compile/device flow validation, service deployment/IAM/secret/config pres
 - Native parse/project checks and focused real-SwiftUI-SDK type checking passed; full app/device verification is outstanding.
 
 All destructive tests use synthetic in-memory fixtures/emulators. No user account, recording, production configuration or live data has been deleted or modified.
+
+## Independent backend follow-up (2026-10-12)
+
+The shared testing-event cleanup now removes a deleted coach's owner/operator
+attribution, device entries and invitations, releases only that coach's station
+leases, and scrubs check-in/protocol-change attribution while retaining other
+athletes and shared event evidence. Issue cleanup also removes deterministic
+request-identity and daily actor records belonging to the deleted UID.
+
+Testing-event rep/progress/finalization writes and Storage-driven event dirty
+markers now read player tombstones in their write transactions. This includes
+completion/failure markers after asynchronous finalization. Background issue
+intake similarly checks reporter and athlete tombstones before persisting data.
+Regression cases cover delayed rep creation/deletion, deletion during
+finalization, delayed Storage notifications, background issue ingestion, shared
+coach-event preservation, derived issue identities, and lease expiry recovery.
+The full Functions suite passed **1,004 tests, with 3 existing skips**.
+
+This is local synthetic evidence, not completed live erasure coverage. The
+remaining cross-service writer audit must include the underlying Insights/social
+projectors, notification workers and in-flight external sends, restoration
+suppression, and all production bucket/warehouse/legacy ownership inventories.
+Large-account runtime/progress acceptance and native device flows remain release
+gates. Configuration remains disabled; no push, deployment or production data
+operation was performed by this review.

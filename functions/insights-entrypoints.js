@@ -60,14 +60,17 @@ function createInsightsEntrypoints(functions, admin, caller) {
     const playerId = storageOwner(object);
     const eventId = storageTestingEventId(object);
     if (playerId && eventId) {
-      await db.collection("testingEvents").doc(eventId).collection("projectionDirty").doc(playerId).set({
+      await db.runTransaction(async tx => {
+        if ((await tx.get(db.doc(`playerDeletionLocks/${playerId}`))).exists) return;
+        tx.set(db.collection("testingEvents").doc(eventId).collection("projectionDirty").doc(playerId), {
         playerId,
         insightArtifactDirty: true,
         revision: admin.firestore.FieldValue.increment(1),
         pending: true,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAtMillis: Date.now(),
-      }, { merge: true });
+        }, { merge: true });
+      });
       return;
     }
     return rebuild(playerId, sourceKind, context);
