@@ -182,3 +182,21 @@ test("deletion removes UID-attributed feedback, recovery grants and usage descen
   }
   assert.ok(h.db.snapshot("appFeedbackResponsesV1/anonymous")); assert.ok(h.db.snapshot("players/other"));
 });
+
+test("deletes actual reporter schema and paired issue artifacts without erasing shared triage", async () => {
+  const h = harness({
+    "userIssueOccurrences/owned": { reporterUid: "athlete", issueId: "shared", reporterName: "Personal name" },
+    "userIssueOccurrences/owned/observations/o": { reporterUid: "athlete" },
+    "userIssueOccurrences/other": { reporterUid: "other", issueId: "shared" },
+    "userIssueOutbox/owned": { contactSnapshot: { player: { id: "profile" } } },
+    "userIssueSourceClaims/claim": { occurrenceId: "owned" },
+    "userIssues/shared": { latestOccurrenceId: "owned", latestUser: "Personal name", state: "investigating", occurrences: 2 },
+    "aiSharingConsents/athlete": { accepted: true },
+    "aiSharingConsents/other": { accepted: true },
+  });
+  await h.api.request(payload, actor()); await h.api.process(h.key());
+  for (const path of ["userIssueOccurrences/owned", "userIssueOccurrences/owned/observations/o", "userIssueOutbox/owned", "userIssueSourceClaims/claim", "aiSharingConsents/athlete"]) assert.equal(h.db.snapshot(path), undefined, path);
+  assert.deepEqual(h.db.snapshot("userIssues/shared"), { state: "investigating", occurrences: 2 });
+  assert.ok(h.db.snapshot("userIssueOccurrences/other"));
+  assert.ok(h.db.snapshot("aiSharingConsents/other"));
+});

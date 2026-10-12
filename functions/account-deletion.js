@@ -29,14 +29,14 @@ const USER_RECORDS = {
   appFeedbackResponsesV1: ["author.uid"],
   clubStaffInvitations: ["claimedByUID", "claimedByUid", "redeemedByUid"],
   accountAccessGrants: ["targetUID"], accountAccessAudit: ["targetUID", "actorUID"],
-  insightUsageIntervals: ["actorUid"], userIssueOccurrences: ["actorUid", "uid", "contactSnapshot.actorUid"],
+  insightUsageIntervals: ["actorUid"], userIssueOccurrences: ["reporterUid", "actorUid", "uid", "contactSnapshot.actorUid"],
   userIssueActors: ["uid"], userIssueOutbox: ["actorUid"],
 };
 for (const root of ["devicePerformanceAttempts", "devicePerformanceRuns", "devicePerformanceUploadGroups", "devicePerformanceTransfers", "devicePerformanceDevices"]) {
   PLAYER_RECORDS[root] = ["authority.playerDocumentID"];
   USER_RECORDS[root] = ["authority.reporterUid"];
 }
-const USER_DOCUMENTS = ["admins", "users", "socialPreferences", "socialRateLimits", "admissionAttempts", "insightUsageActors"];
+const USER_DOCUMENTS = ["admins", "users", "socialPreferences", "socialRateLimits", "admissionAttempts", "insightUsageActors", "aiSharingConsents"];
 
 function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsError,
   eraseWarehouse = async () => { throw new Error("Warehouse eraser is not configured"); },
@@ -168,7 +168,19 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
     }
     if (root === "appFeedbackResponsesV1") await erase(db.doc(`appFeedbackSessionsV1/${doc.id}`));
     if (root === "accountAccessGrants") await eraseMatches("accountAccessTargets", "grantId", doc.id);
-    if (root === "userIssueOccurrences") await eraseMatches("userIssueSourceClaims", "occurrenceId", doc.id);
+    if (root === "userIssueOccurrences") {
+      await eraseMatches("userIssueSourceClaims", "occurrenceId", doc.id);
+      await erase(db.doc(`userIssueOutbox/${doc.id}`));
+      const issueId = doc.data().issueId;
+      if (playerSegment(issueId)) await db.runTransaction(async tx => {
+        const ref = db.doc(`userIssues/${issueId}`), issue = await tx.get(ref);
+        // Keep aggregate triage and other reporters, but remove the deleted
+        // reporter's cached display label and now-invalid occurrence pointer.
+        if (issue.exists && issue.data().latestOccurrenceId === doc.id) {
+          tx.update(ref, { latestUser: FieldValue.delete(), latestOccurrenceId: FieldValue.delete() });
+        }
+      });
+    }
     await erase(doc.ref);
   }
   async function eraseMatches(collection, field, value, operator = "==") {
