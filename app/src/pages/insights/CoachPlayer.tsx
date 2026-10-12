@@ -8,9 +8,10 @@ import AthleteDetail from "../coach-dashboard/views/AthleteDetail";
 import { loadAthleteBundle } from "../coach-dashboard/lib/data";
 import { athleteSummary } from "../coach-dashboard/lib/logic";
 import { blockDoseLine } from "../../lib/contracts/drillV2";
-import { completeReport } from "./lib/completeReport";
+import { completedWorkoutsInPeriod } from './lib/coachPlayerSummary';
 import { sameScope, scopePayload } from "./lib/expanded";
 import CoachPlayerOneScreen from "./CoachPlayerOneScreen";
+import CoachMeasuredTests from './CoachMeasuredTests';
 import type { InsightScope, ExpandedPlayer, CoachTestScore } from "./lib/expanded";
 import type { ExpandedRequest } from "./lib/expandedQuery";
 import "../coach-dashboard/coach-dashboard.scss";
@@ -24,6 +25,13 @@ export interface CoachComparison {
 }
 export function assertCoachComparison(data: CoachComparison, scope: InsightScope, request: ExpandedRequest) {
   if (data.schemaVersion !== 1 || !sameScope(data.scope, scope) || data.player.id !== request.playerId || data.period.startDate !== request.startDate || data.period.endDate !== request.endDate || data.period.timeZone !== request.timezone || data.testingMode !== request.testingWindow || data.freshness.complete !== true) throw Object.assign(new Error("Player comparison no longer matches the current selection."), { code: "failed-precondition" });
+}
+export function assertCoachWorkoutEvidence(comparison: CoachComparison, logs: unknown[]) {
+  const completed = completedWorkoutsInPeriod(logs, comparison.period, comparison.generatedAtMillis);
+  const focus = comparison.performance?.coachFocus;
+  if (focus?.version === 1 && completed !== null && completed !== focus.completedInPeriod) {
+    throw Object.assign(new Error('Workout summary is updating to match saved sessions. Refresh activity to retry.'), { code: 'unavailable' });
+  }
 }
 
 export function CoachPercentile({ data }: { data: CoachComparison }) {
@@ -60,9 +68,9 @@ export function CoachPercentile({ data }: { data: CoachComparison }) {
 export default function CoachPlayer({ uid, scope, request, onName, onPrescribe, onClose, visible = true }: { uid: string; scope: InsightScope; request: ExpandedRequest; onName: (name: string) => void; onPrescribe: () => void; onClose: () => void; visible?: boolean }) {
   const [retry, setRetry] = useState(0);
   const key = JSON.stringify([uid, scope, request.playerId, request.startDate, request.endDate, request.timezone, request.testingWindow]);
-  const reader = useCallback(async (current: () => boolean, onRebuild: () => void) => {
+  const reader = useCallback(async (current: () => boolean) => {
         const valid = () => current() && auth.currentUser?.uid === uid;
-        const comparison = await completeReport(() => clubCall<CoachComparison>("getCoachPlayerComparison", { scope: scopePayload(scope), playerId: request.playerId, startDate: request.startDate, endDate: request.endDate, timeZone: request.timezone, testingMode: request.testingWindow }), valid, onRebuild);
+        const comparison = await clubCall<CoachComparison>("getCoachPlayerComparison", { scope: scopePayload(scope), playerId: request.playerId, startDate: request.startDate, endDate: request.endDate, timeZone: request.timezone, testingMode: request.testingWindow });
         if (!comparison || !valid()) return null;
         assertCoachComparison(comparison, scope, request);
         const ref = db.collection("players").doc(request.playerId);
@@ -71,12 +79,13 @@ export default function CoachPlayer({ uid, scope, request, onName, onPrescribe, 
         if (!profile.exists) throw Object.assign(new Error("Player is unavailable"), { code: "not-found" });
         const personal: any[] = published.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         const summary = athleteSummary({ ...profile.data(), id: request.playerId }, bundle.reps, bundle.plans, bundle.logs, bundle.provisionalEstimates, bundle.allResultReps);
+        assertCoachWorkoutEvidence(comparison, bundle.logs);
         onName(`${comparison.player.firstName} ${comparison.player.lastName}`.trim() || "Player");
         return { comparison, summary, personal };
   // Only the exact selected player and comparison window invalidate these reads.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
-  const state = useReadOnlyReport({ key, read: reader, revision: retry });
+  const state = useReadOnlyReport({ key, read: reader, revision: retry, retry: true });
   const refresh = () => setRetry(value => value + 1);
   useForegroundReport({ key, refresh, busy: state.refreshing, interval: true, enabled: visible });
   const ready = state.kind === 'ready' ? state.data : null;
@@ -90,7 +99,7 @@ export default function CoachPlayer({ uid, scope, request, onName, onPrescribe, 
       <section className="coach-player-more" aria-label="Team comparison and full player records">
         <header className="coach-player-more-header"><h2>Team comparison and full player records</h2><span>Age {ready.comparison.player.age ?? "not recorded"} · current roster</span></header>
         <CoachPercentile data={ready.comparison} />
-        <section className="coach-player-training pt-coachdash" aria-label="Player training and testing detail"><p className="insights-note">Complete plan editing, workout history and benchmark details.</p><AthleteDetail embedded summary={ready.summary} job={null} onBack={onClose} onCreatePlan={onPrescribe} onPlanChanged={async () => { setRetry(value => value + 1); }} /></section>
+        <section className="coach-player-training pt-coachdash" aria-label="Player training and testing detail"><p className="insights-note">Plan details, saved workout history and measured testing results.</p><AthleteDetail embedded testingContent={<CoachMeasuredTests performance={ready.comparison.performance} />} summary={ready.summary} job={null} onBack={onClose} onCreatePlan={onPrescribe} onPlanChanged={async () => { setRetry(value => value + 1); }} /></section>
         <section className="insights-card coach-personal-workouts"><h2>Published personal workouts</h2><p className="insights-note">Workouts the player has published. Their AI conversations and unpublished drafts remain private.</p>{ready.personal.length ? ready.personal.map(workout => <details key={workout.id}><summary>{String(workout.title || "Personal workout")}<span>{Number.isFinite(workout.estimatedMinutes) ? ` · approximately ${workout.estimatedMinutes} min` : ""}</span></summary><ul>{(Array.isArray(workout.blocks) ? workout.blocks : []).map((block: any, index: number) => <li key={block.blockId || index}><strong>{String(block.name || "Drill")}</strong><span>{blockDoseLine(block)}</span></li>)}</ul></details>) : <p>No published personal workouts yet.</p>}</section>
       </section>
   </div>;

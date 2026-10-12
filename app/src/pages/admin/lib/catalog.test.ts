@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { updateDrill, type DrillWrite } from './catalog';
+import { mediaPlaybackUrl, updateDrill, type DrillWrite } from './catalog';
 
-const harness = vi.hoisted(() => ({ save: vi.fn(), transaction: vi.fn(), currentVersion: '1.0.8' }));
+const harness = vi.hoisted(() => ({ save: vi.fn(), transaction: vi.fn(), media: vi.fn(), currentVersion: '1.0.8' }));
 vi.mock('../../../lib/firebase', () => ({
-  default: {}, auth: { currentUser: { uid: 'admin-test' } }, storage: {},
+  default: {}, auth: { currentUser: { uid: 'admin-test' } }, storage: { ref: () => ({ getDownloadURL: harness.media }) },
   cloud: { httpsCallable: (name: string) => { if (name !== 'trainingSaveDrill') throw new Error(name); return harness.save; } },
   db: { collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ productionBatchId: 'whole-body-2026-09', catalogVersion: harness.currentVersion }) }) }) }), runTransaction: harness.transaction },
 }));
@@ -13,7 +13,14 @@ const write: DrillWrite = { name: 'Goblet squat', domain: 'strength', minAge: 10
   howTo: { setup: 'Prepare the reviewed load.', steps: ['Use the reviewed range.'] }, dose: { sets: 2, reps: 6 },
   maxFrequencyPerWeek: 2, coachComments: [], adaptiveLevers: [], status: 'draft' };
 
-beforeEach(() => { harness.save.mockReset(); harness.transaction.mockReset(); harness.save.mockResolvedValue({ data: { catalogVersion: '1.0.9' } }); });
+beforeEach(() => { harness.save.mockReset(); harness.transaction.mockReset(); harness.media.mockReset(); harness.save.mockResolvedValue({ data: { catalogVersion: '1.0.9' } }); });
+
+it('does not resolve a quarantined primary demo in the library', async () => {
+  await expect(mediaPlaybackUrl({ storagePath: 'retained/video.mp4', status: 'pending' })).resolves.toBeNull();
+  expect(harness.media).not.toHaveBeenCalled();
+  harness.media.mockResolvedValue('https://synthetic.invalid/demo.mp4');
+  await expect(mediaPlaybackUrl({ storagePath: 'retained/video.mp4', status: 'approved' })).resolves.toBe('https://synthetic.invalid/demo.mp4');
+});
 
 describe('managed drill content concurrency', () => {
   it('sends the version the editor loaded, even when a newer document is fetched for routing', async () => {

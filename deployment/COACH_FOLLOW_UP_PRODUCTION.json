@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 1,
+  "release": "Coach follow-up from saved workouts and measured testing",
+  "status": "production-verified",
+  "website": "https://posetek.net",
+  "deploymentId": "6acd3e31cae1c1af33af3d3e",
+  "previousDeploymentId": "6acd37e9e903ac054286f910",
+  "sourceCommit": "139162a04a1aa2afefda78c62bf2715d9667acbc",
+  "sourceBranch": "codex/coach-follow-up-focus",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/55",
+  "publishedAt": "2026-10-12T20:10:21.798Z",
+  "verifiedAt": "2026-10-12T20:10:29.977Z",
+  "artifactFiles": 1968,
+  "providerFiles": 1969,
+  "preservedPredecessorFiles": 1951,
+  "addedRuntimeAssets": 16,
+  "allowedPriorChanges": [
+    "/application.html",
+    "/netlify.toml (generated provider metadata)"
+  ],
+  "applicationSha1": "ae739ab08de14aa7d1d2e0e07fbdbd3a8548c30a",
+  "feedbackSha1": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+  "exactReviewedDraftPromoted": true,
+  "supersededDraftPublished": false,
+  "concurrentTimerRelease": {
+    "deploymentId": "6acd37e9e903ac054286f910",
+    "runtimeSource": "4fc717eaecf7ae71de823900aed47134821cf186",
+    "sourceAndConfirmedRecordsIntegrated": true,
+    "priorRecordPreservationVerified": true
+  },
+  "behavior": {
+    "coachD1PresentationWithheld": true,
+    "loginTimestampNotAFollowUpCriterion": true,
+    "followUp": "No saved completed workouts in selected local period; comparable measured metrics down on each test's latest two qualified local dates through the selected end",
+    "personalAssignedAndExtraCompletionsIncluded": true,
+    "activePlanOrTestingNotPrerequisites": true,
+    "missingOrDifferentMetricsNotDeclines": true,
+    "mixedChangesExplainedWithMeasuredValues": true,
+    "fullFilteredGroupsBeforeSearchAndPagination": true,
+    "uniquePlayerFollowUpCounts": true,
+    "boundedHistoryProjectionAgreement": true,
+    "signupCopyingPrescribingHistoryAndScopePreserved": true
+  },
+  "backend": {
+    "sourceCommit": "b6363eed692b3abba4f456de21277025e39dc927",
+    "scope": "functions:expanded-insights",
+    "sourceFiles": {
+      "index.js": {
+        "sha256": "6ec5341fa5b88f82b7318f74a990ab6dabd6ab02a812b44900a24fbb809662fb",
+        "bytes": 808
+      },
+      "insights-entrypoints.js": {
+        "sha256": "3de79c9e39d865242edf784f5425cb14a0aba61b170c6e4eab7aee68a106385c",
+        "bytes": 7215
+      },
+      "insights-v2.js": {
+        "sha256": "9b07dbb3389cdd68488fda5c62cb6227cf91e23b5ed2c23d5dc64c54e890c281",
+        "bytes": 42571
+      },
+      "insights-overview.js": {
+        "sha256": "e57660aa8d0bf2e33fab2a2287cd23865fea06bda6b0c41d83f1ff3067ceaa35",
+        "bytes": 8055
+      },
+      "insights-v2-projection.js": {
+        "sha256": "2a9a9988b0fc87ee0f42a5b969b58f21a3c211645a0408d48a2a655f13541e76",
+        "bytes": 17809
+      },
+      "insights-v2-qualification.js": {
+        "sha256": "9d76e838c0b829c2576c41568f3764d89d056c3759cdf214513bc56633d46556",
+        "bytes": 12356
+      },
+      "processing-evidence.js": {
+        "sha256": "ff8e976ee70f37c62914c2cee80bef39419e283d0a9fa4b9fc4d028eadf3a38e",
+        "bytes": 4692
+      },
+      "insight-usage.js": {
+        "sha256": "94f02489c224cd33dec3e19bc62c73be766e68c4e37072527cf0a966ae71d4d0",
+        "bytes": 16690
+      },
+      "club-access.js": {
+        "sha256": "ecc45c631b6b2bbf204621a896410f60f40d3d46f98df5576515616c82d5834a",
+        "bytes": 1326
+      },
+      "athlete-storage-paths.js": {
+        "sha256": "2b0c8a3320b82a94f32add9d2344708effcd42ce6aef7f0c88a013ec6db99d4a",
+        "bytes": 2802
+      },
+      "effective-rep.js": {
+        "sha256": "77cb3a0761a890156d67495e2dac84b8e6250467bd53c8da05ecbeb5f5793dff",
+        "bytes": 4643
+      },
+      "insights-axis-scoring.js": {
+        "sha256": "bb09040baaf1263c20d5fbdce4ab8c4438587bb38fbf25c26d3d972847a4f72e",
+        "bytes": 4601
+      },
+      "athlete-profile-spec.json": {
+        "sha256": "138ed2356a56e0ac92c6bc3f9e88f508ed82fb9af1cb6cc363ad9a1453fb967f",
+        "bytes": 2766
+      },
+      "package.json": {
+        "sha256": "a9ac459e8c2330272c3fc52ab9d27b48f40dbd0dca9855f0983cef3f49e44686",
+        "bytes": 498
+      },
+      "package-lock.json": {
+        "sha256": "a8fe6b8e4487c7d263942a6df98c440863107a80940f41cc9b21730b28584a2e",
+        "bytes": 263566
+      }
+    },
+    "functions": {
+      "getClubInsightsV2": {
+        "versionId": "8",
+        "status": "ACTIVE",
+        "sourceSha256": "ae1477480e6f7c1cb63ef0bcd48c8e20a87d3895338e4d9a649ca16f7f83da27",
+        "iamSha256": "c0628979974b95221d9f75067946607266ef54393c11b476037744fc50f1bb6e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true,
+        "runtimeConfigSha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+        "runtimeConfigBytes": 112
+      },
+      "getCoachPlayerComparison": {
+        "versionId": "5",
+        "status": "ACTIVE",
+        "sourceSha256": "ae1477480e6f7c1cb63ef0bcd48c8e20a87d3895338e4d9a649ca16f7f83da27",
+        "iamSha256": "a6b0c301a8aa2e2ae6f52311750f1674f642188ab8d62a66c109f8d5e8af5a7d",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true,
+        "runtimeConfigSha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+        "runtimeConfigBytes": 112
+      },
+      "recordInsightUsage": {
+        "versionId": "7",
+        "status": "ACTIVE",
+        "sourceSha256": "ae1477480e6f7c1cb63ef0bcd48c8e20a87d3895338e4d9a649ca16f7f83da27",
+        "iamSha256": "328f2c2c79c8bc205a61fa521a4da75c05896f467044662bc897a5182956ca91",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true,
+        "runtimeConfigSha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+        "runtimeConfigBytes": 112
+      },
+      "projectInsightPlayer": {
+        "versionId": "8",
+        "status": "ACTIVE",
+        "sourceSha256": "ae1477480e6f7c1cb63ef0bcd48c8e20a87d3895338e4d9a649ca16f7f83da27",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true,
+        "runtimeConfigSha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+        "runtimeConfigBytes": 112
+      },
+      "projectInsightRecords": {
+        "versionId": "8",
+        "status": "ACTIVE",
+        "sourceSha256": "ae1477480e6f7c1cb63ef0bcd48c8e20a87d3895338e4d9a649ca16f7f83da27",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true,
+        "runtimeConfigSha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+        "runtimeConfigBytes": 112
+      },
+      "projectInsightRevisions": {
+        "versionId": "8",
+        "status": "ACTIVE",
+        "sourceSha256": "ae1477480e6f7c1cb63ef0bcd48c8e20a87d3895338e4d9a649ca16f7f83da27",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true,
+        "runtimeConfigSha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+        "runtimeConfigBytes": 112
+      },
+      "projectInsightFailures": {
+        "versionId": "8",
+        "status": "ACTIVE",
+        "sourceSha256": "ae1477480e6f7c1cb63ef0bcd48c8e20a87d3895338e4d9a649ca16f7f83da27",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true,
+        "runtimeConfigSha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+        "runtimeConfigBytes": 112
+      },
+      "projectInsightArtifacts": {
+        "versionId": "8",
+        "status": "ACTIVE",
+        "sourceSha256": "ae1477480e6f7c1cb63ef0bcd48c8e20a87d3895338e4d9a649ca16f7f83da27",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true,
+        "runtimeConfigSha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+        "runtimeConfigBytes": 112
+      },
+      "projectInsightArtifactDeletes": {
+        "versionId": "8",
+        "status": "ACTIVE",
+        "sourceSha256": "ae1477480e6f7c1cb63ef0bcd48c8e20a87d3895338e4d9a649ca16f7f83da27",
+        "iamSha256": "47fc0ef0cbb49a5720d1384bc2d84b2dc916371f65f4ab04efd2fb97df5c871e",
+        "sourceVerified": true,
+        "configurationVerified": true,
+        "iamVerified": true,
+        "runtimeConfigSha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+        "runtimeConfigBytes": 112
+      }
+    },
+    "immutableSourceConfigurationIamVerified": true,
+    "runtimeModuleClosureVerified": true,
+    "unrelatedFunctions": 121,
+    "unrelatedFunctionsPreserved": true,
+    "stableReadbackAt": "2026-10-12T20:10:01.317Z"
+  },
+  "validation": {
+    "frontendTests": 1947,
+    "frontendFiles": 170,
+    "sourceCI": [
+      {
+        "name": "ci",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/posetek/posetek_website/actions/runs/38302063126/job/114987805590"
+      },
+      {
+        "name": "build",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/posetek/posetek_website/actions/runs/38302063126/job/114987109232"
+      },
+      {
+        "name": "server",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/posetek/posetek_website/actions/runs/38302063126/job/114987109101"
+      },
+      {
+        "name": "policy",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/posetek/posetek_website/actions/runs/38302063126/job/114987109033"
+      },
+      {
+        "name": "unit",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/posetek/posetek_website/actions/runs/38302063126/job/114987108996"
+      },
+      {
+        "name": "dependencies",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/posetek/posetek_website/actions/runs/38302063126/job/114987108854"
+      }
+    ],
+    "typescript": true,
+    "backendTests": 88,
+    "existingPrivateFixtureSkips": 3,
+    "scopedPublisherTests": 24,
+    "websiteReleaseGuards": 54,
+    "advisoryReview": {
+      "reviewer": "Primary Codex agent",
+      "completed": true,
+      "reviewedHead": "139162a04a1aa2afefda78c62bf2715d9667acbc",
+      "independentProviderReviewClaimed": false,
+      "paidHostedReviewerActivated": false
+    },
+    "candidate": {
+      "checks": 14,
+      "captures": 8,
+      "errors": 0,
+      "checksPassed": [
+        "Complete server follow-up groups include the uncompleted player and measured decline across pagination, excluding the other team",
+        "Coach overview leads with three evidence counts and two named follow-up groups; D1 and sign-in warnings are absent",
+        "Existing signup code and link copy successfully without regeneration or email",
+        "Player with completed workouts and no login timestamp has only the testing flag, with exact measured before/after results",
+        "Detailed coach testing tab also uses measured results without D1 percentages",
+        "Saved personal, assigned and extra history and email-matching duration precision remain available",
+        "Prescribing retains the selected player and organization context",
+        "A player without an active plan or recorded testing has a clear period-specific workout gap without a testing decline",
+        "Refresh and browser Back preserve player, scope and reporting dates",
+        "Keyboard activation and arrow navigation retain accessible coach tabs",
+        "Coach cannot read the other team through either selected-team or direct-team requests",
+        "Player credentials cannot open staff follow-up evidence",
+        "Administrator saved profile contacts remain intact",
+        "Final server follow-up agrees with displayed records and no verification email was queued"
+      ]
+    },
+    "production": {
+      "checks": 14,
+      "captures": 8,
+      "errors": 0,
+      "checksPassed": [
+        "Complete server follow-up groups include the uncompleted player and measured decline across pagination, excluding the other team",
+        "Coach overview leads with three evidence counts and two named follow-up groups; D1 and sign-in warnings are absent",
+        "Existing signup code and link copy successfully without regeneration or email",
+        "Player with completed workouts and no login timestamp has only the testing flag, with exact measured before/after results",
+        "Detailed coach testing tab also uses measured results without D1 percentages",
+        "Saved personal, assigned and extra history and email-matching duration precision remain available",
+        "Prescribing retains the selected player and organization context",
+        "A player without an active plan or recorded testing has a clear period-specific workout gap without a testing decline",
+        "Refresh and browser Back preserve player, scope and reporting dates",
+        "Keyboard activation and arrow navigation retain accessible coach tabs",
+        "Coach cannot read the other team through either selected-team or direct-team requests",
+        "Player credentials cannot open staff follow-up evidence",
+        "Administrator saved profile contacts remain intact",
+        "Final server follow-up agrees with displayed records and no verification email was queued"
+      ]
+    },
+    "viewportWidths": [
+      360,
+      390,
+      430,
+      1440
+    ],
+    "mobileReasonWrappingVisuallyVerified": true
+  },
+  "preservation": {
+    "protectedFiles": 1966,
+    "ordinaryBuildAllProtectedBytesVerified": true,
+    "ordinaryBuildPublished": false,
+    "marketingFeedbackIconsAndPriorRuntimeAssetsExact": true,
+    "athleteRestTimersPreserved": true,
+    "catalogVersion": "1.0.96",
+    "heldContentAndNativeGatesPreserved": true
+  },
+  "cleanup": {
+    "verified": true,
+    "createdSyntheticAccounts": 3,
+    "authAccountsRemaining": 0,
+    "ownedRootDescendantAndScopedQueryDocumentsRemaining": 0,
+    "activeCurrentAndNoncurrentStorageObjectsRemaining": 0,
+    "notificationOutboxes": 0,
+    "notificationControlsUnchanged": true,
+    "temporaryCredentialsPresent": false,
+    "delayedSeparateReadback": {
+      "verified": true,
+      "verifiedAt": "2026-10-12T20:15:11.754Z",
+      "method": "Delayed separate operator process with independently implemented recursive, scoped-query, Auth and Storage reads",
+      "ownedRootDescendantAndScopedQueryDocuments": 0,
+      "authAccounts": 0,
+      "activeAndNoncurrentStorageObjects": 0,
+      "notificationOutboxes": 0,
+      "temporaryCredentialsPresent": false
+    },
+    "softDeletedSyntheticJsonGenerations": 4,
+    "unchangedSevenDayStorageSoftDeletePolicy": true,
+    "physicalErasureOfRetainedSoftDeletedGenerationsClaimed": false
+  },
+  "notDeployed": [
+    "rules",
+    "indexes",
+    "gateway",
+    "catalog",
+    "native",
+    "paid reviewer activation"
+  ],
+  "realAthleteDataChanged": false
+}

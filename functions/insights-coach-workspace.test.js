@@ -275,3 +275,26 @@ test("comparison rejects current training changes and ownership changes before r
     await assert.rejects(service.getCoachPlayerComparison({ scope, playerId: "one" }, coach), { code: "aborted" });
   }
 });
+
+test("follow-up uses all saved workout types in the period and matching recent metrics across the complete filtered roster", async () => {
+  const service = setup({
+    "players/one/reps/before": { repType: "sprint", max_velocity: 10, createdAt: NOW - 3 * 86400000 },
+    "players/one/reps/r": { repType: "sprint", max_velocity: 8, createdAt: NOW - 86400000 },
+    "players/one/personalWorkoutLogs/personal": { source: "personal", workoutId: "personal", startedAt: NOW - 10000, endedAt: NOW - 1000, endReason: "completed" },
+  });
+  const request = { scope, startDate: "2026-09-20", endDate: "2026-09-29", timeZone: "UTC" };
+  const report = await service.getClubInsightsV2({ ...request, pageSize: 1, nameSearch: "Ada" }, coach);
+  const comparison = await service.getCoachPlayerComparison({ ...request, playerId: "one" }, coach);
+  const focus = report.overview.coachFocus;
+  assert.equal(focus.version, 1); assert.equal(focus.noCompletionPlayers.length, 2);
+  assert.deepEqual(focus.decliningPlayers.map(row => row.id), ["one"]);
+  assert.equal(comparison.performance.coachFocus.completedInPeriod, 1);
+  assert.deepEqual(comparison.performance, report.players[0].performance);
+  assert.deepEqual(comparison.performance.needsYouReasons, ["Recent testing down \u00b7 Sprint"]);
+  assert.equal(comparison.performance.coachFocus.measuredTests.find(test => test.drill === "sprint").metrics[0].trend, "down");
+  const earlier = await service.getClubInsightsV2({ ...request, endDate: "2026-09-27" }, coach);
+  assert.equal(earlier.overview.coachFocus.noCompletionPlayers.length, 3);
+  assert.equal(earlier.overview.coachFocus.decliningPlayers.length, 0);
+  const next = await service.getClubInsightsV2({ ...request, pageSize: 1, cursor: (await service.getClubInsightsV2({ ...request, pageSize: 1 }, coach)).pagination.nextCursor }, coach);
+  assert.deepEqual(next.overview.coachFocus, focus);
+});

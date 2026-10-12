@@ -248,3 +248,22 @@ players, 20,000 reps and 10,000 workout logs per player, and 200,000 selected-sc
 event facts per request. Queries paginate internally, retaining undated source
 documents. No partial global summary is presented as a total.
 Private metadata, artifact paths, contacts, notes and prompts never leave the API.
+
+## Coach follow-up additive contract (October 12, 2026)
+
+`performance.coachFocus` version 1 contains `completedInPeriod` (qualified saved
+personal/assigned/extra completion count in the selected period) and six
+`measuredTests`. Each test has its latest and previous qualified local dates,
+status, and latest raw metrics with comparable previous values and direction.
+Trends compare the same metric at existing displayed precision. No D1 reference,
+missing sign-in timestamp, mixed test composition or provisional value can
+create a decline. Incomplete prior comparisons remain explicitly unavailable.
+
+`overview.coachFocus` version 1 supplies complete `noCompletionPlayers` and
+`decliningPlayers` named groups after reporting inclusion/filtering and before
+name search/pagination. Needs-you counts deduplicate their union. Existing
+performance/D1/testScores fields remain compatible. Historical period bounds,
+canonical artifact qualification, current roster authority and scope rechecks
+are unchanged. No persisted schema or permission change is introduced.
+
+See [coach follow-up](../COACH_FOLLOW_UP.md) for presentation and release evidence.

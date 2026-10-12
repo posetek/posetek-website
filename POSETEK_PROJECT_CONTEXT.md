@@ -1,12 +1,69 @@
 # PoseTek website project context
 
+<!-- coach-follow-up-current:start -->
+## Current coach follow-up release
+
+Website `6acd3e31cae1c1af33af3d3e`, runtime source `139162a04a1aa2afefda78c62bf2715d9667acbc`, was published October 12, 2026 at 1:10:21 PM PDT from the exact reviewed candidate. Coach Overview, roster, player summary and detailed Testing results withhold D1 standing/percentages. Needs you prioritizes zero saved completed personal/assigned/extra workouts in the selected local period and declines in comparable measured metrics on each test's latest two qualified local dates through the selected end. Missing profile sign-in timestamps, missing tests and different metrics do not imply inactivity or decline. Mixed changes show actual before/after measurements. Team percentiles, signup copying, prescribing, history and current-plan progress remain connected.
+
+All 1,968 artifact files match 1,969 provider records; 1,951 predecessor records remain exact and 16 runtime assets are added. The 1,966-file reconciled baseline passed the ordinary byte-preservation build. Source CI passed six checks and 1,947 frontend tests; 88 relevant backend checks, 24 scoped packaging checks and 54 website release guards passed, with three existing private-fixture skips. Candidate and production each passed 14 signed-in synthetic checks and eight captures at 360/390/430px and desktop. The nine Expanded Insights functions from `b6363eed692b3abba4f456de21277025e39dc927` are source/configuration/IAM and dependency-closure verified; all 121 unrelated functions are unchanged.
+
+Three owned synthetic accounts, all active/scoped documents, current/noncurrent storage objects and notification outboxes are absent after delayed independently implemented readback; temporary credentials were removed. Four deleted synthetic JSON generations remain under the unchanged seven-day bucket soft-delete policy until automatic expiry; physical erasure of retained generations is not claimed. No real athlete data or notification control changed. The concurrent athlete timer runtime/records and catalog 1.0.96 are integrated and preserved, including DRB-010's hold and all eighty held drafts. Marketing, isolated feedback, P icons, recovery, contacts and native/content gates remain intact. Rules, indexes, gateway, catalog and native were not released. Read [the coach handoff](docs/COACH_FOLLOW_UP.md), [production evidence](deployment/COACH_FOLLOW_UP_PRODUCTION.json) and [PR #55](https://github.com/posetek/posetek_website/pull/55). Earlier releases below remain preserved historical checkpoints.
+<!-- coach-follow-up-current:end -->
+
+<!-- athlete-rest-timers-current:start -->
+## Preserved athlete rest timer release (2026-10-12)
+
+Website `6acd37e9e903ac054286f910`, runtime source `4fc717eaecf7ae71de823900aed47134821cf186`, was published October 12 at 12:48:08 PM PDT from the exact verified draft. Athletes choose a timer from zero through the current prescribed default, with separate rep/set recovery, reset, elapsed recovery preservation and owner-scoped local restore. Zero disables the timer; it does not rewrite the drill prescription or establish a researched minimum.
+
+All 1,952 artifact files match 1,953 provider records; 1,947 prior records remain exact and four runtime assets are added. Marketing, isolated feedback, P icons and existing assets are preserved. All 1,946 frontend tests, 41 release guards and six hosted runtime-source CI checks passed. Candidate acceptance passed 22 checks and production 14, including owned authenticated reload and 360/390/430/1440px layouts. The 1,950-file preservation baseline is reconciled. The one test account and all owned/scoped records are absent after delayed separate readback; notification outboxes are empty and credential files removed.
+
+Catalog `1.0.96`, all saved real workouts and the 80 held drafts with `mobileVerified: false` remain preserved. DRB-010 stays draft with its corrupted demo pending repair. No backend, gateway, rules, indexes, catalog or native release is included. Read [the handoff](docs/ATHLETE_REST_TIMERS.md) and [production evidence](deployment/ATHLETE_REST_TIMERS_PRODUCTION.json).
+<!-- athlete-rest-timers-current:end -->
+
+<!-- drill-rest-current:start -->
+## Current drill rests and demonstration withdrawal (2026-10-12)
+
+Catalog `1.0.96` has 208 records: 74 website-library published (71 explicit plus
+three absent-status legacy records), 71 with approved primary demos and 134 drafts.
+Eighteen published drills now use their existing authored lower rest bounds; text
+and duration estimates are synchronized while goals, volume and scope are preserved.
+DRB-010 **Speed dribble with stop zone** is draft with its primary demo pending
+after the user reported corruption. Its video object is retained for repair;
+republication requires verified working playback and review. Saved workouts/logs
+were not rewritten. Independent readback matches the one acknowledged transaction
+and preserves all 189 unrelated records, private reviews/configuration and all 80
+held whole-body drafts with `mobileVerified: false`. No hosted artifact, functions,
+gateway, rules, indexes or native build was published. Read
+[the handoff](docs/DRILL_REST_UPDATE.md) and
+[production evidence](deployment/DRILL_REST_UPDATE_20261012.json).
+<!-- drill-rest-current:end -->
+
+<!-- drill-video-audit-current:start -->
+## Historical drill demonstration audit and catalog publication (2026-10-11)
+
+Live catalog `1.0.94` contains 208 records: the website library counts 75 published
+and 133 drafts. All 72 drills with approved uploaded primary demonstrations are
+now library-published. The only matching draft, DRB-010 **Speed dribble with stop
+zone**, was transactionally published after exact-generation Storage verification.
+The count includes 49 legacy records with absent raw status; it is not a count of
+75 executable prescriptions. DRB-010's access-aware personal selection remains
+unavailable pending source-bound space clarification. All 207 other records,
+media, authored content, private authoring/reviews and AI configuration are exact.
+The 80 whole-body drafts still have no uploaded clips and remain pending with
+`mobileVerified: false`; their external filming references do not count as athlete
+demonstrations. Independent readback passed. This data change publishes no new
+website artifact, functions, rules, gateway or native build. Read
+[the audit handoff](docs/DRILL_VIDEO_PUBLICATION_AUDIT.md) and
+[production receipt](deployment/DRILL_VIDEO_PUBLICATION_20261011.json).
+<!-- drill-video-audit-current:end -->
+
 The current production release record below comes from fresh `main`.
 The engineering pipeline remains a separate staged candidate; use
 `docs/engineering/README.md` for its guides, status, and activation limits.
 Merging source is not promotion of a production website artifact.
 
 <!-- workout-reporting-current:start -->
-## Current workout reporting consistency release
+## Preserved workout reporting consistency release
 
 Website `6acbde38a912d2909dd0501a`, runtime source `a4e8da1e00cabb17b21ef60924d77e98f0038731`, was published October 11, 2026 at 12:15:40 PM PDT from the exact verified candidate. Staff history reads personal and assigned logs independently of creation controls, and durations match email precision in minutes with up to one decimal. All completed personal, assigned and extra workouts in the selected period are separate from current fourteen-day assigned-plan progress. Admin Refresh activity updates summary and history together; selected workout views check while visible, with explicit updating/stale states and account/scope isolation. Saved history/projection mismatches receive bounded rereads and are never presented as current.
 

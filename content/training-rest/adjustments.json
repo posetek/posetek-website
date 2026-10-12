@@ -1,0 +1,610 @@
+{
+  "schemaVersion": 1,
+  "kind": "authored-lower-bound-rest-and-demo-withdrawal",
+  "decision": "Use existing authored lower bounds, preserve training goals and allow additional recovery when quality requires it.",
+  "records": [
+    {
+      "drillId": "COD-002",
+      "name": "Deceleration gate",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 4,
+        "repsMin": 3,
+        "repsMax": 3,
+        "repUnit": "reps",
+        "perSide": false,
+        "doseText": "2-4 sets x 3 reps",
+        "restSecondsMin": 60,
+        "restSecondsMax": 90,
+        "restText": "60-90 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 2,
+        "max": 7
+      },
+      "restSecondsAfter": 60,
+      "evidenceIds": [
+        "sprint-2017",
+        "nsca-speed-quality"
+      ]
+    },
+    {
+      "drillId": "COD-003",
+      "name": "45-degree cut progression",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 4,
+        "repsMin": 2,
+        "repsMax": 3,
+        "repUnit": "reps",
+        "perSide": true,
+        "doseText": "2-4 sets x 2-3/side",
+        "doseNote": "side",
+        "restSecondsMin": 60,
+        "restSecondsMax": 120,
+        "restText": "60-120 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 4,
+        "max": 16
+      },
+      "restSecondsAfter": 60,
+      "evidenceIds": [
+        "sprint-2017",
+        "nsca-speed-quality"
+      ]
+    },
+    {
+      "drillId": "COD-004",
+      "name": "90-degree cut progression",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 3,
+        "setsMax": 3,
+        "repsMin": 2,
+        "repsMax": 2,
+        "repUnit": "reps",
+        "perSide": true,
+        "doseText": "3 sets x 2/side",
+        "doseNote": "side",
+        "restSecondsMin": 90,
+        "restSecondsMax": 120,
+        "restText": "90-120 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 1,
+        "frequencyText": "1x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 8,
+        "max": 10
+      },
+      "restSecondsAfter": 90,
+      "evidenceIds": [
+        "sprint-2017",
+        "nsca-speed-quality"
+      ]
+    },
+    {
+      "drillId": "HJP-002",
+      "name": "Standing broad jump reps",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 3,
+        "setsMax": 5,
+        "repsMin": 2,
+        "repsMax": 3,
+        "repUnit": "reps",
+        "perSide": false,
+        "doseText": "3-5 sets x 2-3 reps",
+        "restSecondsMin": 90,
+        "restSecondsMax": 120,
+        "restText": "90-120 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 4,
+        "max": 10
+      },
+      "restSecondsAfter": 90,
+      "evidenceIds": [
+        "youth-plyometric-2014",
+        "maturity-plyometric-2019"
+      ]
+    },
+    {
+      "drillId": "HJP-003",
+      "name": "Triple broad jump",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 1,
+        "setsMax": 1,
+        "repsMin": 3,
+        "repsMax": 5,
+        "repUnit": "reps",
+        "perSide": false,
+        "doseText": "3-5 trials",
+        "restSecondsMin": 120,
+        "restSecondsMax": 180,
+        "restText": "2-3 min",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 1,
+        "frequencyText": "1x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 5,
+        "max": 13
+      },
+      "restSecondsAfter": 120,
+      "evidenceIds": [
+        "youth-plyometric-2014",
+        "maturity-plyometric-2019"
+      ]
+    },
+    {
+      "drillId": "HJP-004",
+      "name": "Single-leg hop to stick",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 4,
+        "repsMin": 3,
+        "repsMax": 3,
+        "repUnit": "reps",
+        "perSide": true,
+        "doseText": "2-4 sets x 3/side",
+        "doseNote": "side",
+        "restSecondsMin": 60,
+        "restSecondsMax": 90,
+        "restText": "60-90 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 4,
+        "max": 13
+      },
+      "restSecondsAfter": 60,
+      "evidenceIds": [
+        "youth-plyometric-2014",
+        "maturity-plyometric-2019"
+      ]
+    },
+    {
+      "drillId": "SPD-002",
+      "name": "Falling start",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 4,
+        "repsMin": 2,
+        "repsMax": 3,
+        "repUnit": "reps",
+        "perSide": false,
+        "doseText": "2-4 sets x 2-3 reps",
+        "restSecondsMin": 60,
+        "restSecondsMax": 120,
+        "restText": "60-120 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 2,
+        "max": 8
+      },
+      "restSecondsAfter": 60,
+      "evidenceIds": [
+        "sprint-2017",
+        "nsca-speed-quality"
+      ]
+    },
+    {
+      "drillId": "SPD-003",
+      "name": "Wall switch to sprint",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 3,
+        "repsMin": 3,
+        "repsMax": 3,
+        "repUnit": "reps",
+        "perSide": false,
+        "doseText": "2-3 sets x 3 reps",
+        "restSecondsMin": 60,
+        "restSecondsMax": 90,
+        "restText": "60-90 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 2,
+        "max": 5
+      },
+      "restSecondsAfter": 60,
+      "evidenceIds": [
+        "sprint-2017",
+        "nsca-speed-quality"
+      ]
+    },
+    {
+      "drillId": "SPD-004",
+      "name": "Push-up start",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 3,
+        "repsMin": 3,
+        "repsMax": 3,
+        "repUnit": "reps",
+        "perSide": false,
+        "doseText": "2-3 sets x 3 reps",
+        "restSecondsMin": 90,
+        "restSecondsMax": 120,
+        "restText": "90-120 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 1,
+        "frequencyText": "1x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 3,
+        "max": 6
+      },
+      "restSecondsAfter": 90,
+      "evidenceIds": [
+        "sprint-2017",
+        "nsca-speed-quality"
+      ]
+    },
+    {
+      "drillId": "SPD-009",
+      "name": "Sprint-cut-sprint",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 4,
+        "repsMin": 2,
+        "repsMax": 2,
+        "repUnit": "reps",
+        "perSide": true,
+        "doseText": "2-4 sets x 2/side",
+        "doseNote": "side",
+        "restSecondsMin": 90,
+        "restSecondsMax": 150,
+        "restText": "90-150 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 1,
+        "frequencyText": "1x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 5,
+        "max": 18
+      },
+      "restSecondsAfter": 90,
+      "evidenceIds": [
+        "sprint-2017",
+        "nsca-speed-quality"
+      ]
+    },
+    {
+      "drillId": "STR-001",
+      "name": "Squat-to-box competency",
+      "schemaVersion": 1,
+      "statusBefore": null,
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 4,
+        "repsMin": 6,
+        "repsMax": 10,
+        "repUnit": "reps",
+        "perSide": false,
+        "doseText": "2-4 sets x 6-10 reps",
+        "restSecondsMin": 60,
+        "restSecondsMax": 90,
+        "restText": "60-90 s",
+        "frequencyPerWeekMin": 2,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 3,
+        "max": 10
+      },
+      "restSecondsAfter": 60,
+      "evidenceIds": [
+        "acsm-youth-strength"
+      ]
+    },
+    {
+      "drillId": "STR-007",
+      "name": "Assisted Nordic progression",
+      "schemaVersion": 1,
+      "statusBefore": null,
+      "doseBefore": {
+        "setsMin": 1,
+        "setsMax": 3,
+        "repsMin": 3,
+        "repsMax": 6,
+        "repUnit": "reps",
+        "perSide": false,
+        "doseText": "1-3 sets x 3-6 reps",
+        "restSecondsMin": 90,
+        "restSecondsMax": 120,
+        "restText": "90-120 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 1,
+        "max": 7
+      },
+      "restSecondsAfter": 90,
+      "evidenceIds": [
+        "nordic-2021"
+      ]
+    },
+    {
+      "drillId": "VJP-002",
+      "name": "Snap-down to vertical jump",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 3,
+        "setsMax": 4,
+        "repsMin": 3,
+        "repsMax": 3,
+        "repUnit": "reps",
+        "perSide": false,
+        "doseText": "3-4 sets x 3 reps",
+        "restSecondsMin": 60,
+        "restSecondsMax": 90,
+        "restText": "60-90 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 4,
+        "max": 7
+      },
+      "restSecondsAfter": 60,
+      "evidenceIds": [
+        "youth-plyometric-2014",
+        "maturity-plyometric-2019"
+      ]
+    },
+    {
+      "drillId": "VJP-004",
+      "name": "Pogo series",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 4,
+        "repsMin": 10,
+        "repsMax": 20,
+        "repUnit": "contacts",
+        "perSide": false,
+        "doseText": "2-4 x 10-20 contacts",
+        "restSecondsMin": 45,
+        "restSecondsMax": 90,
+        "restText": "45-90 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 2,
+        "max": 8
+      },
+      "restSecondsAfter": 45,
+      "evidenceIds": [
+        "youth-plyometric-2014",
+        "maturity-plyometric-2019"
+      ]
+    },
+    {
+      "drillId": "VJP-005",
+      "name": "Low hurdle hops",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 4,
+        "repsMin": 4,
+        "repsMax": 6,
+        "repUnit": "contacts",
+        "perSide": false,
+        "doseText": "2-4 sets x 4-6 contacts",
+        "restSecondsMin": 90,
+        "restSecondsMax": 120,
+        "restText": "90-120 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 2,
+        "max": 7
+      },
+      "restSecondsAfter": 90,
+      "evidenceIds": [
+        "youth-plyometric-2014",
+        "maturity-plyometric-2019"
+      ]
+    },
+    {
+      "drillId": "VJP-006",
+      "name": "Single-leg jump and stick",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 3,
+        "repsMin": 3,
+        "repsMax": 4,
+        "repUnit": "reps",
+        "perSide": true,
+        "doseText": "2-3 sets x 3-4/side",
+        "doseNote": "side",
+        "restSecondsMin": 45,
+        "restSecondsMax": 75,
+        "restText": "45-75 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 2,
+        "frequencyText": "1-2x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 4,
+        "max": 9
+      },
+      "restSecondsAfter": 45,
+      "evidenceIds": [
+        "youth-plyometric-2014",
+        "maturity-plyometric-2019"
+      ]
+    },
+    {
+      "drillId": "VJP-007",
+      "name": "Lateral bound to vertical jump",
+      "schemaVersion": 2,
+      "statusBefore": "published",
+      "doseBefore": {
+        "setsMin": 3,
+        "setsMax": 3,
+        "repsMin": 3,
+        "repsMax": 3,
+        "repUnit": "reps",
+        "perSide": true,
+        "doseText": "3 sets x 3/side",
+        "doseNote": "side",
+        "restSecondsMin": 60,
+        "restSecondsMax": 90,
+        "restText": "60-90 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 1,
+        "frequencyText": "1x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 7,
+        "max": 9
+      },
+      "restSecondsAfter": 60,
+      "evidenceIds": [
+        "youth-plyometric-2014",
+        "maturity-plyometric-2019"
+      ]
+    },
+    {
+      "drillId": "VJP-008",
+      "name": "Drop landing to jump",
+      "schemaVersion": 1,
+      "statusBefore": null,
+      "doseBefore": {
+        "setsMin": 2,
+        "setsMax": 4,
+        "repsMin": 3,
+        "repsMax": 3,
+        "repUnit": "reps",
+        "perSide": false,
+        "doseText": "2-4 sets x 3 reps",
+        "restSecondsMin": 90,
+        "restSecondsMax": 150,
+        "restText": "90-150 s",
+        "frequencyPerWeekMin": 1,
+        "frequencyPerWeekMax": 1,
+        "frequencyText": "1x/week"
+      },
+      "estimatedMinutesBefore": {
+        "min": 3,
+        "max": 10
+      },
+      "restSecondsAfter": 90,
+      "evidenceIds": [
+        "youth-plyometric-2014",
+        "maturity-plyometric-2019"
+      ]
+    }
+  ],
+  "withdrawal": {
+    "drillId": "DRB-010",
+    "name": "Speed dribble with stop zone",
+    "statusAfter": "draft",
+    "primaryDemoStatusAfter": "pending",
+    "reason": "User reported corrupted demonstration video; retain object for repair."
+  },
+  "retainedLongRest": [
+    "COD-005",
+    "COD-010",
+    "HJP-005",
+    "HJP-006",
+    "SPD-006",
+    "VJP-003"
+  ],
+  "evidence": [
+    {
+      "id": "youth-plyometric-2014",
+      "url": "https://jssm.org/volume13/iss2/cap/jssm-13-287.pdf",
+      "population": "54 boys aged 8-14; seven-week plyometric program comparing 30, 60 and 120 s interset recovery.",
+      "finding": "Similar measured improvements across groups.",
+      "limitation": "Not proof of equivalence, exact PoseTek drill performance quality, safety or all maturity groups."
+    },
+    {
+      "id": "maturity-plyometric-2019",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/31159655/",
+      "population": "Boys aged 10-17, grouped by biological maturity; 30 versus 120 s recovery.",
+      "finding": "Post-PHV participants benefited more from 120 s; pre-PHV outcomes were similar.",
+      "limitation": "Do not infer maturity from chronological age or shorten every power drill."
+    },
+    {
+      "id": "sprint-2017",
+      "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0171462",
+      "population": "29 trained teenage male soccer players; repeated 30 m sprint program with 15 versus 30 s passive recovery and two-minute set rest.",
+      "finding": "30 s maintained sprint performance better; 15 s favored conditioning adaptations.",
+      "limitation": "A repeated-sprint protocol is not a matched trial for these acceleration or cutting drills."
+    },
+    {
+      "id": "nordic-2021",
+      "url": "https://repository.essex.ac.uk/31587/1/i1062-6050-56-9-952.pdf",
+      "population": "10 trained adult men; two sets of six Nordic repetitions with 60 versus 180 s rest.",
+      "finding": "60 s was sufficient in that acute protocol; longer rest may help force.",
+      "limitation": "Not pediatric evidence or a matched assisted-Nordic trial; retain the authored 90 s lower bound."
+    },
+    {
+      "id": "nsca-speed-quality",
+      "url": "https://www.nsca.com/education/articles/kinetic-select/designing-speed-training-sessions/",
+      "population": "Professional speed-training guidance.",
+      "finding": "High quality sprinting requires adequate recovery and individualized volume.",
+      "limitation": "Guidance supports preserving longer maximum-speed recovery; not an exact interval experiment."
+    },
+    {
+      "id": "acsm-youth-strength",
+      "url": "https://www.acsm.org/wp-content/uploads/2025/02/NYSHSI-Youth-Resistance-Training-PDF.pdf",
+      "population": "General youth resistance-training guidance (2015 publication).",
+      "finding": "One-minute recovery can be appropriate; longer recovery may be needed as loads and sets increase.",
+      "limitation": "Guidance rather than a matched squat-to-box rest trial; supervision and technique remain required."
+    }
+  ]
+}

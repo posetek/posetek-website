@@ -15,6 +15,9 @@ import { useWorkoutWakeLock } from './use-workout-wake-lock';
 import { createWorkoutActivity, workoutActivityLog, workoutActivitySessionId, WORKOUT_ACTIVITY_HEARTBEAT_MS } from './workout-activity';
 import type { WorkoutActivityReporter, WorkoutActivityResponse } from './workout-activity';
 import './workout-experience.css';
+import RestTimerControls from './RestTimerControls';
+import { chosenRest, resizeRestTimer, startRestTimer } from './rest-choice';
+import type { RestChoices, RestKind } from './rest-choice';
 import { savedWorkoutAllowsFeedback } from './feedback-invitation';
 
 export default function PlayerWorkout({ workout, store, playerId, preview, onExit, onCompleted }: {
@@ -28,7 +31,7 @@ export default function PlayerWorkout({ workout, store, playerId, preview, onExi
   const [anotherTab, setAnotherTab] = useState(false), [localRecovery, setLocalRecovery] = useState(true);
   const key = runtimeKey(owner), legacyKey = `posetek:workout-clock:${owner.uid}:${playerId}:${workout.id}`;
   const [initial] = useState(() => {
-    const recovered = (value: { clock: Clock; index: number; timerStartedHere: boolean }) => ({ ...value, clock: applyConfirmedElapsed(value.clock, workout.recoveredActiveSeconds, Date.now()), timerStartedHere: value.timerStartedHere || Number.isFinite(workout.recoveredActiveSeconds) });
+    const recovered = (value: { clock: Clock; index: number; timerStartedHere: boolean; restChoices?: RestChoices }) => ({ ...value, restChoices: value.restChoices || {}, clock: applyConfirmedElapsed(value.clock, workout.recoveredActiveSeconds, Date.now()), timerStartedHere: value.timerStartedHere || Number.isFinite(workout.recoveredActiveSeconds) });
     if (!preview) try {
       const raw = localStorage.getItem(key);
       const saved = restoreRuntime(JSON.parse(raw || 'null'), owner, blocks, log, Date.now());
@@ -39,6 +42,7 @@ export default function PlayerWorkout({ workout, store, playerId, preview, onExi
     return recovered({ clock: newClock(Date.now()), index: resumeIndex(blocks, log), timerStartedHere: workout.timerStartedHere === true });
   });
   const [clock, updateClock] = useState<Clock>(initial.clock), clockRef = useRef(clock);
+  const [restChoices, updateRestChoices] = useState<RestChoices>(initial.restChoices), restChoicesRef = useRef(restChoices);
   const setClock = useCallback((change: Clock | ((old: Clock) => Clock)) => { const next = typeof change === 'function' ? change(clockRef.current) : change; clockRef.current = next; updateClock(next); }, []);
   const [now, setNow] = useState(() => Date.now()), [index, updateIndex] = useState(initial.index), indexRef = useRef(index);
   const setIndex = (i: number) => { indexRef.current = i; updateIndex(i); };
@@ -100,12 +104,12 @@ export default function PlayerWorkout({ workout, store, playerId, preview, onExi
   const persist = useCallback(() => { if (!preview && tabActive.current) try {
     if (ended.current) { localStorage.removeItem(key); localStorage.removeItem(legacyKey); }
     else {
-      localStorage.setItem(key, JSON.stringify(runtimeSnapshot(owner, blocks, indexRef.current, clockRef.current, initial.timerStartedHere, tabId)));
+      localStorage.setItem(key, JSON.stringify(runtimeSnapshot(owner, blocks, indexRef.current, clockRef.current, initial.timerStartedHere, tabId, restChoicesRef.current)));
       localStorage.removeItem(legacyKey);
     }
     setLocalRecovery(true);
   } catch { setLocalRecovery(false); } }, [preview, key, legacyKey, owner, blocks, initial.timerStartedHere, tabId]);
-  useEffect(persist, [persist, clock, index, log?.endedAt]);
+  useEffect(persist, [persist, clock, index, restChoices, log?.endedAt]);
   const pause = useCallback((at = Date.now()) => { setClock(c => pauseClock(c, at)); persist(); activity.current?.pause(); }, [setClock, persist]);
   const resume = () => { setClock(c => resumeClock(c, Date.now())); activity.current?.resume(); };
   const attachment = useRef(0);
@@ -143,6 +147,15 @@ export default function PlayerWorkout({ workout, store, playerId, preview, onExi
   const row = log?.blocks?.find((r: Row) => r.blockId === block?.blockId);
   const done = row?.setsCompleted || 0, target = Math.max(1, block?.sets || 1);
   const rest = restSeconds(clock, now);
+  const canChooseRest = () => (preview || auth.currentUser?.uid === owner.uid) && tabActive.current && !painStopped && !store.saving && !ended.current;
+  const chooseRest = (kind: RestKind, duration: number) => {
+    if (!canChooseRest()) return;
+    const accepted = chosenRest(block, { [kind]: duration }, kind);
+    const next = { ...restChoicesRef.current, [block.blockId]: { ...restChoicesRef.current[block.blockId], [kind]: accepted } };
+    restChoicesRef.current = next; updateRestChoices(next);
+    setClock(c => resizeRestTimer(c, accepted, Date.now(), kind));
+    persist();
+  };
   const tick = async (count: number) => {
     if (!allowed()) return;
     const actionAt = Date.now();
@@ -151,8 +164,8 @@ export default function PlayerWorkout({ workout, store, playerId, preview, onExi
       const r = next ? { ...blockLogRow(block, next), estimatedMinutes: block.estimatedMinutes || 0 } : null;
       await store.saveBlock(workout.id, block.blockId, r, initial.timerStartedHere ? Math.floor(elapsed(clockRef.current, Date.now())) : undefined);
       activity.current?.progress(actionAt);
-      const restSeconds = block.restScope === 'reps' ? Number(block.restBetweenSetsSeconds || 0) : Number(block.restSeconds || 0);
-      setClock(c => next > done && next < target && restSeconds > 0 ? { ...c, restTotal: restSeconds, restUntil: c.runningSince !== null ? Date.now() + restSeconds * 1000 : null, frozenRest: c.runningSince === null ? restSeconds : null } : stopRest(c));
+      const duration = chosenRest(block, restChoicesRef.current[block.blockId], 'sets');
+      setClock(c => next > done && next < target ? startRestTimer(c, duration, Date.now(), 'sets') : stopRest(c));
     } catch { /* store surfaces the retryable error */ }
   };
   const skipBlock = async (reason: string) => {
@@ -213,6 +226,8 @@ export default function PlayerWorkout({ workout, store, playerId, preview, onExi
       <TrainingLoadInstructions block={block} />
       <section className="portal-card"><p className="eyebrow">{rest > 0 ? 'Rest now' : done >= target ? 'Drill complete' : `Up next · Set ${done + 1} of ${target}`}</p>
         {rest > 0 && <div className="player-rest"><div><strong role="timer" aria-label="Rest time remaining">{Math.floor(rest / 60)}:{String(rest % 60).padStart(2, '0')}</strong>{clock.restTotal ? <small>{Math.max(0, clock.restTotal - rest)}s of {clock.restTotal}s rested</small> : null}</div><button disabled={!enabled} onClick={() => { if (allowed()) setClock(c => stopRest(c)); }}>Skip rest</button></div>}
+        <RestTimerControls block={block} choice={restChoices[block.blockId]} disabled={!accountValid || anotherTab || painStopped || store.saving || !!log?.endedAt} startDisabled={!enabled}
+          onChange={chooseRest} onStart={kind => { if (allowed()) setClock(c => startRestTimer(c, chosenRest(block, restChoicesRef.current[block.blockId], kind), Date.now(), kind)); }} />
         <div className="player-sets">{Array.from({ length: target }, (_, i) => i + 1).map(n => <button key={n} disabled={!enabled} aria-pressed={n <= done} aria-label={`Set ${n}${n <= done ? ', completed' : ''}`} onClick={() => void tick(n === done ? n - 1 : n)}>{n <= done ? '✓' : n}</button>)}</div>
         {block.cues?.length > 0 && <ul>{block.cues.map((c: string, i: number) => <li key={i}>{c}</li>)}</ul>}{block.whyIncluded && <p>{block.whyIncluded}</p>}
       </section>
