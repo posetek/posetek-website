@@ -1,5 +1,13 @@
 # PoseTek website
 
+## Athlete rest timer choices (October 12, 2026)
+
+Athletes can now choose any whole-second rest timer from zero through the workout's current default. Rep and set timers stay separate; zero means no timer, and
+reset restores the prescription. Choices are local to the workout player. The
+verified website is `6acd37e9e903ac054286f910`; saved real workouts and catalog
+`1.0.96` remain unchanged. Read [the handoff](docs/ATHLETE_REST_TIMERS.md) and
+[production receipt](deployment/ATHLETE_REST_TIMERS_PRODUCTION.json).
+
 ## Drill rests and demonstration withdrawal (October 12, 2026)
 
 Catalog `1.0.96` now lists 74 published drills, including 71 with approved primary
