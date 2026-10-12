@@ -1,5 +1,27 @@
 # PoseTek website
 
+## Drill rests and demonstration withdrawal (October 12, 2026)
+
+Catalog `1.0.96` now lists 74 published drills, including 71 with approved primary
+demos. Eighteen drill rest defaults use their existing authored lower bounds.
+Speed dribble with stop zone is unpublished and its corrupted demo is pending
+repair. Saved workouts and all held content are preserved. Read
+[the handoff](docs/DRILL_REST_UPDATE.md) and
+[verified receipt](deployment/DRILL_REST_UPDATE_20261012.json).
+
+## Historical drill demonstration coverage (October 11, 2026)
+
+The live website library now counts 75 published drills of 208 catalog records.
+All 72 drills with approved uploaded primary demonstrations are library-published;
+DRB-010 **Speed dribble with stop zone** was published in catalog `1.0.94`.
+Personal-workout availability remains subject to the existing access requirements,
+and the 80 whole-body drafts retain their content/media/device acceptance hold.
+The library count includes legacy records with absent status. Read
+[the audit](docs/DRILL_VIDEO_PUBLICATION_AUDIT.md) and
+[verified receipt](deployment/DRILL_VIDEO_PUBLICATION_20261011.json) for count
+definitions, exact preservation evidence and remaining requirements. This was a
+catalog data change, without a new website artifact.
+
 For development, tests, CI, review, releases and recovery across all three
 repositories, start with the [engineering handbook](docs/engineering/README.md).
 The [main rollout ledger](docs/engineering/MAIN_ROLLOUT.md) distinguishes merged

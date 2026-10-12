@@ -1,5 +1,42 @@
 # PoseTek website project context
 
+<!-- drill-rest-current:start -->
+## Current drill rests and demonstration withdrawal (2026-10-12)
+
+Catalog `1.0.96` has 208 records: 74 website-library published (71 explicit plus
+three absent-status legacy records), 71 with approved primary demos and 134 drafts.
+Eighteen published drills now use their existing authored lower rest bounds; text
+and duration estimates are synchronized while goals, volume and scope are preserved.
+DRB-010 **Speed dribble with stop zone** is draft with its primary demo pending
+after the user reported corruption. Its video object is retained for repair;
+republication requires verified working playback and review. Saved workouts/logs
+were not rewritten. Independent readback matches the one acknowledged transaction
+and preserves all 189 unrelated records, private reviews/configuration and all 80
+held whole-body drafts with `mobileVerified: false`. No hosted artifact, functions,
+gateway, rules, indexes or native build was published. Read
+[the handoff](docs/DRILL_REST_UPDATE.md) and
+[production evidence](deployment/DRILL_REST_UPDATE_20261012.json).
+<!-- drill-rest-current:end -->
+
+<!-- drill-video-audit-current:start -->
+## Historical drill demonstration audit and catalog publication (2026-10-11)
+
+Live catalog `1.0.94` contains 208 records: the website library counts 75 published
+and 133 drafts. All 72 drills with approved uploaded primary demonstrations are
+now library-published. The only matching draft, DRB-010 **Speed dribble with stop
+zone**, was transactionally published after exact-generation Storage verification.
+The count includes 49 legacy records with absent raw status; it is not a count of
+75 executable prescriptions. DRB-010's access-aware personal selection remains
+unavailable pending source-bound space clarification. All 207 other records,
+media, authored content, private authoring/reviews and AI configuration are exact.
+The 80 whole-body drafts still have no uploaded clips and remain pending with
+`mobileVerified: false`; their external filming references do not count as athlete
+demonstrations. Independent readback passed. This data change publishes no new
+website artifact, functions, rules, gateway or native build. Read
+[the audit handoff](docs/DRILL_VIDEO_PUBLICATION_AUDIT.md) and
+[production receipt](deployment/DRILL_VIDEO_PUBLICATION_20261011.json).
+<!-- drill-video-audit-current:end -->
+
 The current production release record below comes from fresh `main`.
 The engineering pipeline remains a separate staged candidate; use
 `docs/engineering/README.md` for its guides, status, and activation limits.

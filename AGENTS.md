@@ -1,5 +1,42 @@
 # PoseTek website context
 
+<!-- drill-rest-current:start -->
+## Current drill rests and demonstration withdrawal (2026-10-12)
+
+Catalog `1.0.96` has 208 records: 74 website-library published (71 explicit plus
+three absent-status legacy records), 71 with approved primary demos and 134 drafts.
+Eighteen published drills now use their existing authored lower rest bounds; text
+and duration estimates are synchronized while goals, volume and scope are preserved.
+DRB-010 **Speed dribble with stop zone** is draft with its primary demo pending
+after the user reported corruption. Its video object is retained for repair;
+republication requires verified working playback and review. Saved workouts/logs
+were not rewritten. Independent readback matches the one acknowledged transaction
+and preserves all 189 unrelated records, private reviews/configuration and all 80
+held whole-body drafts with `mobileVerified: false`. No hosted artifact, functions,
+gateway, rules, indexes or native build was published. Read
+[the handoff](docs/DRILL_REST_UPDATE.md) and
+[production evidence](deployment/DRILL_REST_UPDATE_20261012.json).
+<!-- drill-rest-current:end -->
+
+<!-- drill-video-audit-current:start -->
+## Historical drill demonstration audit and catalog publication
+
+On October 11, 2026, live catalog `1.0.94` contains 208 records: 75 website-library
+published and 133 drafts. All 72 drills with approved uploaded demonstrations are
+now library-published; DRB-010 **Speed dribble with stop zone** was the only draft
+with a demo and was published through a reviewed status/meta transaction. The
+published count includes 49 legacy records with absent status, not 75 executable
+prescriptions. Its access-aware personal selection remains unavailable pending
+source-bound space clarification. Exact independent readback preserves the other
+207 records, all media/content, private reviews and configuration. The 80 held
+whole-body drafts still have no uploaded clips and retain pending reviews and
+`mobileVerified: false`; external filming links are not athlete demonstrations.
+This catalog change includes no website artifact, backend, rules, gateway or native
+release. Read [the audit](docs/DRILL_VIDEO_PUBLICATION_AUDIT.md) and
+[receipt](deployment/DRILL_VIDEO_PUBLICATION_20261011.json). Keep private snapshots
+and operation journals out of Git.
+<!-- drill-video-audit-current:end -->
+
 For the staged engineering pipeline, start at
 `docs/engineering/README.md`, then read `WORKFLOW.md` and the approved plan in
 that directory. The pipeline remains separate from the current production

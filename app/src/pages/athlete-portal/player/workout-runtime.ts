@@ -1,24 +1,26 @@
 import { elapsed, reconcileClock, validClock } from './clock';
 import type { Clock } from './clock';
 import type { Row } from './execution';
+import { restoreRestChoices } from './rest-choice';
+import type { RestChoices } from './rest-choice';
 
 export type RuntimeOwner = { uid: string; playerId: string; logId: string; planId: string; workoutRevision: number; kind?: 'personal' };
-export type WorkoutRuntime = RuntimeOwner & { schemaVersion: 1; blockId: string; clock: Clock; timerStartedHere: boolean; tabId?: string };
+export type WorkoutRuntime = RuntimeOwner & { schemaVersion: 1; blockId: string; clock: Clock; timerStartedHere: boolean; tabId?: string; restChoices?: RestChoices };
 export function runtimeKey(owner: RuntimeOwner) { return `posetek:${owner.kind === 'personal' ? 'personal-' : ''}workout-runtime:${[owner.uid, owner.playerId, owner.logId].map(encodeURIComponent).join(':')}`; }
 export function resumeIndex(blocks: Row[], log: Row | null): number {
   const next = blocks.findIndex(b => !log?.blocks?.some((r: Row) => r.blockId === b.blockId && ['done', 'skipped'].includes(r.status)));
   return next < 0 ? Math.max(0, blocks.length - 1) : next;
 }
-export function runtimeSnapshot(owner: RuntimeOwner, blocks: Row[], index: number, clock: Clock, timerStartedHere = false, tabId?: string): WorkoutRuntime {
-  return { ...owner, schemaVersion: 1, blockId: blocks[index]?.blockId || '', clock, timerStartedHere, ...(tabId ? { tabId } : {}) };
+export function runtimeSnapshot(owner: RuntimeOwner, blocks: Row[], index: number, clock: Clock, timerStartedHere = false, tabId?: string, restChoices?: RestChoices): WorkoutRuntime {
+  return { ...owner, schemaVersion: 1, blockId: blocks[index]?.blockId || '', clock, timerStartedHere, ...(tabId ? { tabId } : {}), ...(restChoices ? { restChoices: restoreRestChoices(restChoices, blocks) } : {}) };
 }
-export function restoreRuntime(value: unknown, owner: RuntimeOwner, blocks: Row[], log: Row | null, now: number): { clock: Clock; index: number; timerStartedHere: boolean } | null {
+export function restoreRuntime(value: unknown, owner: RuntimeOwner, blocks: Row[], log: Row | null, now: number): { clock: Clock; index: number; timerStartedHere: boolean; restChoices: RestChoices } | null {
   if (!value || typeof value !== 'object' || log?.endedAt) return null;
   const saved = value as WorkoutRuntime;
   if (saved.schemaVersion !== 1 || !validClock(saved.clock) || !owner.uid || !owner.playerId || !owner.logId || !owner.planId || !Number.isInteger(owner.workoutRevision) || owner.workoutRevision < 1 ||
       !(['uid', 'playerId', 'logId', 'planId', 'workoutRevision', 'kind'] as const).every(k => saved[k] === owner[k])) return null;
   const index = blocks.findIndex(b => b.blockId === saved.blockId);
-  return index < 0 ? null : { clock: reconcileClock(saved.clock, now), index, timerStartedHere: saved.timerStartedHere === true };
+  return index < 0 ? null : { clock: reconcileClock(saved.clock, now), index, timerStartedHere: saved.timerStartedHere === true, restChoices: restoreRestChoices(saved.restChoices, blocks) };
 }
 export function canMutateWorkout(clock: Clock, saving: boolean, ended: boolean, now: number): boolean {
   return !saving && !ended && reconcileClock(clock, now).runningSince !== null;
