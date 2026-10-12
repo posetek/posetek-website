@@ -1,7 +1,13 @@
 # Coach release readiness
 
+Current coach presentation is governed by [Coach follow-up](COACH_FOLLOW_UP.md)
+and [its production receipt](../deployment/COACH_FOLLOW_UP_PRODUCTION.json).
+D1 standing and profile-login follow-up below are historical presentation
+checkpoints. Their qualification, ownership and access boundaries remain in
+force; current coach follow-up uses saved completions and measured test changes.
+
 <!-- coach-release-alignment-current:start -->
-## Current combined coach and admin-menu release
+## Historical combined coach and admin-menu release
 
 Website `6ac6a6bd448852167e52d189`, runtime source `69e51f5`, was published October 7, 2026 at 1:14:12 PM PDT from the exact reviewed candidate. Kai's always-visible coach roster and player summary now share authoritative cumulative D1 standing through the selected end, latest-two-local-test-date change and current fourteen-day plan progress. Missing summaries remain unavailable. Signup copying, scope/filter/history returns, player records and prescribing remain connected. The admin header groups Overview, Coaching hub and System & User Insights while retaining the existing tools and hierarchy.
 

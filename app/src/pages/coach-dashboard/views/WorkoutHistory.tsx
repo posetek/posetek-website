@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { hoursLine } from '../lib/logic';
+import { workoutMinutes } from '../../../lib/workout-duration';
 import { OUTCOME_LABELS, workoutHistory } from '../lib/history';
 import type { WorkoutHistoryEntry } from '../lib/history';
 import type { ReactNode } from 'react';
@@ -25,12 +25,15 @@ export function WorkoutHistoryCard({ entry, formatTime = when, expanded = false,
         <h3>{entry.snapshot?.title || 'Workout'}</h3><p className="coachdash-sub">{formatTime(entry.start)}{entry.log.workoutRevision ? ` · Saved revision ${entry.log.workoutRevision}` : ''}</p></div>
         <span className="plan-chip">{OUTCOME_LABELS[entry.status]}</span></header>
       <dl className="coachdash-player-metrics">
-        <div><dt>Recorded time</dt><dd>{entry.timerSeconds !== null ? `${hoursLine(entry.timerSeconds)} timer`
-          : entry.estimatedSeconds !== null ? `${hoursLine(entry.estimatedSeconds)} elapsed estimate` : 'Unknown'}</dd></div>
+        <div><dt>Recorded duration</dt><dd>{entry.timerSeconds !== null ? `${workoutMinutes(entry.timerSeconds / 60)} timer`
+          : entry.estimatedSeconds !== null ? `${workoutMinutes(entry.estimatedSeconds / 60)} elapsed estimate` : 'Not recorded'}</dd></div>
         <div><dt>Sets reported</dt><dd>{entry.setsCompleted}</dd></div>
         <div><dt>Drill outcomes</dt><dd>{entry.doneBlocks} done · {entry.partialBlocks} partial · {entry.skippedBlocks} skipped</dd></div>
         <div><dt>Prescribed sets</dt><dd>{!entry.prescribedKnown ? 'Prescription unknown' : entry.allSetsCompleted ? 'All completed' : 'Not all completed'}</dd></div>
       </dl>
+      <p className="coachdash-sub">{entry.timerSeconds !== null ? 'Saved active timer time; pauses are excluded. This is separate from app use.'
+        : entry.estimatedSeconds !== null ? 'Estimated from start to end; pauses may be included. No active timer was recorded.'
+          : 'Duration was not recorded. No elapsed time or attendance is inferred.'}</p>
       {entry.end !== null && <p className="coachdash-sub">Ended {formatTime(entry.end)}</p>}
       {entry.log.endReason === 'pain' && <p className="coachdash-notice">The player stopped because of pain.</p>}
       {entry.duplicateLogs > 0 && <p className="coachdash-sub">{entry.duplicateLogs} linked duplicate {entry.duplicateLogs === 1 ? 'log' : 'logs'} counted once.</p>}

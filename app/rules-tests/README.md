@@ -1,5 +1,10 @@
 # Rules emulator suites
 
+For concurrent worktrees, set `RULES_PORT_OFFSET` to a distinct non-negative
+integer (for example `20000`). It offsets all four loopback emulator ports;
+invalid or out-of-range values fail before startup. Never stop another worktree's
+emulators to reclaim a port.
+
 These suites test the **canonical** Firestore and Storage rules, which live only in
 `PoseTek-mobile-app/firebase/firestore.rules` and `storage.rules`. This repository has
 no rules files and cannot publish rules: `firebase.json` carries Firestore *indexes*
@@ -41,6 +46,7 @@ that entrypoint with Node directly instead of a shell shim.
 | `adminRules` | Firestore | Admin predicate, catalog authoring, plan-edit closure, staff test recording |
 | `insightsRules` | Firestore | Insight usage and summary projections are server-only |
 | `workoutNotifications` | Firestore | Notification settings, activity and outbox deny direct client access |
+| `accountRecovery` | Firestore | Public intake, player recovery and grant/audit state deny direct client access for every role |
 | `personalizedRules` | Firestore | Personalized planner capabilities, draft views, private context |
 | `personalWorkoutSetup` | Firestore | Personal assessment, bounded focuses/space assumption, age reconfirmation and ownership |
 | `socialRules` | Firestore + Storage | Feed roots, protected invitations, recording media |

@@ -2,6 +2,9 @@
 
 const { millis } = require("./insights-v2-qualification");
 const { overallD1, recentD1Change } = require("./insights-axis-scoring");
+const { metrics } = require("./athlete-profile-spec.json");
+const { EXERCISES } = require("./insights-v2-qualification");
+const TEST_LABELS = { shooting: "Shooting", sprint: "Sprint", jump: "Vertical jump", broadJump: "Broad jump", changeOfDirection: "Agility", dribbling: "Dribbling" };
 const DAY = 86400000;
 const validDate = value => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
   && Number.isFinite(Date.parse(`${value}T00:00:00Z`)) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
@@ -47,17 +50,52 @@ function planProgress(planRow, logs, now) {
   return { sessionsDone: done.size, sessionsPlanned, activePlan: true,
     planAgeDays: activatedAt === null ? null : Math.max(0, Math.floor((now - activatedAt) / DAY)) };
 }
-function playerPerformance({ testing, profile, training, now, endMillis, timeZone }) {
+/** Compare like-for-like qualified metrics on the latest two local dates for each
+ * test. Different exercises or missing metrics cannot imply a decline. Values
+ * that display identically at the existing metric precision are unchanged. */
+function recentMeasuredTests(tests, timeZone) {
+  return EXERCISES.map(drill => {
+    const days = new Map();
+    for (const event of tests) {
+      if (event.drill !== drill || !event.qualified || event.duplicate || !Number.isFinite(event.at) || !event.profileMetrics) continue;
+      const values = metrics.filter(metric => !metric.placeholder && metric.drills.includes(drill))
+        .filter(metric => Number.isFinite(event.profileMetrics[metric.key]) && event.profileMetrics[metric.key] > 0);
+      if (!values.length) continue;
+      const date = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(event.at);
+      const row = days.get(date) || {};
+      for (const metric of values) {
+        const value = event.profileMetrics[metric.key], previous = row[metric.key];
+        row[metric.key] = previous === undefined ? value : metric.direction === "lower" ? Math.min(value, previous) : Math.max(value, previous);
+      }
+      days.set(date, row);
+    }
+    const dates = [...days.keys()].sort(), lastTestDate = dates.at(-1) || null, previousTestDate = dates.at(-2) || null;
+    const current = days.get(lastTestDate) || {}, previous = days.get(previousTestDate) || {};
+    const rows = metrics.filter(metric => !metric.placeholder && metric.drills.includes(drill) && current[metric.key] !== undefined).map(metric => {
+      const before = previous[metric.key] ?? null, after = current[metric.key];
+      const displayed = value => Number((value * (metric.divisor || 1)).toFixed(metric.key.toLowerCase().includes("time") ? 2 : 1));
+      const delta = before === null ? null : (displayed(after) - displayed(before)) * (metric.direction === "lower" ? -1 : 1);
+      return { key: metric.key, current: after, previous: before, direction: metric.direction,
+        trend: delta === null ? "unavailable" : delta < 0 ? "down" : delta > 0 ? "up" : "same" };
+    });
+    const comparable = rows.filter(row => row.trend !== "unavailable"), down = comparable.some(row => row.trend === "down"), up = comparable.some(row => row.trend === "up");
+    return { drill, lastTestDate, previousTestDate, metrics: rows,
+      status: !lastTestDate ? "notTested" : !previousTestDate ? "noPriorTest" : !comparable.length ? "notComparable" : down && up ? "mixed" : down ? "down" : up ? "up" : "same" };
+  });
+}
+function playerPerformance({ testing, training, workouts, now, endMillis, timeZone }) {
   const tests = testing.filter(event => Number.isFinite(event.at) && event.at < endMillis);
   const change = recentD1Change(tests, timeZone);
   const progress = planProgress(training?.plan || null, training?.logs || [], now);
   const reasons = [];
   const changePoints = change.change === null ? null : Math.round(change.change);
-  if (changePoints !== null && changePoints <= -5) reasons.push("D1 down at least 5 points");
-  if (progress.activePlan && progress.planAgeDays !== null && progress.planAgeDays >= 3 && millis(profile.lastLogin) === null) reasons.push("No sign-in recorded");
-  if (progress.activePlan && progress.planAgeDays !== null && progress.planAgeDays >= 7 && progress.sessionsPlanned > 0
-    && progress.sessionsDone * 2 < progress.sessionsPlanned) reasons.push("Behind on training");
+  const measuredTests = recentMeasuredTests(tests, timeZone);
+  const completedInPeriod = Number.isSafeInteger(workouts?.completed) && workouts.completed >= 0 ? workouts.completed : null;
+  if (completedInPeriod === 0) reasons.push("No completed workouts in this period");
+  const declined = measuredTests.filter(test => test.metrics.some(metric => metric.trend === "down"));
+  if (declined.length) reasons.push(`Recent testing down · ${declined.map(test => TEST_LABELS[test.drill]).join(", ")}`);
   return { d1: overallD1(tests), change: changePoints, lastTestDate: change.lastTestDate,
-    previousTestDate: change.previousTestDate || null, ...progress, needsYouReasons: reasons };
+    previousTestDate: change.previousTestDate || null, ...progress, needsYouReasons: reasons,
+    coachFocus: { version: 1, completedInPeriod, measuredTests } };
 }
-module.exports = { activePlan, planProgress, playerPerformance };
+module.exports = { activePlan, planProgress, playerPerformance, recentMeasuredTests };

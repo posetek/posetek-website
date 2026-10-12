@@ -40,6 +40,13 @@
   .admin-grid-two { align-items: start; }
   .admin-drill-tabs { overflow-x: auto; }
 }
+.pt-admin .admin-contact-details {
+  margin-bottom: 20px;
+  dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 16px 0 0; }
+  dl > div { min-width: 0; }
+  dt { color: var(--admin-dim); font-size: 13px; margin-bottom: 5px; }
+  dd { margin: 0; color: var(--admin-text); overflow-wrap: anywhere; user-select: text; }
+}
 .pt-admin .admin-player-summary {
   padding: 18px 0;
   border-block: 1px solid var(--admin-line);
@@ -57,7 +64,17 @@
   dd.missing { font-size: 20px; }
   dd.admin-player-summary-detail { font-size: 13px; font-weight: 400; margin: 4px 0 0; color: var(--admin-dim); }
 }
+.pt-admin .admin-player-workout-evidence {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;
+  padding-top: 14px; border-top: 1px solid var(--admin-line); margin: 14px 0;
+  > div { min-width: 0; }
+  dt { font-size: 12px; }
+  dd { font-size: 16px; overflow-wrap: anywhere; }
+  dd.admin-player-summary-detail { font-size: 12px; }
+}
 @media (max-width: 600px) {
+  .pt-admin .admin-player-summary .admin-player-workout-evidence { grid-template-columns: 1fr; gap: 12px; dt { min-height: 0; } dd { min-height: 0; font-size: 16px; } }
+  .pt-admin .admin-contact-details dl { grid-template-columns: 1fr; }
   .pt-admin .admin-player-workspace .admin-heading {
     align-items: start;
     .admin-heading-actions { width: 100%; }

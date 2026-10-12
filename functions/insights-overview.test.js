@@ -1,7 +1,7 @@
 "use strict";
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { activePlan, planProgress, playerPerformance } = require("./insights-overview");
+const { activePlan, planProgress, playerPerformance, recentMeasuredTests } = require("./insights-overview");
 const { recentD1Change, overallD1 } = require("./insights-axis-scoring");
 const DAY = 86400000, NOW = Date.UTC(2026, 9, 6, 12);
 const plan = { id: "plan", data: { status: "active", activatedAt: NOW - 10 * DAY,
@@ -30,10 +30,10 @@ test("D1 change uses local test dates and ignores duplicates, failed and undated
   assert.ok(Math.abs(result.change + 46) < 1e-10);
   assert.equal(overallD1([]), null);
 });
-test("follow-up reports threshold reasons while future tests do not contribute", () => {
+test("follow-up reports saved workout gaps and measured declines, excluding future tests", () => {
   const result = playerPerformance({ testing: [event(NOW - 2 * DAY, 2), event(NOW - DAY, 4), event(NOW + DAY, 0.5)],
-    profile: {}, training: { plan, logs: [] }, now: NOW, endMillis: NOW, timeZone: "UTC" });
-  assert.deepEqual(result.needsYouReasons, ["D1 down at least 5 points", "No sign-in recorded", "Behind on training"]);
+    profile: {}, workouts: { completed: 0 }, training: { plan, logs: [] }, now: NOW, endMillis: NOW, timeZone: "UTC" });
+  assert.deepEqual(result.needsYouReasons, ["No completed workouts in this period", "Recent testing down \u00b7 Sprint"]);
   assert.ok(Math.abs(result.d1 - 92) < 1e-10);
 });
 test("unusable explicit plan timezones retain absolute completions without inventing calendar targets", () => {
@@ -64,4 +64,39 @@ test("rolling training targets use the plan timezone, confirmed start, and exact
   assert.equal(planProgress(scheduled("UTC"), [ending("one", at - 14 * DAY - 1)], at).sessionsDone, 0);
   const future = scheduled("UTC"); future.data.intake.trainingContext.startDate = "2026-10-08";
   assert.equal(planProgress(future, [], at).sessionsPlanned, 0);
+});
+
+test("completed personal workouts suppress the gap without any sign-in or active-plan prerequisite", () => {
+  for (const training of [null, { plan, logs: [] }]) {
+    const value = playerPerformance({ testing: [], profile: {}, training, workouts: { completed: 1 }, now: NOW, endMillis: NOW, timeZone: "UTC" });
+    assert.deepEqual(value.needsYouReasons, []);
+    assert.equal(value.coachFocus.completedInPeriod, 1);
+  }
+  assert.equal(playerPerformance({ testing: [], training: null, now: NOW, endMillis: NOW, timeZone: "UTC" }).coachFocus.completedInPeriod, null);
+});
+test("recent measured trends compare matching metrics and use local dates without D1", () => {
+  const rows = recentMeasuredTests([event(NOW - 2 * DAY, 2), event(NOW - DAY, 2.5)], "UTC");
+  const sprint = rows.find(row => row.drill === "sprint");
+  assert.equal(sprint.status, "down"); assert.equal(sprint.metrics[0].previous, 2); assert.equal(sprint.metrics[0].current, 2.5);
+  assert.equal(sprint.metrics[0].trend, "down"); assert.equal(rows.find(row => row.drill === "jump").status, "notTested");
+  const local = recentMeasuredTests([event(Date.UTC(2026, 9, 5, 1), 2), event(Date.UTC(2026, 9, 5, 23), 2.5)], "America/Los_Angeles")[1];
+  assert.equal(local.previousTestDate, "2026-10-04"); assert.equal(local.lastTestDate, "2026-10-05");
+});
+test("different tests, different metrics, one test date, invalid and display-identical observations cannot invent a decline", () => {
+  const trend = list => recentMeasuredTests(list, "UTC").find(row => row.drill === "sprint");
+  assert.equal(trend([event(NOW - DAY, 2), event(NOW, 3, { drill: "dribbling" })]).status, "noPriorTest");
+  assert.equal(trend([event(NOW - DAY, 2), event(NOW, 3, { profileMetrics: { sprintMaxSpeed: 6 } })]).status, "notComparable");
+  assert.equal(trend([event(NOW - 1000, 2), event(NOW, 3)]).status, "noPriorTest");
+  assert.equal(trend([event(NOW - DAY, 2), event(NOW, 2.001), event(NOW, 10, { duplicate: true }), event(NOW, 10, { qualified: false }), event(null, 10)]).status, "same");
+  assert.equal(trend([event(NOW - DAY, 2), event(NOW, 0)]).status, "noPriorTest");
+});
+test("mixed changes show which metric declined while higher speed and jumps improve", () => {
+  const rows = recentMeasuredTests([
+    event(NOW - DAY, 2, { profileMetrics: { sprintCompletionTime: 2, sprintMaxSpeed: 7 } }),
+    event(NOW, 2.2, { profileMetrics: { sprintCompletionTime: 2.2, sprintMaxSpeed: 8 } }),
+    event(NOW - DAY, 1, { drill: "jump", profileMetrics: { verticalJumpHeight: .3 } }),
+    event(NOW, 1, { drill: "jump", profileMetrics: { verticalJumpHeight: .4 } }),
+  ], "UTC");
+  assert.equal(rows.find(row => row.drill === "sprint").status, "mixed");
+  assert.equal(rows.find(row => row.drill === "jump").status, "up");
 });

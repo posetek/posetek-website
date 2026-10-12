@@ -1,5 +1,6 @@
 import type { ExpandedRequest } from "./expandedQuery";
 import { shiftDate } from "./expandedQuery";
+import { workoutMinutes } from '../../../lib/workout-duration';
 export type InsightScope = { kind: "coachRoster"; coachId?: string } | { kind: "global" } | { kind: "organization"; organizationId: string } | { kind: "team"; organizationId: string; teamId: string };
 export type CountGroup = { key: string; count: number };
 export type InsightAccess = "admin" | "manager" | "coach";
@@ -10,12 +11,18 @@ export interface QualifiedProgress {
 export interface InsightChoices { coachRoster?: { label: string; coachId: string } | null; global: boolean; organizations: { id: string; name: string; role: InsightAccess; teams: { id: string; name: string }[] }[] }
 /** Qualified latest per-test dates through the selected report end; never raw reps. */
 export interface CoachTestScore { drill: string; score: number | null; change: number | null; lastTestDate: string | null; previousTestDate: string | null }
+export interface CoachMeasuredTest {
+  drill: string; lastTestDate: string | null; previousTestDate: string | null;
+  status: "notTested" | "noPriorTest" | "notComparable" | "mixed" | "down" | "up" | "same";
+  metrics: { key: string; current: number; previous: number | null; direction: "higher" | "lower"; trend: "unavailable" | "down" | "up" | "same" }[];
+}
 export interface ExpandedPlayer {
   id: string; firstName: string; lastName: string; organizationId: string; organizationName: string; teamId: string | null; teamName: string | null;
   division: string; age: number | null; ageBand: string; registered?: boolean; signupInvitationReady?: boolean;
   testing: { status: string; exercisesComplete: number; exerciseKeys: string[]; recordedDocuments: number; distinctAttempts: number; qualifyingTests: number; dateUnknownAttempts?: number; hasDateUnknownAttempts?: boolean };
   performance?: { d1: number | null; change: number | null; lastTestDate: string | null; previousTestDate: string | null;
-    sessionsDone: number | null; sessionsPlanned: number | null; activePlan: boolean; planAgeDays: number | null; needsYouReasons: string[] };
+    sessionsDone: number | null; sessionsPlanned: number | null; activePlan: boolean; planAgeDays: number | null; needsYouReasons: string[];
+    coachFocus?: { version: 1; completedInPeriod: number | null; measuredTests: CoachMeasuredTest[] } };
   workouts: { status: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number; allPrescribedSetsCompleted: number; unknownPrescription: number; outcomeEvents?: number; timerRecords?: number; estimatedRecords?: number };
   usage: { status: string; collected: boolean; webCollected: boolean; iosCollected: boolean; activeMinutes: number; webMinutes: number; iosMinutes: number; activeDays: number };
 }
@@ -32,7 +39,7 @@ export interface ExpandedInsights {
   roster: { total: number; included: number; excluded: number; filtered: number; matched?: number };
   nameSearch?: string;
   participation?: { testingPlayers: number; workoutPlayers: number; anyPlayers: number };
-  overview?: { playersWithD1: number; averageD1: number | null; playersWithChange: number; improved: number; planPlayers: number; keepingUp: number; coachFollowUp: number; needsYouPlayers?: { id: string; name: string; reasons: string[] }[]; noTestingPlayers?: { id: string; name: string }[]; noWorkoutPlayers?: { id: string; name: string }[] };
+  overview?: { playersWithD1: number; averageD1: number | null; playersWithChange: number; improved: number; planPlayers: number; keepingUp: number; coachFollowUp: number; needsYouPlayers?: { id: string; name: string; reasons: string[] }[]; noTestingPlayers?: { id: string; name: string }[]; noWorkoutPlayers?: { id: string; name: string }[]; coachFocus?: { version: 1; noCompletionPlayers: { id: string; name: string }[]; decliningPlayers: { id: string; name: string }[] } };
   demographics: { division: CountGroup[]; ageBand: CountGroup[] };
   scopeBreakdown: { organizations: { id: string; name: string; count: number }[]; teams: { id: string | null; organizationId: string; name: string; count: number }[] };
   testing: { statuses: CountGroup[]; recordedDocuments: number; distinctAttempts: number; qualifyingTests: number; duplicateDocuments: number; needsReview: number; noResultDocuments: number; undatedDocuments: number; futureDatedDocuments: number; failureReports?: number; linkedFailureReports?: number; unmatchedFailureReports?: number;
@@ -79,7 +86,7 @@ export function assertReportScope(report: ExpandedInsights, scope: InsightScope,
 }
 export const minuteText = (value: number, collected = true) => collected ? `${Math.max(0, value).toLocaleString(undefined, { maximumFractionDigits: 1 })} min` : "Not collected";
 export function workoutDurationText(minutes: number, sourceRecords?: number) {
-  return sourceRecords === undefined ? "Coverage unavailable" : sourceRecords === 0 ? "Not recorded" : minuteText(minutes);
+  return sourceRecords === undefined ? "Coverage unavailable" : sourceRecords === 0 ? "Not recorded" : workoutMinutes(minutes);
 }
 export function workoutOutcomeSlices(workouts: ExpandedInsights["workouts"]): { key: string; label: string; value: number }[] {
   return [{ key: "completed", label: "Completed as logged", value: workouts.completed }, { key: "endedEarly", label: "Ended early", value: workouts.endedEarly }, { key: "inProgress", label: "No ending record", value: workouts.inProgress }, { key: "abandoned", label: "Abandoned", value: workouts.abandoned }, { key: "unknown", label: "Unknown ending", value: workouts.unknownEnding || 0 }];

@@ -4,6 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useMemo, useState } from "react";
+import type { ReactNode } from 'react';
 import AthleteStats from "../../../components/athlete-stats/AthleteStats";
 import {
   currentWeekNumber,
@@ -17,7 +18,8 @@ import {
   toDate,
 } from "../../athlete-portal/lib/training";
 import type { AthleteSummary } from "../lib/logic";
-import { hoursLine, planProgress } from "../lib/logic";
+import { planProgress } from "../lib/logic";
+import { workoutMinutes } from '../../../lib/workout-duration';
 import type { PlanJobState } from "../lib/data";
 import { savePlanWeeks } from "../lib/data";
 import {
@@ -45,6 +47,8 @@ interface AthleteDetailProps {
   job: PlanJobState | null;
   preview?: boolean;
   embedded?: boolean;
+  /** Coach workspace uses measured results while D1 presentation is withheld. */
+  testingContent?: ReactNode;
   onBack: () => void;
   onCreatePlan: () => void;
   onPlanChanged: () => Promise<unknown>;
@@ -58,7 +62,7 @@ function fullName(athlete: any): string {
   return `${athlete?.firstName || ""} ${athlete?.lastName || ""}`.trim() || String(athlete?.name || "Athlete");
 }
 
-export default function AthleteDetail({ summary, job, preview, embedded = false, onBack, onCreatePlan, onPlanChanged, onPreviewEdit }: AthleteDetailProps) {
+export default function AthleteDetail({ summary, job, preview, embedded = false, testingContent, onBack, onCreatePlan, onPlanChanged, onPreviewEdit }: AthleteDetailProps) {
   const [tab, setTab] = useState<"stats" | "program" | "history">("program");
   const plan = summary.plan;
 
@@ -73,7 +77,7 @@ export default function AthleteDetail({ summary, job, preview, embedded = false,
             <p className="eyebrow">Athlete</p>
             <h1>{fullName(summary.athlete)}</h1>
             <p className="coachdash-sub">
-              {summary.totals.workoutsCompleted} completed workouts · {hoursLine(summary.totals.timerSeconds)} timer time · {planProgress(plan)}
+              {summary.totals.workoutsCompleted} completed workouts · {workoutMinutes(summary.totals.timerSeconds / 60)} timer time · {planProgress(plan)}
             </p>
           </div>
         </div>}
@@ -84,14 +88,14 @@ export default function AthleteDetail({ summary, job, preview, embedded = false,
           </button>
           <button type="button" role="tab" aria-selected={tab === 'history'} className={tab === 'history' ? 'active' : ''} onClick={() => setTab('history')}>Workout history</button>
           <button type="button" role="tab" aria-selected={tab === "stats"} className={tab === "stats" ? "active" : ""} onClick={() => setTab("stats")}>
-            Stats
+            {testingContent ? 'Testing results' : 'Stats'}
           </button>
         </div>
       </section>
 
       {tab === 'history' ? <WorkoutHistory logs={summary.logs} /> : tab === "stats" ? (
         <section className="coachdash-stats-wrap">
-          <AthleteStats athlete={summary.athlete} athleteName={fullName(summary.athlete)} reps={summary.reps} provisionalEstimates={summary.provisionalEstimates} estimateReps={summary.allResultReps} />
+          {testingContent || <AthleteStats athlete={summary.athlete} athleteName={fullName(summary.athlete)} reps={summary.reps} provisionalEstimates={summary.provisionalEstimates} estimateReps={summary.allResultReps} />}
         </section>
       ) : plan && isV3Plan(plan) ? (
         <V3ProgramView plan={plan} />

@@ -46,6 +46,8 @@ import PlayerSummary from "./PlayerSummary";
 import { PlayerHierarchyBreadcrumbs } from "./AdminBreadcrumbs";
 import { PlayerWorkoutHistoryContent } from "./PlayerWorkoutHistory";
 import "../player-detail.scss";
+import { useReadOnlyReport } from '../../../lib/useReadOnlyReport';
+import { useForegroundReport } from '../../../lib/foreground-report';
 
 const PlayerDetailPreview = import.meta.env.DEV ? lazy(() => import('./PlayerDetailPreview')) : null;
 export default function PlayerDetail({ preview = false }: { preview?: boolean }) {
@@ -79,6 +81,10 @@ function LivePlayerDetail() {
 
 export function PlayerDetailContent({ player, panel, onProfileSaved, children, summary }: { player: PlayerRow; panel: PlayerDetailPanel; onProfileSaved: () => Promise<void>; children?: ReactNode; summary?: ReactNode }) {
   const location = useLocation();
+  const [reportRevision, setReportRevision] = useState(0);
+  const [summaryBusy, setSummaryBusy] = useState(false);
+  const [workoutEvidence, setWorkoutEvidence] = useState<PlayerWorkoutsData | null>(null);
+  const refreshActivity = useCallback(() => setReportRevision(value => value + 1), []);
   const resolvedAge = resolvePlayerAge(player.raw);
   const athlete = useMemo(() => ({ ...player.raw, id: player.id }), [player]);
   const plannerQuery = new URLSearchParams(location.search);
@@ -100,6 +106,9 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
           </p>
         </div>
         <div className="admin-heading-actions">
+          {player.organizationId && <Link className="quiet-button" to={`/admin/access?orgId=${encodeURIComponent(player.organizationId)}&playerId=${encodeURIComponent(player.id)}`}>
+            <span className="material-symbols-outlined" aria-hidden="true">key</span>Help with sign-in
+          </Link>}
           <Link className="primary-cta small" to={adminPlannerPath(player.id, plannerQuery.toString())}>
             <span className="material-symbols-outlined" aria-hidden="true">fitness_center</span>Prescribe workouts
           </Link>
@@ -109,12 +118,12 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
         </div>
       </section>
 
-      {summary ?? <PlayerSummary player={player} />}
+      {summary ?? <PlayerSummary player={player} refreshKey={reportRevision} workoutEvidence={panel === 'workouts' ? workoutEvidence : null} onBusy={setSummaryBusy} onRefresh={panel === 'workouts' ? undefined : refreshActivity} foreground={panel !== 'workouts'} />}
       <PlayerDetailTabs playerId={player.id} selected={panel} />
       <div role="tabpanel" id={`admin-player-panel-${panel}`} aria-labelledby={`admin-player-tab-${panel}`} tabIndex={0} className="admin-player-panel">
         {children ?? <>
           {panel === 'results' && <AdminResults embedded athlete={athlete} />}
-          {panel === 'workouts' && <PlayerWorkoutsPanel player={player} />}
+          {panel === 'workouts' && <PlayerWorkoutsPanel player={player} revision={reportRevision} reportBusy={summaryBusy} onEvidence={setWorkoutEvidence} onRefresh={refreshActivity} />}
           {panel === 'profile' && <PlayerProfilePanel player={player} onSaved={onProfileSaved} />}
           {panel === 'ai-incidents' && <PlayerAiIncidents playerId={player.id} />}
         </>}
@@ -162,27 +171,42 @@ function PlayerProfilePanel({ player, onSaved }: { player: PlayerRow; onSaved: (
 }
 
 export function PlayerProfileContent({ player, data, onSaved, readOnly = false }: { player: PlayerRow; data: PlayerProfileData; onSaved: () => Promise<void>; readOnly?: boolean }) {
-  return <div className="admin-grid-two">
-    <ProfileCard key={String(player.raw?.updatedAt?.seconds ?? player.id)} player={player} coach={data.coach} onSaved={onSaved} readOnly={readOnly} />
-    <CoachNoteCard playerId={player.id} note={data.note} onSaved={onSaved} readOnly={readOnly} />
-  </div>;
+  const phone = typeof player.raw?.phone_number === 'string' ? player.raw.phone_number.trim() : '';
+  const email = player.email.trim();
+  return <>
+    <section className="admin-card admin-contact-details" aria-label="Player contact details">
+      <h3>Contact details</h3>
+      <p className="admin-note">Contact information saved on this player profile.</p>
+      <dl>
+        <div><dt>Email</dt><dd>{email || 'Not recorded'}</dd></div>
+        <div><dt>Phone number</dt><dd>{phone || 'Not recorded'}</dd></div>
+      </dl>
+    </section>
+    <div className="admin-grid-two">
+      <ProfileCard key={String(player.raw?.updatedAt?.seconds ?? player.id)} player={player} coach={data.coach} onSaved={onSaved} readOnly={readOnly} />
+      <CoachNoteCard playerId={player.id} note={data.note} onSaved={onSaved} readOnly={readOnly} />
+    </div>
+  </>;
 }
 
-function PlayerWorkoutsPanel({ player }: { player: PlayerRow }) {
+function PlayerWorkoutsPanel({ player, revision, reportBusy, onRefresh, onEvidence }: { player: PlayerRow; revision: number; reportBusy: boolean; onRefresh: () => void; onEvidence: (data: PlayerWorkoutsData | null) => void }) {
   const [query, setQuery] = useSearchParams();
-  const [revision, setRevision] = useState(0);
   const loader = useCallback(() => loadPlayerWorkoutsData(player.id), [player.id]);
-  const { state: load, refresh } = useAccountLoad(loader);
+  const load = useReadOnlyReport({ key: `${player.id}/${player.organizationId || ''}/${player.teamId || ''}`, read: loader, revision, retry: true });
+  useEffect(() => { onEvidence(load.kind === 'ready' ? load.data : null); }, [onEvidence, load.kind, load.data]);
+  useEffect(() => () => onEvidence(null), [onEvidence]);
+  const busy = load.refreshing || reportBusy;
+  useForegroundReport({ key: player.id, refresh: onRefresh, busy, interval: true });
   if (load.kind !== 'ready') return <PlayerWorkoutHistoryContent playerId={player.id} request={parseWorkoutFocus(query)} refresh={revision}
-    load={{ kind: load.kind }} onRefresh={refresh} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />;
-  return <PlayerWorkoutsContent player={player} data={load.data} revision={revision} onRefresh={() => { setRevision(value => value + 1); refresh(); }} />;
+    load={{ kind: load.kind }} onRefresh={onRefresh} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />;
+  return <PlayerWorkoutsContent player={player} data={load.data} revision={revision} onRefresh={onRefresh} refreshing={busy} stale={load.stale} />;
 }
 
-export function PlayerWorkoutsContent({ player, data, revision = 0, onRefresh }: { player: PlayerRow; data: PlayerWorkoutsData; revision?: number; onRefresh: () => void }) {
+export function PlayerWorkoutsContent({ player, data, revision = 0, onRefresh, refreshing = false, stale = false }: { player: PlayerRow; data: PlayerWorkoutsData; revision?: number; onRefresh: () => void; refreshing?: boolean; stale?: boolean }) {
   const [query, setQuery] = useSearchParams();
   return <>
     <PlayerWorkoutHistoryContent playerId={player.id} request={parseWorkoutFocus(query)} refresh={revision}
-      load={{ kind: 'ready', logs: data.logs, checkedAt: data.checkedAt }} onRefresh={onRefresh} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />
+      load={{ kind: 'ready', logs: data.logs, checkedAt: data.checkedAt }} refreshing={refreshing} stale={stale} onRefresh={onRefresh} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />
     <PlanSection playerId={player.id} plan={data.plan} plans={data.plans}
       logs={data.logs.filter(log => log._workoutSource === 'workoutLogs')} context={`?${query}`} />
     {data.plan && isV3Plan(data.plan) && <AdjustmentHistory adjustments={data.adjustments} />}

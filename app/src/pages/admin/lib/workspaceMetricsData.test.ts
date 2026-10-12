@@ -18,6 +18,16 @@ function report(input = payload()): ExpandedInsights {
 }
 afterEach(() => vi.useRealTimers());
 describe("shared workspace reporting", () => {
+  it('retries a successful but unsynchronized projection within the same five-attempt boundary', async () => {
+    vi.useFakeTimers();
+    const input = payload(['a']), stale = report(input), fresh = report(input);
+    fresh.generatedAtMillis = stale.generatedAtMillis + 1;
+    const read = vi.fn().mockResolvedValueOnce(stale).mockResolvedValue(fresh);
+    const validate = vi.fn((data: ExpandedInsights) => { if (data === stale) throw Object.assign(new Error('Still synchronizing'), { code: 'unavailable' }); });
+    const pending = createWorkspaceMetricsTransport(read).load('admin', input, () => true, undefined, validate);
+    await vi.runAllTimersAsync();
+    expect(await pending).toBe(fresh); expect(read).toHaveBeenCalledTimes(2); expect(validate).toHaveBeenCalledTimes(2);
+  });
   it("requests20 rows and only visible IDs, with no private labels or client identity", () => {
     const actual = payload(["z", "a"]);
     expect(actual).toMatchObject({ pageSize: 20, scope, rosterPlayerIds: ["a", "z"], startDate: "2026-09-01", endDate: "2026-10-01" });

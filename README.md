@@ -1,7 +1,82 @@
 # PoseTek website
 
+<!-- coach-follow-up-current:start -->
+## Current coach follow-up release
+
+Website `6acd3e31cae1c1af33af3d3e`, runtime source `139162a04a1aa2afefda78c62bf2715d9667acbc`, was published October 12, 2026 at 1:10:21 PM PDT from the exact reviewed candidate. Coach Overview, roster, player summary and detailed Testing results withhold D1 standing/percentages. Needs you prioritizes zero saved completed personal/assigned/extra workouts in the selected local period and declines in comparable measured metrics on each test's latest two qualified local dates through the selected end. Missing profile sign-in timestamps, missing tests and different metrics do not imply inactivity or decline. Mixed changes show actual before/after measurements. Team percentiles, signup copying, prescribing, history and current-plan progress remain connected.
+
+All 1,968 artifact files match 1,969 provider records; 1,951 predecessor records remain exact and 16 runtime assets are added. The 1,966-file reconciled baseline passed the ordinary byte-preservation build. Source CI passed six checks and 1,947 frontend tests; 88 relevant backend checks, 24 scoped packaging checks and 54 website release guards passed, with three existing private-fixture skips. Candidate and production each passed 14 signed-in synthetic checks and eight captures at 360/390/430px and desktop. The nine Expanded Insights functions from `b6363eed692b3abba4f456de21277025e39dc927` are source/configuration/IAM and dependency-closure verified; all 121 unrelated functions are unchanged.
+
+Three owned synthetic accounts, all active/scoped documents, current/noncurrent storage objects and notification outboxes are absent after delayed independently implemented readback; temporary credentials were removed. Four deleted synthetic JSON generations remain under the unchanged seven-day bucket soft-delete policy until automatic expiry; physical erasure of retained generations is not claimed. No real athlete data or notification control changed. The concurrent athlete timer runtime/records and catalog 1.0.96 are integrated and preserved, including DRB-010's hold and all eighty held drafts. Marketing, isolated feedback, P icons, recovery, contacts and native/content gates remain intact. Rules, indexes, gateway, catalog and native were not released. Read [the coach handoff](docs/COACH_FOLLOW_UP.md), [production evidence](deployment/COACH_FOLLOW_UP_PRODUCTION.json) and [PR #55](https://github.com/posetek/posetek_website/pull/55). Earlier releases below remain preserved historical checkpoints.
+<!-- coach-follow-up-current:end -->
+
+## Athlete rest timer choices (October 12, 2026)
+
+Athletes can now choose any whole-second rest timer from zero through the workout's current default. Rep and set timers stay separate; zero means no timer, and
+reset restores the prescription. Choices are local to the workout player. The
+verified website is `6acd37e9e903ac054286f910`; saved real workouts and catalog
+`1.0.96` remain unchanged. Read [the handoff](docs/ATHLETE_REST_TIMERS.md) and
+[production receipt](deployment/ATHLETE_REST_TIMERS_PRODUCTION.json).
+
+## Drill rests and demonstration withdrawal (October 12, 2026)
+
+Catalog `1.0.96` now lists 74 published drills, including 71 with approved primary
+demos. Eighteen drill rest defaults use their existing authored lower bounds.
+Speed dribble with stop zone is unpublished and its corrupted demo is pending
+repair. Saved workouts and all held content are preserved. Read
+[the handoff](docs/DRILL_REST_UPDATE.md) and
+[verified receipt](deployment/DRILL_REST_UPDATE_20261012.json).
+
+## Historical drill demonstration coverage (October 11, 2026)
+
+The live website library now counts 75 published drills of 208 catalog records.
+All 72 drills with approved uploaded primary demonstrations are library-published;
+DRB-010 **Speed dribble with stop zone** was published in catalog `1.0.94`.
+Personal-workout availability remains subject to the existing access requirements,
+and the 80 whole-body drafts retain their content/media/device acceptance hold.
+The library count includes legacy records with absent status. Read
+[the audit](docs/DRILL_VIDEO_PUBLICATION_AUDIT.md) and
+[verified receipt](deployment/DRILL_VIDEO_PUBLICATION_20261011.json) for count
+definitions, exact preservation evidence and remaining requirements. This was a
+catalog data change, without a new website artifact.
+
+For development, tests, CI, review, releases and recovery across all three
+repositories, start with the [engineering handbook](docs/engineering/README.md).
+The [main rollout ledger](docs/engineering/MAIN_ROLLOUT.md) distinguishes merged
+source, verified checks and activation still pending.
+Engineering pipeline source does not change the production release below
+until deliberate artifact promotion.
+
+<!-- workout-reporting-current:start -->
+## Preserved workout reporting consistency release
+
+Website `6acbde38a912d2909dd0501a`, runtime source `a4e8da1e00cabb17b21ef60924d77e98f0038731`, was published October 11, 2026 at 12:15:40 PM PDT from the exact verified candidate. Staff history reads personal and assigned logs independently of creation controls, and durations match email precision in minutes with up to one decimal. All completed personal, assigned and extra workouts in the selected period are separate from current fourteen-day assigned-plan progress. Admin Refresh activity updates summary and history together; selected workout views check while visible, with explicit updating/stale states and account/scope isolation. Saved history/projection mismatches receive bounded rereads and are never presented as current.
+
+All 1,948 artifact files match 1,949 provider records; 1,928 predecessor records remain exact and 19 runtime assets are added. The reconciled baseline protects 1,946 files and passed the ordinary build. All 1,938 frontend tests and six hosted source CI checks passed; candidate and production each passed 17 live synthetic checks with seven captures, including 360/390/430px and desktop. Headless visibility checks use explicit document visibility events. Three owned synthetic accounts and all owned/scoped records were removed; delayed separate readback found zero residue, no email outboxes and no temporary credentials.
+
+All 130 function versions/configurations and notification settings remain unchanged. A bounded private sample of three completion and two quiet-session emails matched saved logs and projections; it does not identify the user's unspecified case or establish every historical notification. No real athlete data, existing notification payload or delivery evidence was changed. Backend, rules, indexes, gateway, catalog, native and reviewer activation were not released. Marketing, isolated feedback, P icons, contact details, recovery, Kai's workspace and training/content gates remain preserved. Read [the reporting handoff](docs/WORKOUT_REPORTING_CONSISTENCY.md), [production evidence](deployment/WORKOUT_REPORTING_CONSISTENCY_PRODUCTION.json) and [PR #48](https://github.com/posetek/posetek_website/pull/48). The following checkpoints remain historical and their feature contracts stay in force.
+<!-- workout-reporting-current:end -->
+
+<!-- admin-profile-contacts-current:start -->
+## Preserved administrator player contact release
+
+Website `6ac95bd8769320160da44176`, runtime source `4b5cc6804732588dd0284d85634237b27b1d2107`, was published October 9, 2026 at 2:28:04 PM PDT from the exact verified candidate. Administrator player **Profile** tabs now show saved email and canonical `phone_number` in a read-only Contact details card. Missing values display **Not recorded** independently. Contacts come from the existing player read; no Auth lookup, extra request, profile write or permission change is introduced.
+
+All 1,929 artifact files match 1,930 provider records; 1,873 predecessor records remain exact and 55 runtime assets are added. The reconciled baseline protects 1,927 files and passed the ordinary preservation build. All 1,904 frontend tests, six hosted source CI checks, and ten candidate plus ten production browser checks passed. Long contacts fit 360/390/430px and desktop. Both owned synthetic accounts, player profiles, admin profile and derived documents were removed; delayed separate readback found zero residue and no temporary credentials.
+
+Fresh main `92c4e36403122939de62f7c2df53489ab2c9a259` is retained, including engineering CI and the explicit test-only Firebase emulator bootstrap. Paid reviewer/provider activation and pending backend dependency releases remain separate. No backend, rules, indexes, gateway, catalog or native release occurred. Marketing, isolated feedback, P icons, recovery, Kai’s workspace and training/content gates remain preserved. Read [the contact handoff](docs/ADMIN_PROFILE_CONTACTS.md), [production evidence](deployment/ADMIN_PROFILE_CONTACTS_PRODUCTION.json) and [PR #46](https://github.com/posetek/posetek_website/pull/46). The following release checkpoints remain historical and their feature contracts stay in force.
+<!-- admin-profile-contacts-current:end -->
+
+<!-- player-account-recovery-current:start -->
+## Preserved player account recovery release
+
+Website `6ac73b9c8091f2ef117b22bf`, runtime source `293acca795c4baddf279a23e9792404f97336326`, was published October 8, 2026 at 12:03:50 AM PDT. Players can request tracked sign-in help. Active organization managers can assist their own enabled password-based players after identity confirmation and sign-in within five minutes; PoseTek retains global/staff recovery. Administrators share a private one-time 30-minute link directly, and players choose their own password. Shared, Password updated and Sign-in confirmed remain separate evidence. Requests expire through 90-day TTL. The same recovered account supports existing website and mobile password sign-in; native UI and release gates are unchanged.
+
+The exact draft passed hosted and production synthetic acceptance. Ten scoped functions are verified, 120 unrelated functions are unchanged, required indexes/TTL are ready, and the reconciled 1,872-file baseline passed its ordinary preservation build. Marketing, isolated feedback, stable P icons and teammate navigation remain preserved. All seven owned synthetic accounts were removed; delayed independent readback found zero owned, descendant or scoped-query documents with verification browser and copied owner credential files removed. Read [the recovery handoff](docs/PLAYER_ACCOUNT_RECOVERY.md), [production evidence](deployment/PLAYER_ACCOUNT_RECOVERY_PRODUCTION.json), [scoped operations](deployments/account-recovery/README.md) and [PR #40](https://github.com/posetek/posetek_website/pull/40).
+<!-- player-account-recovery-current:end -->
+
 <!-- organization-navigation-current:start -->
-## Current organization manager navigation release
+## Historical organization manager navigation release
 
 Website `6ac6c5c6cebb1cb580004fae`, runtime source `0a7fe6d`, was published October 7, 2026 at 3:28:24 PM PDT. Kai's PR #39 retains organization navigation across manager Organization, Insights, Planner and Community. Planner links follow the currently verified selection while preserving unsaved intake and draft state. Existing admin/coach access and the preceding coach release are retained.
 

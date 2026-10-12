@@ -1,5 +1,5 @@
 // Date-based native clock semantics: explicit resume, frozen rest and a 30-minute idle cap.
-export type Clock = { seconds: number; runningSince: number | null; lastInteraction: number; restUntil: number | null; frozenRest: number | null; restTotal?: number | null; pauseReason?: 'user' | 'inactivity' | null };
+export type Clock = { seconds: number; runningSince: number | null; lastInteraction: number; restUntil: number | null; frozenRest: number | null; restTotal?: number | null; restKind?: 'reps' | 'sets' | null; pauseReason?: 'user' | 'inactivity' | null };
 export const IDLE_MS = 30 * 60 * 1000;
 export const newClock = (now: number): Clock => ({ seconds: 0, runningSince: now, lastInteraction: now, restUntil: null, frozenRest: null, restTotal: null, pauseReason: null });
 export function elapsed(clock: Clock, now: number) { return clock.seconds + (clock.runningSince === null ? 0 : Math.max(0, Math.min(now, clock.lastInteraction + IDLE_MS) - clock.runningSince) / 1000); }
@@ -7,7 +7,7 @@ export function restSeconds(clock: Clock, now: number) {
   const value = clock.frozenRest ?? (clock.restUntil === null ? 0 : (clock.restUntil - Math.min(now, clock.lastInteraction + IDLE_MS)) / 1000);
   return Math.max(0, Math.ceil(Math.min(value, clock.restTotal ?? Infinity)));
 }
-export function stopRest(clock: Clock): Clock { return { ...clock, restUntil: null, frozenRest: null, restTotal: null }; }
+export function stopRest(clock: Clock): Clock { return { ...clock, restUntil: null, frozenRest: null, restTotal: null, ...(clock.restKind !== undefined ? { restKind: null } : {}) }; }
 export function pauseClock(clock: Clock, now: number, reason: Clock['pauseReason'] = 'user'): Clock {
   if (clock.runningSince === null) return clock;
   const at = Math.max(clock.runningSince, Math.min(now, clock.lastInteraction + IDLE_MS));
@@ -37,5 +37,6 @@ export function validClock(value: unknown): value is Clock {
     finiteOrNull(c.runningSince) && finiteOrNull(c.restUntil) && finiteOrNull(c.frozenRest) &&
     (c.runningSince === null ? c.restUntil === null : c.runningSince <= c.lastInteraction && c.frozenRest === null) &&
     (c.restTotal === undefined || finiteOrNull(c.restTotal)) &&
+    (c.restKind == null || c.restKind === 'reps' || c.restKind === 'sets') &&
     (c.pauseReason == null || c.pauseReason === 'user' || c.pauseReason === 'inactivity');
 }

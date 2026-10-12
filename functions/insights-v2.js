@@ -314,7 +314,7 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
         futureDatedDocuments: row.history.testing.filter(event => event.at > generatedAtMillis).length };
       const workouts = summarizeWorkouts(row.history.workouts, period, generatedAtMillis);
       const usage = { ...row.usage, status: !row.usage.collected ? "notCollected" : row.usage.returning ? "returning" : row.usage.totalMillis > 0 ? "active" : "inactive" };
-      const performance = playerPerformance({ testing: row.history.testing, profile: row.profile, training: row.training,
+      const performance = playerPerformance({ testing: row.history.testing, training: row.training, workouts,
         now: generatedAtMillis, endMillis: validEnd, timeZone: period.timeZone });
       return { ...row, organizationId: org?.id || "", organizationName: org?.name || "", teamId: team?.id || null, teamName: team?.name || null,
         firstName: tidy(row.profile.firstName), lastName: tidy(row.profile.lastName), ...demographics(row.profile, row.reporting, generatedAtMillis), testing, workouts, usage, performance, selected };
@@ -427,7 +427,10 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
         .map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim() || "Player", reasons: row.performance.needsYouReasons }))
         .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
       noTestingPlayers: namedPlayers(row => row.testing.status === "noRecordedTests"),
-      noWorkoutPlayers: namedPlayers(row => row.workouts.status === "none") };
+      noWorkoutPlayers: namedPlayers(row => row.workouts.status === "none"),
+      coachFocus: { version: 1,
+        noCompletionPlayers: namedPlayers(row => row.performance.coachFocus.completedInPeriod === 0),
+        decliningPlayers: namedPlayers(row => row.performance.coachFocus.measuredTests.some(test => test.metrics.some(metric => metric.trend === "down"))) } };
     const lookupRows = hasRosterLookup ? new Map(allRows.map(row => [row.id, row])) : null;
     const rosterMetrics = hasRosterLookup ? rosterPlayerIds.map(playerId => {
       const row = lookupRows.get(playerId);

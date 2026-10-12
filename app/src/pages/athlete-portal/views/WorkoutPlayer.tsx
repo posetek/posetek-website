@@ -37,6 +37,9 @@ import {
 } from "../lib/training";
 import { loadCatalogDrill } from "../lib/workout-store";
 import type { WorkoutStore } from "../lib/workout-store";
+import RestTimerControls from '../player/RestTimerControls';
+import { chosenRest } from '../player/rest-choice';
+import type { RestChoices, RestKind } from '../player/rest-choice';
 
 interface PlayerProps {
   workout: any;
@@ -56,6 +59,8 @@ export default function WorkoutPlayer({ workout, store, linkedTrainingSessionId,
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showPainCard, setShowPainCard] = useState(false);
   const [restRemaining, setRestRemaining] = useState<number | null>(null);
+  const [restChoices, setRestChoices] = useState<RestChoices>({});
+  const restTimer = useRef<{ kind: RestKind; duration: number } | null>(null);
   // State for what the summary renders; a ref alongside it so the idempotence
   // guard is exact even if `finish` fires twice before a re-render.
   const [didEnd, setDidEnd] = useState(false);
@@ -76,7 +81,21 @@ export default function WorkoutPlayer({ workout, store, linkedTrainingSessionId,
     if (store.logsLoaded) beginWorkout(workout, linkedTrainingSessionId);
   }, [store.logsLoaded, beginWorkout, workout, linkedTrainingSessionId]);
 
-  const stopRest = useCallback(() => setRestRemaining(null), []);
+  const stopRest = useCallback(() => { restTimer.current = null; setRestRemaining(null); }, []);
+  const startRest = (block: any, kind: RestKind) => {
+    const duration = chosenRest(block, restChoices[block.blockId], kind);
+    restTimer.current = duration ? { kind, duration } : null;
+    setRestRemaining(duration || null);
+  };
+  const chooseRest = (block: any, kind: RestKind, seconds: number) => {
+    const duration = chosenRest(block, { [kind]: seconds }, kind);
+    setRestChoices(old => ({ ...old, [block.blockId]: { ...old[block.blockId], [kind]: duration } }));
+    const timer = restTimer.current;
+    if (timer?.kind === kind) {
+      setRestRemaining(remaining => remaining === null ? null : Math.max(0, duration - Math.max(0, timer.duration - remaining)) || null);
+      restTimer.current = duration ? { kind, duration } : null;
+    }
+  };
 
   // Between-sets rest, auto-started on a set tick when the block prescribes it.
   // Dismissible — a countdown is a hint, not a lock, but restSeconds is real
@@ -122,10 +141,10 @@ export default function WorkoutPlayer({ workout, store, linkedTrainingSessionId,
       store.updateBlock(workout.id, blockLogRow(block, clamped));
     }
 
-    const rest = Number(block?.restSeconds) || 0;
-    if (clamped > previous && clamped < target && rest > 0) setRestRemaining(rest);
+    const rest = chosenRest(block, restChoices[block.blockId], 'sets');
+    if (clamped > previous && clamped < target && rest > 0) { restTimer.current = { kind: 'sets', duration: rest }; setRestRemaining(rest); }
     else stopRest();
-  }, [store, workout.id, stopRest]);
+  }, [store, workout.id, stopRest, restChoices]);
 
   const skip = useCallback((block: any, reason: string) => {
     const currentLog = store.logFor(workout.id);
@@ -199,6 +218,9 @@ export default function WorkoutPlayer({ workout, store, linkedTrainingSessionId,
           log={log}
           restRemaining={restRemaining}
           onDismissRest={stopRest}
+          restChoice={restChoices[currentBlock.blockId]}
+          onChooseRest={(kind, seconds) => chooseRest(currentBlock, kind, seconds)}
+          onStartRest={kind => startRest(currentBlock, kind)}
           onSetSets={sets => setSets(sets, currentBlock)}
           onSkip={reason => skip(currentBlock, reason)}
         />
@@ -313,11 +335,14 @@ function PrimaryAction({ block, log, isLast, onCompleteSet, onAdvance }: {
 
 // MARK: - One block, one page
 
-function BlockPage({ block, log, restRemaining, onDismissRest, onSetSets, onSkip }: {
+function BlockPage({ block, log, restRemaining, onDismissRest, restChoice, onChooseRest, onStartRest, onSetSets, onSkip }: {
   block: any;
   log: any;
   restRemaining: number | null;
   onDismissRest: () => void;
+  restChoice?: RestChoices[string];
+  onChooseRest: (kind: RestKind, seconds: number) => void;
+  onStartRest: (kind: RestKind) => void;
   onSetSets: (sets: number) => void;
   onSkip: (reason: string) => void;
 }) {
@@ -378,8 +403,10 @@ function BlockPage({ block, log, restRemaining, onDismissRest, onSetSets, onSkip
           ))}
         </div>
         {restSeconds > 0 ? (
-          <p className="rest-note">Rest {restSeconds}s between sets — full recovery is part of the work.</p>
+          <p className="rest-note">Default rest: {restSeconds}s between {block.restScope === 'reps' ? 'reps' : 'sets'}.</p>
         ) : null}
+        <RestTimerControls block={block} choice={restChoice} disabled={status === STATUS_SKIPPED || status === STATUS_DONE}
+          onChange={onChooseRest} onStart={onStartRest} />
       </section>
 
       {cues.length ? (
