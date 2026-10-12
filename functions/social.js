@@ -1,4 +1,5 @@
 "use strict";
+const { deletionLocked } = require("./account-deletion-state");
 
 const { playerSegment, storageFolderCandidates } = require("./athlete-storage-paths");
 const { isClubAdmin, activeMember } = require("./club-access");
@@ -289,6 +290,7 @@ function createSocial({ db, bucket, HttpsError, now = Date.now }) {
   async function rebuild(playerId, dryRun = false) {
     segment(playerId);
     return db.runTransaction(async tx => {
+      if (await deletionLocked(db, tx, { playerId })) return { skipped: "account deletion", count: 0 };
       const p = await tx.get(playerRef(playerId));
       const config = (await tx.get(db.collection("socialSettings").doc("feed"))).data() || {};
       if (p.exists && !((config.allOrganizations === true && playerSegment(p.data().organizationId)) || (config.organizationIds || []).includes(p.data().organizationId))) {

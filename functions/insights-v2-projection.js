@@ -1,4 +1,5 @@
 "use strict";
+const { deletionLocked } = require("./account-deletion-state");
 
 const { randomUUID, createHash } = require("node:crypto");
 const { playerSegment } = require("./athlete-storage-paths");
@@ -65,6 +66,7 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
     if (!playerSegment(playerId)) throw new HttpsError("invalid-argument", "Invalid player.");
     const eventHash = sourceEventHash(source), token = randomUUID();
     return db.runTransaction(async transaction => {
+      if (await deletionLocked(db, transaction, { playerId })) return { invalidated: false, deleted: true };
       const eventRef = eventHash && db.collection("players").doc(playerId).collection("insightSummaries").doc(`event_${eventHash}`);
       if (eventRef && (await transaction.get(eventRef)).exists) return { invalidated: false, sourceEventHash: eventHash };
       // Preserve the active owner; a newly dirty token must be handled by that
@@ -134,24 +136,33 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
       grouped.get(day)[type].push(event);
     }
     const revisionId = randomUUID(), rebuiltAtMillis = now(), dayIds = [];
-    let batch = db.batch(), pending = 0;
+    let pending = [];
+    async function writePages() {
+      const pages = pending;
+      await db.runTransaction(async transaction => {
+        if (await deletionLocked(db, transaction, { playerId })) throw rebuildError("insights-player-deleted", rebuildId, source, "Player deletion is pending.");
+        for (const [ref, data] of pages) transaction.set(ref, data);
+      });
+      pending = [];
+    }
     for (const [day, events] of [...grouped.entries()].sort(([a], [b]) => a.localeCompare(b))) {
       const count = Math.max(events.testing.length, events.workouts.length, events.failures.length);
       for (let offset = 0; offset < count; offset += 250) {
         const id = `${day}_${revisionId}_${offset / 250}`;
         dayIds.push(id);
         if (dayIds.length > 5000) throw new HttpsError("resource-exhausted", "The complete daily report exceeds its manifest bound.");
-        batch.set(playerRef.collection("insightSummaryDays").doc(id), { version: PROJECTION_VERSION, revisionId, day,
-          rebuiltAtMillis, testing: events.testing.slice(offset, offset + 250), workouts: events.workouts.slice(offset, offset + 250), failures: events.failures.slice(offset, offset + 250) });
-        if (++pending === 400) { await batch.commit(); batch = db.batch(); pending = 0; }
+        pending.push([playerRef.collection("insightSummaryDays").doc(id), { version: PROJECTION_VERSION, revisionId, day,
+          rebuiltAtMillis, testing: events.testing.slice(offset, offset + 250), workouts: events.workouts.slice(offset, offset + 250), failures: events.failures.slice(offset, offset + 250) }]);
+        if (pending.length === 400) await writePages();
       }
     }
-    if (pending) await batch.commit();
+    if (pending.length) await writePages();
     const summary = { version: PROJECTION_VERSION, revisionId, rebuiltAtMillis, complete: true, token,
       recordedDocuments: reps.length, workoutLogs: logDocs.length + personalLogs.length, failureReports: failures.length, dayIds };
     // Immutable daily pages become visible only when the complete manifest is
     // published. Concurrent invalidation prevents stale rebuild publication.
     await db.runTransaction(async transaction => {
+      if (await deletionLocked(db, transaction, { playerId })) throw rebuildError("insights-player-deleted", rebuildId, source, "Player deletion is pending.");
       const [freshState, freshProfile] = await Promise.all([transaction.get(stateRef(playerId)), transaction.get(playerRef)]);
       if (!freshProfile.exists) throw rebuildError("insights-player-deleted", rebuildId, source, "Player was deleted during the rebuild.");
       if (freshState.data()?.rebuildLease?.id !== rebuildId || freshState.data().rebuildLease.expiresAtMillis <= now())
@@ -170,6 +181,7 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
     sourceEventHash(source);
     const rebuildId = randomUUID(), startedAtMillis = now();
     const claim = await db.runTransaction(async transaction => {
+      if (await deletionLocked(db, transaction, { playerId })) return { deleted: true };
       const snapshot = await transaction.get(stateRef(playerId)), state = snapshot.data() || {};
       if (state.rebuildLease?.id && state.rebuildLease.expiresAtMillis > now()) return { acquired: false };
       if (source) {
@@ -183,6 +195,7 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
         startedAtMillis, expiresAtMillis: startedAtMillis + REBUILD_LEASE_MS } }, { merge: true });
       return { acquired: true };
     });
+    if (claim.deleted) return { deleted: true, playerId };
     if (claim.current) return claim.current;
     // Returning success here would lose a dirty revision if its owner failed.
     // The source trigger remains retryable until a complete latest manifest is
@@ -199,6 +212,7 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
         }
         if (summary.deleted) return summary;
         const finished = await db.runTransaction(async transaction => {
+          if (await deletionLocked(db, transaction, { playerId })) return;
           const snapshot = await transaction.get(stateRef(playerId)), state = snapshot.data();
           if (state?.rebuildLease?.id !== rebuildId || state.rebuildLease.expiresAtMillis <= now())
             throw rebuildError("insights-rebuild-lease-lost", rebuildId, source, "The rebuild owner changed. Retry to refresh the report.");
@@ -215,6 +229,7 @@ function createInsightProjection({ db, bucket, HttpsError, now = () => Date.now(
     } finally {
       try {
         await db.runTransaction(async transaction => {
+          if (await deletionLocked(db, transaction, { playerId })) return;
           const snapshot = await transaction.get(stateRef(playerId));
           if (snapshot.data()?.rebuildLease?.id === rebuildId) transaction.set(stateRef(playerId), { rebuildLease: null }, { merge: true });
         });

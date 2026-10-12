@@ -204,3 +204,11 @@ test("background issue ingestion cannot recreate deleted reporter or athlete dat
     assert.equal([...f.db.docs.keys()].some(path => /^(userIssues|userIssueOccurrences|userIssueOutbox|userIssueRequestIdentities)\//.test(path)), false);
   }
 });
+
+test("queued personal issue notification cannot send after deletion acceptance", async () => {
+  const f = fixture();
+  const result = await f.service.submit(input(), { uid: "athlete" });
+  await f.db.doc("accountDeletionLocks/athlete").set({ jobId: "job" });
+  await f.service.dispatch(result.occurrenceId);
+  assert.equal(f.sends.length, 0);
+});

@@ -1,4 +1,5 @@
 "use strict";
+const { deletionLocked } = require("./account-deletion-state");
 
 const crypto = require("node:crypto");
 const { isClubAdmin } = require("./club-access");
@@ -120,9 +121,11 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
     return true;
   }
   async function related(tx, playerId) {
+    if (await deletionLocked(db, tx, { playerId })) return null;
     const player = await tx.get(db.collection("players").doc(playerId));
     if (!player.exists) return null;
     const profile = player.data();
+    if (await deletionLocked(db, tx, profile)) return null;
     const org = playerSegment(profile.organizationId) ? await tx.get(db.collection("organizations").doc(profile.organizationId)) : null;
     const team = playerSegment(profile.teamId) ? await tx.get(db.collection("teams").doc(profile.teamId)) : null;
     return { player: profile, org: org?.data(), team: team?.exists && profile.organizationId && team.data().organizationId === profile.organizationId ? team.data() : undefined };
@@ -213,6 +216,7 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
       const at = now(), settings = settingsValue((await tx.get(settingsRef)).data(), at);
       if (!settings.enabled) return { accepted: false, reason: "disabled" };
       const player = await selfPlayer(tx, auth);
+      if (await deletionLocked(db, tx, { uid: auth.uid, playerId: player.id })) return { accepted: false, reason: "account deletion" };
       if (!playerIncluded(settings, player.id)) return { accepted: false, reason: "disabled" };
       const incoming = await tx.get(logRef(player.id, data.source, data.logId));
       if (!validLog(incoming.data(), data.source)) fail("not-found", "The saved workout was not found.");
@@ -261,6 +265,7 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
       const at = now(), settings = settingsValue((await tx.get(settingsRef)).data(), at);
       if (!settings.enabled) return;
       const ref = activityRef(id), stateDoc = await tx.get(ref), state = stateDoc.data();
+      if (state && await deletionLocked(db, tx, state)) return;
       if (!state || !state.webObserved || !state.quietDueAtMillis || state.quietDueAtMillis > at) return;
       const logDoc = await tx.get(logRef(state.playerId, state.source, state.logId)), log = logDoc.data();
       const jobRef = outboxRef(`${id}_inactivity`), job = await tx.get(jobRef);
@@ -279,6 +284,7 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
       const at = now(), settings = settingsValue((await tx.get(settingsRef)).data(), at);
       if (!settings.enabled || !settings.sendEnabled) return null;
       const ref = outboxRef(id), snapshot = await tx.get(ref), job = snapshot.data();
+      if (job && await deletionLocked(db, tx, job)) return null;
       if (!job || FINAL_DELIVERY.has(job.status) || !job.dispatchAfterMillis || job.dispatchAfterMillis > at) return null;
       const deliveryProvider = Microsoft.providerFor(job, settings);
       const microsoftConfig = deliveryProvider === "microsoft" ? (await tx.get(db.doc(Microsoft.SETTINGS))).data() : null;
@@ -311,11 +317,12 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
         firstAttemptAtMillis: job.firstAttemptAtMillis || at, attempts: (job.attempts || 0) + 1, failureMessage: null });
       return { ...job, ...route, summary, payload, leaseId, firstAttemptAtMillis: job.firstAttemptAtMillis || at, attempts: (job.attempts || 0) + 1 };
     });
-    if (!claimed) return;
+    if (!claimed || await deletionLocked(db, null, claimed)) return;
     let result, error;
     try { result = await provider.send(claimed.payload, `posetek-workout/${id}`, { ...claimed, kind: "workout", id }); } catch (caught) { error = caught; }
     await db.runTransaction(async tx => {
       const ref = outboxRef(id), latest = (await tx.get(ref)).data();
+      if (await deletionLocked(db, tx, claimed)) return;
       if (!latest || latest.leaseId !== claimed.leaseId || latest.status !== "sending") return;
       const at = now();
       if (result?.id && claimed.deliveryProvider !== "microsoft") {
@@ -373,6 +380,7 @@ function createWorkoutNotifications({ db, HttpsError, provider, now = Date.now, 
     return db.runTransaction(async tx => {
       const ref = outboxRef(id), job = (await tx.get(ref)).data(), receiptRef = ref.collection("webhookEvents").doc(hash(eventId));
       const receipt = await tx.get(receiptRef);
+      if (job && await deletionLocked(db, tx, job)) return { ignored: true };
       if (receipt.exists) return { duplicate: true };
       if (!job?.firstAttemptAtMillis || job.deliveryProvider === "microsoft" || !job.payload || (job.providerId && job.providerId !== providerId)
         || eventAt < job.firstAttemptAtMillis - 300000 || ![FROM, "workouts@alerts.posetek.net"].includes(event.data.from)

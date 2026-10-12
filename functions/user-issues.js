@@ -1,4 +1,5 @@
 "use strict";
+const { deletionLocked } = require("./account-deletion-state");
 const crypto = require("node:crypto");
 const { isClubAdmin, clubStaffCanAccessPlayer } = require("./club-access");
 const M = require("./user-issue-model");
@@ -223,6 +224,7 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
     if (!/^[a-f0-9]{64}$/.test(id || "")) return;
     const claimed = await db.runTransaction(async tx => {
       const at = now(), settings = M.setting((await tx.get(settingsRef)).data(), at), ref = jobRef(id), job = (await tx.get(ref)).data();
+      if (job && await deletionLocked(db, tx, job)) return null;
       if (!settings.enabled || settings.sendEnabled !== true || !job || !["pending", "sending"].includes(job.status) || !job.dueAtMillis || job.dueAtMillis > at) return null;
       if (!SendFrontier.allows(settings, job, at)) return null;
       const deliveryProvider = Microsoft.providerFor(job, settings);
@@ -244,11 +246,12 @@ function createUserIssues({ db, auth: authProvider, HttpsError, provider, now = 
         attempts: (job.attempts || 0) + 1, status: "sending", dueAtMillis: at + LEASE, uncertain: job.uncertain === true || job.status === "sending" };
       tx.update(ref, next); return { ...job, ...next };
     });
-    if (!claimed) return;
+    if (!claimed || await deletionLocked(db, null, claimed)) return;
     let result, error;
     try { result = await provider.send(claimed.payload, `posetek-user-issue/${id}`, { ...claimed, kind: "issue", id }); } catch (e) { error = e; }
     await db.runTransaction(async tx => {
       const ref = jobRef(id), current = (await tx.get(ref)).data();
+      if (await deletionLocked(db, tx, claimed)) return;
       if (current?.leaseId !== claimed.leaseId || current.status !== "sending") return;
       if (result?.id && claimed.deliveryProvider !== "microsoft") { tx.update(ref, { status: "accepted", providerId: result.id, acceptedAtMillis: now(), dueAtMillis: null, leaseId: null }); return; }
       const delay = Math.max(Math.min(3600000, 60000 * 2 ** Math.min(claimed.attempts - 1, 6)), Number(error?.retryAfterMs) || 0);

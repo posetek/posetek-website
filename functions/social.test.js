@@ -177,3 +177,9 @@ test("friends outside an organization project when connected to any enabled orga
   const friendFeed = await api.getFeed({scope:"friends"}, auth("u4"));
   assert.equal(friendFeed.items.length, 1);
 });
+
+test("deleted athlete tombstone suppresses delayed social projection", async () => {
+  const { db, api } = setup({ "playerDeletionLocks/p2": { jobId: "job" } });
+  assert.equal((await api.rebuild("p2")).count, 0);
+  assert.equal([...db.docs.keys()].some(path => path.startsWith("socialActivities/")), false);
+});
