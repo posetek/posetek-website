@@ -243,7 +243,7 @@
   .coach-roster-table tbody tr.is-needs-you:hover { background: rgba(232,184,95,.12); }
   .coach-roster-table tbody tr.is-needs-you > th { box-shadow: inset 3px 0 0 var(--status-warning, #e8b85f); }
   .coach-roster-table .coach-needs-you { margin: 0; padding-left: 16px; color: var(--status-warning, #e8b85f); font-weight: 600; }
-  .coach-roster-table .coach-needs-you li { white-space: nowrap; }
+  .coach-roster-table .coach-needs-you li { white-space: normal; overflow-wrap: anywhere; }
   .coach-roster-table td[data-label="Needs you"] { max-width: none; }
   .coach-roster-table .coach-needs-you li + li { margin-top: 2px; }
   .coach-roster-date { white-space: nowrap; }
