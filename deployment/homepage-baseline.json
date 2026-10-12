@@ -1,11 +1,11 @@
 {
-  "deploymentId": "6acbde38a912d2909dd0501a",
-  "sourceCommit": "a4e8da1e00cabb17b21ef60924d77e98f0038731",
-  "url": "https://6acbde38a912d2909dd0501a--posetek.netlify.app",
+  "deploymentId": "6acd37e9e903ac054286f910",
+  "sourceCommit": "4fc717eaecf7ae71de823900aed47134821cf186",
+  "url": "https://6acd37e9e903ac054286f910--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "936d5274fd2c8a060ac8b3a22278ceae14a64985",
+    "sha": "a741001c52b3f6c8d5576946c40f3b98a6fe3412",
     "size": 2861,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
@@ -821,6 +821,11 @@
       "size": 17630
     },
     {
+      "path": "/_astro/applicationroot.mw2zoyku.js",
+      "sha": "24f98da1c790b60f7de9c6f59cad50e47c0b4cac",
+      "size": 18124
+    },
+    {
       "path": "/_astro/applicationroot.pw4oew3o.js",
       "sha": "a332d62d89a28382302be767352c573aacf685e0",
       "size": 18124
@@ -911,6 +916,11 @@
       "size": 25278
     },
     {
+      "path": "/_astro/athleteportalpage.cydoq4yw.css",
+      "sha": "9be9740adaf2f174a99b9cb4807dcd30baccc5a6",
+      "size": 35044
+    },
+    {
       "path": "/_astro/athleteportalpage.d-stdlad.js",
       "sha": "955584f950d6e4f98dcd72c641ff990c66c1945a",
       "size": 324576
@@ -934,6 +944,11 @@
       "path": "/_astro/athleteportalpage.heigudpe.js",
       "sha": "42994cec3bb8f41bbc60373c0dab19229876a11a",
       "size": 327808
+    },
+    {
+      "path": "/_astro/athleteportalpage.kdyjyrvj.js",
+      "sha": "8fe2c69ef4555c458be6932bed17ead88d173418",
+      "size": 332090
     },
     {
       "path": "/_astro/athleteportalpage.n3nikkkj.js",
@@ -3176,6 +3191,11 @@
       "size": 10814
     },
     {
+      "path": "/_astro/supportpage.cwo_muai.js",
+      "sha": "699edffae3392fe494e5f9e3ba1abf6ddf9b68de",
+      "size": 10814
+    },
+    {
       "path": "/_astro/supportpage.cyyjiuwe.js",
       "sha": "a869de0c4815e65fa4825f59d63626e7282b29cd",
       "size": 10814
@@ -3692,7 +3712,7 @@
     },
     {
       "path": "/application.html",
-      "sha": "140e57b066bb80bdc59fe1d6f2eadf970674548e",
+      "sha": "6266d9ed2093885a4750cd746e9b3e7a0906f2bb",
       "size": 15761
     },
     {

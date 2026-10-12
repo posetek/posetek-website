@@ -65,3 +65,14 @@ Reconciled base: GitHub main `eb434849ab17b14e3c9f53d810907358aac83714`,
 website `6acbde38a912d2909dd0501a`, 1,946 protected files. This document describes
 source behavior; confirmed publication and synthetic verification will be
 recorded after the exact hosted artifact passes production acceptance.
+
+
+The preparation guard detected a concurrent athlete rest-timer release:
+`6acd37e9e903ac054286f910`, runtime `4fc717eaecf7ae71de823900aed47134821cf186`,
+published October 12 at 12:48:08 PM PDT. Its source is integrated into this
+branch. All 1,947 predecessor provider records other than the application and
+provider metadata were independently preserved; four runtime assets are added.
+The reconciled baseline protects 1,950 files. The coach release must preserve
+this live timer flow, the already-confirmed catalog 1.0.96 and DRB-010 release
+records, and the unchanged held-drill/native gates. Final main integration and
+confirmed timer release records remain required before coach promotion.
