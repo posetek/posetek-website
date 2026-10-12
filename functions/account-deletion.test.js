@@ -200,3 +200,30 @@ test("deletes actual reporter schema and paired issue artifacts without erasing 
   assert.ok(h.db.snapshot("userIssueOccurrences/other"));
   assert.ok(h.db.snapshot("aiSharingConsents/other"));
 });
+
+
+test("coach cleanup releases only owned event leases and preserves shared athlete evidence", async () => {
+  const h = harness({
+    "coaches/c": { userUID: "coach" },
+    "testingEvents/event": { ownerUid: "coach", operatorUids: ["coach", "other"], closedByUid: "other" },
+    "testingEvents/event/stations/owned": { claimedByUid: "coach", claimedDeviceId: "device", leaseExpiresAtMillis: baseTime + 10000, drills: ["sprint"] },
+    "testingEvents/event/stations/other": { claimedByUid: "other", claimedDeviceId: "keep", leaseExpiresAtMillis: baseTime + 10000 },
+    "testingEvents/event/devices/device": { operatorUid: "coach" },
+    "testingEvents/event/devices/keep": { operatorUid: "other" },
+    "testingEvents/event/checkIns/other": { playerDocId: "other", checkedInByUid: "coach", ordinal: 1 },
+    "testingEvents/event/protocolChanges/change": { playerId: "other", changedByUid: "coach", repCounts: { sprint: 3 } },
+    "testingEventInvites/invite": { createdByUid: "coach" },
+    "testingEventInvites/keep": { createdByUid: "other" },
+  });
+  await h.api.request({ ...payload, targetType: "coach", targetId: "c" }, admin);
+  await h.api.process(h.key());
+  assert.deepEqual(h.db.snapshot("testingEvents/event"), { operatorUids: ["other"], closedByUid: "other" });
+  assert.deepEqual(h.db.snapshot("testingEvents/event/stations/owned"), { claimedByUid: null, claimedDeviceId: null, leaseExpiresAtMillis: 0, drills: ["sprint"] });
+  assert.equal(h.db.snapshot("testingEvents/event/stations/other").claimedDeviceId, "keep");
+  assert.equal(h.db.snapshot("testingEvents/event/devices/device"), undefined);
+  assert.ok(h.db.snapshot("testingEvents/event/devices/keep"));
+  assert.deepEqual(h.db.snapshot("testingEvents/event/checkIns/other"), { playerDocId: "other", ordinal: 1 });
+  assert.deepEqual(h.db.snapshot("testingEvents/event/protocolChanges/change"), { playerId: "other", repCounts: { sprint: 3 } });
+  assert.equal(h.db.snapshot("testingEventInvites/invite"), undefined);
+  assert.ok(h.db.snapshot("testingEventInvites/keep"));
+});

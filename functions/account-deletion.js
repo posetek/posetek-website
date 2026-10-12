@@ -26,6 +26,7 @@ const USER_RECORDS = {
   llmJobs: ["requestedByUid"], llmUsage: ["requestedByUid", "uid"], aiIncidents: ["requestedByUid"],
   failureCases: ["reportedByUid", "uploadedByUID", "userUID"], processingAttempts: ["reportedByUid", "uploadedByUID", "userUID"],
   socialActivities: ["authorUid"], socialReports: ["reporterUid"],
+  testingEventInvites: ["createdByUid", "usedByUid"],
   appFeedbackResponsesV1: ["author.uid"],
   clubStaffInvitations: ["claimedByUID", "claimedByUid", "redeemedByUid"],
   accountAccessGrants: ["targetUID"], accountAccessAudit: ["targetUID", "actorUID"],
@@ -235,6 +236,29 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
       });
     });
     await scan("testingEvents", async event => {
+      if (uid) {
+        // Events and their other athletes survive coach deletion. Remove only
+        // the exact operator's attribution and release their station lease.
+        async function scrub(ref, fields, station = false) {
+          await db.runTransaction(async tx => {
+            const fresh = await tx.get(ref); if (!fresh.exists) return;
+            const data = fresh.data(), patch = {};
+            for (const field of fields) if (data[field] === uid) patch[field] = FieldValue.delete();
+            if (Array.isArray(data.operatorUids) && data.operatorUids.includes(uid)) {
+              patch.operatorUids = data.operatorUids.filter(value => value !== uid);
+            }
+            if (station && data.claimedByUid === uid) Object.assign(patch, {
+              claimedByUid: null, claimedDeviceId: null, leaseExpiresAt: FieldValue.delete(), leaseExpiresAtMillis: 0,
+            });
+            if (Object.keys(patch).length) tx.update(ref, patch);
+          });
+        }
+        await scrub(event.ref, ["ownerUid", "closedByUid"]);
+        await scan(`${event.ref.path}/stations`, doc => scrub(doc.ref, ["claimedByUid"], true));
+        await eraseMatches(`${event.ref.path}/devices`, "operatorUid", uid);
+        await scan(`${event.ref.path}/checkIns`, doc => scrub(doc.ref, ["checkedInByUid"]));
+        await scan(`${event.ref.path}/protocolChanges`, doc => scrub(doc.ref, ["changedByUid"]));
+      }
       for (const pid of players) {
         await erase(event.ref.collection("participants").doc(pid));
         await erase(event.ref.collection("projectionDirty").doc(pid));
