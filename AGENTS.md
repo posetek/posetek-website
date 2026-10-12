@@ -1,7 +1,17 @@
 # PoseTek website context
 
+<!-- coach-follow-up-current:start -->
+## Current coach follow-up release
+
+Website `6acd3e31cae1c1af33af3d3e`, runtime source `139162a04a1aa2afefda78c62bf2715d9667acbc`, was published October 12, 2026 at 1:10:21 PM PDT from the exact reviewed candidate. Coach Overview, roster, player summary and detailed Testing results withhold D1 standing/percentages. Needs you prioritizes zero saved completed personal/assigned/extra workouts in the selected local period and declines in comparable measured metrics on each test's latest two qualified local dates through the selected end. Missing profile sign-in timestamps, missing tests and different metrics do not imply inactivity or decline. Mixed changes show actual before/after measurements. Team percentiles, signup copying, prescribing, history and current-plan progress remain connected.
+
+All 1,968 artifact files match 1,969 provider records; 1,951 predecessor records remain exact and 16 runtime assets are added. The 1,966-file reconciled baseline passed the ordinary byte-preservation build. Source CI passed six checks and 1,947 frontend tests; 88 relevant backend checks, 24 scoped packaging checks and 54 website release guards passed, with three existing private-fixture skips. Candidate and production each passed 14 signed-in synthetic checks and eight captures at 360/390/430px and desktop. The nine Expanded Insights functions from `b6363eed692b3abba4f456de21277025e39dc927` are source/configuration/IAM and dependency-closure verified; all 121 unrelated functions are unchanged.
+
+Three owned synthetic accounts, all active/scoped documents, current/noncurrent storage objects and notification outboxes are absent after delayed independently implemented readback; temporary credentials were removed. Four deleted synthetic JSON generations remain under the unchanged seven-day bucket soft-delete policy until automatic expiry; physical erasure of retained generations is not claimed. No real athlete data or notification control changed. The concurrent athlete timer runtime/records and catalog 1.0.96 are integrated and preserved, including DRB-010's hold and all eighty held drafts. Marketing, isolated feedback, P icons, recovery, contacts and native/content gates remain intact. Rules, indexes, gateway, catalog and native were not released. Read [the coach handoff](docs/COACH_FOLLOW_UP.md), [production evidence](deployment/COACH_FOLLOW_UP_PRODUCTION.json) and [PR #55](https://github.com/posetek/posetek_website/pull/55). Earlier releases below remain preserved historical checkpoints.
+<!-- coach-follow-up-current:end -->
+
 <!-- athlete-rest-timers-current:start -->
-## Current athlete rest timer release (2026-10-12)
+## Preserved athlete rest timer release (2026-10-12)
 
 Website `6acd37e9e903ac054286f910`, runtime source `4fc717eaecf7ae71de823900aed47134821cf186`, was published October 12 at 12:48:08 PM PDT from the exact verified draft. Athletes choose a timer from zero through the current prescribed default, with separate rep/set recovery, reset, elapsed recovery preservation and owner-scoped local restore. Zero disables the timer; it does not rewrite the drill prescription or establish a researched minimum.
 

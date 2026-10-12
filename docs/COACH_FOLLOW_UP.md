@@ -76,3 +76,22 @@ The reconciled baseline protects 1,950 files. The coach release must preserve
 this live timer flow, the already-confirmed catalog 1.0.96 and DRB-010 release
 records, and the unchanged held-drill/native gates. Final main integration and
 confirmed timer release records remain required before coach promotion.
+
+
+Confirmed release: website `6acd3e31cae1c1af33af3d3e`, runtime `139162a04a1aa2afefda78c62bf2715d9667acbc`,
+published October 12, 2026 at 1:10:21 PM PDT. The exact candidate and production
+each passed 14 signed-in checks with eight captures at 360/390/430px and desktop.
+All 1,968 artifact files match 1,969 provider records; 1,951 predecessor records
+are exact and 16 runtime assets are added. The 1,966-file preservation baseline
+passed the ordinary build. Source CI passed all six checks and 1,947 frontend
+tests. Backend source `b6363eed692b3abba4f456de21277025e39dc927` is verified through the prescribed
+nine-function publisher; all 121 unrelated functions remain unchanged.
+
+Three owned Auth accounts, all owned/scoped active documents, active/current/
+noncurrent Storage objects and email outboxes are absent after delayed separate
+independently implemented readback. Temporary credentials are removed. Four
+deleted synthetic JSON generations remain recoverable until October 19 under
+the unchanged seven-day soft-delete policy; no retained-generation physical
+erasure is claimed. No real athlete records or notification controls changed.
+Read [the production evidence](../deployment/COACH_FOLLOW_UP_PRODUCTION.json)
+and [PR #55](https://github.com/posetek/posetek_website/pull/55).
