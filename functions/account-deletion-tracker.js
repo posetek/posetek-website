@@ -26,7 +26,7 @@ function createTrackerErasure({ db, now = Date.now }) {
     const jobRef = db.doc(`accountDeletionJobs/${keyFor(subject)}`);
     const prior = (await jobRef.get()).data()?.trackerErasure;
     const sources = new Set(prior?.sourceIds || []), emails = new Set(prior?.emailIds || []);
-    const players = new Set(subject.playerIds || []), canonicalGroups = new Set();
+    const players = new Set(subject.playerIds || []), canonicalGroups = new Set(), providers = new Set(prior?.providerIds || []);
     const owned = value => Boolean(value && (
       subject.uid && [value.reporterUid, value.actorUid, value.uid, value.contactSnapshot?.actorUid,
         value.values?.["Recorded actor UID"]].includes(subject.uid)
@@ -38,7 +38,7 @@ function createTrackerErasure({ db, now = Date.now }) {
     // Capture joins before ordinary occurrence/outbox erasure. On retry the
     // job retains only opaque source IDs, never copied names, contact or cells.
     await scan("userIssueOccurrences", doc => { if (owned(doc.data())) sources.add(doc.id); });
-    await scan("userIssueOutbox", doc => { if (owned(doc.data())) sources.add(doc.id); });
+    await scan("userIssueOutbox", doc => { if (owned(doc.data())) { sources.add(doc.id); if (typeof doc.data().providerId === "string") providers.add(doc.data().providerId); } });
     function discoverRow(group, key, value) {
       if (group === "instances" && owned(value) && playerSegment(key)) sources.add(key);
       if (group === "emails" && sources.has(value?.eventRef)) emails.add(key);
@@ -46,8 +46,15 @@ function createTrackerErasure({ db, now = Date.now }) {
     async function discover(collection) {
       await scan(collection, doc => { const row = doc.data(); discoverRow(row.group, row.key, row.value); });
     }
+    function discoverMetadata(value) {
+      for (const group of ["instances", "dailyRows", "emails"]) {
+        for (const [key, row] of Object.entries(value?.rows?.[group] || {})) discoverRow(group, key, row);
+      }
+    }
+    discoverMetadata((await db.doc("issueTrackerState/seed").get()).data());
     await discover("issueTrackerRows");
     await scan("issueTrackerBatches", async doc => {
+      discoverMetadata(doc.data().nextSeedMetadata);
       for (const [group, rows] of Object.entries(doc.data().payload?.changes || {})) {
         for (const row of Array.isArray(rows) ? rows : []) discoverRow(group, row.key, row);
       }
@@ -55,7 +62,17 @@ function createTrackerErasure({ db, now = Date.now }) {
     });
     // A second pass resolves emails after all instance identities are known.
     await discover("issueTrackerRows");
-    await scan("issueTrackerBatches", doc => discover(`${doc.ref.path}/rows`));
+    discoverMetadata((await db.doc("issueTrackerState/seed").get()).data());
+    await scan("issueTrackerBatches", async doc => {
+      discoverMetadata(doc.data().nextSeedMetadata);
+      await discover(`${doc.ref.path}/rows`);
+    });
+    function discoverMapRelations(value) {
+      for (const [key, row] of Object.entries(value?.providerOccurrences || {})) if (sources.has(row)) providers.add(key);
+      for (const [key, row] of Object.entries(value?.emailCanonicalItems || {})) if (emails.has(row?.primaryId)) canonicalGroups.add(key);
+    }
+    discoverMapRelations((await db.doc("issueTrackerState/seed").get()).data());
+    await scan("issueTrackerBatches", doc => discoverMapRelations(doc.data().nextSeedMetadata));
 
     async function discoverGroups(collection) {
       await scan(collection, doc => {
@@ -64,6 +81,16 @@ function createTrackerErasure({ db, now = Date.now }) {
         for (const [key, value] of Object.entries(row.maps?.emailCanonicalItems || {})) if (emails.has(value?.primaryId)) canonicalGroups.add(key);
       });
     }
+    await scan("issueTrackerIndexBases", doc => {
+      for (const [key, value] of Object.entries(doc.data().maps?.providerOccurrences || {})) if (sources.has(value)) providers.add(key);
+    });
+    await scan("issueTrackerIndices", doc => { const row = doc.data(); if (row.group === "providerOccurrences" && sources.has(row.value)) providers.add(row.key); });
+    await scan("issueTrackerQueue", doc => {
+      const message = doc.data().message, join = message?.exactJoin;
+      if ((["occurrenceId", "outboxId"].includes(join?.type) && sources.has(join.value)) || join?.type === "providerId" && providers.has(join.value)) {
+        for (const id of [message.id, message.originalId, message.immutableId]) if (typeof id === "string") emails.add(id);
+      }
+    });
     await discoverGroups("issueTrackerIndexBases");
     await discoverGroups("issueTrackerIndices");
     await scan("issueTrackerBatches", doc => discoverGroups(`${doc.ref.path}/indices`));
@@ -74,7 +101,7 @@ function createTrackerErasure({ db, now = Date.now }) {
         const job = await tx.get(jobRef);
         if (!job.exists) throw new Error("Tracker erasure requires a durable deletion job");
         const writer = await tx.get(writerRef);
-        tx.update(jobRef, { trackerErasure: { pending: true, sourceIds: [...sources].sort(), emailIds: [...emails].sort(), requestedAtMillis: prior?.requestedAtMillis || now() } });
+        tx.update(jobRef, { trackerErasure: { pending: true, sourceIds: [...sources].sort(), emailIds: [...emails].sort(), providerIds: [...providers].sort(), requestedAtMillis: prior?.requestedAtMillis || now() } });
         tx.set(writerRef, { ...(writer.exists ? {} : { revision: 0 }), privacyErasurePending: true,
           privacyErasureReason: "External workbook erasure and seed reconciliation required", leaseId: null, leaseUntilMillis: 0 }, { merge: true });
       });
@@ -123,7 +150,8 @@ function createTrackerErasure({ db, now = Date.now }) {
     await scan("issueTrackerQueue", async doc => {
       const row = doc.data(), join = row.message?.exactJoin;
       if ((["occurrence", "outbox"].includes(row.source) && sources.has(row.sourceId))
-        || emails.has(row.message?.id) || (["occurrenceId", "outboxId"].includes(join?.type) && sources.has(join.value))) await remove(doc.ref);
+        || [row.message?.id, row.message?.originalId, row.message?.immutableId].some(id => emails.has(id))
+        || (["occurrenceId", "outboxId"].includes(join?.type) && sources.has(join.value)) || join?.type === "providerId" && providers.has(join.value)) await remove(doc.ref);
     });
     await scan("issueTrackerRows", async doc => {
       const row = doc.data(); if (ownRow(row.group, row.key, row.value)) await remove(doc.ref);
@@ -165,7 +193,7 @@ function createTrackerErasure({ db, now = Date.now }) {
         // The old receipt is not evidence for the redacted payload. Retain
         // unrelated cell values, but make this batch permanently non-sendable.
         value.state = "privacy-erased"; value.privacyErased = true;
-        delete value.receipt; delete value.payload.payloadSha256;
+        delete value.receipt; if (value.payload) delete value.payload.payloadSha256;
         delete value.seedRowsSha256; delete value.seedTransitionSha256;
         return true;
       });

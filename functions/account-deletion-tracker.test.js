@@ -77,3 +77,27 @@ test("ambiguous names never authorize deleting unrelated tracker records", async
   await erase(subject);
   assert.deepEqual(db.snapshot("issueTrackerRows/ambiguous"), before);
 });
+
+test("legacy seed-only identity discovers linked mail and indices without surviving source records", async () => {
+  const db = new FakeFirestore({
+    [jobPath]: { ...subject, state: "deleting" },
+    "issueTrackerState/seed": { counter: 4, rows: { instances: { lost: instance("owner", "p"), keep: instance("other", "q") },
+      emails: { mail: { eventRef: "lost", values: { Subject: "Private mail" } }, unrelated: { eventRef: "keep", values: { Subject: "Other mail" } } } },
+      outboxOccurrences: { lost: "lost", keep: "keep" }, emailCanonicalItems: { canonical: { primaryId: "mail" } }, emailCanonicalAliases: { alias: "canonical" } },
+    "issueTrackerBatches/legacy": { nextSeedMetadata: { rows: { instances: { archived: instance("owner", "p") }, emails: { archivedMail: { eventRef: "archived" } } }, outboxOccurrences: { archived: "archived", keep: "keep" } } },
+    "issueTrackerIndices/link": { group: "providerOccurrences", key: "provider", value: "lost" },
+    "issueTrackerIndices/alias": { group: "emailCanonicalAliases", key: "alias", value: "canonical" },
+  });
+  db.recursiveDelete = async ref => { db.docs.delete(ref.path); };
+  assert.equal((await createTrackerErasure({ db })(subject)).pending, true);
+  const seed = db.snapshot("issueTrackerState/seed");
+  assert.deepEqual(Object.keys(seed.rows.instances), ["keep"]);
+  assert.deepEqual(Object.keys(seed.rows.emails), ["unrelated"]);
+  assert.deepEqual(seed.outboxOccurrences, { keep: "keep" });
+  assert.deepEqual(seed.emailCanonicalItems, {});
+  assert.deepEqual(seed.emailCanonicalAliases, {});
+  assert.equal(db.snapshot("issueTrackerIndices/link"), undefined);
+  assert.equal(db.snapshot("issueTrackerIndices/alias"), undefined);
+  assert.equal(db.snapshot("issueTrackerBatches/legacy").privacyErased, true);
+  assert.deepEqual(db.snapshot("issueTrackerBatches/legacy").nextSeedMetadata.rows.emails, {});
+});

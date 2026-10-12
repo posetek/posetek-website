@@ -13,7 +13,7 @@ Approved behavior: admins can delete users/coaches; coaches remove only players 
 - Canonical rules/native UI are in the companion mobile branch `worktree-account-deletion`.
 - Gateway and Standard-processor barriers are in the companion processor branch `worktree-account-deletion`. No processor weights or generated artifacts are included.
 
-Jobs store only UID/player/coach IDs and operational state, not names/emails/media. Receipt tokens are SHA-256 indexed server-side. Receipts expose only state/timestamps. Job metadata and locks expire 90 days after completion to cover the documented backup restoration window. Team and organization objects are retained; an organization with no manager remains administrable by PoseTek staff.
+Jobs store UID/player/coach IDs and operational state, not names/emails/media. Tracker-erasure holds additionally retain exact opaque occurrence, provider and mail IDs required to suppress re-import and reconcile external copies. Receipt tokens are SHA-256 indexed server-side. Receipts expose only state/timestamps. Job metadata and locks expire 90 days after completion to cover the documented backup restoration window. Team and organization objects are retained; an organization with no manager remains administrable by PoseTek staff.
 
 ## Enablement is blocked pending verification
 
@@ -75,7 +75,7 @@ The Auth `closeSocialAccount` deletion hook in `functions/index.js` already read
 the UID lock inside its write transaction. Scoped source preparation manifests
 include the new shared `account-deletion-state.js` dependency.
 
-**Unresolved release blocker: existing issue-tracker copies.** The source queue
+**Earlier review checkpoint (superseded by the tracker-erasure follow-up below):** The source queue
 observer in `functions/issue-tracker-bridge.js` now rejects locked reporters and
 athletes, and ignores fully deleted sources. Existing `issueTrackerQueue`,
 `issueTrackerBatches` (including `rows`/`indices` descendants),
@@ -92,3 +92,83 @@ provider-retention verification are complete.
 Final local validation for this follow-up: the full Functions suite plus the
 issue-tracker packaging suite passed **1,017 tests, with 3 existing skips and no
 failures** (1,020 total). All fixtures were synthetic and all work stayed local.
+
+## Tracker erasure follow-up (local source only)
+
+`functions/account-deletion-tracker.js` now runs before ordinary issue sources are
+erased. It discovers ownership only from exact reporter/athlete fields, normalized
+`Recorded actor UID` / `Target player ID` cells, and proven occurrence/provider/mail
+joins. Discovery includes current and frozen rows and legacy inline seed rows.
+Names, email addresses, free text and substring matches never authorize erasure.
+
+The worker removes matching `issueTrackerQueue` and `issueTrackerRows` documents;
+removes matching batch `rows`/`indices` descendants and owned payload cells; and
+prunes exact joins from `issueTrackerState/seed`, `issueTrackerIndices` and
+`issueTrackerIndexBases`. Mixed-user batches, shared action rows and unrelated
+map entries/cells are retained. Proven mail/source/provider IDs are saved in the
+deletion job for retry and exact re-import suppression. Ambiguous and unlinked
+mail/evidence remain a coverage-review gate rather than being guessed from text.
+
+This local erasure is intentionally **not a valid workbook synchronization**.
+Before the first tracker mutation, a transaction records `trackerErasure.pending`
+on the deletion job and `issueTrackerState/writer.privacyErasurePending`, with a
+human-readable reason, and revokes the writer lease. Redacted frozen payloads are
+marked `privacy-erased`; their old payload/transition seals and receipts are
+removed. Affected content-addressed base maps are marked `privacyErased`; their old
+key/checksum must not be treated as a valid snapshot. Original aggregate counts
+are retained as reconciliation evidence, not recomputed or asserted correct.
+
+The publication hold affects the shared workbook writer. Unrelated occurrence and
+mail ingestion continues to queue; no external batch can be prepared, sent or
+acknowledged under that hold. Prepare/transport-claim/acknowledgement transactions
+also recheck exact source tombstones. A request already accepted by the external
+service can still finish; its receipt cannot restore erased local seed data.
+There is no automatic hold release. Account cleanup removes other scoped data,
+but remains retrying and does not delete Auth or report completion while the
+tracker hold requires external reconciliation.
+
+### Concrete remaining operator work
+
+The current contracts provide **no external erase operation**:
+`functions/issue-tracker-bridge-model.js` and
+`scripts/issue-tracker/office-script.ts` accept sealed upsert changes and verify
+row counts/revisions; `functions/issue-tracker-bridge-transport.js` only submits
+that contract. `functions/issue-tracker-graph-reader.js` and the fixed-mailbox
+read/identity proxies retrieve or identify mail; they do not delete it.
+
+Before release, an authorized workbook/mailbox owner must supply or approve:
+
+1. An exact workbook/table and mailbox retention scope, including retained
+   versions, copies, deleted-item retention, legal holds and tracker capture/
+   evidence archives. Resolve ambiguous/unlinked records using verified source
+   identity; never infer ownership from a name or the mailbox recipient.
+2. A reviewed erasure operation for `IncidentInstances` occurrence keys,
+   `EmailEvidence` proven immutable message keys and `DailyDeliveries` exact
+   job references. Preserve unrelated records and shared `ActionTracker` human
+   columns. The corresponding mailbox operation needs scoped delete permissions
+   and a decision about retained/recoverable messages; existing read permissions
+   are not sufficient evidence of that authority or capability.
+3. Independent readback evidence binding the erased source IDs to the exact
+   workbook/mailbox copies and retention result, including any request already
+   in flight when the hold began. No such evidence has been created locally.
+4. Reconciliation of the redacted workbook revision/counts, exact machine hashes,
+   local seed/index base and pending mixed batches. Implement a reviewed recovery
+   path that rebuilds valid seals without replaying erased cells, preserves other
+   queued work, and records evidence before explicitly releasing the publication
+   and deletion-job holds. The present worker deliberately has no release API.
+
+Deletion configuration remains disabled. These are lifecycle and access decisions,
+not a reason to broaden identity selectors or silently discard unrelated content.
+No production configuration, workbook, mailbox, account or recording was accessed
+or modified by this implementation.
+
+Validation for this tracker-erasure follow-up: **1,025 passed, 3 existing skips,
+zero failures** across the full Functions and tracker-packaging suites (1,028
+checks total). Focused cases include mixed-user preservation, legacy seed-only
+identity, missing batch payloads, retry idempotence, exact mail re-import
+suppression, deletion during preparation/provider receipt, unrelated ingestion,
+and refusal to complete an account job with unresolved external copies.
+`firebase.json` packages the full `functions` source directory; the new erasure
+module depends only on Node crypto and the already packaged athlete-path helper.
+The isolated tracker package already includes its deletion-state dependency and
+passed its packaging suite. No release artifact was deployed.

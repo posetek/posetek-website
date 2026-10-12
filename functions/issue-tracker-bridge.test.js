@@ -313,3 +313,14 @@ for (const boundary of ["prepare", "receipt"]) test(`deletion at tracker ${bound
   assert.equal(f.db.snapshot(PATHS.writer).privacyErasurePending, true);
   assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${ID}`), undefined);
 });
+
+test("erased exact mail or source IDs suppress re-import while unrelated mail still queues", async () => {
+  const f = fixture();
+  await f.db.doc("accountDeletionJobs/job").set({ trackerErasure: { pending: true, sourceIds: [ID], emailIds: ["erased-mail"], providerIds: ["erased-provider"] } });
+  for (const message of [
+    { id: "erased-mail" },
+    { id: "new-capture", exactJoin: { type: "occurrenceId", value: ID, evidence: "verified" } },
+    { id: "provider-capture", exactJoin: { type: "providerId", value: "erased-provider", evidence: "verified" } },
+  ]) assert.deepEqual(await f.service.enqueueMessage({ ...message, mailbox: "dylank@posetek.net" }), { queued: false, reason: "account_deletion" });
+  assert.equal((await f.service.enqueueMessage({ id: "other-mail", mailbox: "dylank@posetek.net" })).queued, true);
+});

@@ -79,6 +79,16 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       const settings = (await tx.get(db.doc(PATHS.settings))).data();
       if (settings?.enabled !== true) M.fail("tracker_disabled");
       if (message.mailbox.toLowerCase() !== settings.mailbox?.toLowerCase()) M.fail("tracker_wrong_mailbox");
+      // Opaque proven IDs retained in deletion jobs suppress re-import even
+      // after their canonical occurrence/provider mapping has been erased.
+      const erasedKeys = [
+        ...[message.id, message.originalId, message.immutableId].filter(value => typeof value === "string").map(value => ["emailIds", value]),
+        ...(exactJoin ? [[exactJoin.type === "providerId" ? "providerIds" : "sourceIds", exactJoin.value]] : []),
+      ];
+      for (const [field, value] of erasedKeys) {
+        const held = await tx.get(db.collection("accountDeletionJobs").where(`trackerErasure.${field}`, "array-contains", value).limit(1));
+        if (!held.empty) return { queued: false, reason: "account_deletion" };
+      }
       if (aliasReconciliation) {
         // Only a separately archived authoritative fixed-mailbox proof can
         // authorize reconciliation of already seeded duplicate captures.
