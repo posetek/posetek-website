@@ -1,7 +1,25 @@
 # PoseTek website project context
 
+<!-- drill-rest-current:start -->
+## Current drill rests and demonstration withdrawal (2026-10-12)
+
+Catalog `1.0.96` has 208 records: 74 website-library published (71 explicit plus
+three absent-status legacy records), 71 with approved primary demos and 134 drafts.
+Eighteen published drills now use their existing authored lower rest bounds; text
+and duration estimates are synchronized while goals, volume and scope are preserved.
+DRB-010 **Speed dribble with stop zone** is draft with its primary demo pending
+after the user reported corruption. Its video object is retained for repair;
+republication requires verified working playback and review. Saved workouts/logs
+were not rewritten. Independent readback matches the one acknowledged transaction
+and preserves all 189 unrelated records, private reviews/configuration and all 80
+held whole-body drafts with `mobileVerified: false`. No hosted artifact, functions,
+gateway, rules, indexes or native build was published. Read
+[the handoff](docs/DRILL_REST_UPDATE.md) and
+[production evidence](deployment/DRILL_REST_UPDATE_20261012.json).
+<!-- drill-rest-current:end -->
+
 <!-- drill-video-audit-current:start -->
-## Current drill demonstration audit and catalog publication (2026-10-11)
+## Historical drill demonstration audit and catalog publication (2026-10-11)
 
 Live catalog `1.0.94` contains 208 records: the website library counts 75 published
 and 133 drafts. All 72 drills with approved uploaded primary demonstrations are

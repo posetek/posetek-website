@@ -1,4 +1,9 @@
-# Drill publication and demonstration audit
+# Historical drill publication and demonstration audit
+
+Superseded October 12, 2026: DRB-010 was withdrawn after the user reported a
+corrupted video. Current counts are 74 library-published and 71 approved primary
+demos. See [the current handoff](DRILL_REST_UPDATE.md). The following records the
+October 11 metadata audit and publication; it did not verify playback.
 
 Verified October 11, 2026 against the live Firebase catalog and Storage objects.
 See [the production receipt](../deployment/DRILL_VIDEO_PUBLICATION_20261011.json).
