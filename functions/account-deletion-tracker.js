@@ -5,6 +5,8 @@
 // describe an external workbook revision: redaction intentionally invalidates
 // affected seals and holds publication until an operator reconciles that copy.
 const crypto = require("node:crypto");
+const { digest } = require("./issue-tracker-bridge-model");
+const { MAILBOX } = require("./issue-tracker-graph-reader");
 const { playerSegment } = require("./athlete-storage-paths");
 const copy = value => JSON.parse(JSON.stringify(value));
 const keyFor = subject => crypto.createHash("sha256").update(subject.uid ? `uid:${subject.uid}` : `player:${subject.playerIds[0]}`).digest("hex");
@@ -39,6 +41,24 @@ function createTrackerErasure({ db, now = Date.now }) {
     // job retains only opaque source IDs, never copied names, contact or cells.
     await scan("userIssueOccurrences", doc => { if (owned(doc.data())) sources.add(doc.id); });
     await scan("userIssueOutbox", doc => { if (owned(doc.data())) { sources.add(doc.id); if (typeof doc.data().providerId === "string") providers.add(doc.data().providerId); } });
+    // Recover exact identities from complete legacy archives even after their
+    // original documents have disappeared. Reject corrupt archives; never guess.
+    await scan("issueTrackerEvidence", async doc => {
+      const row = doc.data();
+      if (!["backend-occurrence", "backend-outbox"].includes(row.source)) return;
+      if (owned(row.identity)) sources.add(row.sourceId);
+      if (!row.complete) return;
+      if (!Number.isSafeInteger(row.chunks) || row.chunks < 1 || row.chunks > 121) throw new Error("Invalid tracker evidence archive");
+      let content = "";
+      for (let i = 0; i < row.chunks; i++) {
+        const chunk = (await doc.ref.collection("chunks").doc(String(i).padStart(6, "0")).get()).data();
+        if (chunk?.index !== i || typeof chunk.content !== "string") throw new Error("Incomplete tracker evidence archive");
+        content += chunk.content;
+      }
+      const value = JSON.parse(content);
+      if (Buffer.byteLength(content) !== row.bytes || digest(value) !== row.sha256) throw new Error("Invalid tracker evidence archive hash");
+      if (owned(value)) { sources.add(row.sourceId); if (typeof value.providerId === "string") providers.add(value.providerId); }
+    });
     function discoverRow(group, key, value) {
       if (group === "instances" && owned(value) && playerSegment(key)) sources.add(key);
       if (group === "emails" && sources.has(value?.eventRef)) emails.add(key);
@@ -147,6 +167,13 @@ function createTrackerErasure({ db, now = Date.now }) {
       return changed;
     }
 
+    const mailboxPrefix = `${MAILBOX}/`;
+    await scan("issueTrackerEvidence", async doc => {
+      const row = doc.data();
+      if (["backend-occurrence", "backend-outbox"].includes(row.source) && sources.has(row.sourceId)
+        || ["outlook", "outlook_alias_verification"].includes(row.source) && mailboxPrefix
+          && row.sourceId?.startsWith(mailboxPrefix) && emails.has(row.sourceId.slice(mailboxPrefix.length))) await remove(doc.ref);
+    });
     await scan("issueTrackerQueue", async doc => {
       const row = doc.data(), join = row.message?.exactJoin;
       if ((["occurrence", "outbox"].includes(row.source) && sources.has(row.sourceId))

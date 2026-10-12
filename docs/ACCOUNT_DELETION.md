@@ -199,3 +199,21 @@ or media deletion occurs for the unsupported shape. Full Functions plus tracker
 packaging: **1,031 passed, 3 existing skips, zero failures** (1,034 total).
 External tracker completion and the native completion-time wording remain
 unchanged release blockers.
+
+## Tracker evidence archives
+
+The local ownership inventory includes `issueTrackerEvidence/<digest>/chunks/*`:
+raw backend occurrence/outbox JSON and fixed-mailbox `outlook` and
+`outlook_alias_verification` snapshots. Exact source/mail keys remove the parent
+and chunks recursively. Complete legacy backend archives reconstruct and verify
+chunk indices, byte count and canonical digest before extracting structured
+ownership, including archives whose original source record has disappeared.
+New archives record minimal structured ownership before the first chunk, and
+check deletion locks and retained erasure joins transactionally before every
+chunk and completion. Corrupt legacy archives stop deletion for investigation;
+unlinked legacy mail and historical orphan chunks still require inventory and
+verified linkage, not identity inferred from body text. External mailbox and
+workbook copies/versions/retention remain unresolved.
+
+Local full Functions plus tracker-packaging validation: 1,033 passed, 3 existing
+skips, zero failures (1,036 total). No live archive was inspected or changed.

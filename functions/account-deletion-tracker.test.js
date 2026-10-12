@@ -101,3 +101,35 @@ test("legacy seed-only identity discovers linked mail and indices without surviv
   assert.equal(db.snapshot("issueTrackerBatches/legacy").privacyErased, true);
   assert.deepEqual(db.snapshot("issueTrackerBatches/legacy").nextSeedMetadata.rows.emails, {});
 });
+
+test("archive-only source identity erases exact raw copies and retains unrelated archives", async () => {
+  const { createEvidenceArchive } = require("./issue-tracker-evidence");
+  const { MAILBOX } = require("./issue-tracker-graph-reader");
+  const db = new FakeFirestore({});
+  const archive = createEvidenceArchive(db);
+  const own = await archive("backend-outbox", "legacy", { reporterUid: "owner", providerId: "provider-legacy" });
+  const other = await archive("backend-outbox", "other", { reporterUid: "other" });
+  const mail = await archive("outlook", `${MAILBOX}/mail-legacy`, { body: "private" });
+  await db.doc(jobPath).set({ ...subject, state: "deleting" });
+  await db.doc("issueTrackerQueue/mail").set({ message: { id: "mail-legacy", exactJoin: { type: "providerId", value: "provider-legacy" } } });
+  db.recursiveDelete = async ref => { for (const path of [...db.docs.keys()]) if (path === ref.path || path.startsWith(ref.path + "/")) db.docs.delete(path); };
+  await createTrackerErasure({ db })(subject);
+  for (const id of [own.id, mail.id]) assert.equal([...db.docs.keys()].some(path => path.startsWith(`issueTrackerEvidence/${id}`)), false);
+  assert.equal(db.snapshot(`issueTrackerEvidence/${other.id}`).complete, true);
+  await assert.rejects(archive("outlook", `${MAILBOX}/mail-legacy`, { body: "late" }), { code: "tracker_subject_deleting" });
+});
+
+test("archive deletion fences each chunk and leaves interrupted parent discoverable", async () => {
+  const { createEvidenceArchive } = require("./issue-tracker-evidence");
+  const db = new FakeFirestore({});
+  const transaction = db.runTransaction.bind(db); let count = 0;
+  db.runTransaction = async callback => {
+    const result = await transaction(callback);
+    if (++count === 1) await db.doc("accountDeletionLocks/owner").set({});
+    return result;
+  };
+  await assert.rejects(createEvidenceArchive(db)("backend-occurrence", "late", { reporterUid: "owner", body: "x".repeat(150000) }), { code: "tracker_subject_deleting" });
+  const parents = [...db.docs.entries()].filter(([path]) => path.startsWith("issueTrackerEvidence/"));
+  assert.equal(parents.length, 1); assert.equal(parents[0][1].complete, false);
+  assert.equal(parents[0][1].sourceId, "late");
+});
