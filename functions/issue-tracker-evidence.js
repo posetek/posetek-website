@@ -1,11 +1,13 @@
 "use strict";
 const { digest, canonical, fail } = require("./issue-tracker-bridge-model");
+const { playerSegment } = require("./athlete-storage-paths");
 const { MAILBOX } = require("./issue-tracker-graph-reader");
 const { deletionLocked } = require("./account-deletion-state");
 // Private immutable snapshots. JSON chunks keep large original bodies outside
 // queue documents and Excel; metadata is committed only after every chunk.
 function createEvidenceArchive(db) {
   return async function archive(source, sourceId, value) {
+    if (["backend-occurrence", "backend-outbox"].includes(source) && !playerSegment(sourceId)) fail("tracker_evidence_invalid_source");
     const content = JSON.stringify(value), bytes = Buffer.byteLength(content);
     if (!sourceId || bytes > 12000000) fail("tracker_evidence_capacity");
     const identity = { reporterUid: value?.reporterUid || null, actorUid: value?.actorUid || value?.contactSnapshot?.actorUid || null, uid: value?.uid || null, player: { id: value?.player?.id || value?.contactSnapshot?.player?.id || null } };

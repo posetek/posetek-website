@@ -133,3 +133,12 @@ test("archive deletion fences each chunk and leaves interrupted parent discovera
   assert.equal(parents.length, 1); assert.equal(parents[0][1].complete, false);
   assert.equal(parents[0][1].sourceId, "late");
 });
+
+test("malformed legacy archive source IDs fail closed without deleting unrelated copies", async () => {
+  const { db, erase } = fixture({
+    "issueTrackerEvidence/owned-invalid": { source: "backend-outbox", sourceId: null, identity: { reporterUid: "owner" }, complete: false },
+    "issueTrackerEvidence/unrelated-invalid": { source: "backend-outbox", sourceId: null, identity: { reporterUid: "other" }, complete: false },
+  });
+  await assert.rejects(erase(subject), /Invalid tracker evidence source identity/);
+  assert.ok(db.snapshot("issueTrackerEvidence/unrelated-invalid"));
+});

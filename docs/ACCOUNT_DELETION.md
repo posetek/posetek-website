@@ -217,3 +217,35 @@ workbook copies/versions/retention remain unresolved.
 
 Local full Functions plus tracker-packaging validation: 1,033 passed, 3 existing
 skips, zero failures (1,036 total). No live archive was inspected or changed.
+
+## Bounded reconciliation library (not an operational release path)
+
+`functions/account-deletion-tracker-reconciliation.js` is not connected to an
+endpoint or operator command. Its default behavior refuses hold release because
+no trusted external evidence verifier is installed. An eventual trusted adapter
+must authenticate the exact plan/workbook/mailbox/revision and replacement-seed
+hash, approved scope, retention outcome, settled in-flight sends and independent
+readback. Caller booleans and partial receipts are rejected. Hash-shaped fixture
+receipts in unit tests are synthetic and are not provider evidence.
+
+Preparation binds current jobs, settings, writer, seed, rows, bases and frozen
+batch/index snapshots. Recovery rechecks those reads in the release transaction;
+a new hold or changed snapshot invalidates the plan. It preserves exact surviving
+machine rows and joins, rebuilds a valid v2 seed/base, retains unrelated queued
+work, invalidates unapplied frozen batches, and retains erasure source IDs as
+re-import suppression. It clears only the tracker hold, never the account job's
+state; normal retry and final sweeps still run. V2 storage cutover must already
+be explicitly configured. This bounded implementation refuses more than 150
+snapshot records/4 MB, conflicting frozen/current survivors, incomplete frozen
+seeds and ambiguous joins. Those cases require a separately reviewed migration
+or reconciliation, not truncation or manual boolean overrides.
+
+Remaining operator work: approve the exact inventory/retention scope (including
+legacy orphan evidence chunks, workbook copies/versions and recoverable mail),
+provide erase-capable scoped workbook/mail operations, drain/quarantine old
+external requests, independently read back all approved copies, implement and
+review the authenticated verifier adapter, reconcile conflicting mixed batches,
+and exercise the complete recovery/worker flow with owned synthetic records.
+The existing Office Script is upsert-only; Graph capture is read-only. Neither
+can perform or prove these external erasures. No automatic hold release is
+exported, and no external operation or scope approval was performed here.

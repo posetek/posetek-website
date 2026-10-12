@@ -46,6 +46,7 @@ function createTrackerErasure({ db, now = Date.now }) {
     await scan("issueTrackerEvidence", async doc => {
       const row = doc.data();
       if (!["backend-occurrence", "backend-outbox"].includes(row.source)) return;
+      if (!playerSegment(row.sourceId)) throw new Error("Invalid tracker evidence source identity");
       if (owned(row.identity)) sources.add(row.sourceId);
       if (!row.complete) return;
       if (!Number.isSafeInteger(row.chunks) || row.chunks < 1 || row.chunks > 121) throw new Error("Invalid tracker evidence archive");
