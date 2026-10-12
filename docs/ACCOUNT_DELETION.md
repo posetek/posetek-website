@@ -51,9 +51,44 @@ coach-event preservation, derived issue identities, and lease expiry recovery.
 The full Functions suite passed **1,004 tests, with 3 existing skips**.
 
 This is local synthetic evidence, not completed live erasure coverage. The
-remaining cross-service writer audit must include the underlying Insights/social
-projectors, notification workers and in-flight external sends, restoration
-suppression, and all production bucket/warehouse/legacy ownership inventories.
+remaining release audit includes in-flight external sends, restoration suppression,
+and all production bucket/warehouse/legacy ownership inventories. The subsequent
+bounded source review below closes the identified projector and notification
+write paths.
 Large-account runtime/progress acceptance and native device flows remain release
 gates. Configuration remains disabled; no push, deployment or production data
 operation was performed by this review.
+
+### Bounded producer and notification review
+
+`functions/insights-v2-projection.js` now checks deletion locks when invalidating,
+claiming a rebuild, staging each bounded group of daily pages, publishing a
+summary, and releasing a lease. `functions/social.js` checks the lock within its
+rebuild transaction. `functions/workout-notifications.js` checks observer,
+activity, quiet-queue, dispatch and callback transactions; `functions/user-issues.js`
+checks dispatch; `functions/microsoft-email.js` checks the external send-permission
+claim, receipt and trace writes. Both email dispatchers recheck immediately
+before calling the provider. A provider request already in flight cannot be
+recalled by a Firestore lock; its downstream retention still needs acceptance.
+`functions/player-invitations.js` guards delayed invitation creation and redemption.
+The Auth `closeSocialAccount` deletion hook in `functions/index.js` already reads
+the UID lock inside its write transaction. Scoped source preparation manifests
+include the new shared `account-deletion-state.js` dependency.
+
+**Unresolved release blocker: existing issue-tracker copies.** The source queue
+observer in `functions/issue-tracker-bridge.js` now rejects locked reporters and
+athletes, and ignores fully deleted sources. Existing `issueTrackerQueue`,
+`issueTrackerBatches` (including `rows`/`indices` descendants),
+`issueTrackerState/seed`, `issueTrackerRows`, `issueTrackerIndices` and
+`issueTrackerIndexBases`, plus already published external Office workbook/mail
+copies, need a reviewed erasure lifecycle. See `functions/issue-tracker-bridge.js`,
+`functions/issue-tracker-bridge-seed.js`, `functions/issue-tracker-bridge-transport.js`
+and `deployments/issue-tracker/prepare.cjs`. The account cleanup manifest does
+**not** yet erase these existing copies or cancel an already frozen tracker
+batch. No bridge disablement or external-copy deletion was attempted. Do not
+approve manifest coverage or enable account deletion until that integration and
+provider-retention verification are complete.
+
+Final local validation for this follow-up: the full Functions suite plus the
+issue-tracker packaging suite passed **1,017 tests, with 3 existing skips and no
+failures** (1,020 total). All fixtures were synthetic and all work stayed local.

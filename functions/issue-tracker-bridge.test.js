@@ -281,3 +281,15 @@ test("mail ingress rejects missing/wrong credentials, other mailbox and disabled
   }
   await f.db.doc(PATHS.settings).update({ enabled: false }); assert.equal((await request(secret)).code, 503);
 });
+
+test("deleted reporter sources and deletion triggers cannot enqueue new tracker copies", async () => {
+  const f = fixture();
+  await f.db.doc("accountDeletionLocks/known-reporter").set({ jobId: "job" });
+  assert.equal((await f.service.observeOutbox(ID)).queued, false);
+  assert.equal((await f.service.observeOccurrence(ID)).queued, false);
+  assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${ID}`), undefined);
+  await f.db.doc(`userIssueOutbox/${ID}`).delete();
+  await f.db.doc(`userIssueOccurrences/${ID}`).delete();
+  assert.equal((await f.service.observeOccurrence(ID)).queued, false);
+  assert.equal(f.tasks.length, 0);
+});

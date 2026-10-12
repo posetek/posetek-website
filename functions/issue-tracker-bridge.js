@@ -1,4 +1,5 @@
 "use strict";
+const { deletionLocked } = require("./account-deletion-state");
 const crypto = require("node:crypto");
 const M = require("./issue-tracker-bridge-model");
 const { ROWS, INDEX_BASES, INDICES, createSeedStore, splitSeed, partitionSeed, verifyIndex } = require("./issue-tracker-bridge-seed");
@@ -32,6 +33,8 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       // Read the current document, not the possibly out-of-order trigger image.
       const job = (await tx.get(db.doc(`userIssueOutbox/${id}`))).data();
       const occurrence = job?.type === "incident" || occurrenceRequired ? (await tx.get(db.doc(`userIssueOccurrences/${id}`))).data() : null;
+      if (!job && !occurrence) return { queued: false };
+      if (await deletionLocked(db, tx, { ...job, ...occurrence })) return { queued: false };
       if (occurrenceRequired && !occurrence) M.fail("tracker_occurrence_unavailable");
       if (occurrence && job && job.type !== "incident") M.fail("tracker_source_identity_conflict");
       const issueId = occurrence?.issueId || job?.issueId;

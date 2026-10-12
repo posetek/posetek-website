@@ -1,7 +1,7 @@
 "use strict";
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto");
 const baseline = require("./baseline.json");
-const MODULES = ["team-leaderboard.js", "effective-results.js", "processing-evidence.js", "insights-v2-qualification.js", "insights-v2-projection.js", "athlete-storage-paths.js"];
+const MODULES = ["team-leaderboard.js", "effective-results.js", "processing-evidence.js", "insights-v2-qualification.js", "insights-v2-projection.js", "athlete-storage-paths.js", "account-deletion-state.js"];
 function patchIndex(source) {
   const anchor = 'const teamLeaderboard = createTeamLeaderboard({ db, HttpsError: functions.https.HttpsError });';
   if (source.split(anchor).length !== 2) throw Error("Reviewed leaderboard initialization changed.");

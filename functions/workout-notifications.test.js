@@ -446,3 +446,18 @@ test("deletion blocks delayed workout observers and already queued sends", async
   assert.equal(f.db.snapshot(f.statePath()), undefined);
   assert.equal(f.db.snapshot(f.jobPath()), undefined);
 });
+
+test("provider completion after deletion acceptance cannot recreate inactivity activity", async () => {
+  const f = fixture();
+  await f.service.recordWorkoutActivity(f.activity(), AUTH);
+  f.advance(QUIET_MS);
+  await f.service.queueQuiet(f.identity("workoutLogs"));
+  const id = f.db.snapshot(f.jobPath("workoutLogs", "inactivity")).id;
+  f.provider.send = async () => {
+    await f.db.doc("playerDeletionLocks/player").set({ jobId: "job" });
+    await f.db.doc(f.statePath()).delete();
+    return { id: "already-in-flight" };
+  };
+  await f.service.dispatch(id);
+  assert.equal(f.db.snapshot(f.statePath()), undefined);
+});

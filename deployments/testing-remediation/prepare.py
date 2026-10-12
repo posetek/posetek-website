@@ -11,7 +11,7 @@ release.HERE = HERE
 release.ENDPOINTS = ("getAthleteEffectiveResults", "getAthleteRepMedia")
 release.CALLABLES = release.ENDPOINTS
 release.FILES = ("effective-results.js", "processing-evidence.js", "insights-v2-qualification.js",
-                 "insights-v2-projection.js", "club-access.js", "athlete-storage-paths.js", "package.json", "package-lock.json")
+                 "insights-v2-projection.js", "club-access.js", "athlete-storage-paths.js", "account-deletion-state.js", "package.json", "package-lock.json")
 release.FIREBASE_CONFIG = {"functions": {"source": "source", "codebase": "testing-results", "runtime": "nodejs22"}}
 
 def definitions():
