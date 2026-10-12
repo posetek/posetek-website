@@ -347,6 +347,26 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
     });
     return { ok: true };
   }
+  // Removing a roster membership does not erase an athlete's account or media.
+  async function removeClubPlayerFromTeam(data, auth) {
+    const playerId = id(data?.playerId, "player");
+    const expectedTeamId = id(data?.teamId, "team");
+    await db.runTransaction(async (tx) => {
+      const state = await readClub(tx, data?.organizationId, auth, false);
+      const player = state.players.find((p) => p.id === playerId);
+      if (!player || player.teamId !== expectedTeamId) fail("failed-precondition", "The player's team changed. Refresh and try again.");
+      if (!isClubAdmin(auth) && !(activeMember(state.actor, auth.uid) && state.actor.role === "coach"
+          && state.actor.teamIds.includes(expectedTeamId))) fail("permission-denied", "You can remove only players on your own team.");
+      if (player.accountDeletionPending === true) fail("failed-precondition", "This account is being deleted.");
+      player.teamId = "";
+      // Preserve organizationId: an unassigned athlete must not fall back to
+      // historical coach pointers for authorization.
+      tx.update(db.collection("players").doc(playerId), { teamId: "", coachUID: FieldValue.delete(),
+        coachId: FieldValue.delete(), coachDocId: FieldValue.delete(), updatedAt: stamp() });
+      syncProjections(tx, state);
+    });
+    return { ok: true, accountDeleted: false };
+  }
   async function setClubPlayerTeam(data, auth) {
     const playerId = id(data?.playerId, "player");
     const teamId = id(data?.teamId, "team");
@@ -409,6 +429,6 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
     });
     return { playerId, code };
   }
-  return { getClubContext, createClubOrganization, saveClubTeam, validateStaffInvitation, createClubStaffInvitation, redeemClubStaffInvitation, claimManualStaffInvitation, setClubStaffTeams, revokeClubStaffInvitation, setClubPlayerTeam, createClubPlayer, issueClubPlayerInvitation };
+  return { removeClubPlayerFromTeam, getClubContext, createClubOrganization, saveClubTeam, validateStaffInvitation, createClubStaffInvitation, redeemClubStaffInvitation, claimManualStaffInvitation, setClubStaffTeams, revokeClubStaffInvitation, setClubPlayerTeam, createClubPlayer, issueClubPlayerInvitation };
 }
 module.exports = { createClubs, INVITE_TTL_MS };

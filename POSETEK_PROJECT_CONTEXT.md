@@ -1,5 +1,9 @@
 # PoseTek website project context
 
+## Local account-deletion candidate (2026-10-09)
+
+Owner-approved role-based deletion is being prepared on `worktree-account-deletion`, with companion mobile and processor branches. It is disabled, unpushed and undeployed. The owner requires explicit later authorization for any production push/deployment. See [the candidate handoff](docs/ACCOUNT_DELETION.md) for scope, test evidence and remaining release gates. Existing production records below are unchanged.
+
 <!-- organization-navigation-current:start -->
 ## Current organization manager navigation release
 

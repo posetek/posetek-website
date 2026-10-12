@@ -82,7 +82,7 @@ export default function PrivacyPage() {
             <li>Players' data may be visible to their own club's authorized coaches and administrators. It is not public.</li>
             <li>We do not sell personal information. We do not show third-party ads. We do not track users across other companies' apps or websites.</li>
             <li>Many of our players are minors. We require a parent or guardian's consent for players under 13, and parents can review or delete their child's information at any time.</li>
-            <li>You can delete your account and associated data by emailing us.</li>
+            <li>You can request permanent deletion in the app under Account settings → Delete account. No support email is required.</li>
           </ul>
         </PolicySection>
 
@@ -201,9 +201,10 @@ export default function PrivacyPage() {
         <PolicySection id="data-retention">
           <ul>
             <li>We keep account, profile, video, and performance information for as long as the account is active, so that players can see their progress over time.</li>
-            <li>When an account is deleted, we delete or de-identify the associated personal information, including training videos, within 30 days, except where we must retain limited information to comply with law, resolve disputes, or prevent abuse. Backups are overwritten on a rolling schedule of up to 90 days.</li>
+            <li>When an account is deleted, we delete the associated personal information, including training videos, within 30 days, except information we are legally required to retain. Backups are overwritten on a rolling schedule of up to 90 days.</li>
             <li>Accounts that are inactive for 24 months may be deleted after notice to the email address on file.</li>
             <li>Detailed active-use records are retained for 90 days and daily usage summaries for 24 months. Older app builds and dates before collection began may have no usage measurements.</li>
+            <li>Restricted deletion-job and receipt records are kept for up to 90 days after completion to verify the request and prevent deleted data from being restored. Removing a player from a team keeps their account and recordings; it is not account deletion.</li>
             <li>Payment records are retained as required for financial and legal compliance purposes.</li>
             <li>De-identified and aggregated data that can no longer be linked to an individual may be retained.</li>
           </ul>
@@ -212,7 +213,7 @@ export default function PrivacyPage() {
         <PolicySection id="your-choices-and-rights">
           <ul>
             <li><strong>Access and correction.</strong> You can view and update most account and profile information in the app.</li>
-            <li><strong>Delete your account.</strong> You can delete your account and associated data, including training videos, by emailing <ContactEmail />. Deletion is permanent.</li>
+            <li><strong>Delete your account.</strong> Open Account settings → Delete account in the app to request automatic deletion of your account and associated data, including training videos. Confirm your identity and the permanent deletion. You can check completion using the deletion receipt on the sign-in screen. You may also contact <ContactEmail /> for help; email is not required to use in-app deletion. Deletion is permanent.</li>
             <li><strong>Permissions.</strong> You can turn off camera and photo library access in your device settings. Some features will not work without camera access.</li>
             <li><strong>Club connection.</strong> You can ask to disconnect from a club, which ends that club's access to the player's information going forward.</li>
           </ul>

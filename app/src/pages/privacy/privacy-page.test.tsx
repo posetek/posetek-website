@@ -38,7 +38,7 @@ describe("privacy policy page", () => {
   });
 
   it("discloses prospective account attribution, anonymous shared visits and unchanged historical anonymity", () => {
-    expect(POLICY_LAST_UPDATED).toBe("October 5, 2026");
+    expect(POLICY_LAST_UPDATED).toBe("October 9, 2026");
     const section = html.match(/<section id="app-feedback"[\s\S]*?<\/section>/)?.[0] ?? "";
     expect(section).toContain("before you answer");
     expect(section).toContain("requires a signed-in account");

@@ -31,7 +31,8 @@ describe("support page", () => {
 
   it("explains account deletion, which App Review asks for", () => {
     const answer = html.slice(html.indexOf('id="delete-account"'), html.indexOf('id="parents"'));
-    expect(answer).toContain("ask us to delete your account");
+    expect(answer).toContain("Account settings → Delete account");
+    expect(answer).toContain("no support email is required");
     expect(answer).toContain("Deletion is permanent");
   });
 });

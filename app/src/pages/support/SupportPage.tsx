@@ -106,7 +106,7 @@ export default function SupportPage() {
           </Question>
 
           <Question id="delete-account">
-            <p>Email <SupportEmail /> from the address on your account and ask us to delete your account. We delete the account and its associated data, including training videos. Deletion is permanent. You can also ask us to delete specific videos or results without closing your account.</p>
+            <p>In the app, open Account settings → Delete account. Confirm your identity and permanent deletion; no support email is required. We automatically delete the account and its associated personal data, including training videos, within 30 days. Check completion using the deletion receipt on the sign-in screen. Deletion is permanent. Removing a player from a team keeps their account and recordings. For help, or to ask us to delete specific videos or results without closing your account, email <SupportEmail />.</p>
             <p>Our Privacy Policy explains <Link to="/privacy#your-choices-and-rights">your choices and rights</Link> and <Link to="/privacy#data-retention">how long deletion takes</Link>.</p>
           </Question>
 

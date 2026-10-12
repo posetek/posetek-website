@@ -32,7 +32,7 @@ function createDiagnosticAccess({ db }) {
   async function athleteAccess(id, auth) {
     if (!playerSegment(id)) return false;
     const player = await read(`players/${id}`);
-    if (!player) return false;
+    if (!player || player.accountDeletionPending === true) return false;
     if (isClubAdmin(auth)) return true;
     const own = (player.authenticationUID ?? auth.uid) === auth.uid && (player.userUID ?? auth.uid) === auth.uid
       && (player.authenticationUID === auth.uid || player.userUID === auth.uid || id === auth.uid);
