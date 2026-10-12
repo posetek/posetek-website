@@ -55,14 +55,29 @@ zero before/after a set, reset, active-countdown clearing, another drill's defau
 an arbitrary 17-second choice and pause/resume. Responsive rendering is reviewed
 against the existing player. Device lock-screen behavior remains unchanged.
 
-## Release boundary
+## Confirmed website release
 
-This source is prepared for the guarded website release. Use the exact committed
-source, preserve current marketing/feedback/icons and every prior runtime asset,
-verify a hosted draft, then promote that exact reviewed artifact. Production
-publication and final hosted evidence belong in
-`deployment/ATHLETE_REST_TIMERS_PRODUCTION.json` once verified. An ordinary Git
-build or passing CI is not evidence that these controls are live.
+Website `6acd37e9e903ac054286f910` was published October 12, 2026 at 12:48:08 PM
+PDT from the exact verified draft and pushed runtime source
+`4fc717eaecf7ae71de823900aed47134821cf186`. See
+[the production receipt](../deployment/ATHLETE_REST_TIMERS_PRODUCTION.json).
+All 1,952 artifacts match 1,953 provider records. All 1,947 prior records outside
+the application entry and generated provider metadata remain exact; four runtime
+assets are added. The exact live feedback document was retained after the initial
+draft's shared-CSS build changed its references. That first draft was never
+published. Marketing documents, feedback, icons and existing runtime assets are
+preserved. The reconciled baseline protects 1,950 files and passed the ordinary
+preservation build.
+
+All six hosted CI checks passed for the runtime source. Final candidate acceptance
+passed 22 checks, including authenticated owned-account reload, zero/default
+recovery, separate cluster timers and 360/390/430/1440px layouts. Production passed
+14 checks, including authenticated recovery of zero and reset to default. Tests
+record explicit waits for acknowledged saves before reload. The test account and
+all owned root, descendant and scoped-query records were removed; delayed separate
+readback confirmed zero residue and zero notification outboxes. Temporary
+credential files were removed. No real athlete workout or repaired-video playback
+acceptance is claimed.
 
 No catalog, saved plans/logs, backend function, rules, gateway, indexes or native
 schema/release changes are required. The optional local runtime fields are

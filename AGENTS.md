@@ -1,5 +1,15 @@
 # PoseTek website context
 
+<!-- athlete-rest-timers-current:start -->
+## Current athlete rest timer release (2026-10-12)
+
+Website `6acd37e9e903ac054286f910`, runtime source `4fc717eaecf7ae71de823900aed47134821cf186`, was published October 12 at 12:48:08 PM PDT from the exact verified draft. Athletes choose a timer from zero through the current prescribed default, with separate rep/set recovery, reset, elapsed recovery preservation and owner-scoped local restore. Zero disables the timer; it does not rewrite the drill prescription or establish a researched minimum.
+
+All 1,952 artifact files match 1,953 provider records; 1,947 prior records remain exact and four runtime assets are added. Marketing, isolated feedback, P icons and existing assets are preserved. All 1,946 frontend tests, 41 release guards and six hosted runtime-source CI checks passed. Candidate acceptance passed 22 checks and production 14, including owned authenticated reload and 360/390/430/1440px layouts. The 1,950-file preservation baseline is reconciled. The one test account and all owned/scoped records are absent after delayed separate readback; notification outboxes are empty and credential files removed.
+
+Catalog `1.0.96`, all saved real workouts and the 80 held drafts with `mobileVerified: false` remain preserved. DRB-010 stays draft with its corrupted demo pending repair. No backend, gateway, rules, indexes, catalog or native release is included. Read [the handoff](docs/ATHLETE_REST_TIMERS.md) and [production evidence](deployment/ATHLETE_REST_TIMERS_PRODUCTION.json).
+<!-- athlete-rest-timers-current:end -->
+
 <!-- drill-rest-current:start -->
 ## Current drill rests and demonstration withdrawal (2026-10-12)
 
@@ -47,7 +57,7 @@ activation remain pending. Preserve the published release records and use
 isolated worktrees.
 
 <!-- workout-reporting-current:start -->
-## Current workout reporting consistency release
+## Preserved workout reporting consistency release
 
 Website `6acbde38a912d2909dd0501a`, runtime source `a4e8da1e00cabb17b21ef60924d77e98f0038731`, was published October 11, 2026 at 12:15:40 PM PDT from the exact verified candidate. Staff history reads personal and assigned logs independently of creation controls, and durations match email precision in minutes with up to one decimal. All completed personal, assigned and extra workouts in the selected period are separate from current fourteen-day assigned-plan progress. Admin Refresh activity updates summary and history together; selected workout views check while visible, with explicit updating/stale states and account/scope isolation. Saved history/projection mismatches receive bounded rereads and are never presented as current.
 
