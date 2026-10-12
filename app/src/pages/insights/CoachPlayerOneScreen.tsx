@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { AthleteSummary } from "../coach-dashboard/lib/logic";
 import type { ExpandedPlayer, CoachTestScore } from "./lib/expanded";
-import { coachPlanLabel, coachSessionRows, summaryDateLabel, validSummaryDay } from "./lib/coachPlayerSummary";
+import { coachPlanLabel, coachSessionRows, completedWorkoutsInPeriod, summaryDateLabel, validSummaryDay } from "./lib/coachPlayerSummary";
 
 const TESTS = [
   { key: "shooting", label: "Shooting" }, { key: "sprint", label: "Sprint" },
@@ -11,7 +11,7 @@ const TESTS = [
 
 export default function CoachPlayerOneScreen({ summary, performance, testScores, period, generatedAtMillis = Date.now(), onPrescribe, disabled = false }: {
   summary: AthleteSummary; performance?: ExpandedPlayer["performance"]; testScores?: CoachTestScore[];
-  period?: { endDate: string; timeZone: string }; generatedAtMillis?: number; onPrescribe: () => void; disabled?: boolean;
+  period?: { startDate?: string; endDate: string; timeZone: string }; generatedAtMillis?: number; onPrescribe: () => void; disabled?: boolean;
 }) {
   const plan = summary.plan, asOf = Number.isFinite(generatedAtMillis) ? generatedAtMillis : Date.now();
   const history = useMemo(() => coachSessionRows(summary, asOf, period?.timeZone || "UTC"), [summary, asOf, period?.timeZone]);
@@ -23,14 +23,16 @@ export default function CoachPlayerOneScreen({ summary, performance, testScores,
   const recordedTest = plan?.nextTestDate || plan?.retestDate || plan?.assessment?.nextTestDate;
   const nextTest = validSummaryDay(recordedTest) ? recordedTest : null;
   const trainingKnown = performance?.activePlan && performance.sessionsDone !== null && performance.sessionsPlanned !== null;
+  const completed = completedWorkoutsInPeriod(summary.logs || [], period, asOf);
   return <section className="coach-player-one-screen" aria-label="Player progress at a glance">
     <header className="coach-player-glance-heading"><h2>{currentName}</h2><button className="primary-cta" type="button" onClick={onPrescribe} disabled={disabled}>Prescribe workouts</button></header>
+    <div className="coach-player-workout-total"><div><span>Completed workouts</span><strong>{completed === null ? 'Unavailable' : completed}</strong></div><p>Personal, assigned and extra sessions{period?.startDate && ` · ${period.startDate}–${period.endDate} · ${period.timeZone}`}.</p></div>
     <dl className="coach-snapshot-stats coach-player-summary" aria-label={`${currentName}: ${overall === null ? stage : `${Math.round(overall)}% of D1`}; ${changeLabel}`}>
       <div><dt>D1 standing</dt><dd className="coach-snapshot-value">{overall === null ? "—" : `${Math.round(overall)}%`}</dd><dd>{stage}</dd></div>
       <div><dt>Since last test</dt><dd className="coach-snapshot-value">{change === null ? "—" : Math.abs(change) <= 2 ? "Same" : `${change > 0 ? "▲ +" : "▼ −"}${Math.abs(change)}`}{change !== null && Math.abs(change) > 2 && <small> pts</small>}</dd><dd>{changeLabel}</dd></div>
-      <div><dt>Training / 14 days</dt>{!performance ? <><dd className="coach-snapshot-value">—</dd><dd>Training unavailable</dd></> : performance.activePlan ? <>
+      <div><dt>Current-plan progress</dt>{!performance ? <><dd className="coach-snapshot-value">—</dd><dd>Training unavailable</dd></> : performance.activePlan ? <>
         <dd className="coach-snapshot-value">{trainingKnown ? <>{performance.sessionsDone}<small> of {performance.sessionsPlanned}</small></> : "—"}</dd>
-        <dd>{trainingKnown ? "Last 14 days" : performance.sessionsDone === null ? "Completion unavailable" : "Schedule unavailable"}</dd><dd>{coachPlanLabel(plan, asOf)}</dd>
+        <dd>{trainingKnown ? "Assigned plan · last 14 days" : performance.sessionsDone === null ? "Completion unavailable" : "Schedule unavailable"}</dd><dd>{coachPlanLabel(plan, asOf)}</dd>
       </> : <><dd className="coach-snapshot-value">—</dd><dd>No active plan · <button type="button" className="insights-text-button" onClick={onPrescribe} disabled={disabled}>Create one</button></dd></>}</div>
       <div className={reasons.length ? "coach-snapshot-need" : ""}><dt>Needs you</dt><dd className="coach-snapshot-value">{performance ? reasons.length : "—"}</dd><dd>{!performance ? "Follow-up unavailable" : reasons.length ? reasons.join(" · ") : "Nothing flagged"}</dd></div>
     </dl>

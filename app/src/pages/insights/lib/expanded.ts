@@ -1,5 +1,6 @@
 import type { ExpandedRequest } from "./expandedQuery";
 import { shiftDate } from "./expandedQuery";
+import { workoutMinutes } from '../../../lib/workout-duration';
 export type InsightScope = { kind: "coachRoster"; coachId?: string } | { kind: "global" } | { kind: "organization"; organizationId: string } | { kind: "team"; organizationId: string; teamId: string };
 export type CountGroup = { key: string; count: number };
 export type InsightAccess = "admin" | "manager" | "coach";
@@ -79,7 +80,7 @@ export function assertReportScope(report: ExpandedInsights, scope: InsightScope,
 }
 export const minuteText = (value: number, collected = true) => collected ? `${Math.max(0, value).toLocaleString(undefined, { maximumFractionDigits: 1 })} min` : "Not collected";
 export function workoutDurationText(minutes: number, sourceRecords?: number) {
-  return sourceRecords === undefined ? "Coverage unavailable" : sourceRecords === 0 ? "Not recorded" : minuteText(minutes);
+  return sourceRecords === undefined ? "Coverage unavailable" : sourceRecords === 0 ? "Not recorded" : workoutMinutes(minutes);
 }
 export function workoutOutcomeSlices(workouts: ExpandedInsights["workouts"]): { key: string; label: string; value: number }[] {
   return [{ key: "completed", label: "Completed as logged", value: workouts.completed }, { key: "endedEarly", label: "Ended early", value: workouts.endedEarly }, { key: "inProgress", label: "No ending record", value: workouts.inProgress }, { key: "abandoned", label: "Abandoned", value: workouts.abandoned }, { key: "unknown", label: "Unknown ending", value: workouts.unknownEnding || 0 }];

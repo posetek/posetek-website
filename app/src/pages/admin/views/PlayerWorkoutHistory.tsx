@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useReadOnlyReport } from '../../../lib/useReadOnlyReport';
+import { useForegroundReport } from '../../../lib/foreground-report';
 import { useSearchParams } from 'react-router-dom';
 import { WorkoutHistoryCard } from '../../coach-dashboard/views/WorkoutHistory';
 import { getWorkoutNotificationStatus, loadPlayerWorkoutHistory, parseWorkoutFocus, selectWorkoutHistory, workoutFocusQuery, workoutPacificTime } from '../lib/workoutNotifications';
@@ -12,20 +14,18 @@ type SavedDrill = { blockId?: string; name?: string };
 export default function PlayerWorkoutHistory({ playerId }: { playerId: string }) {
   const [query, setQuery] = useSearchParams();
   const [refresh, setRefresh] = useState(0);
-  const [load, setLoad] = useState<HistoryLoad>({ kind: 'loading' });
   const request = parseWorkoutFocus(query);
-  useEffect(() => {
-    let live = true;
-    loadPlayerWorkoutHistory(playerId).then(logs => { if (live) setLoad({ kind: 'ready', logs, checkedAt: Date.now() }); })
-      .catch(() => { if (live) setLoad({ kind: 'error' }); });
-    return () => { live = false; };
-  }, [playerId, refresh]);
+  const reader = useCallback(() => loadPlayerWorkoutHistory(playerId), [playerId]);
+  const state = useReadOnlyReport({ key: playerId, read: reader, revision: refresh, retry: true });
+  const reload = () => setRefresh(value => value + 1);
+  useForegroundReport({ key: playerId, refresh: reload, busy: state.refreshing, interval: true });
+  const load: HistoryLoad = state.kind === 'ready' ? { kind: 'ready', logs: state.data, checkedAt: state.checkedAt } : { kind: state.kind };
   return <PlayerWorkoutHistoryContent playerId={playerId} load={load} request={request} refresh={refresh}
-    onRefresh={() => { setLoad({ kind: 'loading' }); setRefresh(value => value + 1); }} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />;
+    refreshing={state.refreshing} stale={state.stale} onRefresh={reload} onSelect={focus => setQuery(workoutFocusQuery(query, focus))} />;
 }
 
-export function PlayerWorkoutHistoryContent({ playerId, load, request, refresh = 0, onRefresh, onSelect }: {
-  playerId: string; load: HistoryLoad; request: FocusRequest; refresh?: number; onRefresh: () => void; onSelect: (focus: WorkoutFocus) => void;
+export function PlayerWorkoutHistoryContent({ playerId, load, request, refresh = 0, refreshing = false, stale = false, onRefresh, onSelect }: {
+  playerId: string; load: HistoryLoad; request: FocusRequest; refresh?: number; refreshing?: boolean; stale?: boolean; onRefresh: () => void; onSelect: (focus: WorkoutFocus) => void;
 }) {
   const selection = load.kind === 'ready' ? selectWorkoutHistory(load.logs, request) : null;
   const target = useRef<HTMLDivElement>(null);
@@ -40,13 +40,15 @@ export function PlayerWorkoutHistoryContent({ playerId, load, request, refresh =
     <div className="admin-heading">
       <div><h2 id="admin-workout-history-title">Workout activity</h2>
         <p>Saved workouts, reported progress, and notification delivery. Times are Pacific.</p></div>
-      <button type="button" className="quiet-button" disabled={load.kind === 'loading'} onClick={onRefresh}>Refresh activity</button>
+      <button type="button" className="quiet-button" disabled={load.kind === 'loading' || refreshing} onClick={onRefresh}>Refresh activity</button>
     </div>
     {load.kind === 'loading' && <p role="status" className="admin-note">Loading workout activity…</p>}
     {load.kind === 'error' && <p role="alert" className="form-message">Workout history is unavailable. Refresh activity to try again.</p>}
     {request.kind === 'invalid' && <p role="alert" className="form-message">This workout link is incomplete or invalid. Choose a recorded workout below to view its activity.</p>}
     {load.kind === 'ready' && <>
-      <p className="admin-note">History checked {workoutPacificTime(load.checkedAt)}. This view does not update live.</p>
+      <p className="admin-note">History checked {workoutPacificTime(load.checkedAt)}. Checks again each minute while this workout view is visible.</p>
+      {refreshing && <p role="status" className="admin-note">Updating summary and history… Showing the last successful records.</p>}
+      {stale && <p role="alert" className="form-message">Refresh failed. This history is from the last successful check. Refresh activity to retry.</p>}
       {request.kind === 'valid' && !selection?.focused && <p role="alert" className="form-message">The exact workout in this link is unavailable. No other workout has been selected.</p>}
       {selection?.focused && request.kind === 'valid' && <div className="admin-focused-workout" ref={target} tabIndex={-1} aria-label="Selected workout">
         <p className="eyebrow">Selected saved workout</p>

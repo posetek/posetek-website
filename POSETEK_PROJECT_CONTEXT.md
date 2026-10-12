@@ -24,8 +24,18 @@ The engineering pipeline remains a separate staged candidate; use
 `docs/engineering/README.md` for its guides, status, and activation limits.
 Merging source is not promotion of a production website artifact.
 
+<!-- workout-reporting-current:start -->
+## Current workout reporting consistency release
+
+Website `6acbde38a912d2909dd0501a`, runtime source `a4e8da1e00cabb17b21ef60924d77e98f0038731`, was published October 11, 2026 at 12:15:40 PM PDT from the exact verified candidate. Staff history reads personal and assigned logs independently of creation controls, and durations match email precision in minutes with up to one decimal. All completed personal, assigned and extra workouts in the selected period are separate from current fourteen-day assigned-plan progress. Admin Refresh activity updates summary and history together; selected workout views check while visible, with explicit updating/stale states and account/scope isolation. Saved history/projection mismatches receive bounded rereads and are never presented as current.
+
+All 1,948 artifact files match 1,949 provider records; 1,928 predecessor records remain exact and 19 runtime assets are added. The reconciled baseline protects 1,946 files and passed the ordinary build. All 1,938 frontend tests and six hosted source CI checks passed; candidate and production each passed 17 live synthetic checks with seven captures, including 360/390/430px and desktop. Headless visibility checks use explicit document visibility events. Three owned synthetic accounts and all owned/scoped records were removed; delayed separate readback found zero residue, no email outboxes and no temporary credentials.
+
+All 130 function versions/configurations and notification settings remain unchanged. A bounded private sample of three completion and two quiet-session emails matched saved logs and projections; it does not identify the user's unspecified case or establish every historical notification. No real athlete data, existing notification payload or delivery evidence was changed. Backend, rules, indexes, gateway, catalog, native and reviewer activation were not released. Marketing, isolated feedback, P icons, contact details, recovery, Kai's workspace and training/content gates remain preserved. Read [the reporting handoff](docs/WORKOUT_REPORTING_CONSISTENCY.md), [production evidence](deployment/WORKOUT_REPORTING_CONSISTENCY_PRODUCTION.json) and [PR #48](https://github.com/posetek/posetek_website/pull/48). The following checkpoints remain historical and their feature contracts stay in force.
+<!-- workout-reporting-current:end -->
+
 <!-- admin-profile-contacts-current:start -->
-## Current administrator player contact release
+## Preserved administrator player contact release
 
 Website `6ac95bd8769320160da44176`, runtime source `4b5cc6804732588dd0284d85634237b27b1d2107`, was published October 9, 2026 at 2:28:04 PM PDT from the exact verified candidate. Administrator player **Profile** tabs now show saved email and canonical `phone_number` in a read-only Contact details card. Missing values display **Not recorded** independently. Contacts come from the existing player read; no Auth lookup, extra request, profile write or permission change is introduced.
 

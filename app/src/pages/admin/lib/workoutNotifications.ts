@@ -49,11 +49,11 @@ export function workoutPacificTime(value: number | null): string {
 
 export async function loadPlayerWorkoutHistory(playerId: string): Promise<RecordedWorkoutLog[]> {
   const player = db.collection('players').doc(playerId);
-  const [assigned, config] = await Promise.all([player.collection('workoutLogs').get(), db.collection('config').doc('llm').get()]);
-  const personal = config.data()?.personalWorkoutsEnabled === true ? await player.collection('personalWorkoutLogs').get() : null;
+  // Creation can be paused without concealing already-recorded staff-readable activity.
+  const [assigned, personal] = await Promise.all([player.collection('workoutLogs').get({ source: 'server' }), player.collection('personalWorkoutLogs').get({ source: 'server' })]);
   return [
     ...assigned.docs.map(doc => ({ ...doc.data(), id: doc.id, _workoutSource: 'workoutLogs' as const })),
-    ...(personal?.docs || []).map(doc => ({ ...doc.data(), id: doc.id, source: 'personal', _workoutSource: 'personalWorkoutLogs' as const })),
+    ...personal.docs.map(doc => ({ ...doc.data(), id: doc.id, source: 'personal', _workoutSource: 'personalWorkoutLogs' as const })),
   ];
 }
 

@@ -17,7 +17,8 @@ import {
   toDate,
 } from "../../athlete-portal/lib/training";
 import type { AthleteSummary } from "../lib/logic";
-import { hoursLine, planProgress } from "../lib/logic";
+import { planProgress } from "../lib/logic";
+import { workoutMinutes } from '../../../lib/workout-duration';
 import type { PlanJobState } from "../lib/data";
 import { savePlanWeeks } from "../lib/data";
 import {
@@ -73,7 +74,7 @@ export default function AthleteDetail({ summary, job, preview, embedded = false,
             <p className="eyebrow">Athlete</p>
             <h1>{fullName(summary.athlete)}</h1>
             <p className="coachdash-sub">
-              {summary.totals.workoutsCompleted} completed workouts · {hoursLine(summary.totals.timerSeconds)} timer time · {planProgress(plan)}
+              {summary.totals.workoutsCompleted} completed workouts · {workoutMinutes(summary.totals.timerSeconds / 60)} timer time · {planProgress(plan)}
             </p>
           </div>
         </div>}

@@ -65,7 +65,7 @@ export function WorkspaceSummary({ data, loading, error, legacy, accountCount, s
   return <section className="workspace-summary" aria-label="Roster and activity summary">
     <div className="workspace-summary-card"><span>Players</span><strong>{accountCount !== undefined ? accountCount.toLocaleString() : data ? data.roster.total.toLocaleString() : unavailable}</strong><p>{scopeLabel}{data && <><br />{data.roster.included.toLocaleString()} included in reporting{data.roster.excluded > 0 ? ` · ${data.roster.excluded} excluded` : ""}</>}</p></div>
     <div className="workspace-summary-card"><span>Testing coverage</span><strong>{unavailable || `${fullyTested.toLocaleString()}/${data!.roster.filtered.toLocaleString()}`}</strong><p>All six exercises · {request.testingWindow === "cumulative" ? `through ${request.endDate}` : period}</p></div>
-    <div className="workspace-summary-card"><span>Completed workouts</span><strong>{unavailable || data!.workouts.completed.toLocaleString()}</strong><p>Recorded completions · {period}</p></div>
+    <div className="workspace-summary-card"><span>Completed workouts</span><strong>{unavailable || data!.workouts.completed.toLocaleString()}</strong><p>Personal + assigned + extra · {period}</p></div>
     <div className="workspace-summary-card"><span>Estimated active use</span><strong>{unavailable || minuteText(data!.usage.activeMinutes, data!.usage.collectedPlayers > 0)}</strong><p>{data ? `${data.usage.collectedPlayers}/${data.roster.filtered} players with collection` : "Measured website and app activity"}<br />{period}</p></div>
   </section>;
 }

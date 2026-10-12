@@ -4,6 +4,14 @@ import { workoutHistory } from "../../coach-dashboard/lib/history";
 import type { AthleteSummary } from "../../coach-dashboard/lib/logic";
 
 const DAY = 86400000;
+/** All saved execution types, completed in the selected local date window.
+ * This is intentionally separate from the active plan's fourteen-day progress. */
+export function completedWorkoutsInPeriod(logs: any[], period: { startDate?: string; endDate: string; timeZone: string } | undefined, now: number): number | null {
+  if (!period || !validSummaryDay(period.startDate) || !validSummaryDay(period.endDate) || !summaryTimeZone(period.timeZone)) return null;
+  const date = (value: number) => new Intl.DateTimeFormat('en-CA', { timeZone: period.timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(value);
+  return workoutHistory(logs).filter(entry => entry.status === 'completed' && entry.start !== null && entry.end !== null
+    && entry.end >= entry.start && entry.end <= now && date(entry.end) >= period.startDate! && date(entry.end) <= period.endDate).length;
+}
 export function validSummaryDay(value: unknown): value is string {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
     && Number.isFinite(Date.parse(`${value}T12:00:00Z`)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;

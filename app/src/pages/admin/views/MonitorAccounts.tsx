@@ -213,6 +213,9 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
   return <>
     {scopeControl}
     <WorkspaceReportControls request={request} disabled={legacy} onChange={update} />
+    {metrics.data && <p className="admin-note">Report checked {new Date(metrics.data.generatedAtMillis).toLocaleString('en-US', { timeZone: request.timezone, dateStyle: 'medium', timeStyle: 'short' })} · {request.timezone}.</p>}
+    {metrics.refreshing && metrics.data && <p role="status" className="admin-note">Updating activity… Showing the last successful report.</p>}
+    {metrics.stale && <p role="alert" className="form-message">Refresh failed. These figures are from the last successful report. Refresh reporting to retry.</p>}
     <WorkspaceScopeSummary {...metricState} accountCount={accountCount} scopeLabel={scopeLabel} request={request} />
     <p className="admin-note">{attention ? "Activity totals reflect reporting filters; queue name search changes only the player list." : "Name/email search and account pages change the player list, not organization/team summary totals."}</p>
     <p className="admin-note">Testing coverage is {request.testingWindow === "cumulative" ? "cumulative through the selected end date" : "limited to the selected period"}. Workouts and estimated use cover {request.startDate} through {request.endDate}, in {request.timezone.replaceAll("_", " ")}. Reporting follows current membership; excluded history and uncollected use remain distinct from zero.</p>

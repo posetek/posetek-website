@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import CoachPlayerOneScreen from "./CoachPlayerOneScreen";
-import { coachPlanLabel, coachSessionRows } from "./lib/coachPlayerSummary";
+import { coachPlanLabel, coachSessionRows, completedWorkoutsInPeriod } from "./lib/coachPlayerSummary";
 import type { AthleteSummary } from "../coach-dashboard/lib/logic";
 import type { ExpandedPlayer } from "./lib/expanded";
 
@@ -11,6 +11,21 @@ const plan = { id: "plan", planId: "plan", status: "active", schemaVersion: 3, s
   weeks: [1, 2, 3].map(weekNumber => ({ weekNumber, workouts: [{ workoutId: `w${weekNumber}`, order: 1, title: "Recorded prescription" }] })), notes: "Generic AI plan description" };
 const summary = { athlete: { firstName: "Alex", lastName: "Example" }, profile: { overall: 999 }, reps: [{ createdAtMillis: 0 }, { createdAtMillis: now + 1000 }], plan, logs: [] } as unknown as AthleteSummary;
 const performance: NonNullable<ExpandedPlayer["performance"]> = { d1: 92, change: -46, lastTestDate: "2026-09-16", previousTestDate: "2026-09-09", activePlan: true, sessionsDone: 1, sessionsPlanned: 2, planAgeDays: 8, needsYouReasons: ["D1 down at least 5 points"] };
+describe('all-workout completion counts in the selected period', () => {
+  it('uses ending date in the reporting timezone and deduplicates personal/assigned records independently', () => {
+    const record = { planId: 'p', workoutId: 'w', startedAt: now - 3600000, endedAt: now - 1000, endReason: 'completed' };
+    const logs = [{ ...record, id: 'assigned' }, { ...record, id: 'assigned-duplicate' }, { ...record, id: 'personal', source: 'personal' },
+      { ...record, id: 'future', source: 'adhoc', workoutId: 'future', endedAt: now + 1 },
+      { ...record, id: 'early', workoutId: 'early', source: 'personal', endReason: 'pain' }];
+    expect(completedWorkoutsInPeriod(logs, { startDate: '2026-10-06', endDate: '2026-10-06', timeZone: 'America/Los_Angeles' }, now)).toBe(2);
+    expect(completedWorkoutsInPeriod(logs, { startDate: '2026-10-06', endDate: '2026-10-06', timeZone: 'UTC' }, now)).toBe(0);
+  });
+  it('keeps unspecified periods unavailable and does not count missing or reversed endings', () => {
+    expect(completedWorkoutsInPeriod([], undefined, now)).toBeNull();
+    expect(completedWorkoutsInPeriod([{ id: 'no-end', endReason: 'completed' }, { id: 'inverted', startedAt: now, endedAt: now - 1, endReason: 'completed' }],
+      { startDate: '2026-10-01', endDate: '2026-10-10', timeZone: 'UTC' }, now)).toBe(0);
+  });
+});
 const render = (value: ExpandedPlayer["performance"] = performance) => renderToStaticMarkup(<CoachPlayerOneScreen summary={summary} performance={value}
   testScores={[{ drill: "sprint", score: 46, change: -46, lastTestDate: "2026-09-16", previousTestDate: "2026-09-09" }]}
   generatedAtMillis={now} period={{ endDate: "2026-09-16", timeZone: "UTC" }} onPrescribe={() => {}} />);
@@ -21,7 +36,7 @@ describe("authoritative coach player summary", () => {
     expect(html).toContain("92%"); expect(html).toContain("46%"); expect(html).toContain("▼ −46"); expect(html).not.toContain("999%");
     expect(html).toContain("best measured results through 2026-09-16"); expect(html).toContain("latest two test dates in UTC");
     expect(html).toContain("D1 down at least 5 points"); expect(html).not.toContain("missed scheduled sessions");
-    expect(html).toContain("Training / 14 days"); expect(html).toContain("Last 14 days"); expect(html).toContain("week 2 of 6");
+    expect(html).toContain("Current-plan progress"); expect(html).toContain("Assigned plan · last 14 days"); expect(html).toContain("week 2 of 6");
   });
   it("never replaces absent additive fields with raw current data or no-follow-up claims", () => {
     const html = renderToStaticMarkup(<CoachPlayerOneScreen summary={summary} generatedAtMillis={now} onPrescribe={() => {}} />);

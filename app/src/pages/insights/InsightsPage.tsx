@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate, useSearchParams } from "react-router-do
 import { auth } from "../../lib/firebase";
 import { clubCall, getClubContext, type ClubContext } from "../../lib/organization-data";
 import { adminPlayerLinkFromReport } from "../admin/lib/adminNavigation";
-import { completeReport } from "./lib/completeReport";
+import { completeReport, retryableReportError } from "./lib/completeReport";
+import { useForegroundReport } from '../../lib/foreground-report';
 import { loadAuthorizedReport } from "./lib/loadReport";
 import ExpandedReport from "./ExpandedReport";
 import OrganizationHeader from "../organization/OrganizationHeader";
@@ -118,12 +119,14 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
   const [rebuilding, setRebuilding] = useState(false);
   const [loading, setLoading] = useState(true), [error, setError] = useState(""), [accessDenied, setAccessDenied] = useState(false);
   const [retry, setRetry] = useState(0), [playerLabel, setPlayerLabel] = useState({ id: "", name: "Player" });
+  const [stale, setStale] = useState(false);
   const scrollPosition = useRef(0), previousView = useRef(request.view);
   const cursorHistory = useRef<Record<number, string>>({ 0: "" });
   const guard = useRef(createInsightsRequestGuard(() => auth.currentUser?.uid)).current;
   // Presentation-only tabs, feed links and player selection never reload the report.
-  const requestKey = JSON.stringify([uid, embedded, request.orgId, request.teamId, request.startDate, request.endDate, request.timezone, request.testingWindow, request.division, request.ageBand, request.testingStatus, request.workoutStatus, request.usageStatus, request.usagePlatform, request.usageFeature, request.teamAssignment, request.rosterSearch, request.cursor, retry]);
-  const report = response?.key === requestKey ? response.data : null;
+  const dataKey = JSON.stringify([uid, embedded, request.orgId, request.teamId, request.startDate, request.endDate, request.timezone, request.testingWindow, request.division, request.ageBand, request.testingStatus, request.workoutStatus, request.usageStatus, request.usagePlatform, request.usageFeature, request.teamAssignment, request.rosterSearch, request.cursor]);
+  const requestKey = JSON.stringify([dataKey, retry]);
+  const report = response?.key === dataKey ? response.data : null;
   const coach = !embedded && role === "coach";
   const currentScope = report?.scope || scope;
   const selectedName = report?.players.find(player => player.id === request.playerId);
@@ -139,7 +142,7 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
   useEffect(() => {
     document.title = embedded ? "Admin overview | PoseTek" : "Team Insights | PoseTek";
     const isCurrent = guard.begin(uid);
-    setResponse(null); setContext(null); setError(""); setLoading(true); setRebuilding(false); setAccessDenied(false); setChoices(null); setScope(null);
+    setResponse(previous => previous?.key === dataKey ? previous : null); setContext(null); setError(""); setLoading(true); setRebuilding(false); setStale(false); setAccessDenied(false); setChoices(null); setScope(null);
     void (async () => {
       try {
         let selected: InsightScope;
@@ -178,14 +181,16 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
         if (selected.kind !== "global" && selected.kind !== "coachRoster" && !request.orgId) { queryWriter.current(current => expandedQuery(expandedRequest(current.toString()), { orgId: selected.organizationId }), { replace: true }); return; }
         const result = await loadAuthorizedReport(request, selected, payload => clubCall<ExpandedInsights>("getClubInsightsV2", payload), isCurrent, { adminOnly: embedded, onRebuild: () => setRebuilding(true) });
         if (!result || !isCurrent()) return;
-        setChoices(result.choices); setScope(result.scope); setRole(result.scope.access); setResponse({ key: requestKey, data: result });
+        setChoices(result.choices); setScope(result.scope); setRole(result.scope.access); setResponse({ key: dataKey, data: result });
         cursorHistory.current[request.page] = request.cursor;
         if (result.pagination.nextCursor) cursorHistory.current[request.page + 1] = result.pagination.nextCursor;
       } catch (failure) {
         if (!isCurrent()) return;
         const code = String((failure as { code?: string })?.code || "").split("/").at(-1);
         if (["unauthenticated", "permission-denied", "not-found"].includes(code || "")) { setChoices(null); setScope(null); setContext(null); setRole(null); }
-        setResponse(null); setError(expandedFailureMessage(failure));
+        if (retryableReportError(failure)) { setResponse(previous => previous?.key === dataKey ? previous : null); setStale(true); }
+        else { setResponse(null); setStale(false); }
+        setError(expandedFailureMessage(failure));
       } finally { if (isCurrent()) setLoading(false); }
     })();
     return () => guard.cancel();
@@ -203,12 +208,13 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
     setQuery(next);
   }
   function refresh() {
-    guard.cancel(); setResponse(null); setLoading(true); cursorHistory.current = { 0: "" };
+    guard.cancel(); setLoading(true); cursorHistory.current = { 0: "" };
     // A changed roster invalidates opaque cursors. Refresh starts a fresh page
     // while preserving the selected player, reporting filters and dates.
     if (request.cursor || request.page) setQuery(expandedQuery(request, { cursor: "", page: 0 }), { replace: true });
     setRetry(value => value + 1);
   }
+  useForegroundReport({ key: dataKey, refresh, busy: loading, enabled: Boolean(role && activeView !== 'community') });
   function previousPage() {
     if (request.page < 1) return;
     const previous = cursorHistory.current[request.page - 1];
@@ -231,7 +237,7 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
   function nextPage() { if (report?.pagination.nextCursor) change({ page: request.page + 1, cursor: report.pagination.nextCursor }); }
   function playerLink(player: { id: string }) { return `/insights?${expandedQuery(request, { view: "player", playerId: player.id })}`; }
   function closePlayer() { change({ view: "overview", playerId: "" }); }
-  const snapshot = report && coach && activeView === "overview" && !loading ? <CoachOverviewSnapshot data={report} playerLink={playerLink} /> : null;
+  const snapshot = report && coach && activeView === "overview" ? <CoachOverviewSnapshot data={report} playerLink={playerLink} /> : null;
   function prescribe() {
     if (!report || !request.playerId) return;
     const params = new URLSearchParams({ players: request.playerId, returnTo: location.pathname + location.search });
@@ -249,10 +255,12 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
     <InsightTabs request={{ ...request, view: activeView }} onChange={change} coach={coach} playerName={playerName} onClosePlayer={closePlayer} />
     {["overview", "testing", "player"].includes(activeView) && <div className="insights-toolbar"><p className="insights-note">Testing coverage</p><div className="insights-toggle" aria-label="Testing coverage period"><button type="button" aria-pressed={request.testingWindow === "cumulative"} onClick={() => change({ testingWindow: "cumulative" })}>Through selected end</button><button type="button" aria-pressed={request.testingWindow === "period"} onClick={() => change({ testingWindow: "period" })}>Selected period only</button></div></div>}
     {error && <div className="insights-message error" role="alert"><p>{error}</p><button className="quiet-button" type="button" onClick={refresh}>Retry Insights</button></div>}
+    {stale && report && <p role="alert" className="insights-note">Refresh failed. Showing the last successful report; these figures may be out of date.</p>}
+    {report && <p className="insights-note">Report checked {new Date(report.generatedAtMillis).toLocaleString('en-US', { timeZone: report.period.timeZone, dateStyle: 'medium', timeStyle: 'short' })} · {report.period.timeZone}.</p>}
     {accessDenied && <section className="insights-card"><h2>No current coaching scope</h2><p>Ask your organization manager to assign a team, or sign in with your active coach account.</p><Link className="quiet-button" to="/organization">Open organization</Link></section>}
     {loading && <p role="status">{rebuilding ? "Refreshing team records…" : "Loading complete Insights…"}</p>}
-    {report && !loading && <div id="insights-report" role="tabpanel" aria-labelledby={`insights-tab-${activeView}`} tabIndex={0}>
-      {coach && request.playerId && <div hidden={activeView !== "player"}><CoachPlayer key={JSON.stringify([uid, report.scope, request.playerId])} uid={uid} scope={report.scope} request={request} onName={name => setPlayerLabel({ id: request.playerId, name })} onPrescribe={prescribe} onClose={closePlayer} /></div>}
+    {report && <div id="insights-report" role="tabpanel" aria-labelledby={`insights-tab-${activeView}`} tabIndex={0} aria-busy={loading}>
+      {coach && request.playerId && <div hidden={activeView !== "player"}><CoachPlayer key={JSON.stringify([uid, report.scope, request.playerId])} uid={uid} scope={report.scope} request={request} visible={activeView === 'player'} onName={name => setPlayerLabel({ id: request.playerId, name })} onPrescribe={prescribe} onClose={closePlayer} /></div>}
       {coach && activeView === "community" ? <EmbeddedCoachCommunity uid={uid} organizationId={report.scope.kind === "team" || report.scope.kind === "organization" ? report.scope.organizationId : undefined} />
         : activeView !== "player" ? <>
           {coach && activeView === "overview" && <PlayerFilters data={report} request={request} onChange={change} />}
