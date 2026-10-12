@@ -105,8 +105,18 @@ export default function SupportPage() {
             <p>If a result still looks wrong, email us the date, the drill, and what looked wrong. We review individual results and can correct or remove them.</p>
           </Question>
 
+          <Question id="ai-sharing">
+            <p>Open Account settings → AI sharing in the iPhone app. Review the information and providers shown before allowing sharing. You can decline or revoke permission there; recording remains available. This choice is separate from microphone and speech-recognition permission. Permission is not transferred to another account or device, and coaches cannot authorize AI sharing for another athlete.</p>
+            <p>Revoking stops new AI requests. Requests already sent may finish, and existing conversations and reports are not deleted. If the app cannot confirm account-wide withdrawal, sharing stays off on that device; retry when connected. See <Link to="/privacy#ai-and-automated-processing">AI and automated processing</Link>.</p>
+          </Question>
+
+          <Question id="diagnostic-media">
+            <p>In Drill Settings, use Share diagnostic videos and images. It is off by default and available to eligible players for their own profile. Enabling it permits new failed recordings and calibration images from that account and athlete on that device to be sent to PoseTek support. It is separate from Save video to cloud.</p>
+            <p>Turning it off stops new diagnostic media uploads, including queued media; an upload already started may finish. Diagnostic logs still send, and local recovery files may remain. Coaches cannot grant this permission for another athlete. See <Link to="/privacy#information-we-collect">information we collect</Link>.</p>
+          </Question>
+
           <Question id="delete-account">
-            <p>In the app, open Account settings → Delete account. Confirm your identity and permanent deletion; no support email is required. We automatically delete the account and its associated personal data, including training videos, within 30 days. Check completion using the deletion receipt on the sign-in screen. Deletion is permanent. Removing a player from a team keeps their account and recordings. For help, or to ask us to delete specific videos or results without closing your account, email <SupportEmail />.</p>
+            <p>In the app, open Account settings → Delete account. Confirm your identity and permanent deletion; no support email is required. We automatically delete the account and its associated personal data, including training videos, within 30 days. Check completion using the deletion receipt on the sign-in screen. Deletion is permanent. Removing a player from a team keeps their account and recordings; it is not account deletion. Deleting a coach’s account does not delete their players’ accounts or recordings. For help, or to ask us to delete specific videos or results without closing your account, email <SupportEmail />.</p>
             <p>Our Privacy Policy explains <Link to="/privacy#your-choices-and-rights">your choices and rights</Link> and <Link to="/privacy#data-retention">how long deletion takes</Link>.</p>
           </Question>
 
