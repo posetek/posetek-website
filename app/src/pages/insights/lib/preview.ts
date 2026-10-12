@@ -30,11 +30,14 @@ export function previewInsights(request: ExpandedRequest, page = 0, state = "nor
     const sessionsDone = planActive ? ([1, 3, 4].includes(i % 6) ? 2 : i % 4) : null;
     const d1Change = exercisesComplete > 0 && i % 3 !== 0 ? [-7, -2, 4, 1][i % 4] : null;
     const planAgeDays = planActive ? 3 + i % 14 : null;
-    const needsYouReasons = [
-      ...(d1Change !== null && d1Change <= -5 ? ["D1 down at least 5 points"] : []),
-      ...(planActive && planAgeDays! >= 3 && i % 13 === 0 ? ["No sign-in recorded"] : []),
-      ...(planActive && planAgeDays! >= 7 && sessionsPlanned! > 0 && sessionsDone! * 2 < sessionsPlanned! ? ["Behind on training"] : []),
-    ];
+    const completedInPeriod = workoutStatus === "completed" ? 1 + i % 3 : 0;
+    const measuredTests = EXERCISES.map(drill => ({ drill, lastTestDate: exercisesComplete ? request.endDate : null,
+      previousTestDate: d1Change === null ? null : shiftDate(request.endDate, -14),
+      status: !exercisesComplete ? "notTested" as const : d1Change === null ? "noPriorTest" as const : d1Change < -2 ? "down" as const : d1Change > 2 ? "up" as const : "same" as const,
+      metrics: drill === "sprint" && exercisesComplete ? [{ key: "sprintCompletionTime", current: 2.4, previous: d1Change === null ? null : d1Change < -2 ? 2.1 : 2.4,
+        direction: "lower" as const, trend: d1Change === null ? "unavailable" as const : d1Change < -2 ? "down" as const : "same" as const }] : [] }));
+    const needsYouReasons = [ ...(completedInPeriod === 0 ? ["No completed workouts in this period"] : []),
+      ...(measuredTests.some(test => test.metrics.some(metric => metric.trend === "down")) ? ["Recent testing down · Sprint"] : []) ];
     const age = i % 7 === 0 ? null : [9, 11, 14, 17, 21][i % 5];
     const row: ExpandedPlayer = { id: `synthetic-${i}`, firstName: FIRST[i % FIRST.length], lastName: LAST[Math.floor(i / FIRST.length)], organizationId: org.id, organizationName: org.name, teamId: team?.id || null, teamName: team?.name || null,
       division: i % 11 === 0 ? "unknown" : i % 2 ? "girls" : "boys", age, ageBand: age === null ? "unknown" : AGE_BANDS[[9,11,14,17,21].indexOf(age)],
@@ -42,7 +45,7 @@ export function previewInsights(request: ExpandedRequest, page = 0, state = "nor
       performance: { d1: exercisesComplete ? 62 + i % 42 : null, change: exercisesComplete > 0 && i % 3 !== 0 ? d1Change : null,
         lastTestDate: exercisesComplete > 0 ? shiftDate(request.endDate, -(i % 10)) : null,
         previousTestDate: exercisesComplete > 0 && i % 3 !== 0 ? shiftDate(request.endDate, -(18 + (i % 6))) : null,
-        sessionsDone, sessionsPlanned, activePlan: planActive, planAgeDays, needsYouReasons },
+        sessionsDone, sessionsPlanned, activePlan: planActive, planAgeDays, needsYouReasons, coachFocus: { version: 1, completedInPeriod, measuredTests } },
       workouts: { status: workoutStatus, started: workoutStatus === "none" ? 0 : 1 + i % 4, completed: workoutStatus === "completed" ? 1 + i % 3 : 0, timerMinutes: workoutStatus === "completed" ? 30 + i % 25 : 0, estimatedMinutes: workoutStatus === "endedEarly" ? 12 + i % 12 : 0, allPrescribedSetsCompleted: workoutStatus === "completed" && i % 2 === 0 && i % 11 !== 0 ? 1 : 0, unknownPrescription: i % 11 === 0 ? outcomeEvents : 0, outcomeEvents, timerRecords: workoutStatus === "completed" ? outcomeEvents : 0, estimatedRecords: workoutStatus === "endedEarly" ? outcomeEvents : 0 },
       usage: { status: usageStatus, collected: usageStatus !== "notCollected", webCollected: usageStatus !== "notCollected", iosCollected, activeMinutes, webMinutes: activeMinutes * (iosCollected ? .7 : 1), iosMinutes: iosCollected ? activeMinutes * .45 : 0, activeDays } };
     return { ...row, overlapMinutes: iosCollected ? activeMinutes * .15 : 0, featureMinutes: { training: activeMinutes * .6, results: activeMinutes * .3, overview: activeMinutes * .1 } };
@@ -97,6 +100,8 @@ export function previewInsights(request: ExpandedRequest, page = 0, state = "nor
         .map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim(), reasons: row.performance?.needsYouReasons || [] }))
         .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
       noTestingPlayers: rows.filter(row => row.testing.status === "noRecordedTests").map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim() })).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
+      coachFocus: { version: 1, noCompletionPlayers: rows.filter(row => row.workouts.completed === 0).map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim() })),
+        decliningPlayers: rows.filter(row => row.performance?.coachFocus?.measuredTests.some(test => test.metrics.some(metric => metric.trend === "down"))).map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim() })) },
       noWorkoutPlayers: rows.filter(row => row.workouts.status === "none").map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim() })).sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)) },
     players: visible.slice(page * 25, (page + 1) * 25), pagination: { total: visible.length, pageSize: 25, nextCursor: (page + 1) * 25 < visible.length ? `synthetic-page-${page + 1}` : null } };
 }

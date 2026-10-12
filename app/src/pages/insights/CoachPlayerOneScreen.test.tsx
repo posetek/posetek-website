@@ -10,7 +10,8 @@ const plan = { id: "plan", planId: "plan", status: "active", schemaVersion: 3, s
   intake: { trainingContext: { startDate: "2026-09-29", scheduleConfirmed: true, sessionDays: [2] } },
   weeks: [1, 2, 3].map(weekNumber => ({ weekNumber, workouts: [{ workoutId: `w${weekNumber}`, order: 1, title: "Recorded prescription" }] })), notes: "Generic AI plan description" };
 const summary = { athlete: { firstName: "Alex", lastName: "Example" }, profile: { overall: 999 }, reps: [{ createdAtMillis: 0 }, { createdAtMillis: now + 1000 }], plan, logs: [] } as unknown as AthleteSummary;
-const performance: NonNullable<ExpandedPlayer["performance"]> = { d1: 92, change: -46, lastTestDate: "2026-09-16", previousTestDate: "2026-09-09", activePlan: true, sessionsDone: 1, sessionsPlanned: 2, planAgeDays: 8, needsYouReasons: ["D1 down at least 5 points"] };
+const performance: NonNullable<ExpandedPlayer["performance"]> = { d1: 92, change: -46, lastTestDate: "2026-09-16", previousTestDate: "2026-09-09", activePlan: true, sessionsDone: 1, sessionsPlanned: 2, planAgeDays: 8, needsYouReasons: ["No sign-in recorded"], coachFocus: { version: 1, completedInPeriod: 1,
+  measuredTests: [{ drill: "sprint", status: "down", lastTestDate: "2026-09-16", previousTestDate: "2026-09-09", metrics: [{ key: "sprintCompletionTime", current: 4, previous: 2, direction: "lower", trend: "down" }] }] } };
 describe('all-workout completion counts in the selected period', () => {
   it('uses ending date in the reporting timezone and deduplicates personal/assigned records independently', () => {
     const record = { planId: 'p', workoutId: 'w', startedAt: now - 3600000, endedAt: now - 1000, endReason: 'completed' };
@@ -33,19 +34,19 @@ const render = (value: ExpandedPlayer["performance"] = performance) => renderToS
 describe("authoritative coach player summary", () => {
   it("matches roster standing and follow-up while distinguishing latest test score", () => {
     const html = render();
-    expect(html).toContain("92%"); expect(html).toContain("46%"); expect(html).toContain("▼ −46"); expect(html).not.toContain("999%");
-    expect(html).toContain("best measured results through 2026-09-16"); expect(html).toContain("latest two test dates in UTC");
-    expect(html).toContain("D1 down at least 5 points"); expect(html).not.toContain("missed scheduled sessions");
+    expect(html).not.toContain("D1"); expect(html).not.toContain("No sign-in recorded"); expect(html).toContain("2.00 s"); expect(html).toContain("4.00 s");
+    expect(html).toContain("latest two test dates through the selected end");
+    expect(html).toContain("Recent testing down"); expect(html).not.toContain("missed scheduled sessions");
     expect(html).toContain("Current-plan progress"); expect(html).toContain("Assigned plan · last 14 days"); expect(html).toContain("week 2 of 6");
   });
   it("never replaces absent additive fields with raw current data or no-follow-up claims", () => {
     const html = renderToStaticMarkup(<CoachPlayerOneScreen summary={summary} generatedAtMillis={now} onPrescribe={() => {}} />);
-    for (const label of ["Standing unavailable", "Change unavailable", "Training unavailable", "Follow-up unavailable", "Test summary unavailable"]) expect(html).toContain(label);
+    for (const label of ["Testing trend unavailable", "Training unavailable", "Follow-up unavailable", "Testing summary unavailable"]) expect(html).toContain(label);
     expect(html).not.toContain("999%"); expect(html).not.toContain("No active plan"); expect(html).not.toContain("Nothing flagged"); expect(html).not.toContain("1970");
   });
   it("preserves observed zero/null values and never invents a coach note or retest date", () => {
-    const html = render({ ...performance, d1: 0, change: 0, sessionsDone: 0, sessionsPlanned: 0, needsYouReasons: [] });
-    expect(html).toContain("0%"); expect(html).toContain("Same"); expect(html).toContain("Nothing flagged"); expect(html).toContain("No coach note recorded");
+    const html = render({ ...performance, d1: 0, change: 0, sessionsDone: 0, sessionsPlanned: 0, needsYouReasons: [], coachFocus: { version: 1, completedInPeriod: 1, measuredTests: [] } });
+    expect(html).not.toContain("0%"); expect(html).toContain("Needs comparable tests"); expect(html).toContain("No workout or testing flags"); expect(html).toContain("No coach note recorded");
     expect(html).not.toContain("Generic AI plan description"); expect(html).toContain("Not scheduled");
     expect(render({ ...performance, sessionsPlanned: null })).toContain("Schedule unavailable");
     expect(render({ ...performance, sessionsDone: null })).toContain("Completion unavailable");

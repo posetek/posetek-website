@@ -275,5 +275,5 @@ test("roster cursors reject changed training targets and follow-up ordering", as
   await assert.rejects(service.getClubInsightsV2({ ...orgRequest, pageSize: 1, cursor: first.pagination.nextCursor }, admin), { code: "failed-precondition" });
   const next = await service.getClubInsightsV2({ ...orgRequest, pageSize: 1 }, admin);
   service.db.docs.set("players/a", { ...seed["players/a"], lastLogin: NOW });
-  await assert.rejects(service.getClubInsightsV2({ ...orgRequest, pageSize: 1, cursor: next.pagination.nextCursor }, admin), { code: "failed-precondition" });
+  assert.equal((await service.getClubInsightsV2({ ...orgRequest, pageSize: 1, cursor: next.pagination.nextCursor }, admin)).freshness.complete, true); // Sign-in telemetry no longer changes follow-up or ordering.
 });
