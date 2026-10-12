@@ -188,3 +188,14 @@ ordinary canonical aliases, and a pre-existing unsafe queued job. Full Functions
 plus tracker-packaging regression: **1,029 passed, 3 existing skips, zero failures**
 (1,032 total). This local selector fix does not resolve the external tracker
 completion lifecycle or justify the native automatic/30-day completion wording.
+
+Coach identity review confirms `userUID` is required by the existing admission,
+club-mirror and native signup contracts. Deletion now rejects an
+`authenticationUID`-only coach before acceptance; it also queries that legacy
+field during self/direct-UID discovery so malformed or conflicting coach records
+cannot be silently skipped. Canonical `userUID` and consistent dual-field coaches
+retain their existing behavior. Regression cases verify no job, lock, Auth action
+or media deletion occurs for the unsupported shape. Full Functions plus tracker
+packaging: **1,031 passed, 3 existing skips, zero failures** (1,034 total).
+External tracker completion and the native completion-time wording remain
+unchanged release blockers.

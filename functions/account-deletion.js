@@ -67,7 +67,7 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
   }
   async function identity(tx, uid) {
     const result = { uid, playerIds: [], coachIds: [] };
-    for (const [collection, fields, output] of [["players", ["authenticationUID", "userUID"], "playerIds"], ["coaches", ["userUID"], "coachIds"]]) {
+    for (const [collection, fields, output] of [["players", ["authenticationUID", "userUID"], "playerIds"], ["coaches", ["userUID", "authenticationUID"], "coachIds"]]) {
       const found = new Map();
       for (const field of fields) {
         const matches = await tx.get(db.collection(collection).where(field, "==", uid).limit(51));
@@ -78,6 +78,11 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
       if (direct.exists) found.set(direct.id, direct);
       for (const row of found.values()) {
         const data = row.data();
+        // Coach writers/access contracts require userUID. Query the legacy
+        // alias to detect incomplete identities, never to silently skip them.
+        if (collection === "coaches" && data.userUID !== uid) {
+          fail("failed-precondition", "The coach account identity needs repair.");
+        }
         if (fields.some(field => Object.hasOwn(data, field) && data[field] !== uid)) {
           fail("failed-precondition", "Conflicting account ownership must be repaired before deletion.");
         }
@@ -105,7 +110,7 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
           // Profile aliases become top-level Storage prefixes too. Apply the
           // same reserved-root validation as self and direct-UID requests.
           uid = aliases.length ? id(aliases[0]) : null;
-          if (!uid && data.targetType === "coach") fail("failed-precondition", "The coach account identity needs repair.");
+          if (data.targetType === "coach" && (!uid || p.userUID !== uid)) fail("failed-precondition", "The coach account identity needs repair.");
           if (!uid) {
             if (p.registered === true) fail("failed-precondition", "The registered player identity needs repair.");
             unclaimedPlayer = targetId;

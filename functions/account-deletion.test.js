@@ -312,3 +312,27 @@ test("legacy queued jobs with reserved UID cannot reach Auth or Storage cleanup"
   assert.ok(h.remaining.has("config/shared.mov"));
   assert.equal(h.db.snapshot("accountDeletionJobs/legacy").state, "queued");
 });
+
+test("unsupported authenticationUID-only coaches fail before any partial deletion", async () => {
+  for (const target of [
+    { targetType: "coach", targetId: "legacy" },
+    { targetType: "uid", targetId: "athlete" },
+    {},
+  ]) {
+    const h = harness({ "coaches/legacy": { authenticationUID: "athlete", members: ["other"] } }, ["athlete/private.mov", "other/private.mov"]);
+    await assert.rejects(h.api.request({ ...payload, ...target }, target.targetType ? admin : actor()), { code: "failed-precondition" });
+    assert.deepEqual(h.db.snapshot("coaches/legacy"), { authenticationUID: "athlete", members: ["other"] });
+    assert.ok(h.db.snapshot("players/profile"));
+    assert.equal(h.db.snapshot("players/profile").accountDeletionPending, undefined);
+    assert.equal([...h.db.docs.keys()].some(path => /^(accountDeletionJobs|accountDeletionLocks|playerDeletionLocks|accountDeletionReceipts)\//.test(path)), false);
+    assert.deepEqual(h.authActions, []);
+    assert.deepEqual([...h.remaining], ["athlete/private.mov", "other/private.mov"]);
+  }
+});
+
+test("conflicting coach aliases cannot be silently ignored during self deletion", async () => {
+  const h = harness({ "coaches/legacy": { authenticationUID: "athlete", userUID: "other", members: ["other"] } });
+  await assert.rejects(h.api.request(payload, actor()), { code: "failed-precondition" });
+  assert.equal(h.db.snapshot("players/profile").accountDeletionPending, undefined);
+  assert.deepEqual(h.authActions, []);
+});
