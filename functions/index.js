@@ -83,7 +83,8 @@ exports.closeSocialAccount = functions.runWith({ failurePolicy: true }).auth.use
   }));
 const eraseAccountWarehouse = require("./account-deletion-warehouse").createWarehouseEraser({
   accessToken: async () => (await admin.credential.applicationDefault().getAccessToken()).access_token });
-const accountDeletion = require("./account-deletion").createAccountDeletion({ db, authDirectory: admin.auth(), eraseWarehouse: eraseAccountWarehouse,
+const eraseGatewayStorage = require("./account-deletion-gateway-storage").createGatewayStorageEraser({ db, bucketForName: name => admin.storage().bucket(name) });
+const accountDeletion = require("./account-deletion").createAccountDeletion({ db, authDirectory: admin.auth(), eraseWarehouse: eraseAccountWarehouse, eraseGatewayStorage,
   bucket: admin.storage().bucket("kickai-69dd0.firebasestorage.app"), FieldValue: admin.firestore.FieldValue,
   HttpsError: functions.https.HttpsError });
 exports.requestAccountDeletion = firebaseFunctions.https.onCall((data, context) => accountDeletion.request(data || {}, requireCaller(context)));

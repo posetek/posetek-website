@@ -142,3 +142,10 @@ test("malformed legacy archive source IDs fail closed without deleting unrelated
   await assert.rejects(erase(subject), /Invalid tracker evidence source identity/);
   assert.ok(db.snapshot("issueTrackerEvidence/unrelated-invalid"));
 });
+
+test("empty legacy provider identity cannot erase unrelated malformed mail", async () => {
+  const { db, erase } = fixture({ "userIssueOutbox/owned": { reporterUid: "owner", providerId: "" },
+    "issueTrackerQueue/ambiguous-mail": { message: { id: "unrelated", exactJoin: { type: "providerId", value: "" } } } });
+  await assert.rejects(erase(subject), /Invalid tracker external join/);
+  assert.ok(db.snapshot("issueTrackerQueue/ambiguous-mail"));
+});

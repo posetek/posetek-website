@@ -8,7 +8,7 @@ const payload = { confirmation: "DELETE", receiptToken: token };
 const baseTime = 1800000000000;
 const actor = (uid = "athlete") => ({ uid, authTime: baseTime / 1000, isAnonymous: false });
 const admin = { ...actor("admin"), email: "owner@posetek.net", emailVerified: true };
-function harness(seed = {}, objects = []) {
+function harness(seed = {}, objects = [], eraseGatewayStorage = async () => {}) {
   let time = baseTime, failStorage = false;
   const db = new FakeFirestore({ "config/accountDeletion": { enabled: true, verifiedManifestVersion: 1, warehouseReviewed: true, bigQueryTables: [] },
     "players/profile": { userUID: "athlete", authenticationUID: "athlete", firstName: "A" },
@@ -24,7 +24,7 @@ function harness(seed = {}, objects = []) {
     } }))];
   } };
   const authDirectory = Object.fromEntries(["updateUser", "revokeRefreshTokens", "deleteUser"].map(method => [method, async uid => authActions.push([method, uid])]));
-  const api = createAccountDeletion({ db, FieldValue, HttpsError, bucket, authDirectory, eraseWarehouse: async () => {}, now: () => time });
+  const api = createAccountDeletion({ db, FieldValue, HttpsError, bucket, authDirectory, eraseGatewayStorage, eraseWarehouse: async () => {}, now: () => time });
   return { api, db, remaining, authActions, advance: ms => time += ms, failStorage: value => { failStorage = value; },
     key: () => [...db.docs.keys()].find(p => p.startsWith("accountDeletionJobs/")).split("/")[1] };
 }
@@ -335,4 +335,30 @@ test("conflicting coach aliases cannot be silently ignored during self deletion"
   await assert.rejects(h.api.request(payload, actor()), { code: "failed-precondition" });
   assert.equal(h.db.snapshot("players/profile").accountDeletionPending, undefined);
   assert.deepEqual(h.authActions, []);
+});
+
+
+test("gateway artifact identities survive source deletion and failure for final resweep", async () => {
+  const calls = []; let failJob = true;
+  const h = harness({ "llmJobs/owned-job": { playerId: "profile", uid: "athlete" } }, [], async op => {
+    calls.push(op);
+    if (op.kind === "job" && failJob) throw new Error("private bucket unavailable");
+  });
+  await h.api.request(payload, actor());
+  await assert.rejects(h.api.process(h.key()), /needs retry/);
+  assert.ok(h.db.snapshot("llmJobs/owned-job"), "source identity must survive failed storage erase");
+  assert.deepEqual(h.db.snapshot(`accountDeletionJobs/${h.key()}`).gatewayArtifactJobIds, ["owned-job"]);
+  failJob = false; h.advance(3600000); await h.api.process(h.key());
+  assert.equal(h.db.snapshot("llmJobs/owned-job"), undefined);
+  const count = calls.filter(op => op.kind === "job").length;
+  h.advance(25 * 3600000); await h.api.process(h.key());
+  assert.ok(calls.filter(op => op.kind === "job").length > count, "final sweep must erase late objects after source record is gone");
+  assert.equal(h.db.snapshot(`accountDeletionJobs/${h.key()}`).state, "completed");
+});
+
+test("missing gateway eraser blocks acceptance without creating locks or jobs", async () => {
+  const h = harness();
+  const api = createAccountDeletion({ db: h.db, FieldValue, HttpsError, now: () => baseTime });
+  await assert.rejects(api.request(payload, actor()), { code: "failed-precondition" });
+  assert.equal([...h.db.docs.keys()].some(path => path.startsWith("accountDeletionJobs/") || path.startsWith("accountDeletionLocks/")), false);
 });

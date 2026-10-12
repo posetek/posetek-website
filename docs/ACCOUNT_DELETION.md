@@ -249,3 +249,41 @@ and exercise the complete recovery/worker flow with owned synthetic records.
 The existing Office Script is upsert-only; Graph capture is read-only. Neither
 can perform or prove these external erasures. No automatic hold release is
 exported, and no external operation or scope approval was performed here.
+
+## Separate gateway storage inventory
+
+The Functions worker now requires an explicit `gatewayStorageBuckets` inventory
+under the still-disabled `config/accountDeletion`: nonempty `llmArtifacts` and
+`trainingContexts` bucket-name lists. Include all current and historical buckets
+actually used by gateway `LLM_ARTIFACT_BUCKET` and `TRAINING_CONTEXT_BUCKET`
+(the latter falls back to `POSETEK_STORAGE_BUCKET`). No production values were
+inferred or written. Missing coverage blocks acceptance and sweeps. This syntax
+check does not constitute inventory/retention approval.
+
+`functions/account-deletion-gateway-storage.js` erases live/noncurrent objects
+only beneath exact `llmJobs/<ownedJobId>/` and
+`trainingPlanContexts/<ownedPlayerId>/` prefixes. It never follows record URLs.
+The job IDs are persisted on the deletion job before deleting each source
+`llmJobs` record; retries and the final sweep reuse them to catch late writes.
+A failed storage erase leaves the source record and deletion job retryable.
+The app bucket cleanup remains separate. Scope comes from gateway
+`Services/agent-gateway/main.py` result/trace writers and
+`Services/agent-gateway/gateway/storage.py` context writer in the processor repo.
+
+Operator gates remain: verify current/historical bucket inventory, authorize
+worker access, review retention/versioning/soft-delete expiry for every bucket,
+verify gateway write barriers and owned synthetic late-write cleanup. Artifacts
+whose authoritative job is already absent and has no retained exact join need
+an inventory/linkage procedure; arbitrary bucket-wide searches or URL-following
+are not implemented. No bucket was accessed during these local tests.
+
+Final local validation for archive fencing, bounded recovery and distinct-bucket
+coverage: **1,045 passed, 3 existing skips, zero failures** (1,048 total) across
+`functions/*.test.js` and `deployments/issue-tracker/prepare.test.cjs`.
+Tests include partial/boolean evidence rejection, new-hold race, valid recovery
+followed by repeated non-reholding sweeps, retained mail re-import suppression,
+mixed frozen seed refusal, v2 cutover gating, exact bucket-prefix preservation,
+storage failure before source deletion, durable final resweep after source
+removal, and refusal to accept requests without configured storage coverage.
+These tests use synthetic in-memory stores; they do not establish live inventory,
+provider erasure, retention expiry, permissions or deployment acceptance.

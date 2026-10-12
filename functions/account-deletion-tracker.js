@@ -115,6 +115,8 @@ function createTrackerErasure({ db, now = Date.now }) {
     await discoverGroups("issueTrackerIndexBases");
     await discoverGroups("issueTrackerIndices");
     await scan("issueTrackerBatches", doc => discoverGroups(`${doc.ref.path}/indices`));
+    for (const key of sources) if (!playerSegment(key)) throw new Error("Invalid tracker source join");
+    for (const key of [...emails, ...providers]) if (typeof key !== "string" || !key.trim() || key.length > 4096 || /[\u0000-\u001f]/.test(key)) throw new Error("Invalid tracker external join");
     let touched = prior?.pending === true, held = false;
     async function hold() {
       if (held) return;

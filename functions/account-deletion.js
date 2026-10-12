@@ -40,6 +40,7 @@ for (const root of ["devicePerformanceAttempts", "devicePerformanceRuns", "devic
 const USER_DOCUMENTS = ["admins", "users", "socialPreferences", "socialRateLimits", "admissionAttempts", "insightUsageActors", "aiSharingConsents"];
 
 function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsError,
+  eraseGatewayStorage = async () => { throw new Error("Gateway storage eraser is not configured"); },
   eraseWarehouse = async () => { throw new Error("Warehouse eraser is not configured"); },
   now = () => Date.now(), randomId = () => crypto.randomBytes(16).toString("hex") }) {
   const eraseTracker = require("./account-deletion-tracker").createTrackerErasure({ db, now });
@@ -59,6 +60,7 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
     if (config?.enabled !== true || config?.verifiedManifestVersion !== 1 || config?.warehouseReviewed !== true || !Array.isArray(config?.bigQueryTables)) {
       fail("failed-precondition", "Account deletion is not available yet. Please try again later.");
     }
+    try { await eraseGatewayStorage({ kind: "verify" }); } catch { fail("failed-precondition", "Account deletion storage coverage is not configured."); }
   }
   function recent(caller) {
     if (!caller?.uid || caller.isAnonymous) fail("unauthenticated", "Sign in to continue.");
@@ -162,10 +164,20 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
       for (const file of files) await file.delete({ ignoreNotFound: true });
     }
   }
-  async function eraseRecord(doc) {
+  async function eraseRecord(doc, storageJobRef) {
     const root = doc.ref.path.split("/")[0];
     // Capture paths before deleting their authoritative record; never follow
     // arbitrary storagePath/URL fields into another user's or shared media.
+    if (root === "llmJobs") {
+      const artifactJobId = id(doc.id);
+      if (!storageJobRef) throw new Error("Gateway artifact erasure requires a durable deletion job");
+      await db.runTransaction(async tx => {
+        const job = await tx.get(storageJobRef);
+        if (!job.exists) throw new Error("Missing durable deletion job");
+        tx.update(storageJobRef, { gatewayArtifactJobIds: [...new Set([...(job.data().gatewayArtifactJobIds || []), artifactJobId])] });
+      });
+      await eraseGatewayStorage({ kind: "job", id: artifactJobId });
+    }
     if (root === "failureCases") await erasePrefix(`failure_cases/${id(doc.id)}/`);
     if (root === "processingAttempts") {
       const p = doc.data(), uploader = p.reportedByUid || p.uploadedByUID || p.userUID;
@@ -192,11 +204,11 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
     }
     await erase(doc.ref);
   }
-  async function eraseMatches(collection, field, value, operator = "==") {
+  async function eraseMatches(collection, field, value, operator = "==", storageJobRef) {
     for (;;) {
       const page = await db.collection(collection).where(field, operator, value).limit(100).get();
       if (page.empty) return;
-      for (const doc of page.docs) await eraseRecord(doc);
+      for (const doc of page.docs) await eraseRecord(doc, storageJobRef);
     }
   }
   async function scan(collection, handler) {
@@ -287,16 +299,21 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
     const { uid, playerIds, coachIds } = subject;
     if (uid) id(uid);
     for (const value of [...playerIds, ...coachIds]) id(value);
+    await eraseGatewayStorage({ kind: "verify" });
+    const storageJobRef = jobRef(crypto.createHash("sha256").update(uid ? `uid:${uid}` : `player:${playerIds[0]}`).digest("hex"));
+    const durable = (await storageJobRef.get()).data();
+    for (const artifactJobId of durable?.gatewayArtifactJobIds || []) await eraseGatewayStorage({ kind: "job", id: id(artifactJobId) });
     const tracker = await eraseTracker(subject);
     await detach(subject);
     for (const pid of playerIds) {
-      for (const [collection, fields] of Object.entries(PLAYER_RECORDS)) for (const field of fields) await eraseMatches(collection, field, pid);
+      await eraseGatewayStorage({ kind: "player", id: pid });
+      for (const [collection, fields] of Object.entries(PLAYER_RECORDS)) for (const field of fields) await eraseMatches(collection, field, pid, "==", storageJobRef);
       for (const prefix of [`${pid}/`, `diagnostics/${pid}/`, `trainingPlanContexts/${pid}/`]) await erasePrefix(prefix);
       await erase(db.doc(`insightUsageDays/${pid}`));
       await erase(db.doc(`players/${pid}`));
     }
     if (uid) {
-      for (const [collection, fields] of Object.entries(USER_RECORDS)) for (const field of fields) await eraseMatches(collection, field, uid);
+      for (const [collection, fields] of Object.entries(USER_RECORDS)) for (const field of fields) await eraseMatches(collection, field, uid, "==", storageJobRef);
       await eraseMatches("socialConnections", "participants", uid, "array-contains");
       const issueActorKey = require("./user-issue-model").hash(uid);
       await eraseMatches("userIssueRequestIdentities", "actorKey", issueActorKey);
