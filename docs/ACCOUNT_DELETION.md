@@ -172,3 +172,19 @@ and refusal to complete an account job with unresolved external copies.
 module depends only on Node crypto and the already packaged athlete-path helper.
 The isolated tracker package already includes its deletion-state dependency and
 passed its packaging suite. No release artifact was deployed.
+
+## Reserved identity hardening after independent review
+
+Profile-derived Auth UIDs now pass the same reserved-root validation as self and
+direct UID requests before a job or lock is written. Worker claims and direct
+sweeps revalidate durable subject IDs before Auth or Storage operations, so an
+unsafe job accepted by an older handler cannot erase a reserved root. Existing
+player/coach document IDs already use that validator. Processing-attempt uploader
+aliases remain confined beneath `processing_attempts/<uploader>/<attempt>/` and
+cannot select a top-level shared root.
+
+Player and coach alias regressions cover ten reserved names, both alias fields,
+ordinary canonical aliases, and a pre-existing unsafe queued job. Full Functions
+plus tracker-packaging regression: **1,029 passed, 3 existing skips, zero failures**
+(1,032 total). This local selector fix does not resolve the external tracker
+completion lifecycle or justify the native automatic/30-day completion wording.

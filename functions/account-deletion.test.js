@@ -276,3 +276,39 @@ test("tracker external-copy hold cannot be mistaken for completed account erasur
   assert.equal((await h.api.status({ receiptToken: token })).completedAtMillis, null);
   assert.equal(h.db.snapshot("issueTrackerState/writer").privacyErasurePending, true);
 });
+
+for (const targetType of ["player", "coach"]) test(`${targetType} aliases cannot bypass reserved account-root validation`, async () => {
+  for (const reserved of ["config", "users", "players", "coaches", "admins", "organizations", "teams", "llmJobs", "processing_attempts", "ProfessionalOverlay"]) {
+    for (const alias of ["authenticationUID", "userUID"]) {
+      const path = `${targetType === "player" ? "players" : "coaches"}/target`;
+      const h = harness({ [path]: { [alias]: reserved } }, [`${reserved}/shared.mov`]);
+      await assert.rejects(h.api.request({ ...payload, targetType, targetId: "target" }, admin), { code: "invalid-argument" });
+      assert.deepEqual(h.db.snapshot(path), { [alias]: reserved });
+      assert.equal([...h.db.docs.keys()].some(path => /^(accountDeletionJobs|accountDeletionLocks|playerDeletionLocks|accountDeletionReceipts)\//.test(path)), false);
+      assert.deepEqual(h.authActions, []);
+      assert.ok(h.remaining.has(`${reserved}/shared.mov`));
+    }
+  }
+});
+
+test("ordinary player and coach UID aliases retain exact cleanup scope", async () => {
+  for (const [targetType, aliases] of [["player", { authenticationUID: "target-uid" }], ["player", { userUID: "target-uid" }],
+    ["coach", { userUID: "target-uid" }], ["coach", { userUID: "target-uid", authenticationUID: "target-uid" }]]) {
+    const path = `${targetType === "player" ? "players" : "coaches"}/target`;
+    const h = harness({ [path]: aliases }, ["target-uid/private.mov", "other/private.mov"]);
+    await h.api.request({ ...payload, targetType, targetId: "target" }, admin);
+    assert.equal(h.db.snapshot(`accountDeletionJobs/${h.key()}`).uid, "target-uid");
+    await h.api.process(h.key());
+    assert.equal(h.db.snapshot(path), undefined);
+    assert.deepEqual([...h.remaining], ["other/private.mov"]);
+    assert.deepEqual(h.authActions.map(([method, uid]) => uid), ["target-uid", "target-uid", "target-uid"]);
+  }
+});
+
+test("legacy queued jobs with reserved UID cannot reach Auth or Storage cleanup", async () => {
+  const h = harness({ "accountDeletionJobs/legacy": { uid: "config", playerIds: [], coachIds: [], state: "queued", leaseUntilMillis: 0 } }, ["config/shared.mov"]);
+  await assert.rejects(h.api.process("legacy"), { code: "invalid-argument" });
+  assert.deepEqual(h.authActions, []);
+  assert.ok(h.remaining.has("config/shared.mov"));
+  assert.equal(h.db.snapshot("accountDeletionJobs/legacy").state, "queued");
+});

@@ -102,7 +102,9 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
           if (!target.exists) fail("not-found", "The account no longer exists.");
           const p = target.data(), aliases = [p.authenticationUID, p.userUID].filter(v => v !== undefined);
           if (aliases.some(v => !playerSegment(v)) || new Set(aliases).size > 1) fail("failed-precondition", "Conflicting account ownership must be repaired before deletion.");
-          uid = aliases[0] || null;
+          // Profile aliases become top-level Storage prefixes too. Apply the
+          // same reserved-root validation as self and direct-UID requests.
+          uid = aliases.length ? id(aliases[0]) : null;
           if (!uid && data.targetType === "coach") fail("failed-precondition", "The coach account identity needs repair.");
           if (!uid) {
             if (p.registered === true) fail("failed-precondition", "The registered player identity needs repair.");
@@ -278,6 +280,8 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
   }
   async function sweepSubject(subject) {
     const { uid, playerIds, coachIds } = subject;
+    if (uid) id(uid);
+    for (const value of [...playerIds, ...coachIds]) id(value);
     const tracker = await eraseTracker(subject);
     await detach(subject);
     for (const pid of playerIds) {
@@ -305,6 +309,10 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
       const doc = await tx.get(ref); if (!doc.exists) return null;
       const job = doc.data();
       if (job.state === "completed" || job.leaseUntilMillis > now()) return null;
+      // Revalidate durable jobs before Auth or Storage actions, including jobs
+      // accepted by an older version of the request handler.
+      if (job.uid) id(job.uid);
+      for (const value of [...job.playerIds, ...job.coachIds]) id(value);
       tx.update(ref, { lease, leaseUntilMillis: now() + 10 * 60000, state: "deleting", updatedAtMillis: now() });
       return job;
     });
