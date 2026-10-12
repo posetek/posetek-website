@@ -362,3 +362,19 @@ test("missing gateway eraser blocks acceptance without creating locks or jobs", 
   await assert.rejects(api.request(payload, actor()), { code: "failed-precondition" });
   assert.equal([...h.db.docs.keys()].some(path => path.startsWith("accountDeletionJobs/") || path.startsWith("accountDeletionLocks/")), false);
 });
+
+test("recovery deletion uses exact linked identity and preserves unrelated and unlinked claims", async () => {
+  const h = harness({
+    "accountRecoveryRequests/by-uid": { targetUID: "athlete", claimedEmail: "private@example.test" },
+    "accountRecoveryRequests/by-player": { playerId: "profile", note: "private" },
+    "accountRecoveryRequests/other": { targetUID: "other", playerId: "other", updatedByUID: "athlete", note: "Other account case" },
+    "accountRecoveryRequests/unlinked": { claimedEmail: "private@example.test", claimedName: "A" },
+    "accountAccessTargets/owned": { targetUID: "athlete", activeGrantId: "owned", email: "private@example.test" },
+    "accountAccessTargets/other": { targetUID: "other", activeGrantId: "other" },
+  });
+  await h.api.request(payload, actor()); await h.api.process(h.key());
+  for (const path of ["accountRecoveryRequests/by-uid", "accountRecoveryRequests/by-player", "accountAccessTargets/owned"]) assert.equal(h.db.snapshot(path), undefined);
+  assert.deepEqual(h.db.snapshot("accountRecoveryRequests/other"), { targetUID: "other", playerId: "other", note: "Other account case" });
+  assert.deepEqual(h.db.snapshot("accountRecoveryRequests/unlinked"), { claimedEmail: "private@example.test", claimedName: "A" });
+  assert.deepEqual(h.db.snapshot("accountAccessTargets/other"), { targetUID: "other", activeGrantId: "other" });
+});

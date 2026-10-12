@@ -13,6 +13,7 @@ const RECEIPTS = "accountDeletionReceipts";
 // Exact ownership selectors only. Never match email, names, arbitrary strings,
 // or a media URL supplied by a client. Whole player subtrees are removed too.
 const PLAYER_RECORDS = {
+  accountRecoveryRequests: ["playerId"],
   llmJobs: ["playerId"], llmUsage: ["playerId"], aiIncidents: ["playerId"],
   kickAnalysisQueue: ["playerId", "playerDocumentID"],
   failureCases: ["playerDocumentID"], processingAttempts: ["playerDocumentID"],
@@ -23,13 +24,14 @@ const PLAYER_RECORDS = {
   insightUsageIntervals: ["playerId"], userIssueOccurrences: ["player.id", "contactSnapshot.player.id"],
 };
 const USER_RECORDS = {
+  accountRecoveryRequests: ["targetUID"],
   llmJobs: ["requestedByUid"], llmUsage: ["requestedByUid", "uid"], aiIncidents: ["requestedByUid"],
   failureCases: ["reportedByUid", "uploadedByUID", "userUID"], processingAttempts: ["reportedByUid", "uploadedByUID", "userUID"],
   socialActivities: ["authorUid"], socialReports: ["reporterUid"],
   testingEventInvites: ["createdByUid", "usedByUid"],
   appFeedbackResponsesV1: ["author.uid"],
   clubStaffInvitations: ["claimedByUID", "claimedByUid", "redeemedByUid"],
-  accountAccessGrants: ["targetUID"], accountAccessAudit: ["targetUID", "actorUID"],
+  accountAccessTargets: ["targetUID"], accountAccessGrants: ["targetUID"], accountAccessAudit: ["targetUID", "actorUID"],
   insightUsageIntervals: ["actorUid"], userIssueOccurrences: ["reporterUid", "actorUid", "uid", "contactSnapshot.actorUid"],
   userIssueActors: ["uid"], userIssueOutbox: ["actorUid"],
 };
@@ -188,7 +190,7 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
       await eraseMatches("socialReports", "activityId", doc.id);
     }
     if (root === "appFeedbackResponsesV1") await erase(db.doc(`appFeedbackSessionsV1/${doc.id}`));
-    if (root === "accountAccessGrants") await eraseMatches("accountAccessTargets", "grantId", doc.id);
+    if (root === "accountAccessGrants") for (const field of ["activeGrantId", "grantId"]) await eraseMatches("accountAccessTargets", field, doc.id);
     if (root === "userIssueOccurrences") {
       await eraseMatches("userIssueSourceClaims", "occurrenceId", doc.id);
       await erase(db.doc(`userIssueOutbox/${doc.id}`));
@@ -315,6 +317,12 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
     if (uid) {
       for (const [collection, fields] of Object.entries(USER_RECORDS)) for (const field of fields) await eraseMatches(collection, field, uid, "==", storageJobRef);
       await eraseMatches("socialConnections", "participants", uid, "array-contains");
+      await scan("accountRecoveryRequests", async request => {
+        await db.runTransaction(async tx => {
+          const fresh = await tx.get(request.ref);
+          if (fresh.data()?.updatedByUID === uid) tx.update(request.ref, { updatedByUID: FieldValue.delete() });
+        });
+      });
       const issueActorKey = require("./user-issue-model").hash(uid);
       await eraseMatches("userIssueRequestIdentities", "actorKey", issueActorKey);
       await scan("userIssueDays", day => erase(day.ref.collection("actors").doc(issueActorKey)));

@@ -2,6 +2,7 @@
 
 const crypto = require("node:crypto");
 const { isClubAdmin, activeMember } = require("./club-access");
+const { deletionLocked } = require("./account-deletion-state");
 const { playerSegment } = require("./athlete-storage-paths");
 
 const REQUEST_RETENTION_MS = 90 * 86400000;
@@ -30,8 +31,12 @@ function createAccountRecovery({ db, authDirectory, HttpsError, actor, now = Dat
     return value.trim();
   };
   const read = (ref, tx) => tx ? tx.get(ref) : ref.get();
+  async function assertActive(subject, tx) {
+    if (await deletionLocked(db, tx, { uid: subject?.targetUID || subject?.uid, playerId: subject?.playerId, actorUid: subject?.createdByUID }) || await deletionLocked(db, tx, { uid: subject?.updatedByUID })) fail("failed-precondition", "This account is being deleted.");
+  }
   async function caller(auth) {
     const current = await actor(auth);
+    await assertActive(current);
     if (isClubAdmin(current) && !isClubAdmin(auth)) fail("permission-denied", "Refresh your administrator sign-in before managing recovery.");
     return current;
   }
@@ -79,6 +84,7 @@ function createAccountRecovery({ db, authDirectory, HttpsError, actor, now = Dat
     const fields = ["authenticationUID", "userUID"].filter(field => Object.hasOwn(player, field));
     const uid = fields.length ? player[fields[0]] : null;
     if (!playerSegment(uid) || fields.some(field => player[field] !== uid)) fail("failed-precondition", "This player must have one confirmed account link. Ask PoseTek to review it.");
+    await assertActive({ targetUID: uid, playerId, createdByUID: current.uid }, tx);
     if ((await uniquePlayer(uid, tx)).id !== playerId) fail("failed-precondition", "This player's account link needs PoseTek review.");
     let user;
     try { user = userOverride?.uid === uid ? userOverride : await authDirectory.getUser(uid); }
@@ -98,6 +104,7 @@ function createAccountRecovery({ db, authDirectory, HttpsError, actor, now = Dat
     return { current, target: await playerTarget(data, current) };
   }
   async function validateGrantScope(g, tx, issuerOverride, userOverride) {
+    await assertActive(g, tx);
     if (g.recoveryScope !== SCOPE) return;
     const issuer = issuerOverride || await authDirectory.getUser(g.createdByUID);
     if (issuer.disabled) fail("permission-denied", "The recovery issuer is no longer authorized.");
@@ -146,6 +153,9 @@ function createAccountRecovery({ db, authDirectory, HttpsError, actor, now = Dat
     const key = requestId(input.requestId), email = address(input.email), claims = { claimedEmail: email, claimedName: text(input.name, 100), claimedOrganizationName: text(input.organizationName, 100), contact: text(input.contact, 300) };
     const fingerprint = hash(JSON.stringify(claims)), ref = requestRef(key), route = await routeClaim(email);
     await db.runTransaction(async tx => {
+      // Public intake remains non-enumerating. A route resolved before deletion
+      // must not recreate private linked requests/audit after the cleanup sweep.
+      if (await deletionLocked(db, tx, { uid: route.targetUID, playerId: route.playerId })) return;
       const previous = (await tx.get(ref)).data();
       if (previous) {
         if (previous.inputFingerprint !== fingerprint || previous.expiresAtMillis <= now()) fail("already-exists", "This request reference has already been used. Start a new request.");
@@ -204,6 +214,7 @@ function createAccountRecovery({ db, authDirectory, HttpsError, actor, now = Dat
     await db.runTransaction(async tx => {
       const r = (await tx.get(ref)).data();
       if (!r || r.expiresAtMillis <= now()) fail("not-found", "This recovery request is no longer available.");
+      await assertActive({ ...r, updatedByUID: current.uid }, tx);
       await requestAuthority(r, current, tx);
       if (data.organizationId && data.organizationId !== r.organizationId && !(isClubAdmin(current) && data.playerId && !r.grantId)) fail("permission-denied", "This request belongs to another organization.");
       if (r.updatedAtMillis !== data.expectedUpdatedAtMillis) fail("aborted", "This request changed. Refresh it before updating.");
@@ -221,7 +232,7 @@ function createAccountRecovery({ db, authDirectory, HttpsError, actor, now = Dat
     const doc = await ref.get(), grant = doc.data().grantId ? (await db.doc(`accountAccessGrants/${doc.data().grantId}`).get()).data() : null;
     return { request: requestRow(doc, grant) };
   }
-  return { inspectPlayerRecovery, preparePlayerRecovery, validateGrantScope, manager, prepareIssuedRequest, writeIssuedRequest, submitAccountRecoveryRequest, listAccountRecoveryRequests, updateAccountRecoveryRequest, requestRow, fresh, SCOPE };
+  return { assertActive, inspectPlayerRecovery, preparePlayerRecovery, validateGrantScope, manager, prepareIssuedRequest, writeIssuedRequest, submitAccountRecoveryRequest, listAccountRecoveryRequests, updateAccountRecoveryRequest, requestRow, fresh, SCOPE };
 }
 
 module.exports = { createAccountRecovery, REQUEST_RETENTION_MS, REQUEST_WINDOW_MS, SCOPE };

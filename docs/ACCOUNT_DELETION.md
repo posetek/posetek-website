@@ -287,3 +287,30 @@ storage failure before source deletion, durable final resweep after source
 removal, and refusal to accept requests without configured storage coverage.
 These tests use synthetic in-memory stores; they do not establish live inventory,
 provider erasure, retention expiry, permissions or deployment acceptance.
+
+## Upstream recovery integration after main merge
+
+The October 12 source merge added organization-assisted account recovery.
+Deletion now removes `accountRecoveryRequests` only by exact `targetUID` or
+`playerId`, removes exact target-bound `accountAccessTargets`, and recognizes
+both current `activeGrantId` and legacy `grantId` joins. A request concerning a
+different athlete retains its case content while the deleted staff member's
+exact `updatedByUID` attribution is removed. Unlinked claimed names/emails are
+not ownership proof and remain governed by recovery retention/review.
+
+Recovery intake rechecks a resolved target's deletion locks inside its write
+transaction and preserves its generic public response when suppressing a stale
+route. Recovery target validation, issuance, updates and shared access-grant
+commit checks reject deleting targets/actors; the scoped recovery package
+includes the common deletion-state dependency. Regression coverage includes a
+lock appearing after route/target resolution, no late request/audit/grant write,
+exact target cleanup, and unrelated/unlinked record preservation.
+
+Merged-source validation: Functions plus tracker and recovery Node packaging
+suites **1,100 passed, 3 existing skips, zero failures** (1,103 total); recovery
+Python packaging/operation contract tests **36 passed**. Targeted recovery/access
+frontend tests **72 passed** and privacy/support tests **15 passed** using a
+standalone local Vitest test configuration. The ordinary Vite configuration
+could not start because the shared installed dependencies lack
+`@sveltejs/vite-plugin-svelte`; no dependencies were installed and this does not
+claim full frontend build/CI acceptance. No deployment or live data action ran.
