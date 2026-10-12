@@ -215,7 +215,7 @@ export default function PrivacyPage() {
         <PolicySection id="your-choices-and-rights">
           <ul>
             <li><strong>Access and correction.</strong> You can view and update most account and profile information in the app.</li>
-            <li><strong>Delete your account.</strong> Open Account settings → Delete account in the app to request automatic deletion of your account and associated data, including training videos. Confirm your identity and the permanent deletion. You can check completion using the deletion receipt on the sign-in screen. You may also contact <ContactEmail /> for help; email is not required to use in-app deletion. Deletion is permanent.</li>
+            <li><strong>Delete your account.</strong> Open Account settings → Delete account in the app to request deletion of your account and associated data, including training videos. Confirm your identity and the permanent deletion. You can check completion using the deletion receipt on the sign-in screen. You may also contact <ContactEmail /> for help; email is not required to use in-app deletion. Deletion is permanent.</li>
             <li><strong>Permissions.</strong> You can turn off camera and photo library access in your device settings. Some features will not work without camera access.</li>
             <li><strong>Club connection.</strong> You can ask to disconnect from a club, which ends that club's access to the player's information going forward.</li>
           </ul>
