@@ -42,6 +42,7 @@ const USER_DOCUMENTS = ["admins", "users", "socialPreferences", "socialRateLimit
 function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsError,
   eraseWarehouse = async () => { throw new Error("Warehouse eraser is not configured"); },
   now = () => Date.now(), randomId = () => crypto.randomBytes(16).toString("hex") }) {
+  const eraseTracker = require("./account-deletion-tracker").createTrackerErasure({ db, now });
   const fail = (code, message) => { throw new HttpsError(code, message); };
   const id = value => playerSegment(value) && !RESERVED_ROOTS.has(value) ? value : fail("invalid-argument", "Choose a valid account.");
   const jobRef = key => db.collection(JOBS).doc(key);
@@ -277,6 +278,7 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
   }
   async function sweepSubject(subject) {
     const { uid, playerIds, coachIds } = subject;
+    const tracker = await eraseTracker(subject);
     await detach(subject);
     for (const pid of playerIds) {
       for (const [collection, fields] of Object.entries(PLAYER_RECORDS)) for (const field of fields) await eraseMatches(collection, field, pid);
@@ -294,6 +296,7 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
       for (const prefix of [`${uid}/`, `processing_attempts/${uid}/`, `kicking-analysis/${uid}/`, `diagnostics/${uid}/`]) await erasePrefix(prefix);
     }
     for (const cid of coachIds) await erase(db.doc(`coaches/${cid}`));
+    return tracker;
   }
   async function process(key) {
     await enabled();
@@ -313,9 +316,10 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
           await authDirectory.revokeRefreshTokens(subject.uid);
         } catch (e) { if (e.code !== "auth/user-not-found") throw e; }
       }
-      await sweepSubject(subject);
+      const tracker = await sweepSubject(subject);
       const coverage = (await db.doc("config/accountDeletion").get()).data();
       await eraseWarehouse(subject.playerIds, coverage.bigQueryTables);
+      if (tracker.pending) throw new Error("Tracker external erasure and reconciliation required");
       if (subject.uid) {
         try { await authDirectory.deleteUser(subject.uid); }
         catch (e) { if (e.code !== "auth/user-not-found") throw e; }

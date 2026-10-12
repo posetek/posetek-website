@@ -259,3 +259,20 @@ test("an active worker lease prevents overlapping cleanup and an expired lease i
   assert.equal((await h.api.status({ receiptToken: token })).state, "verifying");
   assert.notEqual(h.db.snapshot(`accountDeletionJobs/${h.key()}`).lease, "old-worker");
 });
+
+test("tracker external-copy hold cannot be mistaken for completed account erasure", async () => {
+  const h = harness({
+    "userIssueOccurrences/report": { reporterUid: "athlete" },
+    "issueTrackerRows/row": { group: "instances", key: "report", value: { values: { "Recorded actor UID": "athlete", "User who acted / reported": "Private name" } } },
+  });
+  await h.api.request(payload, actor());
+  await assert.rejects(h.api.process(h.key()), /cleanup needs retry/);
+  assert.equal(h.db.snapshot("issueTrackerRows/row"), undefined);
+  assert.equal(h.db.snapshot("players/profile"), undefined);
+  assert.equal((await h.api.status({ receiptToken: token })).state, "retrying");
+  assert.equal(h.authActions.some(([method]) => method === "deleteUser"), false);
+  h.advance(86400001);
+  await assert.rejects(h.api.process(h.key()), /cleanup needs retry/);
+  assert.equal((await h.api.status({ receiptToken: token })).completedAtMillis, null);
+  assert.equal(h.db.snapshot("issueTrackerState/writer").privacyErasurePending, true);
+});
