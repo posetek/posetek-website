@@ -1,0 +1,33 @@
+html,body { margin:0; background:#04130e; color:#f2f7f4; font-family:Inter,system-ui,sans-serif; }
+* { box-sizing:border-box; }
+.coach-join-page { max-width:600px; margin:0 auto; padding:28px 24px max(40px,env(safe-area-inset-bottom)); }
+.coach-join-brand { display:inline-flex; align-items:center; min-height:44px; color:#bbef28; font-size:22px; font-weight:800; text-decoration:none; margin-bottom:28px; }
+.coach-join-card { padding:30px; border:1px solid #305747; border-radius:18px; background:#0b281d; }
+.coach-join-card h1 { font-size:30px; line-height:1.18; margin:0 0 14px; letter-spacing:-.035em; text-wrap:balance; }
+.coach-join-card p { line-height:1.55; margin:0 0 18px; }
+.coach-join-intro { color:#c6d7cd; }
+.coach-invite-scope { border-left:3px solid #bbef28; padding:6px 0 6px 17px; margin:26px 0; }
+.coach-invite-scope .coach-invite-label { font-size:14px; color:#bbef28; font-weight:700; margin:0 0 7px; }
+.coach-invite-scope h2 { font-size:19px; line-height:1.35; margin:0; text-wrap:balance; }
+.coach-invite-scope ul { padding-left:19px; margin:10px 0; line-height:1.55; }
+.coach-invite-scope p:last-child { margin:0; font-size:13px; color:#c6d7cd; }
+.coach-join-mode,.coach-join-fields { padding:0; margin:0; border:0; min-width:0; }
+.coach-join-mode { display:flex; gap:10px; flex-wrap:wrap; margin:0 0 24px; }
+.coach-join-mode legend { margin-bottom:8px; font-size:14px; font-weight:600; }
+.coach-join-mode label { display:flex; align-items:center; gap:8px; min-height:44px; font-size:14px; cursor:pointer; padding:7px 10px; border:1px solid #3d5b4c; border-radius:8px; }
+.coach-join-mode label:has(:checked) { border-color:#bbef28; color:#bbef28; }
+.coach-join-mode input { accent-color:#bbef28; width:17px; height:17px; }
+.coach-join-fields label { display:flex; flex-direction:column; gap:8px; font-size:14px; font-weight:600; margin-bottom:18px; min-width:0; }
+.coach-join-fields input { width:100%; min-height:48px; border:1px solid #466354; border-radius:9px; background:#041b12; color:#f2f7f4; font:inherit; padding:12px; }
+.coach-join-names { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.coach-join-primary { display:flex; width:100%; align-items:center; justify-content:center; gap:12px; min-height:50px; border:0; border-radius:9px; background:#bbef28; color:#122500; font:700 16px Inter,system-ui,sans-serif; text-decoration:none; padding:12px 16px; cursor:pointer; }
+.coach-join-primary:hover { background:#cafa50; }
+.coach-join-primary:disabled { opacity:.65; cursor:wait; }
+.coach-join-card .coach-join-hint,.coach-join-card .coach-join-note { font-size:13px; color:#c6d7cd; }
+.coach-join-note { margin-top:18px!important; }
+.coach-join-error { background:#38251c; border:1px solid #b28670; border-radius:8px; padding:13px; overflow-wrap:anywhere; }
+.coach-join-help { display:inline-flex; color:#c6d7cd; font-size:14px; min-height:44px; align-items:center; margin-top:18px; text-underline-offset:4px; }
+.coach-join-page :focus-visible { outline:2px solid #bbef28; outline-offset:4px; }
+.coach-join-visually-hidden { position:absolute; width:1px; height:1px; clip-path:inset(50%); overflow:hidden; }
+@media(max-width:480px) { .coach-join-page { padding:16px 18px max(28px,env(safe-area-inset-bottom)); } .coach-join-brand { margin-bottom:14px; } .coach-join-card { padding:22px 18px; } .coach-join-card h1 { font-size:28px; } }
+@media(max-width:370px) { .coach-join-names { grid-template-columns:1fr; gap:0; } }

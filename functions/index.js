@@ -7,6 +7,7 @@ const { playerSegment, storageFolderCandidates } = require("./athlete-storage-pa
 admin.initializeApp();
 const db = admin.firestore();
 const functions = require("./account-deletion-barrier").withAccountDeletionBarrier(firebaseFunctions, db);
+Object.assign(exports, require("./coach-enrollment-entrypoints").createCoachEnrollmentEntrypoints(functions, admin, requireCaller));
 Object.assign(exports, require("./device-processing").createDeviceProcessingEntrypoints(functions, admin, requireCaller));
 
 // Feedback keeps legacy/visitor responses anonymous and verifies account-mode submissions.
