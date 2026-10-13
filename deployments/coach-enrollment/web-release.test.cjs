@@ -3,6 +3,11 @@ const {effectiveConfig,compareCoachConfig,preserveBefore}=require('./web-release
 test('coach release adds exactly the two aliases and its own security headers',()=>{
   const old=effectiveConfig(cp.execFileSync('git',['show','1f9f533:netlify.toml'])),next=effectiveConfig(fs.readFileSync('netlify.toml'));
   compareCoachConfig(old,next);
+  const generated=structuredClone(next);
+  for(const row of generated.redirects.filter(row=>row.from.startsWith('/coach-join'))) Object.assign(row,{force:false,query:{},conditions:{},headers:{}});
+  compareCoachConfig(old,generated);
+  const forced=structuredClone(generated);forced.redirects.find(row=>row.from==='/coach-join').force=true;assert.throws(()=>compareCoachConfig(old,forced));
+  const conditional=structuredClone(generated);conditional.redirects.find(row=>row.from==='/coach-join').conditions={Role:['admin']};assert.throws(()=>compareCoachConfig(old,conditional));
   const bad=structuredClone(next);bad.redirects.find(row=>row.from==='/coach-join').to='/application.html';assert.throws(()=>compareCoachConfig(old,bad));
   const changed=structuredClone(next);changed.headers.find(row=>row.for==='/feedback*').values['Referrer-Policy']='unsafe-url';assert.throws(()=>compareCoachConfig(old,changed));
   const broad=structuredClone(next);broad.redirects.unshift({from:'/admin',to:'/coach-join.html',status:200});assert.throws(()=>compareCoachConfig(old,broad));

@@ -94,7 +94,13 @@ function compareCoachConfig(before, after) {
   const expected = {"redirects":[{"from":"/coach-join","to":"/coach-join.html","status":200},{"from":"/coach-join/","to":"/coach-join.html","status":200}],"headers":[{"for":"/coach-join*","values":{"Cache-Control":"no-cache, no-store, must-revalidate","Referrer-Policy":"no-referrer","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Content-Security-Policy":"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://us-central1-kickai-69dd0.cloudfunctions.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; img-src 'self' data:; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"}}]};
   const redirects = after.redirects.filter(row => expected.redirects.some(allowed => row.from === allowed.from));
   const headers = after.headers.filter(row => row.for === '/coach-join*');
-  requireThat(digest({redirects,headers}) === digest(expected), 'Coach entry configuration is not the exact narrow addition');
+  const normalized = redirects.map(row => {
+    const result = {...row};
+    if (result.force === false) delete result.force;
+    for (const key of ['query','conditions','headers']) if (digest(result[key]) === digest({})) delete result[key];
+    return result;
+  });
+  requireThat(digest({redirects:normalized,headers}) === digest(expected), 'Coach entry configuration is not the exact narrow addition');
   requireThat(!before.redirects.some(row => expected.redirects.some(allowed => row.from === allowed.from)) && !before.headers.some(row => row.for === '/coach-join*'), 'This release must add an isolated coach entry');
   requireThat(digest(before) === digest({redirects:after.redirects.filter(row => !redirects.includes(row)),headers:after.headers.filter(row => !headers.includes(row))}), 'Existing route or header configuration changed');
 }
