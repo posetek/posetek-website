@@ -97,7 +97,7 @@ function compareCoachConfig(before, after) {
   const normalized = redirects.map(row => {
     const result = {...row};
     if (result.force === false) delete result.force;
-    for (const key of ['query','conditions','headers']) if (digest(result[key]) === digest({})) delete result[key];
+    for (const key of ['query','conditions','headers']) if (Object.hasOwn(result,key) && digest(result[key]) === digest({})) delete result[key];
     return result;
   });
   requireThat(digest({redirects:normalized,headers}) === digest(expected), 'Coach entry configuration is not the exact narrow addition');
