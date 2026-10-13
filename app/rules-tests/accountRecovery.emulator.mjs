@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, setLogL
 
 setLogLevel('silent');
 const env = await initializeTestEnvironment({ projectId: 'demo-account-recovery', firestore: firestoreEmulator() });
-const roots = ['accountRecoveryRequests', 'accountRecoveryRequestRateLimits', 'accountAccessGrants', 'accountAccessTargets', 'accountAccessRateLimits', 'accountAccessAudit'];
+  const roots = ['accountRecoveryRequests', 'accountRecoveryRequestRateLimits', 'accountAccessGrants', 'accountAccessTargets', 'accountAccessRateLimits', 'accountAccessAudit', 'coachEnrollmentLinks'];
 let checks = 0;
 try {
   await env.withSecurityRulesDisabled(async context => {

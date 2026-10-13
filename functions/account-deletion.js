@@ -31,6 +31,7 @@ const USER_RECORDS = {
   testingEventInvites: ["createdByUid", "usedByUid"],
   appFeedbackResponsesV1: ["author.uid"],
   clubStaffInvitations: ["claimedByUID", "claimedByUid", "redeemedByUid"],
+  coachEnrollmentLinks: ["createdByUID", "claimedByUID", "revokedByUID"],
   accountAccessTargets: ["targetUID"], accountAccessGrants: ["targetUID"], accountAccessAudit: ["targetUID", "actorUID"],
   insightUsageIntervals: ["actorUid"], userIssueOccurrences: ["reporterUid", "actorUid", "uid", "contactSnapshot.actorUid"],
   userIssueActors: ["uid"], userIssueOutbox: ["actorUid"],

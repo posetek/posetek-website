@@ -40,6 +40,17 @@ test("self request binds canonical profile IDs and receipt exposes no identity",
   assert.equal(JSON.stringify([...h.db.docs.values()]).includes(token), false);
   await assert.rejects(h.api.status({ receiptToken: "b".repeat(64) }), { code: "not-found" });
 });
+test("held deletion worker source erases coach invitation issuer and claimant records without touching others", async () => {
+  const h = harness({
+    "coachEnrollmentLinks/issued": { createdByUID: "athlete" },
+    "coachEnrollmentLinks/claimed": { claimedByUID: "athlete" },
+    "coachEnrollmentLinks/revoked": { revokedByUID: "athlete" },
+    "coachEnrollmentLinks/other": { createdByUID: "other", claimedByUID: "other" },
+  });
+  await h.api.request(payload, actor()); await h.api.process(h.key());
+  for (const name of ["issued", "claimed", "revoked"]) assert.equal(h.db.snapshot(`coachEnrollmentLinks/${name}`), undefined);
+  assert.deepEqual(h.db.snapshot("coachEnrollmentLinks/other"), { createdByUID: "other", claimedByUID: "other" });
+});
 test("players and coaches cannot submit a target, unverified admin cannot impersonate admin", async () => {
   for (const caller of [actor(), actor("coach"), { ...admin, emailVerified: false }]) {
     const h = harness();

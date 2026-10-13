@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "release": "Private coach invitations with recipient-entered account details",
+  "status": "production-verified",
+  "website": "https://posetek.net",
+  "deploymentId": "6ace0ad29778ccacfb979dda",
+  "previousDeploymentId": "6acd3e31cae1c1af33af3d3e",
+  "sourceCommit": "8eaf3ffd35848c3cf7ca753cc9fd4030cc4fb524",
+  "applicationRuntimeSource": "139162a04a1aa2afefda78c62bf2715d9667acbc",
+  "sourceBranch": "codex/coach-enrollment-links",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/57",
+  "publishedAt": "2026-10-13T11:21:09.462Z",
+  "verifiedAt": "2026-10-13T11:21:21.726Z",
+  "artifactFiles": 1973,
+  "providerFiles": 1974,
+  "preservedPredecessorArtifacts": 1968,
+  "addedFiles": 5,
+  "addedRuntimeAssets": 4,
+  "artifactInventorySha256": "2709fbeaa905f3ca1efac12166c7275e9fdc1208f58b360e07387189e8acfe51",
+  "providerInventorySha256": "2552a18010058d81157be5dc1e2247d4d073569602ae505741815228d9d56837",
+  "exactReviewedDraftPromoted": true,
+  "supersededDraftPublished": false,
+  "previousApplicationEntryUnchanged": true,
+  "existingConfigurationPreserved": true,
+  "addedConfiguration": "Two coach-join aliases and dedicated security headers only",
+  "primaryHostRouteChecks": 27,
+  "protectedBaselineFiles": 1971,
+  "ordinaryPreservationBuildPassed": true,
+  "behavior": {
+    "nameAndEmailSuppliedByRecipient": true,
+    "fixedRole": "coach",
+    "membershipAndLinkConsumptionAtomic": true,
+    "privateSingleUseDays": 7,
+    "secretTransport": "URL fragment consumed before imports; page memory only; server stores hash",
+    "newAndExistingUnlinkedPasswordAccounts": true,
+    "noVerificationEmailRequired": true,
+    "existingBoundActivationRecoveryUnchanged": true,
+    "existingPlayerOrOrganizationConflictsPreserved": true,
+    "namesDoNotVerifyIdentity": true,
+    "normalSignInAfterActivationVerified": true
+  },
+  "backend": {
+    "sourceCommit": "6a98d362ef8eb7bb46aa7e51cf341ca458b9b3de",
+    "functions": {
+      "createCoachEnrollmentLink": {
+        "versionId": "1",
+        "sourceSha256": "2e3e3f5fcc7d18f29a4b2ce3fde048e72675d711c4088d9b0bfbfbd4687afa1d",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "httpsTrigger": true,
+          "callable": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "secrets": []
+        },
+        "iamSha256": "8da611a485b2f08e83839e519b53aea5aeba620817f59c46965a782cbd70e51c",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "inspectCoachEnrollmentLink": {
+        "versionId": "1",
+        "sourceSha256": "2e3e3f5fcc7d18f29a4b2ce3fde048e72675d711c4088d9b0bfbfbd4687afa1d",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "30s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "httpsTrigger": true,
+          "callable": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "secrets": []
+        },
+        "iamSha256": "25a8d917cb356a06ea8dfb78fd0a35b4cbbf4d3f08252a436d90a0feb7c065a8",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "claimCoachEnrollmentLink": {
+        "versionId": "1",
+        "sourceSha256": "2e3e3f5fcc7d18f29a4b2ce3fde048e72675d711c4088d9b0bfbfbd4687afa1d",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "httpsTrigger": true,
+          "callable": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "secrets": []
+        },
+        "iamSha256": "adc632fdc8d693834dddc685b5344f530ae645bb52e3dedbef774f75236da49c",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "listCoachEnrollmentLinks": {
+        "versionId": "1",
+        "sourceSha256": "2e3e3f5fcc7d18f29a4b2ce3fde048e72675d711c4088d9b0bfbfbd4687afa1d",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "httpsTrigger": true,
+          "callable": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "secrets": []
+        },
+        "iamSha256": "afc8253dbb5c03bc679ea2a4d5515887aab87d31c5bfe57c94d0ac7e40ff2f48",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      },
+      "revokeCoachEnrollmentLink": {
+        "versionId": "1",
+        "sourceSha256": "2e3e3f5fcc7d18f29a4b2ce3fde048e72675d711c4088d9b0bfbfbd4687afa1d",
+        "status": "ACTIVE",
+        "definition": {
+          "timeout": "60s",
+          "availableMemoryMb": 256,
+          "maxInstances": 5,
+          "httpsTrigger": true,
+          "callable": true,
+          "publicInvoker": true,
+          "ingressSettings": "ALLOW_ALL",
+          "secrets": []
+        },
+        "iamSha256": "51ffd32db1d0d2fc551f80509651946545c3fee73f6a98d2ab1bcf180593da25",
+        "runtimeConfig": {
+          "present": true,
+          "sha256": "5a516fc06a04d088f5327cb214c34742e486eaf4177d6de992e2c7a6f30bfe72",
+          "bytes": 112,
+          "schema": "firebase-project-and-bucket"
+        }
+      }
+    },
+    "runtime": "nodejs22",
+    "generation": "GEN_1",
+    "exactRuntimeClosureVerified": true,
+    "sourceConfigurationAndIamVerified": true,
+    "unrelatedFunctionCount": 130,
+    "allUnrelatedFunctionsUnchanged": true
+  },
+  "verification": {
+    "frontendTests": 1956,
+    "frontendTestFiles": 171,
+    "backendAndReleaseChecks": 150,
+    "packagingTests": 2,
+    "additionalAstroReleaseGuards": 14,
+    "publisherGuards": 2,
+    "typeScriptPassed": true,
+    "canonicalPublishedRulesAssertions": 280,
+    "canonicalPublishedRulesReleases": {
+      "firestore": "98313b3d-047d-471f-afdd-641145692f0a",
+      "storage": "17f98163-14a5-4511-9cab-105efde45bee"
+    },
+    "liveBackendChecks": 8,
+    "candidateBrowserChecks": 15,
+    "productionBrowserChecks": 13,
+    "productionNormalSignInChecks": 2,
+    "candidateCaptures": 5,
+    "productionCaptures": 5,
+    "browserErrors": 0,
+    "viewportWidths": [
+      360,
+      390,
+      430,
+      1440
+    ]
+  },
+  "cleanup": {
+    "verified": true,
+    "independentImplementation": true,
+    "delayedReadbackSeconds": 115,
+    "syntheticAccountsRemoved": 9,
+    "syntheticOrganizationsRemoved": 2,
+    "syntheticTeamsRemoved": 3,
+    "syntheticPlayersRemoved": 3,
+    "syntheticEnrollmentLinksRemoved": 8,
+    "readbackChecks": 441,
+    "residue": 0,
+    "noStorageOrWorkoutFixturesCreated": true,
+    "sharedOperationalRateCountersRetainOrdinaryTtl": true,
+    "temporaryCredentialFilesRemoved": true
+  },
+  "privateHandoff": {
+    "linksIssued": 3,
+    "verifiedUnusedAtHandoff": true,
+    "scopes": [
+      {
+        "label": "Coach Rob",
+        "organization": "Vacaville United Soccer Club",
+        "teams": [
+          "Boys \u2014 Coach Rob"
+        ],
+        "status": "pending",
+        "expiresAtMillis": 1792496619713
+      },
+      {
+        "label": "Coach Daniel",
+        "organization": "Vacaville United Soccer Club",
+        "teams": [
+          "Girls-Coach Daniel"
+        ],
+        "status": "pending",
+        "expiresAtMillis": 1792496671738
+      },
+      {
+        "label": "Coach Niall",
+        "organization": "Vacaville United Soccer Club",
+        "teams": [
+          "Boys \u2014 Coach Niall",
+          "Girls \u2014 Coach Niall"
+        ],
+        "status": "pending",
+        "expiresAtMillis": 1792496674417
+      }
+    ],
+    "normalAdminPasswordSignInUsed": true,
+    "separateEmailsSentToUser": 3,
+    "recipient": "dylank@posetek.net",
+    "mailboxReadbackConfirmed": true,
+    "rawLinksExcludedFromReleaseRecords": true,
+    "realCoachAccountCreationOrRedemptionClaimed": false
+  },
+  "preserved": {
+    "oldApplicationAndAssetsExact": true,
+    "approvedMarketingFeedbackAndIconsExact": true,
+    "canonicalMembershipAndSocialBoundaries": true,
+    "coachFollowUpAndAthleteTimerReleases": true,
+    "rulesIndexesGatewayCatalogNativeNotDeployed": true,
+    "heldAppStorePrivacyAndAccountDeletionSourceRetainedUnpublished": true,
+    "allExistingContentAndNativeAcceptanceGates": true
+  }
+}

@@ -108,6 +108,57 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
       }, { merge: true });
     }
   }
+  // Private in-process capabilities for recipient-completed coach invitations.
+  // The callable cannot choose a role or write authority through client data.
+  async function coachEnrollmentScope(tx, data, issuer) {
+    const state = await readClub(tx, data?.organizationId, issuer);
+    const assigned = teamIds(data?.teamIds || []);
+    requireTeams(state, assigned);
+    return { state, teamIds: assigned, organizationName: state.org.name,
+      teamNames: state.teams.filter(team => assigned.includes(team.id)).map(team => team.name) };
+  }
+  async function claimCoachEnrollmentMembership(tx, scope, auth, profile, enrollmentId) {
+    authRequired(auth);
+    const { state, teamIds: assigned } = scope;
+    const address = email(auth.email);
+    if (/^[^@]+@posetek\.net$/i.test(address)) fail("permission-denied", "PoseTek company accounts cannot claim a coach invitation.");
+    const firstName = text(profile?.firstName, "first name"), lastName = text(profile?.lastName, "last name");
+    if (state.members.length >= MAX_STAFF || state.members.some(m => m.userUID === auth.uid || String(m.email).toLowerCase() === address)) {
+      fail("already-exists", "This account already has staff access, or this club is full. Use your existing sign-in or contact PoseTek.");
+    }
+    const coachRef = db.collection("coaches").doc(auth.uid);
+    const [coach, aliases, players, playerAliases, directPlayer, organizations, invitations, target] = await Promise.all([
+      tx.get(coachRef), tx.get(db.collection("coaches").where("userUID", "==", auth.uid).limit(2)),
+      tx.get(db.collection("players").where("authenticationUID", "==", auth.uid).limit(1)),
+      tx.get(db.collection("players").where("userUID", "==", auth.uid).limit(1)), tx.get(db.doc(`players/${auth.uid}`)),
+      tx.get(db.collection("organizations").where("memberUIDs", "array-contains", auth.uid).limit(1)),
+      tx.get(db.collection("clubStaffInvitations").where("email", "==", address).limit(201)),
+      tx.get(db.doc(`accountAccessTargets/${crypto.createHash("sha256").update(address).digest("hex")}`)),
+    ]);
+    const existing = coach.data();
+    if (players.size || playerAliases.size || directPlayer.exists || organizations.size || aliases.docs.some(doc => doc.id !== auth.uid)
+      || (existing && (existing.userUID !== auth.uid || Object.hasOwn(existing, "organizationId") || existing.organization || existing.organizationCode || (existing.members || []).length))) {
+      fail("failed-precondition", "This account is already linked to an athlete, roster or organization. Ask PoseTek to reconcile it.");
+    }
+    if (invitations.size > 200 || invitations.docs.some(doc => invitationStatus(doc.data()) === "pending")) {
+      fail("failed-precondition", "This email already has a private staff invitation. Use that invitation or contact PoseTek.");
+    }
+    if (target.data()?.activeGrantId) {
+      const prior = await tx.get(db.doc(`accountAccessGrants/${id(target.data().activeGrantId)}`));
+      const grant = prior.data();
+      if (grant && (["consuming", "blocked"].includes(grant.status) || (grant.status === "pending" && grant.expiresAtMillis > now()))) {
+        fail("failed-precondition", "This account has an unfinished access change. Ask PoseTek to review it first.");
+      }
+    }
+    const profileRef = state.orgRef.collection("staffProfiles").doc();
+    const member = { userUID: auth.uid, email: address, firstName, lastName, role: "coach", teamIds: assigned,
+      status: "active", staffProfileId: profileRef.id, enrollmentId, joinedAt: stamp(), updatedAt: stamp() };
+    tx.create(state.orgRef.collection("members").doc(auth.uid), member);
+    tx.create(profileRef, { ...member, createdAt: stamp(), claimedAt: stamp() });
+    state.members.push(member);
+    syncProjections(tx, state);
+    return { organizationId: state.orgRef.id, teamIds: assigned, role: "coach" };
+  }
   async function findPlayer(uid) {
     const candidates = [];
     for (const field of ["authenticationUID", "userUID"]) {
@@ -429,6 +480,6 @@ function createClubs({ invitations, db, FieldValue, HttpsError, now = () => Date
     });
     return { playerId, code };
   }
-  return { removeClubPlayerFromTeam, getClubContext, createClubOrganization, saveClubTeam, validateStaffInvitation, createClubStaffInvitation, redeemClubStaffInvitation, claimManualStaffInvitation, setClubStaffTeams, revokeClubStaffInvitation, setClubPlayerTeam, createClubPlayer, issueClubPlayerInvitation };
+  return { coachEnrollmentScope, claimCoachEnrollmentMembership, removeClubPlayerFromTeam, getClubContext, createClubOrganization, saveClubTeam, validateStaffInvitation, createClubStaffInvitation, redeemClubStaffInvitation, claimManualStaffInvitation, setClubStaffTeams, revokeClubStaffInvitation, setClubPlayerTeam, createClubPlayer, issueClubPlayerInvitation };
 }
 module.exports = { createClubs, INVITE_TTL_MS };

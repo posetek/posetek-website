@@ -14,6 +14,7 @@ const entries = new Map([
   ["/coaches/index.html", "<!-- posetek-coaches-entry -->"],
   ["/application.html", "<!-- posetek-astro-application-entry -->"],
   ["/feedback.html", "<!-- posetek-feedback-entry -->"],
+  ["/coach-join.html", "<!-- posetek-coach-enrollment-entry -->"],
 ]);
 
 export async function composeAstroRelease(root, { marketingSnapshot, fetchImpl = fetch } = {}) {
@@ -50,11 +51,12 @@ export async function composeAstroRelease(root, { marketingSnapshot, fetchImpl =
       if (!html.includes(entries.get(path)) || !html.includes('id="root"') || !html.includes("/_astro/") || /(?:src|href)=["']\/src\//.test(html)) throw new Error("Uncompiled Astro document: " + path);
       if (path === "/application.html" && (!html.includes('client="only"') || (html.match(/<astro-island\b/g) || []).length !== 1 || !html.includes("/marketing/home-navigation.js"))) throw new Error("Application must be one client-only root with its navigation bridge");
       if (path === "/feedback.html" && (!html.includes('client="only"') || (html.match(/<astro-island\b/g) || []).length !== 1 || /clarity|googletagmanager|google-analytics|fonts\.googleapis|home-navigation\.js/i.test(html))) throw new Error("Feedback must be an isolated client-only document");
+      if (path === "/coach-join.html" && (!html.includes('client="only"') || (html.match(/<astro-island\b/g) || []).length !== 1 || /clarity|googletagmanager|google-analytics|fonts\.googleapis|home-navigation\.js/i.test(html))) throw new Error("Coach enrollment must be an isolated client-only document");
       prepared.push({ path, bytes, sha: sha1(bytes), size: bytes.length });
     }
   }
   await inspect(source);
-  if (prepared.length !== entries.size) throw new Error("All four Astro documents are required");
+  if (prepared.length !== entries.size) throw new Error("All declared Astro documents are required");
   if (marketing) for (const entry of marketing.documents) {
     const index = prepared.findIndex(row => row.path === entry.path);
     prepared[index] = entry;

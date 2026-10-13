@@ -1,5 +1,17 @@
 # PoseTek website
 
+<!-- coach-enrollment-current:start -->
+## Current coach enrollment release
+
+Website `6ace0ad29778ccacfb979dda` was published October 13, 2026 at 4:21:09 AM PDT from the exact reviewed candidate. The isolated `/coach-join` entry from `8eaf3ffd35848c3cf7ca753cc9fd4030cc4fb524` lets invited coaches enter their own name, email and password, or sign into an existing unlinked password account. Private seven-day links fix coach access to the assigned teams and are consumed atomically with canonical membership. Link possession authorizes scope; it does not verify identity or email. Existing bound activation, recovery and access-conflict blockers remain intact.
+
+All 1,973 artifacts match 1,974 provider records; all 1,968 prior artifacts remain exact, including application runtime `139162a04a1aa2afefda78c62bf2715d9667acbc`, marketing, feedback and P icons. Only five files and dedicated coach-entry aliases/headers were added. The 1,971-file baseline passed the ordinary preservation build. Five additive functions from `6a98d362ef8eb7bb46aa7e51cf341ca458b9b3de` are source/configuration/IAM and dependency-closure verified at version 1; all 130 unrelated functions are unchanged. Rules, indexes, gateway, catalog and native were not deployed. The newer App Store policy/deletion candidate stays held.
+
+Verification passed 1,956 frontend tests, 150 backend/release checks, 280 actual published-rules assertions, packaging, TypeScript and guarded builds. Candidate/production passed 15/13 browser checks, plus two ordinary production sign-in checks, with ten captures and no page errors. Nine synthetic accounts, two organizations, three teams, three players, eight links and all owned descendant/scoped records were removed; delayed independent readback found zero residue and temporary credentials were removed. Shared operational rate counters retain their ordinary TTL.
+
+Three unused invitations were issued through the user's normal admin sign-in and emailed separately to `dylank@posetek.net` for Coach Rob, Coach Daniel and Coach Niall (both teams). Mailbox readback confirmed all three. No real coach redemption or identity verification is claimed. Keep raw links and credentials out of Git. Read [the handoff](docs/COACH_ENROLLMENT_LINKS.md), [production evidence](deployment/COACH_ENROLLMENT_PRODUCTION.json) and [PR #57](https://github.com/posetek/posetek_website/pull/57). Earlier application releases remain preserved historical checkpoints.
+<!-- coach-enrollment-current:end -->
+
 <!-- coach-follow-up-current:start -->
 ## Current coach follow-up release
 

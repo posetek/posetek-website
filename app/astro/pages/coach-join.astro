@@ -1,0 +1,35 @@
+---
+import CoachEnrollmentPage from "../../src/pages/coach-enrollment/CoachEnrollmentPage";
+import WebsiteIcons from "../components/WebsiteIcons.astro";
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#103b2b" />
+    <title>Join your coaching teams | PoseTek</title>
+    <WebsiteIcons />
+    <script is:inline>
+      // Consume the secret before hydration, requests or any page imports.
+      const inviteUrl = new URL(window.location.href);
+      const inviteFragment = new URLSearchParams(inviteUrl.hash.slice(1));
+      const inviteValues = inviteFragment.getAll("coachInvite");
+      window.__posetekCoachInvite = inviteValues.length === 1 && /^COACH-[A-F0-9]{32}-[A-F0-9]{64}$/.test(inviteValues[0]) ? inviteValues[0] : "";
+      inviteFragment.delete("coachInvite"); inviteUrl.searchParams.delete("coachInvite"); inviteUrl.hash = inviteFragment.toString();
+      if (inviteUrl.href !== window.location.href) window.history.replaceState(window.history.state, "", inviteUrl.href);
+      // Opening a second invitation in this tab is a same-document navigation.
+      // Start a fresh form and consume that fragment before any new page imports.
+      window.addEventListener("hashchange", () => {
+        if (new URLSearchParams(window.location.hash.slice(1)).has("coachInvite")) window.location.reload();
+      });
+    </script>
+  </head>
+  <body>
+    <Fragment set:html={"<!-- posetek-coach-enrollment-entry -->"} />
+    <div id="root"><CoachEnrollmentPage client:only="react" /></div>
+    <noscript>Enable JavaScript to activate your private coach invitation. Existing coaches can sign in at posetek.net/signin.</noscript>
+  </body>
+</html>
