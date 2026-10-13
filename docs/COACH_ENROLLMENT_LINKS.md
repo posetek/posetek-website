@@ -59,7 +59,8 @@ with a React form and Auth-only integration. No main Firebase module, Firestore,
 tracking, replay, analytics or email delivery client is loaded. The CSP allows
 only the existing Auth and callable endpoints, prevents framing and native form
 navigation, and strips referrers. Refresh loses the in-memory secret: reopen the
-original invitation message. After activation, Team Insights opens with the
+original invitation message. Opening another invitation in the same tab reloads
+the isolated document, consumes its new fragment and resets the form. After activation, Team Insights opens with the
 single team selected or both assigned teams available under the organization.
 
 The design lock is the existing PoseTek signup/access card: green canvas and

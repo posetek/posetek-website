@@ -20,6 +20,11 @@ import WebsiteIcons from "../components/WebsiteIcons.astro";
       window.__posetekCoachInvite = inviteValues.length === 1 && /^COACH-[A-F0-9]{32}-[A-F0-9]{64}$/.test(inviteValues[0]) ? inviteValues[0] : "";
       inviteFragment.delete("coachInvite"); inviteUrl.searchParams.delete("coachInvite"); inviteUrl.hash = inviteFragment.toString();
       if (inviteUrl.href !== window.location.href) window.history.replaceState(window.history.state, "", inviteUrl.href);
+      // Opening a second invitation in this tab is a same-document navigation.
+      // Start a fresh form and consume that fragment before any new page imports.
+      window.addEventListener("hashchange", () => {
+        if (new URLSearchParams(window.location.hash.slice(1)).has("coachInvite")) window.location.reload();
+      });
     </script>
   </head>
   <body>
