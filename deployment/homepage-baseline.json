@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6acd3e31cae1c1af33af3d3e",
+  "deploymentId": "6ace0ad29778ccacfb979dda",
   "sourceCommit": "139162a04a1aa2afefda78c62bf2715d9667acbc",
-  "url": "https://6acd3e31cae1c1af33af3d3e--posetek.netlify.app",
+  "url": "https://6ace0ad29778ccacfb979dda--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "936d5274fd2c8a060ac8b3a22278ceae14a64985",
-    "size": 2861,
+    "sha": "8a78a2b1c2c237a6535913b2e620c330e7bc364c",
+    "size": 3761,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -986,6 +986,11 @@
       "size": 18026
     },
     {
+      "path": "/_astro/auth.dd5o2obl.js",
+      "sha": "829e397f207114e8de150c239b379a479a471b44",
+      "size": 1288
+    },
+    {
       "path": "/_astro/authenticatedorganizationheader.bxlecexs.js",
       "sha": "43297974655e449b7bacd3676f48cfefe06dbeb7",
       "size": 972
@@ -1184,6 +1189,16 @@
       "path": "/_astro/coachdetail.xxuisnc1.js",
       "sha": "6a93c39a7fe62c6ccaafecada44283f41a3f3745",
       "size": 4726
+    },
+    {
+      "path": "/_astro/coachenrollmentpage.bu3hgp9v.css",
+      "sha": "be4be44c3d42d6c6ca83be721b44243eaa537555",
+      "size": 3176
+    },
+    {
+      "path": "/_astro/coachenrollmentpage.dzvyt07_.js",
+      "sha": "9ec7c3abc8d6fa2543974279b4b0ae9937649064",
+      "size": 6506
     },
     {
       "path": "/_astro/coachespage.dr2gsrl2.js",
@@ -1884,6 +1899,11 @@
       "path": "/_astro/index.btyqta_0.css",
       "sha": "890a90f04ae618ac49e674cebd9b85ff3f4c4bb5",
       "size": 27150
+    },
+    {
+      "path": "/_astro/index.esm.bnbzll8u.js",
+      "sha": "1881b99732cf39581103f9a4c87b895b33c2ad3d",
+      "size": 80
     },
     {
       "path": "/_astro/index.zvz5isri.css",
@@ -9200,6 +9220,11 @@
       "size": 838
     },
     {
+      "path": "/coach-join.html",
+      "sha": "12f8e0dcefb18c3f960e52b8304480c3e8f5b9c8",
+      "size": 6842
+    },
+    {
       "path": "/coach-roster 3.js",
       "sha": "63b68a032750b3aa05c0ab4278b24b8c2cab6ecf",
       "size": 9781
@@ -9877,5 +9902,7 @@
       "size": 66488,
       "localPath": "videopage.html"
     }
-  ]
+  ],
+  "coachEnrollmentSourceCommit": "8eaf3ffd35848c3cf7ca753cc9fd4030cc4fb524",
+  "sourceNote": "Application entry retained exactly from the preceding coach release; coach-join is the additive enrollment source."
 }

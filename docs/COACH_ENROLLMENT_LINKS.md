@@ -1,8 +1,9 @@
 # Coach links with recipient-entered details
 
-Implementation candidate, October 13, 2026. Publication and delivery evidence will
-be recorded separately after verification. No real coach account is claimed by
-preparing an invitation.
+Live October 13, 2026, website `6ace0ad29778ccacfb979dda`, with five additive
+version-1 callables. See [confirmed production evidence](../deployment/COACH_ENROLLMENT_PRODUCTION.json)
+and [PR #57](https://github.com/posetek/posetek_website/pull/57). The previous main
+application remains byte-identical. No real coach redemption is claimed.
 
 The user does not know the coaches' full names or login emails beforehand. A
 separate **coach enrollment** invitation therefore delegates one coach account to
@@ -76,14 +77,35 @@ icons and assets remain exact. The newer App Store policy/deletion candidate sta
 held. Only the two new URL aliases and dedicated coach-entry security headers
 are added; existing route/header behavior is verified independently.
 
-## Intended real handoff
+## Confirmed private handoff
 
 - Coach Rob: Vacaville United Soccer Club / Boys — Coach Rob.
 - Coach Daniel: Vacaville United Soccer Club / Girls-Coach Daniel.
 - Coach Niall: Vacaville United Soccer Club / Boys — Coach Niall and Girls — Coach Niall.
 
-Three links are to be emailed only to Dylan Keller at `dylank@posetek.net`, for
-individual forwarding. Raw link delivery remains private and outside release
+Three unused links were issued using Dylan's normal admin sign-in and emailed
+separately to Dylan Keller at `dylank@posetek.net` for individual forwarding.
+Mailbox readback confirmed all three; they expire October 20, 2026. Raw link delivery remains private and outside release
 records. These assignments do not identify or alter the preexisting Robert Keller
 account currently assigned to Niall's boys team. Coach accounts are created or
 linked only when the intended recipients redeem their respective invitations.
+
+
+## Acceptance and cleanup
+
+Candidate/production browser acceptance passed 15/13 checks with five captures
+each at 360/390/430/1440px and no page errors. A fresh production browser verified
+ordinary password sign-in and both-team scope. Backend checks used real Firestore
+transactions to verify competing claims yield exactly one coach. Actual published
+canonical rule bytes passed 280 private-collection denials; no rules were published.
+All nine synthetic accounts, two organizations, three teams, three players, eight
+links, descendants and scoped projections/audits were removed. Independent delayed
+readback made 441 reads and found no residue. Temporary credentials were removed.
+Shared operational rate counters retain their ordinary TTL; no storage, workout
+or model fixtures were created.
+
+The full frontend suite passed 1,956 tests; 150 relevant backend/release checks,
+two packaging tests, TypeScript, guarded builds and the reconciled 1,971-file
+ordinary preservation build passed. All previous 1,968 artifacts and all 130
+unrelated functions are preserved. The held deletion-worker cleanup selector is
+source-only and has not been enabled or deployed.
