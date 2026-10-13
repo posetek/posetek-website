@@ -249,3 +249,11 @@ test("the same legacy code in both fields of one athlete is one unambiguous invi
   assert.equal((await invitations.getInvitation("p", operator)).code, "UNIQUE22");
   assert.equal((await invitations.ensure("p", operator)).code, "UNIQUE22");
 });
+
+test("delayed profile trigger cannot regenerate an invitation during account deletion", async () => {
+  const { db, invitations } = setup({ "playerDeletionLocks/p": { jobId: "job" } });
+  const result = await invitations.ensure("p");
+  assert.equal(result.skipped, "Account deletion");
+  assert.equal(db.snapshot("playerSignupInvitations/p"), undefined);
+  assert.equal([...db.docs.keys()].some(path => path.startsWith("playerSignupCodes/")), false);
+});

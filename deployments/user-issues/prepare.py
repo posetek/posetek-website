@@ -15,7 +15,7 @@ FILES = ('user-issues.js', 'user-issue-model.js', 'user-issue-sources.js', 'user
          'user-issue-classification.js', 'user-issue-summary.js', 'user-issue-observations.js', 'user-issue-request-identity.js',
          'user-issue-notification-policy.js', 'user-issue-send-frontier.js',
          'microsoft-email-model.js', 'microsoft-email-transport.js', 'microsoft-email-amendment.js', 'user-issue-contacts.js',
-         'workout-notifications-provider.js', 'club-access.js', 'athlete-storage-paths.js', 'package.json', 'package-lock.json')
+         'workout-notifications-provider.js', 'club-access.js', 'athlete-storage-paths.js', 'account-deletion-state.js', 'package.json', 'package-lock.json')
 
 def definitions():
     result = {}

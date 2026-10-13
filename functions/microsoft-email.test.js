@@ -368,3 +368,11 @@ test("invalid amended body holds without permission; historical consumed recipie
   await old.service.applyTrace("issue", ID, { rows: [row(old, originalTo[0])], checkedAtMillis: old.now() });
   assert.notEqual(old.job().status, "delivered", "removing recipients never converts historical partial delivery into all delivered");
 });
+
+test("Microsoft callback cannot grant an external send for a deleted reporter", async () => {
+  const f = fixture();
+  await f.db.doc(PATH).update({ actorUid: "athlete" });
+  await f.db.doc("accountDeletionLocks/athlete").set({ jobId: "job" });
+  assert.equal((await f.service.claim(f.request)).allowSend, false);
+  assert.equal(f.job().microsoft.claimedAtMillis, undefined);
+});

@@ -1,5 +1,13 @@
 # PoseTek website project context
 
+## Local App Store policy copy candidate (2026-10-12)
+
+Native AI permission/withdrawal, diagnostic-media sharing and support instructions are clarified on `worktree-app-store-policy`. This is unpublished candidate wording with 15 focused SSR checks, not a live-release record. See [scope and publication gates](docs/APP_STORE_POLICY_CANDIDATE.md). The approved 30-day deletion statement is preserved; operational verification and coordinated release remain outstanding.
+
+## Local account-deletion candidate (2026-10-09)
+
+Owner-approved role-based deletion is being prepared on `worktree-account-deletion`, with companion mobile and processor branches. It is disabled and undeployed. The owner has authorized source merging/pushing; production deployment still requires separate authorization. See [the candidate handoff](docs/ACCOUNT_DELETION.md) for scope, test evidence and remaining release gates. Existing production records below are unchanged.
+
 <!-- coach-follow-up-current:start -->
 ## Current coach follow-up release
 

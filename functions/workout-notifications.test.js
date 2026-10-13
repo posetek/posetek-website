@@ -432,3 +432,32 @@ test("raw-body Svix verification rejects forgery, changed bytes, old/future time
   assert.throws(() => verifyResendWebhook(body, { ...headers, "svix-signature": "v1,bad" }, secret, NOW));
   const broken = Buffer.from("not-json"); assert.throws(() => verifyResendWebhook(broken, { ...headers, "svix-signature": sign(broken) }, secret, NOW));
 });
+
+test("deletion blocks delayed workout observers and already queued sends", async () => {
+  const f = fixture();
+  await f.close();
+  const id = f.db.snapshot(f.jobPath()).id;
+  await f.db.doc("playerDeletionLocks/player").set({ jobId: "job" });
+  await f.service.dispatch(id);
+  assert.equal(f.sends.length, 0);
+  await f.db.doc(f.statePath()).delete();
+  await f.db.doc(f.jobPath()).delete();
+  await f.observe("workoutLogs", { activeSeconds: 140 });
+  assert.equal(f.db.snapshot(f.statePath()), undefined);
+  assert.equal(f.db.snapshot(f.jobPath()), undefined);
+});
+
+test("provider completion after deletion acceptance cannot recreate inactivity activity", async () => {
+  const f = fixture();
+  await f.service.recordWorkoutActivity(f.activity(), AUTH);
+  f.advance(QUIET_MS);
+  await f.service.queueQuiet(f.identity("workoutLogs"));
+  const id = f.db.snapshot(f.jobPath("workoutLogs", "inactivity")).id;
+  f.provider.send = async () => {
+    await f.db.doc("playerDeletionLocks/player").set({ jobId: "job" });
+    await f.db.doc(f.statePath()).delete();
+    return { id: "already-in-flight" };
+  };
+  await f.service.dispatch(id);
+  assert.equal(f.db.snapshot(f.statePath()), undefined);
+});

@@ -1,4 +1,5 @@
 "use strict";
+const { deletionLocked } = require("./account-deletion-state");
 const crypto = require("node:crypto");
 const M = require("./microsoft-email-model");
 const NotificationPolicy = require("./user-issue-notification-policy");
@@ -42,6 +43,7 @@ function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.r
       const at = now(), ref = refFor(data.kind, data.jobId);
       const config = (await tx.get(db.doc(M.SETTINGS))).data(), settings = (await tx.get(db.doc(M.DOMAIN_SETTINGS[data.kind]))).data();
       const job = (await tx.get(ref)).data();
+      if (job && await deletionLocked(db, tx, job)) return { schemaVersion: 1, allowSend: false };
       if (!job || job.deliveryProvider !== "microsoft" || !job.microsoft || !job.payload || !job.firstAttemptAtMillis || M.hasSendEvidence(job)
         || !["pending", "sending"].includes(job.status)
         || !M.enabled(config, data.kind, data.jobId, job.createdAtMillis, at) || !domainAllows(data.kind, settings, job, at)) return { schemaVersion: 1, allowSend: false };
@@ -102,6 +104,7 @@ function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.r
       const ref = refFor(data.kind, data.jobId), job = (await tx.get(ref)).data(), at = now();
       if (!job || job.deliveryProvider !== "microsoft" || !job.microsoft?.claimedAtMillis || job.microsoft.runId !== data.runId
         || !M.authenticate(M.hash(data.claimToken), job.microsoft.claimTokenHash)) M.fail("email_claim_mismatch");
+      if (await deletionLocked(db, tx, job)) return { schemaVersion: 1, recorded: false };
       const payload = M.effectiveDeliveryPayload(job);
       const field = data.outcome === "accepted" ? "receiptAcceptedAtMillis" : "receiptUncertainAtMillis";
       if (job.microsoft[field]) return { schemaVersion: 1, recorded: true, duplicate: true };
@@ -123,6 +126,7 @@ function createMicrosoftEmail({ db, now = Date.now, randomToken = () => crypto.r
     return db.runTransaction(async tx => {
       const ref = refFor(kind, id), job = (await tx.get(ref)).data(), at = now();
       if (job?.deliveryProvider !== "microsoft" || !job.microsoft?.claimedAtMillis) return;
+      if (await deletionLocked(db, tx, job)) return;
       const payload = M.effectiveDeliveryPayload(job);
       const send = job.microsoft, rows = result.rows.filter(row => row && row.subject === payload.subject
         && String(row.senderAddress).toLowerCase() === send.senderMailbox && payload.to.includes(String(row.recipientAddress).toLowerCase())

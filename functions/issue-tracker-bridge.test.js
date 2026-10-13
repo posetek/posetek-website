@@ -281,3 +281,46 @@ test("mail ingress rejects missing/wrong credentials, other mailbox and disabled
   }
   await f.db.doc(PATHS.settings).update({ enabled: false }); assert.equal((await request(secret)).code, 503);
 });
+
+test("deleted reporter sources and deletion triggers cannot enqueue new tracker copies", async () => {
+  const f = fixture();
+  await f.db.doc("accountDeletionLocks/known-reporter").set({ jobId: "job" });
+  assert.equal((await f.service.observeOutbox(ID)).queued, false);
+  assert.equal((await f.service.observeOccurrence(ID)).queued, false);
+  assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${ID}`), undefined);
+  await f.db.doc(`userIssueOutbox/${ID}`).delete();
+  await f.db.doc(`userIssueOccurrences/${ID}`).delete();
+  assert.equal((await f.service.observeOccurrence(ID)).queued, false);
+  assert.equal(f.tasks.length, 0);
+});
+
+for (const boundary of ["prepare", "receipt"]) test(`deletion at tracker ${boundary} boundary fences mixed publication and acknowledgement`, async () => {
+  const { createTrackerErasure } = require("./account-deletion-tracker");
+  const crypto = require("node:crypto");
+  let f;
+  const erase = async () => createTrackerErasure({ db: f.db, now: () => AT })({ uid: "known-reporter", playerIds: [], coachIds: [] });
+  f = fixture(boundary === "prepare" ? { normalize: async ({ seed }) => {
+    await erase();
+    return { changes: changes(ID), nextSeed: { counter: seed.counter + 1 } };
+  } } : { send: async batch => { await erase(); return receipt(batch); } });
+  f.db.recursiveDelete = async ref => { for (const path of [...f.db.docs.keys()]) if (path === ref.path || path.startsWith(ref.path + "/")) f.db.docs.delete(path); };
+  const key = crypto.createHash("sha256").update("uid:known-reporter").digest("hex");
+  await f.db.doc(`accountDeletionJobs/${key}`).set({ uid: "known-reporter", playerIds: [], coachIds: [], state: "deleting" });
+  await f.service.observeOutbox(ID);
+  await assert.rejects(f.service.drain(), { code: "tracker_privacy_erasure_pending" });
+  assert.equal(f.sent.length, boundary === "prepare" ? 0 : 1);
+  assert.equal(f.db.snapshot(PATHS.writer).revision, 0, "a receipt after erasure cannot republish local seed rows");
+  assert.equal(f.db.snapshot(PATHS.writer).privacyErasurePending, true);
+  assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${ID}`), undefined);
+});
+
+test("erased exact mail or source IDs suppress re-import while unrelated mail still queues", async () => {
+  const f = fixture();
+  await f.db.doc("accountDeletionJobs/job").set({ trackerErasure: { pending: true, sourceIds: [ID], emailIds: ["erased-mail"], providerIds: ["erased-provider"] } });
+  for (const message of [
+    { id: "erased-mail" },
+    { id: "new-capture", exactJoin: { type: "occurrenceId", value: ID, evidence: "verified" } },
+    { id: "provider-capture", exactJoin: { type: "providerId", value: "erased-provider", evidence: "verified" } },
+  ]) assert.deepEqual(await f.service.enqueueMessage({ ...message, mailbox: "dylank@posetek.net" }), { queued: false, reason: "account_deletion" });
+  assert.equal((await f.service.enqueueMessage({ id: "other-mail", mailbox: "dylank@posetek.net" })).queued, true);
+});

@@ -305,3 +305,26 @@ test("createdByRole is HMAC-bound; forged admin role cannot revive a revoked clu
   assert.equal(shares.validAthleteShareSignature(hash, legacy), true);
   await assert.rejects(shares.verifiedAthleteShare(issued.token, "sprint"), { code: "permission-denied" });
 });
+
+test("coach team removal preserves account and history and synchronizes roster mirrors", async () => {
+  const { clubs, db } = harness();
+  await clubs.removeClubPlayerFromTeam({ organizationId: "club", teamId: "a", playerId: "pa" }, coachA);
+  assert.equal(db.snapshot("players/pa").teamId, "");
+  assert.equal(db.snapshot("players/pa").authenticationUID, "athlete-a");
+  assert.equal(db.snapshot("players/pa").organizationId, "club");
+  assert.equal(db.snapshot("players/pa").coachUID, undefined);
+  assert.ok(db.snapshot("players/pa/reps/r"));
+  assert.deepEqual(db.snapshot("teams/a").playerIds, []);
+  assert.deepEqual(db.snapshot("coaches/coach-a").members, []);
+  assert.deepEqual(db.snapshot("teams/b").playerIds, ["pb"]);
+});
+test("team removal rejects players, managers, other-team/inactive coaches and stale team selection", async () => {
+  const data = { organizationId: "club", teamId: "a", playerId: "pa" };
+  for (const actor of [coachB, manager, auth("athlete-a"), auth("outsider")]) {
+    await assert.rejects(harness().clubs.removeClubPlayerFromTeam(data, actor), { code: "permission-denied" });
+  }
+  const h = harness({ "organizations/club/members/coach-a": { userUID: "coach-a", status: "inactive", role: "coach", teamIds: ["a"] } });
+  await assert.rejects(h.clubs.removeClubPlayerFromTeam(data, coachA), { code: "permission-denied" });
+  await assert.rejects(harness().clubs.removeClubPlayerFromTeam({ ...data, teamId: "b" }, coachA), { code: "failed-precondition" });
+  assert.equal((await harness().clubs.removeClubPlayerFromTeam(data, admin)).accountDeleted, false);
+});

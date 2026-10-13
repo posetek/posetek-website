@@ -29,6 +29,7 @@ function job(uid, playerId, capability, params=bodies[capability]) {
 }
 try {
   await seed(async db => {
+    for (const uid of Object.keys(actors)) await setDoc(doc(db, `aiSharingConsents/${uid}`), { actorUid: uid, version: 1, allowed: true });
     await setDoc(doc(db,'players/player'),{authenticationUID:'athlete',userUID:'athlete',coachUID:'coach',organizationCode:'legacy'});
     await setDoc(doc(db,'coaches/coach'),{userUID:'coach',members:['player','club-player'],organizationCode:'legacy'});
     await setDoc(doc(db,'players/club-player'),{authenticationUID:'athlete',userUID:'athlete',organizationId:'club',teamId:'girls',

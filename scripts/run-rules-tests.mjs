@@ -37,6 +37,7 @@ if (!/^\d+$/.test(portText) || !Number.isSafeInteger(portOffset) || portOffset >
 // project: each suite's own demo project id, so their fixtures never share an emulator.
 // storage: whether the suite needs the Storage emulator as well as Firestore.
 const suites = [
+  { name: 'accountDeletion', project: 'demo-account-deletion', storage: true },
   { name: 'adminRules', project: 'demo-posetek-admin' },
   { name: 'insightsRules', project: 'demo-expanded-insights' },
   { name: 'workoutNotifications', project: 'demo-workout-notifications' },

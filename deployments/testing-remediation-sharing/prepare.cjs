@@ -5,7 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const baseline = require("./baseline.json");
-const MODULES = ["effective-results.js", "processing-evidence.js", "insights-v2-qualification.js", "insights-v2-projection.js", "athlete-storage-paths.js"];
+const MODULES = ["effective-results.js", "processing-evidence.js", "insights-v2-qualification.js", "insights-v2-projection.js", "athlete-storage-paths.js", "account-deletion-state.js"];
 function once(source, before, after) {
   if (source.split(before).length !== 2) throw Error("The reviewed sharing source anchor changed.");
   return source.replace(before, after);

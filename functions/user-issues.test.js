@@ -192,3 +192,23 @@ test("AI projection is covered; correlated phone halves and tests are not mailed
   await sources.document("aiIncidents", await f.db.doc("aiIncidents/client-a").get(), { timestamp: new Date(AT).toISOString() });
   assert.equal((await f.db.collection("userIssueOutbox").get()).size, 1);
 });
+
+
+test("background issue ingestion cannot recreate deleted reporter or athlete data", async () => {
+  for (const lock of ["accountDeletionLocks/athlete", "playerDeletionLocks/player"]) {
+    const f = fixture();
+    await f.db.doc(lock).set({ jobId: "job" });
+    const result = await f.service.ingest(M.normalize(input({ requestId: "late-request" }), AT, true),
+      { uid: "athlete", player: { id: "player", name: "Private name" } }, { source: "backend", sourceEvent: "late-event" });
+    assert.deepEqual(result, { status: "disabled" });
+    assert.equal([...f.db.docs.keys()].some(path => /^(userIssues|userIssueOccurrences|userIssueOutbox|userIssueRequestIdentities)\//.test(path)), false);
+  }
+});
+
+test("queued personal issue notification cannot send after deletion acceptance", async () => {
+  const f = fixture();
+  const result = await f.service.submit(input(), { uid: "athlete" });
+  await f.db.doc("accountDeletionLocks/athlete").set({ jobId: "job" });
+  await f.service.dispatch(result.occurrenceId);
+  assert.equal(f.sends.length, 0);
+});

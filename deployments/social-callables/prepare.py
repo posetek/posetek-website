@@ -18,7 +18,7 @@ ENDPOINTS = ('getSocialAdminDirectory', 'getSocialContext', 'getSocialFeed', 'ge
              'saveSocialPreferences', 'setSocialVisibility', 'getSocialPeople', 'socialConnection',
              'setSocialKudos', 'getSocialComments', 'saveSocialComment', 'reportSocialActivity',
              'moderateSocialActivity', 'getSocialMedia')
-RUNTIME_HELPERS = ('social.js', 'social-projection.js', 'social-benchmarks.json', 'club-access.js', 'athlete-storage-paths.js')
+RUNTIME_HELPERS = ('social.js', 'social-projection.js', 'social-benchmarks.json', 'club-access.js', 'athlete-storage-paths.js', 'account-deletion-state.js')
 PACKAGE_FILES = ('package.json', 'package-lock.json')
 HELPERS = (*RUNTIME_HELPERS, *PACKAGE_FILES)
 CHANGED = ('social-callable-observation.js',)

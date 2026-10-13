@@ -17,7 +17,7 @@ EXISTING = ('getAccountAccessLink', 'completeAccountAccessLink', 'listAccountAcc
 NEW = ('inspectPlayerRecovery', 'issuePlayerRecovery', 'submitAccountRecoveryRequest', 'listAccountRecoveryRequests',
        'updateAccountRecoveryRequest', 'confirmAccountRecovery')
 ENDPOINTS = (*EXISTING, *NEW)
-FILES = ('account-access.js', 'account-recovery.js', 'clubs.js', 'club-access.js', 'player-profile.js', 'athlete-storage-paths.js', 'package.json', 'package-lock.json')
+FILES = ('account-deletion-state.js', 'account-access.js', 'account-recovery.js', 'clubs.js', 'club-access.js', 'player-profile.js', 'athlete-storage-paths.js', 'package.json', 'package-lock.json')
 ONLY = ','.join('functions:' + name for name in ENDPOINTS)
 SERVICE_ACCOUNT = audit.PROJECT + '@appspot.gserviceaccount.com'
 TRANSIENT = {'versionId', 'updateTime', 'buildId', 'buildName', 'sourceUploadUrl', 'sourceArchiveUrl', 'sourceRepository'}

@@ -404,3 +404,30 @@ test("password plus OAuth recovery preserves the existing provider bindings exac
   assert.deepEqual(h.users.get(athlete.uid).providerData, providers);
   assert.deepEqual(h.directory.writes, [{ uid: athlete.uid, password: PASSWORD }]);
 });
+
+test("deletion locks fence a public route resolved before the intake transaction", async () => {
+  const h = setup(), original = h.db.runTransaction.bind(h.db);
+  let injected = false;
+  h.db.runTransaction = async callback => {
+    if (!injected) { injected = true; await h.db.doc("accountDeletionLocks/athlete").set({}); }
+    return original(callback);
+  };
+  assert.deepEqual(await h.api.submitAccountRecoveryRequest(publicRequest()), { accepted: true, requestId: ID });
+  assert.equal(h.request(ID), undefined);
+  assert.equal([...h.db.docs.keys()].some(path => path.startsWith("accountAccessAudit/")), false);
+});
+
+test("player and issuer deletion locks prevent late grant issuance and request updates", async () => {
+  for (const lock of ["playerDeletionLocks/player", "accountDeletionLocks/athlete", "accountDeletionLocks/manager"]) {
+    const h = setup();
+    await h.api.submitAccountRecoveryRequest(publicRequest());
+    const before = h.request(ID), original = h.db.runTransaction.bind(h.db);
+    h.db.runTransaction = async callback => { await h.db.doc(lock).set({}); return original(callback); };
+    await assert.rejects(h.api.issuePlayerRecovery({ ...issue, requestId: ID }, manager), { code: "failed-precondition" });
+    assert.equal([...h.db.docs.keys()].some(path => path.startsWith("accountAccessGrants/")), false);
+    assert.deepEqual(h.request(ID), before);
+  }
+  const h = setup(); await h.api.submitAccountRecoveryRequest(publicRequest());
+  await h.db.doc("accountDeletionLocks/athlete").set({});
+  await assert.rejects(h.api.updateAccountRecoveryRequest({ requestId: ID, status: "closed", expectedUpdatedAtMillis: h.request(ID).updatedAtMillis }, admin), { code: "failed-precondition" });
+});

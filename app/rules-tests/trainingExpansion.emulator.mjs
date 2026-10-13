@@ -17,6 +17,7 @@ try {
   await setDoc(doc(db,'drillCatalogAuthoring/WB-RULE'),{revision:1,reviewStatus:'pending'});
   await setDoc(doc(db,'trainingReviewers/training-admin'),{enabled:true,qualification:'reviewed'});
   await setDoc(doc(db,'trainingImports/rules-test'),{manifestHash:'private'});
+  await setDoc(doc(db,'aiSharingConsents/training-athlete'),{actorUid:'training-athlete',version:1,allowed:true});
   await setDoc(doc(db,'players/training-player'),{authenticationUID:'training-athlete',userUID:'training-athlete'});
   await setDoc(doc(db,'players/training-player/privateProfile/trainingReadiness'),{status:'pending'});
   await setDoc(doc(db,'players/training-player/trainingPlans/plan'),{schemaVersion:3,status:'active',planRevision:1,weeks:[]});

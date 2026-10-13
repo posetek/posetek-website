@@ -14,6 +14,8 @@ export type SupportQuestionId =
   | "forgot-password"
   | "camera"
   | "analysis"
+  | "ai-sharing"
+  | "diagnostic-media"
   | "delete-account"
   | "parents"
   | "coaches-and-clubs";
@@ -24,6 +26,8 @@ export const SUPPORT_QUESTIONS: ReadonlyArray<{ id: SupportQuestionId; question:
   { id: "forgot-password", question: "I forgot my password" },
   { id: "camera", question: "The camera won't open or record" },
   { id: "analysis", question: "My video wasn't analyzed, or a result looks wrong" },
+  { id: "ai-sharing", question: "How do I control AI sharing in the iPhone app?" },
+  { id: "diagnostic-media", question: "How do I control diagnostic videos and images?" },
   { id: "delete-account", question: "How do I delete my account or my data?" },
   { id: "parents", question: "I'm a parent or guardian" },
   { id: "coaches-and-clubs", question: "I'm a coach or run a club" },

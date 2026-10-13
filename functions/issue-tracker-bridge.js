@@ -1,4 +1,5 @@
 "use strict";
+const { deletionLocked } = require("./account-deletion-state");
 const crypto = require("node:crypto");
 const M = require("./issue-tracker-bridge-model");
 const { ROWS, INDEX_BASES, INDICES, createSeedStore, splitSeed, partitionSeed, verifyIndex } = require("./issue-tracker-bridge-seed");
@@ -32,6 +33,8 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       // Read the current document, not the possibly out-of-order trigger image.
       const job = (await tx.get(db.doc(`userIssueOutbox/${id}`))).data();
       const occurrence = job?.type === "incident" || occurrenceRequired ? (await tx.get(db.doc(`userIssueOccurrences/${id}`))).data() : null;
+      if (!job && !occurrence) return { queued: false };
+      if (await deletionLocked(db, tx, { ...job, ...occurrence })) return { queued: false };
       if (occurrenceRequired && !occurrence) M.fail("tracker_occurrence_unavailable");
       if (occurrence && job && job.type !== "incident") M.fail("tracker_source_identity_conflict");
       const issueId = occurrence?.issueId || job?.issueId;
@@ -76,6 +79,16 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       const settings = (await tx.get(db.doc(PATHS.settings))).data();
       if (settings?.enabled !== true) M.fail("tracker_disabled");
       if (message.mailbox.toLowerCase() !== settings.mailbox?.toLowerCase()) M.fail("tracker_wrong_mailbox");
+      // Opaque proven IDs retained in deletion jobs suppress re-import even
+      // after their canonical occurrence/provider mapping has been erased.
+      const erasedKeys = [
+        ...[message.id, message.originalId, message.immutableId].filter(value => typeof value === "string").map(value => ["emailIds", value]),
+        ...(exactJoin ? [[exactJoin.type === "providerId" ? "providerIds" : "sourceIds", exactJoin.value]] : []),
+      ];
+      for (const [field, value] of erasedKeys) {
+        const held = await tx.get(db.collection("accountDeletionJobs").where(`trackerErasure.${field}`, "array-contains", value).limit(1));
+        if (!held.empty) return { queued: false, reason: "account_deletion" };
+      }
       if (aliasReconciliation) {
         // Only a separately archived authoritative fixed-mailbox proof can
         // authorize reconciliation of already seeded duplicate captures.
@@ -116,12 +129,26 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       if (settings?.enabled !== true || settings.seedVerified !== true || settings.connectionVerified !== true || typeof settings.workbookKey !== "string" || !settings.workbookKey) M.fail("tracker_not_configured");
       if (settings.seedStorageVersion != null && ![1, 2].includes(settings.seedStorageVersion)) M.fail("tracker_invalid_storage_version");
       const state = (await tx.get(writerRef)).data();
+      if (state?.privacyErasurePending) M.fail("tracker_privacy_erasure_pending");
       if (!state || !Number.isSafeInteger(state.revision) || state.revision < 0) M.fail("tracker_missing_seed_revision");
       if (state.blockedReason) M.fail("tracker_writer_blocked");
       if (state.leaseUntilMillis > now()) M.fail("tracker_writer_busy");
       tx.update(writerRef, { leaseId, leaseUntilMillis: now() + LEASE_MS });
       return { ...state, leaseId, workbookKey: settings.workbookKey, seedStorageVersion: settings.seedStorageVersion === 2 ? 2 : 1 };
     });
+  }
+
+  async function checkBatchSubjects(tx, batch) {
+    for (const row of batch.payload?.changes?.instances || []) {
+      if (await deletionLocked(db, tx, { uid: row.values?.["Recorded actor UID"], playerId: row.values?.["Target player ID"] })) M.fail("tracker_subject_deleting");
+    }
+    for (const selected of batch.selected || []) if (selected.id.startsWith("outbox-")) {
+      const id = selected.id.slice(7);
+      const job = (await tx.get(db.doc(`userIssueOutbox/${id}`))).data();
+      const occurrence = (await tx.get(db.doc(`userIssueOccurrences/${id}`))).data();
+      if (!job && !occurrence) M.fail("tracker_source_unavailable");
+      if (await deletionLocked(db, tx, { ...job, ...occurrence })) M.fail("tracker_subject_deleting");
+    }
   }
 
   async function loadBatch(claimed) {
@@ -257,6 +284,8 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     }
     await db.runTransaction(async tx => {
       const state = (await tx.get(writerRef)).data();
+      if (state?.privacyErasurePending) M.fail("tracker_privacy_erasure_pending");
+      await checkBatchSubjects(tx, batch);
       let baseRef, existingBase;
       if (batch.seedIndexIds) {
         if (M.digest((await tx.get(seedRef)).data()) !== batch.expectedSeedMetadataSha256) M.fail("tracker_seed_snapshot_changed");
@@ -279,6 +308,7 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     if (M.canonical(receipt.counts) !== M.canonical(batch.nextSeedMetadata.counts)) M.fail("tracker_invalid_receipt_counts");
     await db.runTransaction(async tx => {
       const state = (await tx.get(writerRef)).data();
+      if (state?.privacyErasurePending) M.fail("tracker_privacy_erasure_pending");
       if (batch.seedIndexIds && M.digest((await tx.get(seedRef)).data()) !== batch.expectedSeedMetadataSha256) M.fail("tracker_seed_snapshot_changed");
       const rows = [];
       for (const selected of batch.selected) rows.push({ selected, ref: db.doc(`${PATHS.queue}/${selected.id}`), current: (await tx.get(db.doc(`${PATHS.queue}/${selected.id}`))).data() });
@@ -328,6 +358,8 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       // this batch/digest/revision, never a regenerated payload or row allocation.
       const allowance = await db.runTransaction(async tx => {
         const state = (await tx.get(writerRef)).data();
+        if (state?.privacyErasurePending) M.fail("tracker_privacy_erasure_pending");
+        await checkBatchSubjects(tx, batch);
         if (state?.leaseId !== claimed.leaseId) M.fail("tracker_lease_lost");
         if (state.nextTransportAtMillis > now()) return { deferred: "call_spacing", at: state.nextTransportAtMillis };
         const day = new Date(now()).toISOString().slice(0, 10);
@@ -354,11 +386,13 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
       if (batch) await db.doc(`${PATHS.batches}/${batch.payload.batchId}`).update({ lastError: /^tracker_[a-z_]+$/.test(error?.code || "") ? error.code : "tracker_retry_required", lastTransportReasonCode: transportReason, lastErrorAtMillis: now() });
       await db.runTransaction(async tx => {
         const state = (await tx.get(writerRef)).data();
+        if (state?.privacyErasurePending) return;
         if (state?.leaseId === claimed.leaseId) tx.update(writerRef, { lastTransportReasonCode: transportReason });
       });
       if (["tracker_remote_conflict", "tracker_remote_auth", "tracker_remote_rejected", "tracker_unverified_receipt", "tracker_incomplete_receipt", "tracker_invalid_receipt_counts", "tracker_invalid_frozen_seed_indices"].includes(error?.code)) {
         await db.runTransaction(async tx => {
           const state = (await tx.get(writerRef)).data();
+        if (state?.privacyErasurePending) return;
           if (state?.leaseId === claimed.leaseId) tx.update(writerRef, { blockedReason: error.code, blockedTransportReasonCode: transportReason, blockedAtMillis: now() });
         });
       }
@@ -366,6 +400,7 @@ function createIssueTrackerBridge({ db, scheduleTask, normalize, transport, now 
     } finally {
       await db.runTransaction(async tx => {
         const state = (await tx.get(writerRef)).data();
+        if (state?.privacyErasurePending) return;
         if (state?.leaseId === claimed.leaseId) tx.update(writerRef, { leaseId: null, leaseUntilMillis: 0 });
       });
     }

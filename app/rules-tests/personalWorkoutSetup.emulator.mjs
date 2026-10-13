@@ -24,6 +24,9 @@ const submit = (actor, capability, params) => setDoc(doc(databases[actor], `llmJ
   schemaVersion: 1, status: 'pending', requestedByUid: actor, playerId: 'player', capability, params, createdAt: serverTimestamp(),
 });
 try {
+  await seed(Object.fromEntries(Object.keys(databases).filter(uid => uid !== 'anon').map(uid => [
+    `aiSharingConsents/${uid}`, { actorUid: uid, version: 1, allowed: true },
+  ])));
   await seed({ 'players/player': { authenticationUID: 'athlete', userUID: 'athlete', coachUID: 'coach', age: 14 },
     'coaches/coach': { userUID: 'coach', members: ['player'] } });
   await allowed(submit('athlete', 'assess_personal_workout', assessment));

@@ -1,4 +1,5 @@
 "use strict";
+const { deletionLocked } = require("./account-deletion-state");
 const crypto = require("node:crypto");
 const { playerSegment } = require("./athlete-storage-paths");
 const { isClubAdmin, memberCanAccessPlayer } = require("./club-access");
@@ -60,6 +61,7 @@ function createPlayerInvitations({ db, FieldValue, HttpsError }) {
     if (!playerSegment(playerId)) fail("invalid-argument", "Choose a valid player.");
     return db.runTransaction(async tx => {
       const r = refs(playerId);
+      if (await deletionLocked(db, tx, { playerId, uid: auth?.uid })) return { skipped: "Account deletion" };
       const [snapshot, invitation] = await Promise.all([tx.get(r.player), tx.get(r.invitation)]);
       const p = snapshot.data();
       if (!p || !await authority(tx, p, auth)) fail("permission-denied", "This player is not assigned to your access.");
@@ -103,6 +105,7 @@ function createPlayerInvitations({ db, FieldValue, HttpsError }) {
     if (auth && (!playerSegment(auth.uid) || auth.isAnonymous)) fail("unauthenticated", "Sign in to manage invitations.");
     const r = refs(playerId);
     return db.runTransaction(async tx => {
+      if (await deletionLocked(db, tx, { playerId, uid: auth?.uid })) return { skipped: "Account deletion" };
       const [snapshot, invitation] = await Promise.all([tx.get(r.player), tx.get(r.invitation)]);
       const p = snapshot.data();
       if (!p || !await authority(tx, p, auth)) {
@@ -138,6 +141,7 @@ function createPlayerInvitations({ db, FieldValue, HttpsError }) {
       const index = await tx.get(indexRef);
       if (!index.exists) return null;
       if (!playerSegment(index.data()?.playerId)) fail("not-found", "This signup invitation is no longer available.");
+      if (await deletionLocked(db, tx, { playerId: index.data().playerId, uid })) fail("failed-precondition", "Account deletion is pending.");
       const r = refs(index.data().playerId);
       const [p, invite, first, second, direct] = await Promise.all([tx.get(r.player), tx.get(r.invitation),
         tx.get(db.collection("players").where("authenticationUID", "==", uid).limit(1)),
@@ -159,6 +163,7 @@ function createPlayerInvitations({ db, FieldValue, HttpsError }) {
     const creationId = typeof data.creationId === "string" && /^[a-zA-Z0-9-]{16,64}$/.test(data.creationId) ? digest(auth.uid + ":" + data.creationId) : undefined;
     const ref = creationId ? db.collection("players").doc(creationId) : db.collection("players").doc(), code = `PLR-${crypto.randomBytes(16).toString("hex").toUpperCase()}`;
     return db.runTransaction(async tx => {
+      if (await deletionLocked(db, tx, { uid: auth.uid, playerId: ref.id })) fail("failed-precondition", "Account deletion is pending.");
       const coachId = playerSegment(data.coachDocId) ? data.coachDocId : auth.uid;
       const coach = await tx.get(db.doc(`coaches/${coachId}`));
       if (!coach.exists || coach.data().userUID !== auth.uid) fail("permission-denied", "Use your organization's player creation form.");

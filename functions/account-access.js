@@ -157,6 +157,7 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
     return { id, code, grant };
   }
   async function guardTarget(tx, bundle, replacementId = null) {
+    await recovery.assertActive(bundle.grant, tx);
     const ref = targetRef(bundle.grant.email), doc = await tx.get(ref), target = doc.data();
     if (target && (target.targetUID !== bundle.grant.targetUID || (target.authCreatedAt && target.authCreatedAt !== bundle.grant.authCreatedAt))) fail("failed-precondition", "This address has a different account binding. Ask PoseTek to reconcile it.");
     let previous = null;
@@ -264,6 +265,7 @@ function createAccountAccess({ db, authDirectory, clubs, FieldValue, HttpsError,
     await db.runTransaction(async tx => {
       const g = (await tx.get(ref)).data();
       if (!g) invalid();
+      await recovery.assertActive({ ...g, updatedByUID: current.uid }, tx);
       if (!isClubAdmin(current) || !isClubAdmin(auth)) {
         if (g.recoveryScope !== recovery.SCOPE || g.purpose !== "account_recovery") fail("permission-denied", "Only PoseTek can manage this access link.");
         await recovery.manager(current, g.organizationId, tx);

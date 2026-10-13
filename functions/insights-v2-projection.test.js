@@ -256,3 +256,21 @@ test("player deletion and deadline guards have distinct source-correlated reason
   await assert.rejects(timeout.rebuildInsightPlayer("p", source), error => error.details.reason === "insights-rebuild-deadline-exceeded");
   assert.equal(timeout.db.snapshot("players/p/insightSummaries/current"), undefined);
 });
+
+test("tombstones block delayed invalidation and rebuild without creating state", async () => {
+  const service = fixture({ "playerDeletionLocks/p": { jobId: "job" } });
+  assert.equal((await service.invalidateInsightPlayer("p")).deleted, true);
+  assert.equal((await service.rebuildInsightPlayer("p")).deleted, true);
+  assert.equal([...service.db.docs.keys()].some(path => path.startsWith("players/p/insight")), false);
+});
+
+test("deletion accepted while reading evidence prevents staged daily pages and summary publication", async () => {
+  const { db, bucket } = fixture();
+  const service = createInsightProjection({ db, bucket, HttpsError, now: () => NOW, readEvidence: async () => {
+    await db.doc("playerDeletionLocks/p").set({ jobId: "job" });
+    await db.doc("players/p/insightSummaries/state").delete();
+    return {};
+  } });
+  await assert.rejects(service.rebuildInsightPlayer("p"), error => error.details?.reason === "insights-player-deleted");
+  assert.equal([...db.docs.keys()].some(path => path.startsWith("players/p/insight")), false);
+});

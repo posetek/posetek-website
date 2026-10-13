@@ -1,4 +1,4 @@
-const functions = require("firebase-functions");
+const firebaseFunctions = require("firebase-functions");
 const admin = require("firebase-admin");
 const stripe = require("stripe");
 const crypto = require("crypto");
@@ -6,6 +6,7 @@ const { playerSegment, storageFolderCandidates } = require("./athlete-storage-pa
 
 admin.initializeApp();
 const db = admin.firestore();
+const functions = require("./account-deletion-barrier").withAccountDeletionBarrier(firebaseFunctions, db);
 Object.assign(exports, require("./device-processing").createDeviceProcessingEntrypoints(functions, admin, requireCaller));
 
 // Feedback keeps legacy/visitor responses anonymous and verifies account-mode submissions.
@@ -73,10 +74,30 @@ exports.projectSocialReps = functions.runWith({ timeoutSeconds: 120, failurePoli
 exports.projectSocialWorkouts = functions.runWith({ timeoutSeconds: 120, failurePolicy: true }).firestore.document("players/{playerId}/workoutLogs/{logId}").onWrite((_, context) => social.rebuild(context.params.playerId));
 exports.projectSocialSessions = functions.runWith({ timeoutSeconds: 120, failurePolicy: true }).firestore.document("players/{playerId}/trainingSessions/{sessionId}").onWrite((_, context) => social.rebuild(context.params.playerId));
 exports.projectSocialPlayer = functions.runWith({ timeoutSeconds: 120, failurePolicy: true }).firestore.document("players/{playerId}").onWrite((_, context) => social.rebuild(context.params.playerId));
-// Auth deletion can precede roster cleanup. Immediately make retained results
-// unavailable socially without deleting the club's original athlete records.
+// The deletion worker owns cleanup; do not recreate social data afterwards.
 exports.closeSocialAccount = functions.runWith({ failurePolicy: true }).auth.user().onDelete(user =>
-  db.collection("socialPreferences").doc(user.uid).set({ accountDeleted: true, audience: "private", automatic: false, videos: false }, { merge: true }));
+  db.runTransaction(async tx => {
+    const lock = await tx.get(db.collection("accountDeletionLocks").doc(user.uid));
+    if (!lock.exists) tx.set(db.collection("socialPreferences").doc(user.uid),
+      { accountDeleted: true, audience: "private", automatic: false, videos: false }, { merge: true });
+  }));
+const eraseAccountWarehouse = require("./account-deletion-warehouse").createWarehouseEraser({
+  accessToken: async () => (await admin.credential.applicationDefault().getAccessToken()).access_token });
+const eraseGatewayStorage = require("./account-deletion-gateway-storage").createGatewayStorageEraser({ db, bucketForName: name => admin.storage().bucket(name) });
+const accountDeletion = require("./account-deletion").createAccountDeletion({ db, authDirectory: admin.auth(), eraseWarehouse: eraseAccountWarehouse, eraseGatewayStorage,
+  bucket: admin.storage().bucket("kickai-69dd0.firebasestorage.app"), FieldValue: admin.firestore.FieldValue,
+  HttpsError: functions.https.HttpsError });
+exports.requestAccountDeletion = firebaseFunctions.https.onCall((data, context) => accountDeletion.request(data || {}, requireCaller(context)));
+exports.listAccountDeletionTargets = functions.https.onCall((data, context) => accountDeletion.listAccounts(data || {}, requireCaller(context)));
+exports.getAccountDeletionStatus = firebaseFunctions.https.onCall(data => accountDeletion.status(data || {}));
+exports.processAccountDeletion = functions.runWith({ timeoutSeconds: 540, memory: "512MB", failurePolicy: true })
+  .firestore.document("accountDeletionJobs/{jobId}").onWrite((change, context) => {
+    if (!change.after.exists) return null;
+    if (change.before.exists && change.before.data().retryRequestedAtMillis === change.after.data().retryRequestedAtMillis) return null;
+    return accountDeletion.process(context.params.jobId);
+  });
+exports.retryAccountDeletions = functions.runWith({ timeoutSeconds: 540, memory: "512MB" })
+  .pubsub.schedule("every 60 minutes").onRun(() => accountDeletion.runPending());
 
 const { createAdmission } = require("./admission");
 const { createTeamLeaderboard } = require("./team-leaderboard");
@@ -503,6 +524,7 @@ for (const name of ["inspectPlayerRecovery", "issuePlayerRecovery", "listAccount
 exports.redeemClubStaffInvitation = functions.https.onCall((data, context) => clubs.redeemClubStaffInvitation(data, requireCaller(context)));
 exports.setClubStaffTeams = functions.https.onCall((data, context) => clubs.setClubStaffTeams(data, requireCaller(context)));
 exports.revokeClubStaffInvitation = functions.https.onCall((data, context) => clubs.revokeClubStaffInvitation(data, requireCaller(context)));
+exports.removeClubPlayerFromTeam = functions.https.onCall((data, context) => clubs.removeClubPlayerFromTeam(data, requireCaller(context)));
 exports.setClubPlayerTeam = functions.https.onCall((data, context) => clubs.setClubPlayerTeam(data, requireCaller(context)));
 exports.issueClubPlayerInvitation = functions.https.onCall((data, context) => clubs.issueClubPlayerInvitation(data, requireCaller(context)));
 exports.createClubPlayer = functions.https.onCall((data, context) => clubs.createClubPlayer(data, requireCaller(context)));
