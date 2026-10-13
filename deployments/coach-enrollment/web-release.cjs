@@ -5,7 +5,8 @@
 const fs = require("node:fs"), path = require("node:path"), crypto = require("node:crypto"), cp = require("node:child_process");
 const ROOT = path.resolve(__dirname, "../.."), SITE = "b1ccf990-286c-4367-bb67-ca0d9ea2a020";
 const PUBLIC_FILES = ["/index.html", "/coaches/index.html", "/feedback.html", "/favicon.ico", "/brand/posetek-p.svg", "/brand/posetek-p-96.png", "/apple-touch-icon.png"];
-const APP_ROUTES = ["/coach-join", "/coach-join/", "/coach-join.html", "/application.html", "/signin", "/join", "/organization", "/admin", "/admin/access", "/admin/organizations"];
+const APP_ROUTES = ["/application.html", "/signin", "/join", "/organization", "/admin", "/admin/access", "/admin/organizations"];
+const COACH_ROUTES = ["/coach-join", "/coach-join/", "/coach-join.html"];
 const FEEDBACK_ROUTES = ["/feedback", "/feedback/", "/feedback.html"];
 const sha1 = value => crypto.createHash("sha1").update(value).digest("hex");
 const sha256 = value => crypto.createHash("sha256").update(value).digest("hex");
@@ -174,6 +175,12 @@ async function verifyArtifact(context, api, fetchServed = served) {
     const [old, next] = await Promise.all([fetchServed(priorOrigin, name), fetchServed(origin, name)]);
     requireThat(digest(old.headers) === digest(next.headers) && old.finalPath === next.finalPath, "Effective application or feedback route headers/redirect changed");
     requireThat(next.sha === (APP_ROUTES.includes(name) ? app.sha : old.sha), "Application fallback or isolated feedback rewrite differs");
+    routes.push({ path: name, ...next });
+  }
+  const coach = await fetchServed(origin, "/coach-join.html");
+  for (const name of COACH_ROUTES) {
+    const next = await fetchServed(origin, name);
+    requireThat(next.sha === coach.sha && next.size === coach.size && digest(next.headers) === digest(coach.headers), "Coach entry aliases or effective security headers differ");
     routes.push({ path: name, ...next });
   }
   write(run, "candidate-inventory.json", provider); write(run, "local-inventory.json", local); write(run, "candidate-route-audit.json", routes); write(run, "candidate-asset-route-audit.json", assetRoutes);
