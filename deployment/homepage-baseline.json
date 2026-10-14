@@ -1,7 +1,7 @@
 {
-  "deploymentId": "6acfa10dafea94f1a0142d54",
-  "sourceCommit": "81e8959c81493a7e1d3f8516c8c113868e95aa7e",
-  "url": "https://6acfa10dafea94f1a0142d54--posetek.netlify.app",
+  "deploymentId": "6acfa49a07f33b1d9fb64abf",
+  "sourceCommit": "57e9e03e139a287accfad7889d96747b3ad6ecc3",
+  "url": "https://6acfa49a07f33b1d9fb64abf--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
@@ -769,6 +769,11 @@
       "path": "/_astro/applicationroot.caemum_c.js",
       "sha": "420630886e776d76e9a0011e15da048689a7eee7",
       "size": 17922
+    },
+    {
+      "path": "/_astro/applicationroot.cag_ri_h.js",
+      "sha": "ba47170c3a566cb6e5e0676a8ca0aa6779796c71",
+      "size": 18124
     },
     {
       "path": "/_astro/applicationroot.carak_gb.js",
@@ -3301,6 +3306,11 @@
       "size": 10366
     },
     {
+      "path": "/_astro/supportpage.bir1zv1m.js",
+      "sha": "15c6da8db52d72a30c8a13dc0360d04ecd4aa2e0",
+      "size": 10814
+    },
+    {
       "path": "/_astro/supportpage.bjhktclq.js",
       "sha": "f855af1ee10fc75310565f1857bcb4c4287773e4",
       "size": 10366
@@ -3857,7 +3867,7 @@
     },
     {
       "path": "/application.html",
-      "sha": "dd1824ecdf26038fd6388364cb6bacf8021c8415",
+      "sha": "b23f8e221c6cbd6d5f558836ff89c02d3a85ac2c",
       "size": 15761
     },
     {
@@ -9947,5 +9957,7 @@
       "size": 66488,
       "localPath": "videopage.html"
     }
-  ]
+  ],
+  "coachEnrollmentSourceCommit": "8eaf3ffd35848c3cf7ca753cc9fd4030cc4fb524",
+  "sourceNote": "Runtime freeze codex/coach-overview-runtime contains merged coach overview source while preserving approved privacy/support source from 139162a04a1aa2afefda78c62bf2715d9667acbc. Held candidate remains on main. Isolated coach enrollment and feedback entries retain verified predecessor bytes."
 }

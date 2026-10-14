@@ -3,21 +3,21 @@
   "release": "Coach overview measured progress and clearer evidence",
   "status": "production-verified",
   "website": "https://posetek.net",
-  "deploymentId": "6acfa10dafea94f1a0142d54",
-  "previousDeploymentId": "6ace0ad29778ccacfb979dda",
-  "sourceCommit": "81e8959c81493a7e1d3f8516c8c113868e95aa7e",
+  "deploymentId": "6acfa49a07f33b1d9fb64abf",
+  "previousDeploymentId": "6acfa10dafea94f1a0142d54",
+  "sourceCommit": "57e9e03e139a287accfad7889d96747b3ad6ecc3",
   "sourceMergeCommit": "c60221bd2cee7e32bcae808ee42ccc3eb583c58e",
   "pullRequest": "https://github.com/posetek/posetek_website/pull/58",
-  "publishedAt": "2026-10-14T15:40:47.460Z",
-  "verifiedAt": "2026-10-14T15:45:48.426Z",
+  "publishedAt": "2026-10-14T15:54:55.775Z",
+  "verifiedAt": "2026-10-14T15:56:22.401Z",
   "humanAuthorization": "Owner explicitly requested merge and production publication in the task.",
-  "artifactFiles": 1982,
-  "providerFiles": 1983,
-  "preservedPredecessorFiles": 1972,
-  "addedRuntimeAssets": 9,
-  "artifactInventorySha256": "f0b276b5505075579d4406a4cc430d1f65320a2541f93cdd31ac68a465901aee",
-  "providerInventorySha256": "548be96a095b447273c61e7287db1b2fa6dd6a9e2dc46300cd1f773e05c92755",
-  "applicationSha1": "dd1824ecdf26038fd6388364cb6bacf8021c8415",
+  "artifactFiles": 1984,
+  "providerFiles": 1985,
+  "preservedPredecessorFiles": 1981,
+  "addedRuntimeAssets": 2,
+  "artifactInventorySha256": "14592e9d1ceadb2826e65a71205a67527600b219bd1f46d05ed14451a312c576",
+  "providerInventorySha256": "676250018a75a8ab1fbf7b30c1e08b4461b107d7b8c53002d41847b2b286cce8",
+  "applicationSha1": "b23f8e221c6cbd6d5f558836ff89c02d3a85ac2c",
   "allowedPriorChanges": [
     "/application.html",
     "/netlify.toml (generated provider metadata)"
@@ -32,7 +32,8 @@
     "stable P icons",
     "athlete rest timers",
     "existing navigation and signup/prescribing/history",
-    "native and content release holds"
+    "native and content release holds",
+    "approved privacy/support behavior in final runtime"
   ],
   "behavior": {
     "selectors": [
@@ -349,7 +350,7 @@
       "independent": false,
       "note": "Same-author advisory review; no hosted reviewer or paid provider activated."
     },
-    "frontendTestsPassed": 1960,
+    "frontendTestsPassed": 1957,
     "scopedPackagingTestsPassed": 24,
     "relevantBackendTestsPassed": 94,
     "existingOptionalPrivateFixtureSkips": 3,
@@ -358,7 +359,7 @@
       "accepted": true,
       "checks": 25,
       "failed": 0,
-      "checkedAt": "2026-10-14T15:38:01.815Z",
+      "checkedAt": "2026-10-14T15:51:05.121Z",
       "sourceReconciledPlayers": 8,
       "counts": {
         "improving": 2,
@@ -369,45 +370,48 @@
     },
     "candidateBrowser": {
       "accepted": true,
-      "deploymentId": "6acfa10dafea94f1a0142d54",
-      "artifactDigest": "f0b276b5505075579d4406a4cc430d1f65320a2541f93cdd31ac68a465901aee",
-      "origin": "https://6acfa10dafea94f1a0142d54--posetek.netlify.app",
-      "checks": 15,
+      "deploymentId": "6acfa49a07f33b1d9fb64abf",
+      "artifactDigest": "14592e9d1ceadb2826e65a71205a67527600b219bd1f46d05ed14451a312c576",
+      "origin": "https://6acfa49a07f33b1d9fb64abf--posetek.netlify.app",
+      "checks": 17,
       "failed": 0,
-      "checkedAt": "2026-10-14T15:39:52.025Z",
+      "checkedAt": "2026-10-14T15:54:38.496Z",
       "captures": 8,
       "sourceResponseReconciled": true,
       "missingEvidenceCheck": "intercepted owned response"
     },
     "productionBrowser": {
       "accepted": true,
-      "deploymentId": "6acfa10dafea94f1a0142d54",
-      "artifactDigest": "f0b276b5505075579d4406a4cc430d1f65320a2541f93cdd31ac68a465901aee",
+      "deploymentId": "6acfa49a07f33b1d9fb64abf",
+      "artifactDigest": "14592e9d1ceadb2826e65a71205a67527600b219bd1f46d05ed14451a312c576",
       "origin": "https://posetek.net",
-      "checks": 14,
+      "checks": 16,
       "failed": 0,
-      "checkedAt": "2026-10-14T15:42:08.655Z",
+      "checkedAt": "2026-10-14T15:56:08.887Z",
       "captures": 8,
       "sourceResponseReconciled": true,
       "missingEvidenceCheck": "covered by candidate"
     },
     "ordinaryPreservationBuildPassed": true,
-    "preservationBaselineFiles": 1980
+    "preservationBaselineFiles": 1982,
+    "runtimeCI": "https://github.com/posetek/posetek_website/actions/runs/38592665874",
+    "featureBranchFrontendTestsPassed": 1960,
+    "policySourceAndServedTextPreserved": true
   },
   "cleanup": {
     "completed": true,
-    "checkedAt": "2026-10-14T15:43:28.692Z",
+    "checkedAt": "2026-10-14T15:57:03.050Z",
     "accounts": 5,
     "playerRoots": 14,
     "objects": 42,
-    "deletedDocuments": 304,
+    "deletedDocuments": 294,
     "notificationOutboxes": 0,
     "notificationSettingsUnchanged": true,
     "softDeletePolicyUnchanged": true,
     "independentReadback": {
       "accepted": true,
-      "checkedAt": "2026-10-14T15:45:00Z",
-      "cleanupAt": "2026-10-14T15:43:28.692Z",
+      "checkedAt": "2026-10-14T15:58:09Z",
+      "cleanupAt": "2026-10-14T15:57:03.050Z",
       "implementation": "independent Python REST readback",
       "ownedRootsChecked": 90,
       "scopedQueries": 70,
@@ -418,7 +422,40 @@
       "softDeletePolicyChanged": false
     },
     "temporaryCredentialFilesRemoved": true,
-    "retainedObjectsNote": "42 deleted synthetic JSON objects remain recoverable under the unchanged seven-day bucket soft-delete policy until automatic expiry. No physical erasure of retained soft-deleted objects is claimed."
+    "initialRun": {
+      "completed": true,
+      "checkedAt": "2026-10-14T15:43:28.692Z",
+      "accounts": 5,
+      "playerRoots": 14,
+      "objects": 42,
+      "deletedDocuments": 304,
+      "notificationOutboxes": 0,
+      "notificationSettingsUnchanged": true,
+      "softDeletePolicyUnchanged": true,
+      "independentReadback": {
+        "accepted": true,
+        "checkedAt": "2026-10-14T15:45:00Z",
+        "cleanupAt": "2026-10-14T15:43:28.692Z",
+        "implementation": "independent Python REST readback",
+        "ownedRootsChecked": 90,
+        "scopedQueries": 70,
+        "remainingDocuments": 0,
+        "remainingAuthAccounts": 0,
+        "remainingCurrentOrNoncurrentObjects": 0,
+        "retainedSoftDeletedObjects": 42,
+        "softDeletePolicyChanged": false
+      }
+    },
+    "allRunsTotals": {
+      "accounts": 10,
+      "playerRoots": 28,
+      "organizations": 2,
+      "teams": 4,
+      "currentOrNoncurrentObjectsRemoved": 84,
+      "deletedDocuments": 598,
+      "retainedSoftDeletedObjects": 84
+    },
+    "retainedObjectsNote": "Across both verification runs, 84 deleted synthetic JSON objects remain recoverable under the unchanged seven-day bucket soft-delete policy until automatic expiry. No physical erasure of retained soft-deleted objects is claimed."
   },
   "otherRepositories": {
     "mobileCheckout": "71e64c7702e7bfaf496832c168ad60d9399200d6",
@@ -437,10 +474,26 @@
   "realAthleteDataChanged": false,
   "notificationSettingsChanged": false,
   "recovery": {
-    "previousWebsiteDeploymentId": "6ace0ad29778ccacfb979dda",
+    "previousWebsiteDeploymentId": "6acfa10dafea94f1a0142d54",
     "backendSourceConfigurationIamBackupsCaptured": true,
     "scopedPublisher": "deployments/expanded-insights/README.md",
     "websitePublisher": "deployments/account-recovery/web-release.cjs",
-    "instruction": "Use the canonical guarded publishers and captured exact-version evidence; inspect current production before any recovery mutation."
+    "instruction": "Use canonical guarded publishers and captured exact-version evidence. The immediate predecessor included held policy copy and is not an approved recovery target. Inspect current production and preserve the approved privacy/support source before any recovery mutation.",
+    "lastApprovedPreFeatureDeploymentId": "6ace0ad29778ccacfb979dda"
+  },
+  "runtimeSourceBranch": "codex/coach-overview-runtime",
+  "featureSourceCommit": "81e8959c81493a7e1d3f8516c8c113868e95aa7e",
+  "releaseCorrection": {
+    "initialDeploymentId": "6acfa10dafea94f1a0142d54",
+    "initialPublishedAt": "2026-10-14T15:40:47.460Z",
+    "reason": "The initial full application build also activated held privacy/support policy source from main. This was identified by the final source-to-runtime audit and corrected through a newly built and accepted artifact.",
+    "correctionPublishedAt": "2026-10-14T15:54:55.775Z",
+    "approvedPolicySourceCommit": "139162a04a1aa2afefda78c62bf2715d9667acbc",
+    "approvedPolicyDeploymentId": "6ace0ad29778ccacfb979dda",
+    "sourceEqualityVerified": true,
+    "candidateAndProductionPolicyTextEqualityVerified": true,
+    "heldCandidateSourceRetainedOnMain": true,
+    "runtimeBranchMustNotMergeIntoMain": true,
+    "historicalAssetNote": "Preservation retains prior immutable chunks, including unreferenced held policy chunks. Current privacy/support routes use the approved source."
   }
 }

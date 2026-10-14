@@ -1,11 +1,15 @@
 # Coach overview: measured progress
 
-Published October 14, 2026 at 8:40:47 AM PDT as
-`6acfa10dafea94f1a0142d54`, from the exact accepted hosted candidate.
+Published October 14, 2026 at 8:54:55 AM PDT as
+`6acfa49a07f33b1d9fb64abf`, from the exact accepted hosted candidate.
 [Production evidence](../deployment/COACH_MEASURED_PROGRESS_PRODUCTION.json)
 records website and scoped backend verification. This extends the
 [coach follow-up contract](COACH_FOLLOW_UP.md). Runtime source:
-`81e8959c81493a7e1d3f8516c8c113868e95aa7e`; merged in [PR #58](https://github.com/posetek/posetek_website/pull/58).
+`57e9e03e139a287accfad7889d96747b3ad6ecc3` on `codex/coach-overview-runtime`.
+Coach feature source `81e8959c81493a7e1d3f8516c8c113868e95aa7e` was merged
+in [PR #58](https://github.com/posetek/posetek_website/pull/58). The runtime branch
+preserves approved privacy/support source and must not be merged into main,
+which retains the held policy candidate.
 
 ## Behavior
 
@@ -90,7 +94,8 @@ keep these captures, generated builds and dependencies out of Git.
 
 Local verification:
 
-- Frontend: 1,960 passing tests; final Insights rerun: 123 passing.
+- Frontend: 1,960 passing feature-branch tests; final Insights rerun: 123 passing.
+  The final runtime freeze passes all 1,957 tests with the approved policy tests.
 - Functions/tooling: 1,255 passing, three existing private-fixture skips;
   the additional scope/exclusion/ownership regression passes with the final
   19-test coach-workspace suite.
@@ -108,7 +113,7 @@ Local verification:
 
 Live release verification:
 
-- Final source CI and merged-main CI passed all six checks. The scoped publisher
+- Feature-source, merged-main and final runtime CI each passed all six checks. The scoped publisher
   passed 24 packaging tests; 94 relevant backend tests passed with three existing
   optional private-fixture skips. A stale package-count assertion was corrected
   for the already-included account-deletion dependency; the bundle has sixteen
@@ -120,13 +125,25 @@ Live release verification:
   summary and individual-player responses, including mixed/unchanged/first/missing
   results, older comparisons, workout types, filters, search, pagination, refresh,
   admin/manager/assigned/independent access and stranger/revocation denials.
-- Hosted candidate and production passed 15 and 14 signed-in browser checks,
+- Hosted candidate and production passed 17 and 16 browser checks, including normal staff sign-in,
   each with eight desktop/360/390/430px captures and no page exceptions. Displayed
   values, dates and changes match the authorized response. Missing-evidence UI
   was checked by withholding the additive field from an owned candidate response.
-- The complete 1,982-file artifact matches 1,983 provider records; 1,972
-  predecessor records remain exact and nine runtime assets are added. Marketing,
+- The final 1,984-file artifact matches 1,985 provider records; 1,981
+  immediate-predecessor records remain exact and two runtime assets are added.
+  The reconciled baseline preserves 1,982 files and passes the ordinary build. Marketing,
   feedback, coach enrollment, icons, effective headers and redirects are preserved.
+
+The initial deployment `6acfa10dafea94f1a0142d54` at 8:40:47 AM PDT also
+activated held privacy/support policy source from main. The final source audit
+caught this, and the corrected artifact above was published at 8:54:55 AM PDT.
+Privacy/support source now matches approved runtime `139162a04a1aa2afefda78c62bf2715d9667acbc`
+exactly, and candidate/production browser text matches the previously approved
+`6ace0ad29778ccacfb979dda` pages. Held source stays intact on main. Historical
+immutable chunks remain in the preservation inventory but are not used by the
+current policy routes. Before any future application composition, check held
+source against the intended runtime; a main merge does not authorize every
+pending application feature.
 
 Netlify Git publishing is enabled. Source and receipt commits use `[skip netlify]`;
 ordinary builds preserve the released app and are not application releases. The
@@ -137,7 +154,9 @@ composition, avoiding an unrelated entry regeneration.
 The exact accepted candidate was promoted without rebuilding. The scoped backend
 was published first. No rules, indexes, gateway, catalog, native release, stored
 athlete-data migration or new endpoint is included. Native/content holds remain.
-Owned verification accounts and data are cleaned with delayed independent readback;
+Across both verification runs, ten Auth accounts, twenty-eight players, two
+organizations, four teams and 84 current/noncurrent JSON objects were removed.
+Owned records are absent after delayed independent readback for each run;
 see the production receipt for retained synthetic objects under the unchanged
 bucket soft-delete policy. No real athlete data or notification control changed.
 Future releases retain these canonical publishers and their scoped recovery
