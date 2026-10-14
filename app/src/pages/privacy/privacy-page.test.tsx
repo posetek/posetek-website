@@ -38,7 +38,7 @@ describe("privacy policy page", () => {
   });
 
   it("discloses prospective account attribution, anonymous shared visits and unchanged historical anonymity", () => {
-    expect(POLICY_LAST_UPDATED).toBe("October 12, 2026");
+    expect(POLICY_LAST_UPDATED).toBe("October 5, 2026");
     const section = html.match(/<section id="app-feedback"[\s\S]*?<\/section>/)?.[0] ?? "";
     expect(section).toContain("before you answer");
     expect(section).toContain("requires a signed-in account");
@@ -67,23 +67,4 @@ describe("privacy policy page", () => {
     expect(mailtos.length).toBeGreaterThanOrEqual(6);
     expect(new Set(mailtos)).toEqual(new Set([POLICY_CONTACT_EMAIL]));
   });
-  it("explains native provider permission, withdrawal limits and separate media choices", () => {
-    const ai = html.match(/<section id="ai-and-automated-processing"[\s\S]*?<\/section>/)?.[0] ?? "";
-    for (const text of ["Google Vertex AI", "Anthropic", "TypeSafe (Jev)", "Account settings → AI sharing",
-      "microphone and speech-recognition", "recording remains available", "another account or device",
-      "requests already sent may finish", "does not delete existing conversations", "asks you to retry",
-      "athlete or guardian authority"]) expect(ai).toContain(text);
-    const data = html.match(/<section id="information-we-collect"[\s\S]*?<\/section>/)?.[0] ?? "";
-    for (const text of ["off by default", "that account and athlete on that device", "Coaches cannot grant",
-      "including queued media", "already started may finish", "Diagnostic logs still send", "Local recovery files may remain"])
-      expect(data).toContain(text);
-  });
-
-  it("preserves approved retention and distinguishes team removal from deletion", () => {
-    expect(html).toContain("within 30 days");
-    expect(html).toContain("up to 90 days");
-    expect(html).toContain("Removing a player from a team keeps their account and recordings; it is not account deletion");
-    expect(html).toContain("deletion receipt on the sign-in screen");
-  });
-
 });

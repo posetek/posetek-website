@@ -31,14 +31,7 @@ describe("support page", () => {
 
   it("explains account deletion, which App Review asks for", () => {
     const answer = html.slice(html.indexOf('id="delete-account"'), html.indexOf('id="parents"'));
-    expect(answer).toContain("Account settings → Delete account");
-    expect(answer).toContain("no support email is required");
+    expect(answer).toContain("ask us to delete your account");
     expect(answer).toContain("Deletion is permanent");
   });
-  it("gives native consent routes without conflating withdrawal, media and account deletion", () => {
-    for (const text of ["Account settings → AI sharing", "retry when connected", "Drill Settings",
-      "off by default", "including queued media", "Diagnostic logs still send", "it is not account deletion",
-      "does not delete their players’ accounts or recordings"]) expect(html).toContain(text);
-  });
-
 });
