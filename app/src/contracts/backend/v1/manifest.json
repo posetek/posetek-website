@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "1.0.0",
+  "sourceRepository": "posetek/posetek-backend",
+  "importedFrom": {
+    "repository": "posetek/posetek_website",
+    "commit": "b33b85c3f6a20f3da4c0ba6dc6b35843468bf42e"
+  },
+  "files": {
+    "athlete-profile-spec.json": "138ed2356a56e0ac92c6bc3f9e88f508ed82fb9af1cb6cc363ad9a1453fb967f",
+    "D1Benchmarks.json": "684e62d2168656a37ccbd3deed1b1a820110781543fbccecab7a2e2c53dd9990",
+    "scoring-vectors.json": "3c817ace22e3194be6e8c2edbc117d9bd1071d0176a0dc1a970a807d795ecdeb",
+    "workout-vectors.json": "8f7c2f3db039b1e7d5b660fe044b5d02983c9c8eb06bdfca643bd19eb5df1392"
+  }
+}

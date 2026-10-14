@@ -1,5 +1,5 @@
 import { finiteNumber } from "./result-values";
-import profileSpec from "../../../functions/athlete-profile-spec.json";
+import profileSpec from "../contracts/backend/v1/athlete-profile-spec.json";
 // Port of athlete-benchmarks.js (window.PoseTekBenchmarks). Pure data + math, no DOM.
 
 

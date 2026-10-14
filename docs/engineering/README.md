@@ -1,5 +1,7 @@
 # PoseTek engineering handbook
 
+Migration branch: [Backend source consolidation, stage 1](../BACKEND_MIGRATION.md) is implemented for validation. Production ownership has not switched.
+
 This is the entry point for engineering work across the website, private mobile
 app, and private backend. Documentation and standing CI have reached `main` in
 all three repositories; website authenticated-emulator support is also merged. Use the

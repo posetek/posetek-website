@@ -7,7 +7,7 @@
 import { metricValue as effectiveMetric, resultUsable } from "../../lib/result-values";
 import * as benchmarks from "../../lib/benchmarks";
 import type { BenchmarkKey } from "../../lib/benchmarks";
-import profileSpec from "../../../../functions/athlete-profile-spec.json";
+import profileSpec from "../../contracts/backend/v1/athlete-profile-spec.json";
 
 export const RADAR_CEILING = 130;
 
