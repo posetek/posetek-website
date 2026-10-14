@@ -80,7 +80,8 @@ or the inventory/IAM changes while capturing backups, preparation refuses to
 produce a valid release. Schema 1 manifests must be replaced by a fresh schema 2
 preparation; they lack the complete definition and IAM checks.
 
-This codebase now prepares fifteen source files, including `insights-overview.js`.
+This codebase now prepares sixteen source files, including `insights-overview.js`
+and the shared `account-deletion-state.js` dependency.
 Preparation validates the complete static CommonJS dependency graph rooted at
 `index.js` against those copied files and records it as `moduleClosure` in the
 manifest. Local imports must resolve inside the immutable manifest; external
@@ -97,7 +98,7 @@ accepts it only when its complete JSON is exactly `firebase.projectId` and
 `firebase.storageBucket` with this release's expected project and bucket. Extra
 fields, duplicate keys, differing values and oversized content fail verification.
 Its SHA-256 and byte count are recorded without copying configuration values into
-the sanitized verification metadata. All fifteen prepared source-file hashes remain
+the sanitized verification metadata. All sixteen prepared source-file hashes remain
 unchanged.
 The verifier recomputes the prepared module closure, matches its recorded graph,
 and records `runtimeModuleClosureVerified` only after successful source/runtime/
