@@ -1,16 +1,17 @@
 // Synthetic player signup across the local Astro app and four Firebase emulators.
 // Requires cached Java 21, Firebase emulator binaries, Playwright Chromium,
-// and an explicit reviewed mobile checkout and full SHA.
+// and the explicit Backend checkout pinned in backend-source.json.
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, symlink, writeFile, rm } from 'node:fs/promises';
-import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { spawn, execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import net from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '../app/node_modules/playwright/index.mjs';
-import { reviewedMobileRules } from './authenticated-emulator-source.mjs';
+import { reviewedBackendRules } from './authenticated-emulator-source.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const projectId = 'demo-posetek-website-e2e';
@@ -19,7 +20,10 @@ const ports = { auth: 19199, firestore: 18189, functions: 15101, storage: 19399,
 const host = '127.0.0.1';
 const origin = `http://${host}:${ports.astro}`;
 const require = createRequire(import.meta.url);
-const admin = require('../functions/node_modules/firebase-admin');
+const pin = JSON.parse(readFileSync(path.join(root, 'backend-source.json'), 'utf8'));
+const backend = reviewedBackendRules(process.env.POSETEK_BACKEND_REPO, pin.commit);
+execFileSync('python3', [path.join(root, 'scripts/backend.py'), 'verify'], { stdio: 'inherit' });
+const admin = require(path.join(backend.repo, 'functions/node_modules/firebase-admin'));
 const { initializeTestEnvironment, assertFails } = require('../app/node_modules/@firebase/rules-unit-testing');
 
 async function assertFreePorts() {
@@ -43,8 +47,8 @@ async function runOuter() {
   assert.equal(process.env.FIREBASE_EMULATORS_PATH?.startsWith('/private/tmp/'), true, 'use cached local emulator binaries');
   assert.ok(process.env.PLAYWRIGHT_BROWSERS_PATH, 'PLAYWRIGHT_BROWSERS_PATH must identify cached local Chromium');
   await assertFreePorts();
-  const rules = reviewedMobileRules(process.env.POSETEK_MOBILE_REPO, process.env.POSETEK_MOBILE_SHA);
-  console.log(`Reviewed private mobile rules from ${rules.sha}`);
+  const rules = backend;
+  console.log(`Reviewed private Backend rules from ${rules.sha}`);
   await Promise.all(['/private/tmp/posetek-website-e2e-home', '/private/tmp/posetek-website-e2e-config'].map(dir => mkdir(dir, { recursive: true })));
   const tmp = await mkdtemp(path.join(root, '.firebase-e2e-'));
   try {
@@ -53,18 +57,18 @@ async function runOuter() {
     // this throwaway emulator entry; production Functions source is untouched.
     const fixture = path.join(tmp, 'functions');
     await mkdir(fixture);
-    await symlink(path.join(root, 'functions/node_modules'), path.join(fixture, 'node_modules'));
+    await symlink(path.join(backend.repo, 'functions/node_modules'), path.join(fixture, 'node_modules'));
     await writeFile(path.join(fixture, 'package.json'), JSON.stringify({ name: 'posetek-local-functions-fixture', private: true,
       main: 'index.js', engines: { node: '22' }, dependencies: { 'firebase-admin': '12.7.0', 'firebase-functions': '4.9.0' } }));
-    await writeFile(path.join(fixture, 'index.js'), `const adminPath = require.resolve(${JSON.stringify(path.join(root, 'functions/node_modules/firebase-admin'))});\n` +
+    await writeFile(path.join(fixture, 'index.js'), `const adminPath = require.resolve(${JSON.stringify(path.join(backend.repo, 'functions/node_modules/firebase-admin'))});\n` +
       `const admin = require(adminPath);\n` +
-      `const firestore = require(${JSON.stringify(path.join(root, 'functions/node_modules/@google-cloud/firestore'))});\n` +
+      `const firestore = require(${JSON.stringify(path.join(backend.repo, 'functions/node_modules/@google-cloud/firestore'))});\n` +
       `require.cache[adminPath].exports = new Proxy(admin, { get(target, key, receiver) {\n` +
       `  const value = Reflect.get(target, key, receiver);\n` +
       `  if (key === 'firestore') for (const name of ['FieldValue', 'Timestamp', 'FieldPath', 'Filter']) value[name] ||= firestore[name];\n` +
       `  return value;\n` +
       `} });\n` +
-      `module.exports = require(${JSON.stringify(path.join(root, 'functions/index.js'))});\n`);
+      `module.exports = require(${JSON.stringify(path.join(backend.repo, 'functions/index.js'))});\n`);
     const config = {
       functions: { source: 'functions', runtime: 'nodejs22' },
       firestore: { rules: rules.firestore }, storage: { rules: rules.storage },
@@ -76,7 +80,7 @@ async function runOuter() {
     await writeFile(configFile, JSON.stringify(config));
     const cli = spawn('firebase', ['emulators:exec', '--only', 'auth,firestore,functions,storage', '--project', projectId,
       '--config', configFile, 'node scripts/authenticated-emulator-smoke.mjs --inside'],
-    { cwd: root, env: safeEnvironment({ POSETEK_MOBILE_REPO: rules.repo, POSETEK_MOBILE_SHA: rules.sha }), stdio: 'inherit' });
+    { cwd: root, env: safeEnvironment({ POSETEK_BACKEND_REPO: rules.repo, POSETEK_BACKEND_SHA: rules.sha }), stdio: 'inherit' });
     const code = await new Promise((resolve, reject) => { cli.once('error', reject); cli.once('exit', resolve); });
     assert.equal(code, 0, `Firebase emulator journey exited ${code}`);
   } finally { await rm(tmp, { recursive: true, force: true }); }

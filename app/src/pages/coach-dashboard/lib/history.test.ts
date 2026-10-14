@@ -1,39 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createRequire } from 'node:module';
+import vectors from '../../../contracts/backend/v1/history-vectors.json';
 import { describe, expect, it } from 'vitest';
 import { workoutHistory } from './history';
 import { activePlan, trainingTotals } from './logic';
 
-const { workoutEvents } = createRequire(import.meta.url)('../../../../../functions/insights-v2-qualification.js');
 const start = new Date('2026-09-20T12:00:00Z'), end = new Date('2026-09-20T14:00:00Z');
 const block = { blockId: 'b', name: 'Original drill', sets: 3, dose: { reps: 5 } };
 const base = { id: 'one', planId: 'p', workoutId: 'w', startedAt: start, endedAt: end, endReason: 'completed',
   workoutSnapshot: { title: 'Original session', blocks: [block] }, blocks: [{ blockId: 'b', setsCompleted: 2, status: 'partial' }] };
 
 describe('coach outcome parity with Insights V2', () => {
-  const scenarios: [string, any[]][] = [
-    ['paused timer', [{ ...base, activeSeconds: 600 }]],
-    ['zero timer', [{ ...base, activeSeconds: 0 }]],
-    ['legacy elapsed estimate', [base]],
-    ['invalid timer uses estimate', [{ ...base, activeSeconds: -3 }]],
-    ['timer over safety bound', [{ ...base, activeSeconds: 8 * 86400 }]],
-    ['duplicate prefers immutable prescription', [base, { ...base, id: 'two', workoutSnapshot: undefined, endedAt: new Date('2026-09-21'), activeSeconds: 999 }]],
-    ['newer ending of same pinned prescription', [base, { ...base, id: 'two', endedAt: new Date('2026-09-21'), activeSeconds: 400 }]],
-    ['missing ending remains incomplete', [{ ...base, endedAt: null }]],
-    ['abandoned', [{ ...base, endReason: 'abandoned' }]],
-    ['ended early', [{ ...base, endReason: 'endedEarly' }]],
-    ['personal pain ending', [{ ...base, source: 'personal', endReason: 'pain' }]],
-    ['personal stopped ending', [{ ...base, source: 'personal', endReason: 'stopped' }]],
-    ['legacy unknown ending preserved', [{ ...base, endReason: 'stopped' }]],
-    ['unknown ending', [{ ...base, endReason: 'something-old' }]],
-    ['unknown time and prescription', [{ id: 'old', endReason: 'completed' }]],
-    ['fully completed prescription', [{ ...base, blocks: [{ blockId: 'b', status: 'done', setsCompleted: 3 }] }]],
-    ['skipped drill still completed session', [{ ...base, blocks: [{ blockId: 'b', status: 'skipped', setsCompleted: 0, skipReason: 'pain' }] }]],
-    ['deduplicated block outcomes', [{ ...base, blocks: [{ blockId: 'b', status: 'done', setsCompleted: 3 }, { blockId: 'b', status: 'partial', setsCompleted: 1 }] }]],
-    ['serialized timestamp and epoch', [{ ...base, startedAt: 0, endedAt: { _seconds: 600 } }]],
-  ];
-  it.each(scenarios)('%s', (_name, logs) => {
-    const browser = workoutHistory(logs)[0], server = workoutEvents(logs)[0];
+  const decode = (value: any): any => {
+    if (Array.isArray(value)) return value.map(decode);
+    if (value && typeof value === 'object') {
+      if (typeof value.$date === 'string') return new Date(value.$date);
+      return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, decode(item)]));
+    }
+    return value;
+  };
+  it.each(vectors.cases)('$name', ({ logs, expected: server }) => {
+    const browser = workoutHistory(decode(logs))[0];
     expect(browser.status).toBe(server.status);
     expect(browser.start).toBe(server.at); expect(browser.end).toBe(server.end);
     expect(browser.duplicateLogs).toBe(server.duplicateLogs);

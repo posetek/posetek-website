@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "repository": "posetek/posetek-backend",
-  "commit": "cd83b62068b21f3a5c8f5a78e693c0dda996ef5a",
-  "stage": "validation-only; production ownership unchanged"
+  "commit": "e3f51eaba34a7ec77c2dca50f6d2d9b5914e0762",
+  "stage": "source-ownership-transferred-release-held"
 }

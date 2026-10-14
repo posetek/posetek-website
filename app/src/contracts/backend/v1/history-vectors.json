@@ -1,0 +1,968 @@
+{
+  "cases": [
+    {
+      "name": "paused timer",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ],
+          "activeSeconds": 600
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 10,
+        "estimatedMinutes": 0,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "zero timer",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ],
+          "activeSeconds": 0
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 0,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "legacy elapsed estimate",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "invalid timer uses estimate",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ],
+          "activeSeconds": -3
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "timer over safety bound",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ],
+          "activeSeconds": 691200
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "duplicate prefers immutable prescription",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ]
+        },
+        {
+          "id": "two",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-21T00:00:00.000Z"
+          },
+          "endReason": "completed",
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ],
+          "activeSeconds": 999
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 1,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "newer ending of same pinned prescription",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ]
+        },
+        {
+          "id": "two",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-21T00:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ],
+          "activeSeconds": 400
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 1789905600000,
+        "end": 1789948800000,
+        "duplicateLogs": 1,
+        "timerMinutes": 6.666666666666667,
+        "estimatedMinutes": 0,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "missing ending remains incomplete",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": null,
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "inProgress",
+        "at": 1789905600000,
+        "end": null,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 0,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "abandoned",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "abandoned",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "abandoned",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "ended early",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "endedEarly",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "endedEarly",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "personal pain ending",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "pain",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ],
+          "source": "personal"
+        }
+      ],
+      "expected": {
+        "status": "endedEarly",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "personal stopped ending",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "stopped",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ],
+          "source": "personal"
+        }
+      ],
+      "expected": {
+        "status": "endedEarly",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "legacy unknown ending preserved",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "stopped",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "unknown",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "unknown ending",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "something-old",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "unknown",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "unknown time and prescription",
+      "logs": [
+        {
+          "id": "old",
+          "endReason": "completed"
+        }
+      ],
+      "expected": {
+        "status": "inProgress",
+        "at": null,
+        "end": null,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 0,
+        "unknownPrescription": 1,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 0,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "fully completed prescription",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "status": "done",
+              "setsCompleted": 3
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 1,
+        "setsCompleted": 3,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "skipped drill still completed session",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "status": "skipped",
+              "setsCompleted": 0,
+              "skipReason": "pain"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 0,
+        "skippedBlocks": 1
+      }
+    },
+    {
+      "name": "deduplicated block outcomes",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": {
+            "$date": "2026-09-20T12:00:00.000Z"
+          },
+          "endedAt": {
+            "$date": "2026-09-20T14:00:00.000Z"
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "status": "done",
+              "setsCompleted": 3
+            },
+            {
+              "blockId": "b",
+              "status": "partial",
+              "setsCompleted": 1
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 1789905600000,
+        "end": 1789912800000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 120,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 1,
+        "skippedBlocks": 0
+      }
+    },
+    {
+      "name": "serialized timestamp and epoch",
+      "logs": [
+        {
+          "id": "one",
+          "planId": "p",
+          "workoutId": "w",
+          "startedAt": 0,
+          "endedAt": {
+            "_seconds": 600
+          },
+          "endReason": "completed",
+          "workoutSnapshot": {
+            "title": "Original session",
+            "blocks": [
+              {
+                "blockId": "b",
+                "name": "Original drill",
+                "sets": 3,
+                "dose": {
+                  "reps": 5
+                }
+              }
+            ]
+          },
+          "blocks": [
+            {
+              "blockId": "b",
+              "setsCompleted": 2,
+              "status": "partial"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "status": "completed",
+        "at": 0,
+        "end": 600000,
+        "duplicateLogs": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 10,
+        "unknownPrescription": 0,
+        "allPrescribedSetsCompleted": 0,
+        "setsCompleted": 2,
+        "skippedBlocks": 0
+      }
+    }
+  ]
+}

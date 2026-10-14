@@ -1,11 +1,10 @@
 {
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs22"
-  },
   "hosting": {
     "public": "dist",
-    "predeploy": ["npm --prefix app ci", "npm --prefix app run build"],
+    "predeploy": [
+      "npm --prefix app ci",
+      "npm --prefix app run build"
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -48,8 +47,5 @@
         ]
       }
     ]
-  },
-  "firestore": {
-    "indexes": "firestore.indexes.json"
   }
 }

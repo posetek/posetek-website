@@ -12,8 +12,6 @@ from dependency_audit_policy import evaluate, findings, load_json, require, SEVE
 ROOT = Path(__file__).resolve().parents[1]
 SCOPES = {
     "app": "app",
-    "functions": "functions",
-    "legacy": "functions/legacy-upload-processor",
 }
 
 

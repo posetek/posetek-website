@@ -26,10 +26,10 @@ def resolve_backend(repo, pin):
         raise ValueError('Backend origin is not canonical')
     if git(repo, 'rev-parse', 'HEAD') != pin['commit']:
         raise ValueError('Backend checkout differs from the pinned commit; use a detached checkout at the recorded SHA')
-    if git(repo, 'status', '--porcelain', '--untracked-files=all', '--', 'firebase', 'functions', 'contracts', 'scripts', 'dev'):
+    if git(repo, 'status', '--porcelain', '--untracked-files=all', '--', 'firebase', 'functions', 'contracts', 'scripts', 'dev', 'release'):
         raise ValueError('Backend runtime/test inputs have uncommitted changes')
     # Detect hidden tracked edits even if assume-unchanged is set.
-    paths = git(repo, 'ls-files', '--', 'firebase', 'functions', 'contracts', 'scripts', 'dev').splitlines()
+    paths = git(repo, 'ls-files', '--', 'firebase', 'functions', 'contracts', 'scripts', 'dev', 'release').splitlines()
     for name in paths:
         file = repo / name
         if file.is_symlink() or any(p.is_symlink() for p in file.parents if p != repo):
@@ -42,7 +42,7 @@ def resolve_backend(repo, pin):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['verify', 'rules', 'emulators'])
+    parser.add_argument('command', choices=['verify', 'rules', 'emulators', 'seed', 'smoke'])
     args = parser.parse_args()
     client = Path(__file__).resolve().parents[1]
     pin = json.loads((client / 'backend-source.json').read_text())
@@ -50,7 +50,7 @@ def main():
     if args.command == 'verify':
         print(f'Verified {REPOSITORY}@{pin["commit"]}')
         return
-    commands = [['npm', '--prefix', 'firebase', 'test'], ['npm', '--prefix', 'firebase', 'run', 'test:web-contracts']] if args.command == 'rules' else [['node', 'dev/emulators.mjs']]
+    commands = [['npm', '--prefix', 'firebase', 'test'], ['npm', '--prefix', 'firebase', 'run', 'test:web-contracts']] if args.command == 'rules' else [['node', {'emulators': 'dev/emulators.mjs', 'seed': 'dev/seed.mjs', 'smoke': 'dev/smoke.mjs'}[args.command]]]
     for command in commands:
         subprocess.run(command, cwd=repo, check=True)
 

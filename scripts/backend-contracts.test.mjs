@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const dir = path.join(root, 'app/src/contracts/backend/v1');
 test('backend client bundle is data-only, allowlisted and hash pinned', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json')));
-  const names = ['D1Benchmarks.json', 'athlete-profile-spec.json', 'scoring-vectors.json', 'workout-vectors.json'];
+  const names = ['D1Benchmarks.json', 'athlete-profile-spec.json', 'scoring-vectors.json', 'workout-vectors.json', 'history-vectors.json'];
   assert.equal(manifest.schemaVersion, 1);
   assert.equal(manifest.sourceRepository, 'posetek/posetek-backend');
   assert.match(manifest.importedFrom.commit, /^[0-9a-f]{40}$/);
@@ -26,7 +26,7 @@ test('frontend cannot import private Functions implementation', () => {
   const visit = directory => fs.readdirSync(directory, { withFileTypes: true }).flatMap(e =>
     e.isDirectory() ? visit(path.join(directory, e.name)) : [path.join(directory, e.name)]);
   for (const file of visit(path.join(root, 'app/src')).filter(file => /\.[cm]?[jt]sx?$/.test(file))) {
-    assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /(?:from\s*|require\s*\(|import\s*\()\s*['"][^'"]*\.\.\/[^'"]*functions\//,
+    assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /['"][^'"]*\.\.\/[^'"]*functions\//,
       `Private server import in ${path.relative(root, file)}`);
   }
 });

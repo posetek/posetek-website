@@ -1,5 +1,15 @@
 # PoseTek website context
 
+## Current backend ownership — migration branch
+
+Shared Firebase/runtime source moved to `posetek/posetek-backend`. Read
+[docs/BACKEND_MIGRATION.md](docs/BACKEND_MIGRATION.md) and use the exact
+`backend-source.json` pin. This current ownership note supersedes historical
+Mobile rules/Web Functions paths below. Production behavior is unchanged;
+Backend publication remains held until release qualification. Client application,
+site/native delivery and historical production evidence stay in this repository.
+
+
 
 ## Current coach measured-progress release
 
