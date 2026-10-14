@@ -1,5 +1,14 @@
 # PoseTek website context
 
+
+## Current coach measured-progress release
+
+Website `6acfa10dafea94f1a0142d54`, runtime source `81e8959c81493a7e1d3f8516c8c113868e95aa7e`, was published October 14, 2026 at 8:40:47 AM PDT from the exact reviewed candidate. Coach Overview now separates **Players improving**, **No completed workouts** and **Results to review**. Testing uses actual comparable measurements on each test’s latest two qualified local dates through the selected end; mixed gains/declines appear together. Missing additive evidence stays Unavailable. Complete authorized reporting groups precede name search/pagination. Coach controls, evidence rows, full names and 44px targets are polished without changing manager/admin layouts.
+
+The nine Expanded Insights functions passed immutable source/configuration/IAM and module-closure verification, with all 126 unrelated regional functions unchanged. Final source and merge CI passed six checks; 24 scoped packaging tests and 94 relevant backend tests passed, with three existing optional private-fixture skips. Live API acceptance passed 25 checks. Candidate/production passed 15/14 signed-in browser checks with eight captures each at desktop and 360/390/430px. The 1,982-file artifact matches 1,983 provider records, preserves 1,972 predecessor records exactly and adds nine runtime assets. The reconciled baseline protects 1,980 files.
+
+Five owned synthetic Auth accounts, fourteen players, one organization, two teams, all owned descendant/scoped records and 42 current/noncurrent storage objects were removed. Delayed independent readback verifies cleanup; deleted synthetic JSON objects remain under the unchanged seven-day soft-delete policy until automatic expiry. No real athlete data or notification control changed. Marketing, feedback, isolated coach enrollment, stable P icons, athlete timers and native/content holds remain preserved. Rules, indexes, gateway, catalog and native were not released. Read [the handoff](docs/COACH_MEASURED_PROGRESS.md), [production evidence](deployment/COACH_MEASURED_PROGRESS_PRODUCTION.json) and [PR #58](https://github.com/posetek/posetek_website/pull/58). Earlier sections remain preserved release checkpoints.
+
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release
 
