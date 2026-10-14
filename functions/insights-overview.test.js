@@ -100,3 +100,39 @@ test("mixed changes show which metric declined while higher speed and jumps impr
   assert.equal(rows.find(row => row.drill === "sprint").status, "mixed");
   assert.equal(rows.find(row => row.drill === "jump").status, "up");
 });
+
+test("complete testing groups classify measured gains, declines, cross-test mixed and unchanged without legacy scores", () => {
+  const { coachTestingOverview } = require('./insights-overview');
+  const row = (id, testing) => ({ id, firstName: id, lastName: 'Player', performance: playerPerformance({ testing,
+    workouts: { completed: 1 }, now: NOW, endMillis: NOW + 1, timeZone: 'UTC' }) });
+  const pair = (before, after) => [event(NOW - 60 * DAY, before), event(NOW - 30 * DAY, after)];
+  const mixed = [...pair(2.4, 2.2), event(NOW - 60 * DAY, 1, { drill: 'jump', profileMetrics: { verticalJumpHeight: .5 } }),
+    event(NOW - 30 * DAY, 1, { drill: 'jump', profileMetrics: { verticalJumpHeight: .4 } })];
+  const rows = [row('up', pair(2.4, 2.2)), row('down', pair(2.2, 2.4)), row('mixed', mixed), row('same', pair(2.4, 2.401)),
+    row('first', [event(NOW, 1)]), row('none', []), row('invalid', [event(null, 2), event(NOW, 3, { qualified: false })]),
+    row('different', [event(NOW - DAY, 2), event(NOW, 3, { profileMetrics: { sprintMaxSpeed: 8 } })])];
+  for (const item of rows) { item.performance.change = 99; item.performance.coachFocus.measuredTests.forEach(test => test.status = 'up'); }
+  const result = coachTestingOverview(rows, '2026-10-06');
+  assert.equal(result.version, 1); assert.equal(result.asOfDate, '2026-10-06');
+  assert.equal(result.comparablePlayers, 4);
+  assert.deepEqual(result.improvingPlayers.map(row => row.id), ['up']);
+  assert.deepEqual(result.reviewPlayers.map(row => [row.id, row.status]), [['down', 'down'], ['mixed', 'mixed']]);
+  assert.deepEqual(result.reviewPlayers[1].measuredTests.flatMap(test => test.metrics.map(metric => metric.trend)), ['up', 'down']);
+  assert.equal(result.improvingPlayers[0].measuredTests[0].lastTestDate, '2026-09-06');
+  assert.equal(coachTestingOverview(rows, '2026-09-01').comparablePlayers, 0);
+});
+
+test("testing summary honors local date boundaries, displayed precision and qualified daily bests", () => {
+  const { coachTestingOverview } = require('./insights-overview');
+  const end = Date.UTC(2026, 9, 7, 7); // Midnight after October 6 in Los Angeles.
+  const performance = playerPerformance({ now: end - 1, endMillis: end, timeZone: 'America/Los_Angeles', testing: [
+    event(Date.UTC(2026, 9, 6, 6, 59), 2.4), event(Date.UTC(2026, 9, 6, 7), 2.2), event(end - 1, 2.3),
+    event(end, 1), event(end + DAY, .5), event(end - 1, .5, { duplicate: true }), event(end - 1, .5, { qualified: false }),
+    event(end - 1, 1, { profileMetrics: { sprintCompletionTime: NaN, shotAccuracy: 100 } }),
+  ] });
+  const result = coachTestingOverview([{ id: 'local', firstName: 'Local', lastName: 'Date', performance }], '2026-10-06');
+  const test = result.improvingPlayers[0].measuredTests[0];
+  assert.equal(test.previousTestDate, '2026-10-05'); assert.equal(test.lastTestDate, '2026-10-06');
+  assert.equal(test.metrics[0].previous, 2.4); assert.equal(test.metrics[0].current, 2.2);
+  assert.deepEqual(coachTestingOverview([], '2026-10-06'), { version: 1, asOfDate: '2026-10-06', comparablePlayers: 0, improvingPlayers: [], reviewPlayers: [] });
+});

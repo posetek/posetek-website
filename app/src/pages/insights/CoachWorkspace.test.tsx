@@ -49,7 +49,7 @@ describe("unified coach workspace", () => {
   it("keeps the coach roster compact and preserves invitation controls", () => {
     const rows = { ...data, players: [{ ...data.players[0], age: null }] };
     const html = renderToStaticMarkup(<MemoryRouter><CoachRoster preview data={rows} search="" page={0} onSearch={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={player => `/insights?view=player&playerId=${player.id}`} /></MemoryRouter>);
-    for (const label of ["Needs you", "Recent testing", "Testing", "Workouts completed", "Signup actions"]) expect(html).toContain(`>${label}</th>`);
+    for (const label of ["Needs you", "Latest testing", "Testing", "Workouts completed", "Signup actions"]) expect(html).toContain(`>${label}</th>`);
     expect(html).toContain('<th scope="col" class="coach-training-heading"><span>Training</span><span>14 days</span></th>');
     for (const label of ["Age", "Estimated active use"]) {
       expect(html).not.toContain(`>${label}</th>`);

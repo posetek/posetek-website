@@ -16,6 +16,14 @@ export interface CoachMeasuredTest {
   status: "notTested" | "noPriorTest" | "notComparable" | "mixed" | "down" | "up" | "same";
   metrics: { key: string; current: number; previous: number | null; direction: "higher" | "lower"; trend: "unavailable" | "down" | "up" | "same" }[];
 }
+/** Additive v1 contract; groups cover the whole filtered reporting roster. */
+export interface CoachTestingPlayer {
+  id: string; name: string; status: "up" | "down" | "mixed"; measuredTests: CoachMeasuredTest[];
+}
+export interface CoachTestingOverview {
+  version: 1; asOfDate: string; comparablePlayers: number;
+  improvingPlayers: CoachTestingPlayer[]; reviewPlayers: CoachTestingPlayer[];
+}
 export interface ExpandedPlayer {
   id: string; firstName: string; lastName: string; organizationId: string; organizationName: string; teamId: string | null; teamName: string | null;
   division: string; age: number | null; ageBand: string; registered?: boolean; signupInvitationReady?: boolean;
@@ -39,7 +47,7 @@ export interface ExpandedInsights {
   roster: { total: number; included: number; excluded: number; filtered: number; matched?: number };
   nameSearch?: string;
   participation?: { testingPlayers: number; workoutPlayers: number; anyPlayers: number };
-  overview?: { playersWithD1: number; averageD1: number | null; playersWithChange: number; improved: number; planPlayers: number; keepingUp: number; coachFollowUp: number; needsYouPlayers?: { id: string; name: string; reasons: string[] }[]; noTestingPlayers?: { id: string; name: string }[]; noWorkoutPlayers?: { id: string; name: string }[]; coachFocus?: { version: 1; noCompletionPlayers: { id: string; name: string }[]; decliningPlayers: { id: string; name: string }[] } };
+  overview?: { coachTesting?: CoachTestingOverview; playersWithD1: number; averageD1: number | null; playersWithChange: number; improved: number; planPlayers: number; keepingUp: number; coachFollowUp: number; needsYouPlayers?: { id: string; name: string; reasons: string[] }[]; noTestingPlayers?: { id: string; name: string }[]; noWorkoutPlayers?: { id: string; name: string }[]; coachFocus?: { version: 1; noCompletionPlayers: { id: string; name: string }[]; decliningPlayers: { id: string; name: string }[] } };
   demographics: { division: CountGroup[]; ageBand: CountGroup[] };
   scopeBreakdown: { organizations: { id: string; name: string; count: number }[]; teams: { id: string | null; organizationId: string; name: string; count: number }[] };
   testing: { statuses: CountGroup[]; recordedDocuments: number; distinctAttempts: number; qualifyingTests: number; duplicateDocuments: number; needsReview: number; noResultDocuments: number; undatedDocuments: number; futureDatedDocuments: number; failureReports?: number; linkedFailureReports?: number; unmatchedFailureReports?: number;

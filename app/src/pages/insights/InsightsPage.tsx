@@ -23,6 +23,7 @@ import { createInsightsRequestGuard, insightsPlayerLink, insightsReturnLink, isI
 import "../../styles/pose-portal.css";
 import "../../styles/admin-theme.scss";
 import "./insights.scss";
+import "./coach-overview.scss";
 
 const Preview = import.meta.env.DEV ? lazy(() => import("./InsightsPreview")) : null;
 
@@ -102,7 +103,7 @@ export function InsightsControls({ choices, request, scope, loading, hideScope =
           {dateError && <p className="insights-note" role="alert">{dateError}</p>}
         </form>
       </details>
-      <button className="insights-refresh" type="button" disabled={loading} onClick={onRefresh} aria-label="Refresh Insights" title="Refresh Insights"><span className="material-symbols-outlined" aria-hidden="true">refresh</span></button>
+      <button className="insights-refresh" type="button" disabled={loading} onClick={onRefresh} aria-label="Refresh Insights" title="Refresh Insights">{coach ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5" /><path d="M6.1 6.1A8 8 0 0 1 20 12M4 12a8 8 0 0 0 13.9 5.9" /></svg> : <span className="material-symbols-outlined" aria-hidden="true">refresh</span>}</button>
     </div>
   </section>;
 }
@@ -237,7 +238,7 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
   function nextPage() { if (report?.pagination.nextCursor) change({ page: request.page + 1, cursor: report.pagination.nextCursor }); }
   function playerLink(player: { id: string }) { return `/insights?${expandedQuery(request, { view: "player", playerId: player.id })}`; }
   function closePlayer() { change({ view: "overview", playerId: "" }); }
-  const snapshot = report && coach && activeView === "overview" ? <CoachOverviewSnapshot data={report} playerLink={playerLink} /> : null;
+  const snapshot = report && coach && activeView === "overview" ? <CoachOverviewSnapshot key={JSON.stringify([uid, request.orgId, request.teamId, report.scope.kind])} data={report} playerLink={playerLink} /> : null;
   function prescribe() {
     if (!report || !request.playerId) return;
     const params = new URLSearchParams({ players: request.playerId, returnTo: location.pathname + location.search });
@@ -276,7 +277,7 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
     void auth.signOut().catch(() => setError("Sign out failed. Try again."));
   }}>{content}</AdminInsightsLayout>;
   const back = insightsReturnLink(role || undefined, { orgId: request.orgId, teamId: request.teamId, coachId: request.coachId }, request.from);
-  return <div className="pt-pose portal-body pt-insights">
+  return <div className={`pt-pose portal-body pt-insights${coach ? " is-coach-workspace" : ""}${coach && activeView === "overview" ? " is-coach-overview" : ""}`}>
     {role === "manager" ? <OrganizationHeader ready orgId={currentScope && currentScope.kind !== "global" && currentScope.kind !== "coachRoster" ? currentScope.organizationId : request.orgId} teamId={currentScope?.kind === "team" ? currentScope.teamId : request.teamId} email={auth.currentUser?.email || undefined} onSignOut={() => {
       guard.cancel(); setResponse(null); setContext(null); setScope(null);
       void auth.signOut().catch(() => setError("Sign out failed. Try again."));

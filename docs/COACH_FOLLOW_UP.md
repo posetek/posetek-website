@@ -1,5 +1,9 @@
 # Coach follow-up
 
+Current source extends the overview with [measured progress and full comparison
+evidence](COACH_MEASURED_PROGRESS.md). The release history below describes the
+previously published behavior; the new overview has not been published.
+
 This pass removes D1 standing and D1-normalized testing percentages from the
 coach overview, roster, player summary and detailed Testing results panel.
 Relative team/roster percentiles remain a separate, labeled comparison. Player

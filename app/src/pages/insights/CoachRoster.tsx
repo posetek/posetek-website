@@ -23,7 +23,7 @@ export default function CoachRoster({ data, search, page, onSearch, onPrevious, 
       <button type="submit" className="quiet-button">Search</button>{search && <button type="button" className="insights-text-button" onClick={() => { setDraft(""); onSearch(""); }}>Clear search</button>}
     </form>
     {data.players.length ? <div className="insights-table-wrap"><table className="insights-table coach-roster-table"><caption className="insights-sr-only">Current roster and reporting-period activity</caption>
-      <thead><tr>{["Player", "Needs you", "Recent testing", "Testing"].map(label => <th scope="col" key={label}>{label}</th>)}<th scope="col" className="coach-training-heading"><span>Training</span><span>14 days</span></th>{["Workouts completed", "Signup actions"].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
+      <thead><tr>{["Player", "Needs you", "Latest testing", "Testing"].map(label => <th scope="col" key={label}>{label}</th>)}<th scope="col" className="coach-training-heading"><span>Training</span><span>14 days</span></th>{["Workouts completed", "Signup actions"].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
       <tbody>{data.players.map(player => {
         const name = `${player.firstName} ${player.lastName}`.trim() || "Player";
         const reasons = coachFollowUp(player.performance);
@@ -34,7 +34,7 @@ export default function CoachRoster({ data, search, page, onSearch, onPrevious, 
           }}>
           <th scope="row"><Link to={playerLink(player)} onClick={onOpen}>{name}</Link></th>
           <td data-label="Needs you">{reasons === null ? <span className="insights-subtle">Follow-up unavailable</span> : reasons.length ? <ul className="coach-needs-you">{reasons.map(reason => <li key={reason}>{reason}</li>)}</ul> : <span className="insights-subtle">No workout or testing flags</span>}</td>
-          <td data-label="Recent testing">{coachTestingLabel(player.performance)}</td>
+          <td data-label="Latest testing">{coachTestingLabel(player.performance)}</td>
           <td data-label="Testing"><span className={`insights-status ${player.testing.status === "fullyTested" ? "full" : player.testing.status === "partiallyTested" ? "partial" : ""}`}>{TESTING_LABELS[player.testing.status] || player.testing.status}</span><span className="insights-subtle">{player.testing.exercisesComplete}/6</span>{player.testing.hasDateUnknownAttempts ? <span className="insights-subtle">Date unknown; needs review</span> : null}</td>
           <td data-label="Training · 14 days">{!player.performance ? "Training unavailable" : !player.performance.activePlan ? "No active plan" : player.performance.sessionsPlanned == null ? "Schedule unavailable" : player.performance.sessionsDone == null ? "Completion unavailable" : `${player.performance.sessionsDone} of ${player.performance.sessionsPlanned}`}</td>
           <td data-label="Workouts completed">{player.workouts.completed}</td>
