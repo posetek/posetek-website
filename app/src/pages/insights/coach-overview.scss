@@ -1,0 +1,120 @@
+// Shared coach controls only. Administrator and manager views retain their theme.
+.pt-insights.is-coach-workspace {
+  .insights-heading { margin-bottom: 24px; }
+  .insights-heading h1 { font-size: clamp(28px, 3vw, 34px); font-weight: 650; letter-spacing: -.035em; }
+  .insights-heading p:not(.eyebrow) { margin-top: 8px; font-size: 14px; }
+  .insights-controls { padding: 16px; }
+  .insights-control-row { gap: 12px; }
+  .insights-controls label, .insights-period-presets legend { font-size: 13px; }
+  .insights-controls :is(select, input, button, summary) { min-height: 44px; font-size: 14px; }
+  .insights-period-presets button { min-width: 44px; }
+  .insights-refresh { width: 44px; }
+  .insights-tabs { gap: 28px; margin-top: 28px; }
+  .insights-tabs button { min-height: 48px; font-size: 14px; }
+  .insights-toggle button, .insights-text-button, .insights-filter-chips button { min-height: 44px; font-size: 13px; }
+  .insights-toolbar .insights-note { font-size: 13px; }
+  .portal-header .quiet-button { min-height: 44px; }
+  @media (max-width: 520px) {
+    .insights-controls { padding: 12px; }
+    .insights-control-row > label { flex-basis: calc(50% - 6px); }
+    .insights-tabs { gap: 24px; }
+  }
+}
+
+.pt-insights.is-coach-overview {
+  .coach-overview-snapshot { margin: 24px 0 28px; }
+  .coach-overview-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-bottom: 14px; }
+  .coach-overview-heading h2, .coach-roster h2 { font-size: 20px; font-weight: 650; letter-spacing: -.02em; }
+  .coach-overview-heading > span { color: var(--text-muted); font-size: 13px; }
+  .coach-overview-selectors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .coach-overview-selector {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; padding: 20px;
+    border: 1px solid var(--surface-border); border-radius: var(--radius-md); background: var(--surface-1);
+    color: var(--text-primary); font: inherit; text-align: left; cursor: pointer;
+    &:hover { background: var(--surface-2); }
+    &[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--surface-2); }
+    &.is-improving .coach-overview-number { color: var(--status-good); }
+    &.is-review .coach-overview-number { color: var(--status-warning); }
+  }
+  .coach-overview-label { font-size: 14px; font-weight: 600; }
+  .coach-overview-number { font-size: 36px; font-weight: 650; line-height: 1.15; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+  .coach-overview-number.is-unavailable { font-size: 22px; color: var(--text-muted); letter-spacing: -.02em; }
+  .coach-overview-support { font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+  .coach-overview-evidence { margin-top: 20px; background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: var(--radius-md); overflow: clip; }
+  .coach-overview-evidence > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 24px; }
+  .coach-overview-evidence h3 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.015em; }
+  .coach-overview-evidence header p { margin: 4px 0 0; font-size: 13px; }
+  .coach-overview-count { padding-top: 3px; color: var(--text-muted); font-size: 13px; white-space: nowrap; }
+  .coach-evidence-players { list-style: none; padding: 0; margin: 0; }
+  .coach-evidence-players > li { padding: 12px 24px 20px; border-top: 1px solid var(--surface-border); }
+  .coach-evidence-player { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-bottom: 8px; }
+  .coach-evidence-player a { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text-primary); font-size: 16px; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+  .coach-evidence-player a > span { flex-shrink: 0; color: var(--accent); }
+  .coach-evidence-player a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .coach-evidence-status { font-size: 12px; line-height: 1.4; padding: 4px 8px; border-radius: 4px; background: rgba(232,184,95,.08); color: var(--status-warning); }
+  .coach-evidence-status.is-up { color: var(--status-good); background: rgba(99,216,139,.08); }
+  .coach-evidence-measurements { display: grid; gap: 12px; }
+  .coach-evidence-measurement { display: grid; grid-template-columns: minmax(130px, 1.1fr) repeat(2, minmax(115px, 1fr)) minmax(140px, 1fr); gap: 16px; align-items: center; }
+  .coach-evidence-measurement + .coach-evidence-measurement { padding-top: 12px; border-top: 1px solid rgba(157,177,167,.1); }
+  .coach-evidence-test, .coach-evidence-value, .coach-evidence-change { display: grid; gap: 3px; min-width: 0; }
+  .coach-evidence-measurement strong { font-size: 14px; font-weight: 550; color: var(--text-primary); overflow-wrap: anywhere; }
+  .coach-evidence-test > span, .coach-evidence-value time, .coach-evidence-caption { font-size: 12px; color: var(--text-muted); }
+  .coach-evidence-test > span { font-size: 13px; }
+  .coach-evidence-change.is-up strong { color: var(--status-good); }
+  .coach-evidence-change.is-down strong { color: var(--status-warning); }
+  .coach-evidence-workout { margin: 0; font-size: 14px; }
+  .coach-overview-empty { padding: 0 24px 24px; margin: 0; font-size: 14px; }
+  .coach-overview-show-all { display: block; width: 100%; min-height: 52px; padding: 12px 24px; border: 0; border-top: 1px solid var(--surface-border); color: var(--accent); background: transparent; font: inherit; font-weight: 550; cursor: pointer; text-align: left; }
+  .coach-overview-show-all:focus-visible { outline-offset: -4px; }
+  .coach-overview-show-all:hover { background: var(--surface-2); }
+  .coach-overview-method { margin-top: 8px; }
+  .coach-overview-method > summary { width: fit-content; padding: 12px 4px; min-height: 44px; color: var(--text-muted); font-size: 13px; cursor: pointer; }
+  .coach-overview-method > div { max-width: 800px; padding: 0 4px 8px; }
+  .coach-overview-method p { margin: 0 0 12px; font-size: 14px; }
+  .coach-roster { padding: 24px; }
+  .coach-roster :is(label, .insights-section-title > span, .insights-pagination) { font-size: 13px; }
+  .coach-roster input { font-size: 14px; }
+  .coach-roster-table { table-layout: fixed; width: 100%; }
+  .coach-roster-table :is(th, td) { padding: 16px 8px; font-size: 13px; overflow-wrap: anywhere; white-space: normal; }
+  .coach-roster-table thead th { font-size: 12px; }
+  .coach-roster-table tbody th { min-width: 0; }
+  .coach-roster-table tbody th a { font-size: 14px; min-height: 44px; }
+  .coach-roster-table th:nth-child(1) { width: 15%; }
+  .coach-roster-table th:nth-child(2) { width: 21%; }
+  .coach-roster-table th:nth-child(7) { width: 18%; }
+  .coach-roster-table .insights-subtle, .coach-roster-table .insights-status { font-size: 12px; white-space: normal; }
+  .coach-roster-table tbody tr.is-needs-you { background: transparent; border-color: var(--surface-border); }
+  .coach-roster-table tbody tr.is-needs-you:hover { background: var(--surface-2); }
+  .coach-roster-table tbody tr.is-needs-you > th { box-shadow: none; }
+  .coach-roster-table .coach-needs-you { color: var(--text-muted); font-weight: 400; padding-left: 14px; }
+  .coach-roster-signup { min-width: 0; }
+  .coach-roster-signup .club-player-invitation { grid-template-columns: minmax(0, 1fr); }
+  .coach-roster-signup .club-player-invitation > button { white-space: normal; font-size: 12px; }
+  @media (max-width: 760px) {
+    .coach-evidence-measurement { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; }
+    .coach-evidence-test { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 8px; }
+  }
+  @media (max-width: 760px) {
+    .coach-roster { padding: 16px; }
+    .coach-roster-table :is(th, td) { padding: 0; }
+    .coach-roster-table th:nth-child(n) { width: auto; }
+    .coach-roster-table td::before { font-size: 12px; margin-bottom: 5px; }
+    .coach-roster-table .coach-needs-you { padding-left: 0; }
+    .coach-roster-table tr { padding: 16px; gap: 16px; }
+  }
+  @media (max-width: 580px) {
+    .coach-overview-selectors { grid-template-columns: 1fr; gap: 8px; }
+    .coach-overview-selector { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; padding: 14px 16px; }
+    .coach-overview-number { grid-column: 2; grid-row: 1 / 3; align-self: center; font-size: 32px; }
+    .coach-overview-number.is-unavailable { font-size: 17px; }
+    .coach-overview-support { grid-column: 1; }
+    .coach-overview-evidence > header { padding: 18px 16px; }
+    .coach-overview-evidence > header p { max-width: 230px; }
+    .coach-overview-evidence > header { flex-wrap: wrap; gap: 8px; }
+    .coach-evidence-players > li { padding: 12px 16px 20px; }
+    .coach-evidence-value time { font-size: 12px; }
+    .coach-evidence-change strong { font-size: 13px; }
+    .coach-overview-empty { padding: 0 16px 20px; }
+    .coach-overview-show-all { padding-inline: 16px; }
+  }
+}

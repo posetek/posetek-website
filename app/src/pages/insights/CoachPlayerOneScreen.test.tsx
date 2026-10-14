@@ -36,7 +36,7 @@ describe("authoritative coach player summary", () => {
     const html = render();
     expect(html).not.toContain("D1"); expect(html).not.toContain("No sign-in recorded"); expect(html).toContain("2.00 s"); expect(html).toContain("4.00 s");
     expect(html).toContain("latest two test dates through the selected end");
-    expect(html).toContain("Recent testing down"); expect(html).not.toContain("missed scheduled sessions");
+    expect(html).toContain("Measured decline"); expect(html).not.toContain("missed scheduled sessions");
     expect(html).toContain("Current-plan progress"); expect(html).toContain("Assigned plan · last 14 days"); expect(html).toContain("week 2 of 6");
   });
   it("never replaces absent additive fields with raw current data or no-follow-up claims", () => {

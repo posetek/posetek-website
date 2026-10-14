@@ -98,4 +98,29 @@ function playerPerformance({ testing, training, workouts, now, endMillis, timeZo
     previousTestDate: change.previousTestDate || null, ...progress, needsYouReasons: reasons,
     coachFocus: { version: 1, completedInPeriod, measuredTests } };
 }
-module.exports = { activePlan, planProgress, playerPerformance, recentMeasuredTests };
+/** Complete reporting population, before roster name search or pagination.
+ * These comparisons already use qualified projections, local dates and display
+ * precision. Legacy scores and test-level statuses are not evidence of a gain. */
+function coachTestingOverview(rows, asOfDate) {
+  const result = { version: 1, asOfDate, comparablePlayers: 0, improvingPlayers: [], reviewPlayers: [] };
+  for (const row of rows) {
+    const focus = row.performance?.coachFocus;
+    if (focus?.version !== 1) continue;
+    const measuredTests = focus.measuredTests.filter(test => validDate(test.previousTestDate) && validDate(test.lastTestDate)
+      && test.previousTestDate < test.lastTestDate && test.lastTestDate <= asOfDate)
+      .map(test => ({ ...test, metrics: test.metrics.filter(metric => Number.isFinite(metric.previous) && metric.previous > 0
+        && Number.isFinite(metric.current) && metric.current > 0 && ["up", "down", "same"].includes(metric.trend)) }))
+      .filter(test => test.metrics.length);
+    if (!measuredTests.length) continue;
+    result.comparablePlayers++;
+    const values = measuredTests.flatMap(test => test.metrics);
+    const up = values.some(metric => metric.trend === "up"), down = values.some(metric => metric.trend === "down");
+    const player = { id: row.id, name: `${row.firstName} ${row.lastName}`.trim() || "Player",
+      status: down && up ? "mixed" : down ? "down" : "up", measuredTests };
+    if (down) result.reviewPlayers.push(player);
+    else if (up) result.improvingPlayers.push(player);
+  }
+  for (const group of [result.improvingPlayers, result.reviewPlayers]) group.sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  return result;
+}
+module.exports = { activePlan, planProgress, playerPerformance, recentMeasuredTests, coachTestingOverview };

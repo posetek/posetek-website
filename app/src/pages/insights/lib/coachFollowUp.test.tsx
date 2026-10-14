@@ -12,9 +12,9 @@ describe('coach follow-up evidence', () => {
     expect(coachFollowUp({ ...performance, coachFocus: undefined })).toBeNull();
   });
   it('prioritizes zero saved completions with no active plan and flags mixed measured changes', () => {
-    const value = { ...performance, coachFocus: { ...performance.coachFocus!, completedInPeriod: 0, measuredTests: [{ drill: 'sprint', status: 'mixed' as const, lastTestDate: '2026-10-10', previousTestDate: '2026-10-01', metrics: [{ key: 'sprintCompletionTime', current: 3, previous: 2, direction: 'lower' as const, trend: 'down' as const }] }] } };
-    expect(coachFollowUp(value)).toEqual(['No completed workouts in this period', 'Recent testing down · Sprint']);
-    expect(coachTestingLabel(value)).toBe('Testing down');
+    const value = { ...performance, coachFocus: { ...performance.coachFocus!, completedInPeriod: 0, measuredTests: [{ drill: 'sprint', status: 'mixed' as const, lastTestDate: '2026-10-10', previousTestDate: '2026-10-01', metrics: [{ key: 'sprintCompletionTime', current: 3, previous: 2, direction: 'lower' as const, trend: 'down' as const }, { key: 'sprintMaxSpeed', current: 8, previous: 7, direction: 'higher' as const, trend: 'up' as const }] }] } };
+    expect(coachFollowUp(value)).toEqual(['No completed workouts in this period', 'Measured decline · Sprint']);
+    expect(coachTestingLabel(value)).toBe('Mixed results');
     const html = renderToStaticMarkup(<CoachMeasuredTests performance={value} />);
     expect(html).toContain('2.00 s'); expect(html).toContain('3.00 s'); expect(html).toContain('Mixed · review');
     expect(html).not.toContain('D1'); expect(html).not.toContain('%');

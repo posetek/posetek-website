@@ -285,6 +285,16 @@ test("follow-up uses all saved workout types in the period and matching recent m
   const request = { scope, startDate: "2026-09-20", endDate: "2026-09-29", timeZone: "UTC" };
   const report = await service.getClubInsightsV2({ ...request, pageSize: 1, nameSearch: "Ada" }, coach);
   const comparison = await service.getCoachPlayerComparison({ ...request, playerId: "one" }, coach);
+  const testing = report.overview.coachTesting;
+  assert.equal(testing.version, 1); assert.equal(testing.asOfDate, request.endDate);
+  assert.equal(testing.comparablePlayers, 1);
+  assert.deepEqual(testing.improvingPlayers, []);
+  assert.deepEqual(testing.reviewPlayers.map(row => row.id), ['one']);
+  assert.deepEqual(testing.reviewPlayers[0].measuredTests, comparison.performance.coachFocus.measuredTests.filter(test => test.status === 'down'));
+  const measured = testing.reviewPlayers[0].measuredTests[0].metrics.find(metric => metric.key === 'sprintMaxSpeed');
+  assert.equal(measured.previous, 10); assert.equal(measured.current, 8);
+  const narrowed = await service.getClubInsightsV2({ ...request, startDate: '2026-09-29', testingMode: 'period' }, coach);
+  assert.deepEqual(narrowed.overview.coachTesting, testing);
   const focus = report.overview.coachFocus;
   assert.equal(focus.version, 1); assert.equal(focus.noCompletionPlayers.length, 2);
   assert.deepEqual(focus.decliningPlayers.map(row => row.id), ["one"]);
@@ -295,6 +305,31 @@ test("follow-up uses all saved workout types in the period and matching recent m
   const earlier = await service.getClubInsightsV2({ ...request, endDate: "2026-09-27" }, coach);
   assert.equal(earlier.overview.coachFocus.noCompletionPlayers.length, 3);
   assert.equal(earlier.overview.coachFocus.decliningPlayers.length, 0);
+  assert.equal(earlier.overview.coachTesting.comparablePlayers, 0);
   const next = await service.getClubInsightsV2({ ...request, pageSize: 1, cursor: (await service.getClubInsightsV2({ ...request, pageSize: 1 }, coach)).pagination.nextCursor }, coach);
   assert.deepEqual(next.overview.coachFocus, focus);
+  assert.deepEqual(next.overview.coachTesting, testing);
+});
+
+test("coach testing evidence follows reporting filters, exclusion, refreshed ownership and account/team authority", async () => {
+  const past = player => [`players/${player}/reps/before`, { repType: 'sprint', max_velocity: player === 'one' ? 6 : 12, createdAt: NOW - 40 * 86400000 }];
+  const service = setup({ ...Object.fromEntries(['one', 'two', 'three', 'unrelated', 'a', 'b'].map(past)),
+    'players/two/insightMetadata/reporting': { include: false },
+    'players/unrelated/reps/r': { repType: 'sprint', max_velocity: 8, createdAt: NOW - 1000 },
+  });
+  const request = { scope, startDate: '2026-09-29', endDate: '2026-09-29', timeZone: 'UTC', pageSize: 1 };
+  const report = await service.getClubInsightsV2(request, coach);
+  assert.equal(report.overview.coachTesting.comparablePlayers, 2);
+  assert.deepEqual(report.overview.coachTesting.improvingPlayers.map(row => row.id), ['one']);
+  assert.deepEqual(report.overview.coachTesting.reviewPlayers.map(row => row.id), ['three']);
+  const filtered = await service.getClubInsightsV2({ ...request, filters: { ageBand: '13-15' } }, coach);
+  assert.equal(filtered.overview.coachTesting.comparablePlayers, 1);
+  assert.equal(filtered.overview.coachTesting.reviewPlayers.length, 0);
+  const teamReport = await service.getClubInsightsV2({ ...request, scope: team }, staff);
+  assert.deepEqual(teamReport.overview.coachTesting.reviewPlayers.map(row => row.id), ['a', 'b']);
+  await service.db.doc('players/three').set({ firstName: 'Cam', coachUID: 'other' });
+  const refreshed = await service.getClubInsightsV2(request, coach);
+  assert.equal(refreshed.overview.coachTesting.comparablePlayers, 1);
+  assert.equal(refreshed.overview.coachTesting.reviewPlayers.length, 0);
+  await assert.rejects(service.getClubInsightsV2({ ...request, scope: team }, coach), { code: 'permission-denied' });
 });

@@ -7,7 +7,7 @@ const { EXERCISES, testingStatus, demographics } = require("./insights-v2-qualif
 const { createInsightProjection, completeQuery, mapBounded, PROJECTION_VERSION } = require("./insights-v2-projection");
 const { readPlayerUsage, FEATURES } = require("./insight-usage");
 const { comparePlayer, recentDrillScores } = require("./insights-axis-scoring");
-const { activePlan, playerPerformance } = require("./insights-overview");
+const { activePlan, playerPerformance, coachTestingOverview } = require("./insights-overview");
 const DAY = 86400000;
 const FILTERS = Object.freeze({ division: ["boys", "girls", "unknown"], ageBand: ["under10", "10-12", "13-15", "16-18", "19+", "unknown"],
   testingStatus: ["fullyTested", "partiallyTested", "noSuccessfulTests", "noRecordedTests"],
@@ -418,7 +418,7 @@ function createInsightsV2({ db, bucket, HttpsError, now = () => Date.now(), maxP
     const namedPlayers = predicate => rows.filter(predicate)
       .map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`.trim() || "Player" }))
       .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
-    const overview = { playersWithD1: withD1.length, averageD1: withD1.length ? withD1.reduce((total, value) => total + value, 0) / withD1.length : null,
+    const overview = { coachTesting: coachTestingOverview(rows, period.endDate), playersWithD1: withD1.length, averageD1: withD1.length ? withD1.reduce((total, value) => total + value, 0) / withD1.length : null,
       playersWithChange: withChange.length, improved: overviewPlayers.filter(value => value.change > 2).length,
       averageChange: withChange.length ? withChange.reduce((total, value) => total + value, 0) / withChange.length : null,
       planPlayers: plannedPlayers.length, keepingUp: plannedPlayers.filter(value => value.sessionsDone * 2 >= value.sessionsPlanned).length,
