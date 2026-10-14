@@ -109,7 +109,7 @@ export default function SupportPage() {
           </Question>
 
           <Question id="ai-sharing">
-            <p>Open Profile → Account settings → AI sharing in the iPhone app. AI coaching, workout generation and voice assistance stay off until you allow sharing. Review the information and providers shown (Google Vertex AI, Anthropic and, for voice requests, TypeSafe) before allowing it. You can decline or revoke permission there; recording remains available. This choice is separate from microphone and speech-recognition permission. Permission is not transferred to another account or device, and coaches cannot authorize AI sharing for another athlete.</p>
+            <p>Open Profile → Account settings → AI sharing in the iPhone app. AI coaching, workout generation and voice assistance stay off until you allow sharing. Review the information and providers shown (Google Vertex AI, Anthropic and, for voice requests, TypeSafe) before allowing it. You can decline or revoke permission there; recording remains available. This choice is separate from microphone and speech-recognition permission. Permission is not transferred to another account or device, and coaches cannot authorize AI sharing for another athlete. Verified PoseTek staff administrators may use AI features on an athlete's information for support and quality checks, with their own AI-sharing permission.</p>
             <p>Revoking stops new AI requests. Requests already sent may finish, and existing conversations and reports are not deleted. If the app cannot confirm account-wide withdrawal, sharing stays off on that device; retry when connected. See <Link to="/privacy#ai-and-automated-processing">AI and automated processing</Link>.</p>
           </Question>
 

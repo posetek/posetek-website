@@ -80,7 +80,7 @@ export default function PrivacyPage() {
             <li>We collect the information needed to run a training platform: account details, player profile information, training videos, performance results, and basic app usage and diagnostic data.</li>
             <li>Training videos and performance data are linked to the player's account so we can show progress over time.</li>
             <li>Players' data may be visible to their own club's authorized coaches and administrators. Where a club has turned on the community feed, workout and drill activity can also be seen by teammates, according to the player's sharing settings. It is not public.</li>
-            <li>AI coaching, workout generation and voice assistance send information to AI providers only after the athlete gives explicit permission in Account settings → AI sharing. Permission can be withdrawn at any time.</li>
+            <li>AI coaching, workout generation and voice assistance send information to AI providers only after the athlete gives explicit permission in Account settings → AI sharing. Permission can be withdrawn at any time. Verified PoseTek staff administrators may also use AI features on an athlete's information for support and quality checks, with their own AI-sharing permission.</li>
             <li>The camera is used for drill recording, warm-up tracking and the hands-free Watch mode. Warm-up tracking and Watch mode analyze the camera image on the phone and do not save or upload video.</li>
             <li>We do not sell personal information. We do not show third-party ads. We do not track users across other companies' apps or websites.</li>
             <li>Many of our players are minors. We require a parent or guardian's consent for players under 13, and parents can review or delete their child's information at any time.</li>
@@ -165,7 +165,8 @@ export default function PrivacyPage() {
             </li>
             <li><strong>Withdrawing permission:</strong> you can withdraw at any time in Account settings → AI sharing. Withdrawal stops new AI requests; requests already sent may finish, and withdrawal does not delete existing conversations or reports (deleting your account does). If account-wide withdrawal cannot be confirmed because of a connection failure, the app keeps AI sharing off on that device and asks you to retry.</li>
             <li><strong>Separate from device permissions:</strong> AI permission is separate from microphone and speech-recognition permission. Permission is not transferred to another account or device.</li>
-            <li><strong>Other people's data:</strong> a coach's or administrator's permission alone does not authorize AI sharing of another player's information; those AI features remain unavailable until athlete or guardian authority can be verified.</li>
+            <li><strong>Other people's data:</strong> a coach's, club administrator's or other staff member's permission does not authorize AI sharing of another player's information; for them, those AI features remain unavailable until athlete or guardian authority can be verified.</li>
+            <li><strong>PoseTek administrators:</strong> verified PoseTek staff administrators may use AI features on an athlete's information to provide support and check quality, with their own AI-sharing permission. That information is sent to the same AI providers, under the same limits, as described above.</li>
           </ul>
 
           <h3>Limits of automated feedback</h3>
