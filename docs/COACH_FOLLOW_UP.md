@@ -1,8 +1,8 @@
 # Coach follow-up
 
-Current source extends the overview with [measured progress and full comparison
-evidence](COACH_MEASURED_PROGRESS.md). The release history below describes the
-previously published behavior; the new overview has not been published.
+The current published overview adds [measured progress and full comparison
+evidence](COACH_MEASURED_PROGRESS.md), released October 14, 2026. The release
+history below describes the preceding follow-up checkpoint.
 
 This pass removes D1 standing and D1-normalized testing percentages from the
 coach overview, roster, player summary and detailed Testing results panel.

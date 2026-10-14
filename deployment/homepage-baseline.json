@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6ace0ad29778ccacfb979dda",
-  "sourceCommit": "139162a04a1aa2afefda78c62bf2715d9667acbc",
-  "url": "https://6ace0ad29778ccacfb979dda--posetek.netlify.app",
+  "deploymentId": "6acfa49a07f33b1d9fb64abf",
+  "sourceCommit": "57e9e03e139a287accfad7889d96747b3ad6ecc3",
+  "url": "https://6acfa49a07f33b1d9fb64abf--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "8a78a2b1c2c237a6535913b2e620c330e7bc364c",
-    "size": 3761,
+    "sha": "7f4e298fd586f0f736e7309770a3aecf62659f5f",
+    "size": 3755,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -771,6 +771,11 @@
       "size": 17922
     },
     {
+      "path": "/_astro/applicationroot.cag_ri_h.js",
+      "sha": "ba47170c3a566cb6e5e0676a8ca0aa6779796c71",
+      "size": 18124
+    },
+    {
       "path": "/_astro/applicationroot.carak_gb.js",
       "sha": "d2b99d97b49cc1dd23dbe6e2ab4b89f263d62a16",
       "size": 17511
@@ -819,6 +824,11 @@
       "path": "/_astro/applicationroot.dt67_poe.js",
       "sha": "896be140ded4578f20b07c22ea7a15ef656b7823",
       "size": 17370
+    },
+    {
+      "path": "/_astro/applicationroot.dtyshaqs.js",
+      "sha": "f1631e06159ffd446b47b44e490be58e9994266c",
+      "size": 18124
     },
     {
       "path": "/_astro/applicationroot.dvxmlbk5.js",
@@ -1661,6 +1671,11 @@
       "size": 12207
     },
     {
+      "path": "/_astro/feedback-auth.cbemipv6.js",
+      "sha": "d6d715faadafffc4dcc683baa4c64c09cf7fd0cf",
+      "size": 1157
+    },
+    {
       "path": "/_astro/feedback-auth.zfe0nha6.js",
       "sha": "5a785a2bd40f0554e4293d482cf52e37762dc7b4",
       "size": 1163
@@ -1679,6 +1694,11 @@
       "path": "/_astro/feedbackpage.bab7ksd5.js",
       "sha": "4075ee9ade72a93aa2ae34342b17610c22d5a537",
       "size": 13117
+    },
+    {
+      "path": "/_astro/feedbackpage.bszwllwh.js",
+      "sha": "a4d2154b303663ec3c6aef08a71e9b520a8f3eec",
+      "size": 13150
     },
     {
       "path": "/_astro/feedbackpage.btme5fhn.js",
@@ -2011,6 +2031,11 @@
       "size": 112064
     },
     {
+      "path": "/_astro/insightspage.cj322o9l.css",
+      "sha": "b2b26c695b0f04100048a4b80ebbc57f43094645",
+      "size": 28872
+    },
+    {
       "path": "/_astro/insightspage.ckwfgze6.js",
       "sha": "9e79469fdbf80bbfa7e115cdf27eab10723fce9c",
       "size": 83755
@@ -2049,6 +2074,11 @@
       "path": "/_astro/insightspage.huk8jotj.js",
       "sha": "44a4c2de6712161fe65f95ad07de54e45dcce33a",
       "size": 108129
+    },
+    {
+      "path": "/_astro/insightspage.hvzq-f99.js",
+      "sha": "a6cc37fc421132802dadc88a7dbe1071bb94374f",
+      "size": 89245
     },
     {
       "path": "/_astro/insightspage.ihmmh3z7.js",
@@ -2104,6 +2134,11 @@
       "path": "/_astro/landingpage.bdh4rvew.js",
       "sha": "93ef0dc919ca07ab36a5b59686e56e59042b2100",
       "size": 30768
+    },
+    {
+      "path": "/_astro/landingpage.bg_1wajs.js",
+      "sha": "000998662e11bef13b3c82e596685379c118b547",
+      "size": 31064
     },
     {
       "path": "/_astro/landingpage.bomsfuup.js",
@@ -2891,6 +2926,11 @@
       "size": 20621
     },
     {
+      "path": "/_astro/privacypage.bnscb8z5.js",
+      "sha": "91ac051442d124932b700e29d78bc3fade40e687",
+      "size": 26179
+    },
+    {
       "path": "/_astro/privacypage.cqt3ikyt.js",
       "sha": "0bdc683d2c0fe1a79e12d2bcdebf0dd4d3cc5263",
       "size": 23442
@@ -3206,6 +3246,11 @@
       "size": 14980
     },
     {
+      "path": "/_astro/staffinvitepage.cp5loxf-.js",
+      "sha": "7bce5958acc7c57bc5f6d61f7bd2025b186bed1a",
+      "size": 15894
+    },
+    {
       "path": "/_astro/staffinvitepage.cqchp8tb.js",
       "sha": "fd1c2a7fe915c3c36f1385c5f070d6f1e7d77354",
       "size": 14980
@@ -3259,6 +3304,11 @@
       "path": "/_astro/supportpage.b2_7kur8.js",
       "sha": "12b02ef4fb19b9b70e0f770ed7a06af6c7374047",
       "size": 10366
+    },
+    {
+      "path": "/_astro/supportpage.bir1zv1m.js",
+      "sha": "15c6da8db52d72a30c8a13dc0360d04ecd4aa2e0",
+      "size": 10814
     },
     {
       "path": "/_astro/supportpage.bjhktclq.js",
@@ -3354,6 +3404,11 @@
       "path": "/_astro/supportpage.sgxar9fj.js",
       "sha": "0683960c8e1bf198009db5dc9c637fb13f699de8",
       "size": 10366
+    },
+    {
+      "path": "/_astro/supportpage.wv5avpiu.js",
+      "sha": "73fc3a1dd6972a8450dfa695aaf6f54993ccb06d",
+      "size": 12921
     },
     {
       "path": "/_astro/supportpage.xqhgs--h.js",
@@ -3812,7 +3867,7 @@
     },
     {
       "path": "/application.html",
-      "sha": "ae739ab08de14aa7d1d2e0e07fbdbd3a8548c30a",
+      "sha": "b23f8e221c6cbd6d5f558836ff89c02d3a85ac2c",
       "size": 15761
     },
     {
@@ -9904,5 +9959,5 @@
     }
   ],
   "coachEnrollmentSourceCommit": "8eaf3ffd35848c3cf7ca753cc9fd4030cc4fb524",
-  "sourceNote": "Application entry retained exactly from the preceding coach release; coach-join is the additive enrollment source."
+  "sourceNote": "Runtime freeze codex/coach-overview-runtime contains merged coach overview source while preserving approved privacy/support source from 139162a04a1aa2afefda78c62bf2715d9667acbc. Held candidate remains on main. Isolated coach enrollment and feedback entries retain verified predecessor bytes."
 }

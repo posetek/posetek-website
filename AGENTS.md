@@ -1,5 +1,16 @@
 # PoseTek website context
 
+
+## Current coach measured-progress release
+
+Website `6acfa49a07f33b1d9fb64abf`, runtime source `57e9e03e139a287accfad7889d96747b3ad6ecc3`, was published October 14, 2026 at 8:54:55 AM PDT from the exact accepted candidate. Coach Overview separates **Players improving**, **No completed workouts** and **Results to review**. Testing shows actual comparisons through the selected end, including both sides of mixed results. Missing additive evidence stays Unavailable. Complete authorized reporting groups precede search/pagination. Coach controls and evidence rows are polished without changing manager/admin layouts.
+
+The nine Expanded Insights functions passed immutable source/configuration/IAM and module-closure verification; all 126 unrelated functions are unchanged. Feature, merge and runtime CI each passed six checks. Final runtime tests passed 1,957; scoped packaging passed 24 and relevant backend checks passed 94 with three existing optional skips. Deployed API acceptance passed 25 checks; candidate/production passed 17/16 browser checks with eight captures each at desktop and 360/390/430px. The 1,984-file artifact matches 1,985 provider records, preserves 1,981 immediate-predecessor records and adds two assets. The reconciled 1,982-file baseline passes the ordinary preservation build.
+
+Initial deployment `6acfa10dafea94f1a0142d54` at 8:40:47 AM PDT also activated held privacy/support copy. The final audit caught this and the corrected artifact above restores the approved `139162a04a1aa2afefda78c62bf2715d9667acbc` policy source. Candidate and production policy text match the previously approved site. Runtime branch `codex/coach-overview-runtime` must not merge into main; main retains the held candidate. Future application releases must check held source against the intended runtime before composition. Historical immutable assets remain preserved, including now-unreferenced policy chunks.
+
+Both verification runs are cleaned: ten synthetic Auth accounts, twenty-eight players, two organizations, four teams, owned descendant/scoped records and 84 current/noncurrent JSON objects. Delayed independent readback found zero active residue for each run. Deleted JSON objects remain under the unchanged seven-day soft-delete policy. No real athlete data or notification controls changed. Marketing, feedback, coach enrollment, P icons, athlete timers and native/content holds remain. Rules, indexes, gateway, catalog and native were not released. Read [the handoff](docs/COACH_MEASURED_PROGRESS.md), [production evidence](deployment/COACH_MEASURED_PROGRESS_PRODUCTION.json) and [PR #58](https://github.com/posetek/posetek_website/pull/58). Earlier sections remain historical checkpoints.
+
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release
 
