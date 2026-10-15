@@ -109,7 +109,7 @@ export default function SupportPage() {
           </Question>
 
           <Question id="ai-sharing">
-            <p>Open Account settings → AI sharing in the iPhone app. Review the information and providers shown before allowing sharing. You can decline or revoke permission there; recording remains available. This choice is separate from microphone and speech-recognition permission. Permission is not transferred to another account or device, and coaches cannot authorize AI sharing for another athlete.</p>
+            <p>Open Profile → Account settings → AI sharing in the iPhone app. AI coaching, workout generation and voice assistance stay off until you allow sharing. Review the information and providers shown (Google Vertex AI, Anthropic and, for voice requests, TypeSafe) before allowing it. You can decline or revoke permission there; recording remains available. This choice is separate from microphone and speech-recognition permission. Permission is not transferred to another account or device, and coaches cannot authorize AI sharing for another athlete. Verified PoseTek staff administrators may use AI features on an athlete's information for support and quality checks, with their own AI-sharing permission.</p>
             <p>Revoking stops new AI requests. Requests already sent may finish, and existing conversations and reports are not deleted. If the app cannot confirm account-wide withdrawal, sharing stays off on that device; retry when connected. See <Link to="/privacy#ai-and-automated-processing">AI and automated processing</Link>.</p>
           </Question>
 
@@ -119,12 +119,12 @@ export default function SupportPage() {
           </Question>
 
           <Question id="delete-account">
-            <p>In the app, open Account settings → Delete account. Confirm your identity and permanent deletion; no support email is required. We process the request and delete the account and its associated personal data, including training videos, within 30 days. Check completion using the deletion receipt on the sign-in screen. Deletion is permanent. Removing a player from a team keeps their account and recordings; it is not account deletion. Deleting a coach’s account does not delete their players’ accounts or recordings. For help, or to ask us to delete specific videos or results without closing your account, email <SupportEmail />.</p>
+            <p>In the app, open Profile → Account settings → Delete account (coaches and staff: the account icon at the top of the home screen, then Account settings → Delete account). Confirm your identity and permanent deletion; no support email is required. This deletes the account, athlete profile, recordings and videos, workout logs, AI conversations and memories, your AI-sharing permission, and community feed posts and comments. Deletion normally completes about a day after you confirm, and always within 30 days; de-identified statistics that can no longer be linked to you may remain. Check completion using the deletion receipt on the sign-in screen. Deletion is permanent. Removing a player from a team keeps their account and recordings; it is not account deletion. Deleting a coach’s account does not delete their players’ accounts or recordings. For help, or to ask us to delete specific videos or results without closing your account, email <SupportEmail />.</p>
             <p>Our Privacy Policy explains <Link to="/privacy#your-choices-and-rights">your choices and rights</Link> and <Link to="/privacy#data-retention">how long deletion takes</Link>.</p>
           </Question>
 
           <Question id="parents">
-            <p>A parent or guardian can ask us at any time to review, correct, or delete their child's information, or to withdraw consent. Email <SupportEmail />, or contact your child's club. See <Link to="/privacy#childrens-privacy">Children's privacy</Link> in our Privacy Policy.</p>
+            <p>A parent or guardian can ask us at any time to review, correct, or delete their child's information, or to withdraw consent. To delete the child's account, use Profile → Account settings → Delete account from the child's account in the app, or email us. Email <SupportEmail />, or contact your child's club. See <Link to="/privacy#childrens-privacy">Children's privacy</Link> in our Privacy Policy.</p>
           </Question>
 
           <Question id="coaches-and-clubs">
