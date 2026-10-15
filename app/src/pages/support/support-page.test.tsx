@@ -34,6 +34,9 @@ describe("support page", () => {
     expect(answer).toContain("Account settings → Delete account");
     expect(answer).toContain("no support email is required");
     expect(answer).toContain("Deletion is permanent");
+    for (const text of ["Profile → Account settings → Delete account", "AI conversations and memories",
+      "community feed posts and comments", "about a day after you confirm", "always within 30 days"])
+      expect(answer).toContain(text);
   });
   it("gives native consent routes without conflating withdrawal, media and account deletion", () => {
     for (const text of ["Account settings → AI sharing", "retry when connected", "Drill Settings",

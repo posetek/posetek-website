@@ -125,7 +125,9 @@ also recheck exact source tombstones. A request already accepted by the external
 service can still finish; its receipt cannot restore erased local seed data.
 There is no automatic hold release. Account cleanup removes other scoped data,
 but remains retrying and does not delete Auth or report completion while the
-tracker hold requires external reconciliation.
+tracker hold requires external reconciliation. **Superseded for the automatic
+worker by "Enablement safety" below:** only the explicit operator redaction path
+still sets this hold.
 
 ### Concrete remaining operator work
 
@@ -314,3 +316,54 @@ standalone local Vitest test configuration. The ordinary Vite configuration
 could not start because the shared installed dependencies lack
 `@sveltejs/vite-plugin-svelte`; no dependencies were installed and this does not
 claim full frontend build/CI acceptance. No deployment or live data action ran.
+
+## Enablement safety: tracker follow-up without a publication freeze (2026-10-14)
+
+Before this change, enabling `config/accountDeletion` meant the first deletion of
+any user with mirrored issue-tracker records disabled their sign-in, set the
+single shared `issueTrackerState/writer.privacyErasurePending` hold (freezing
+workbook publication for every user) and then threw on every pass, retrying
+hourly without end. Only the unwired reconciliation library released the hold.
+
+The automatic worker (`eraseTracker(subject)`) now:
+
+- erases the subject's personal tracker copies outside the publication seal
+  chain: evidence archives, queue entries, `issueTrackerRows` shards, legacy
+  inline seed rows, and rows/indices/payload cells of historical (applied or
+  erased) batches;
+- never sets the writer hold. Seed maps, content-addressed index bases and index
+  shards hold only opaque joins; rewriting them breaks the v2 checks in
+  `issue-tracker-bridge-seed.js` for every later batch, so they are reported
+  (`publication-joins`) and left for the reviewed reconciliation;
+- releases the writer's active batch when it carries the subject and was never
+  attempted (it could never pass the send-time deletion fence); the unrelated
+  queued work is prepared again. An attempted batch has an unknown remote
+  outcome, stays intact and is reported (`active-batch-unknown-outcome`);
+- records `trackerErasure.pending`, the unchanged exact suppression IDs and
+  `trackerErasure.manualItems` (always `external-workbook-and-mailbox`).
+
+Processing no longer throws for tracker follow-up. Auth is deleted and the
+24-hour verification sweeps run, but the job never reports `completed` while
+external copies remain: it stays `verifying` with `manualFollowUp: true` and
+`externalCleanup: { status: "pending-manual", items, recordedAtMillis,
+parkedAtMillis }`. Once parked after the final sweep, `retryAccountDeletions`
+stops fanning it out. When reviewed reconciliation sets
+`trackerErasure.pending: false`, the hourly fan-out resumes and the next sweep
+completes the job (`externalCleanup.status: "resolved"`). The
+`getAccountDeletionStatus` contract is unchanged; the app shows `verifying` as
+"The main cleanup is finished. Final checks are in progress."
+
+`eraseTracker(subject, { redactPublicationState: true })` keeps the previous
+seal-chain redaction and writer hold for an operator to run immediately before
+`account-deletion-tracker-reconciliation.js`. Neither is wired to an endpoint.
+Users without mirrored tracker records complete exactly as before.
+
+`bigQueryTables: []` with `warehouseReviewed: true` is accepted and makes no
+warehouse request (a test covers it); the warehouse step is then a no-op.
+
+Remaining gates: the external workbook/mailbox erasure, verifier adapter and
+operator tooling above; deterministic tracker validation failures (corrupt
+legacy archive, invalid joins) still retry hourly; an attempted active batch that
+carries a deleting subject still blocks publication until an operator resolves
+it. Local validation: Functions suite 1,115 tests, 1,112 passed, 3 existing
+skips, 0 failures. No deployment, configuration write or live data access.
