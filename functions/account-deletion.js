@@ -358,7 +358,8 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
       const tracker = await sweepSubject(subject);
       const coverage = (await db.doc("config/accountDeletion").get()).data();
       await eraseWarehouse(subject.playerIds, coverage.bigQueryTables);
-      if (tracker.pending) throw new Error("Tracker external erasure and reconciliation required");
+      // External issue-tracker copies (Office workbook, mailbox) need an
+      // operator. They no longer block Auth deletion or the local sweeps.
       if (subject.uid) {
         try { await authDirectory.deleteUser(subject.uid); }
         catch (e) { if (e.code !== "auth/user-not-found") throw e; }
@@ -366,13 +367,22 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
       // A second pass after the worker grace period catches asynchronous
       // projections and in-flight uploads. Cross-service barriers are a release
       // prerequisite, not replaced by this cleanup pass.
-      const completed = subject.firstSweepAtMillis && now() - subject.firstSweepAtMillis >= DAY;
+      const swept = Boolean(subject.firstSweepAtMillis && now() - subject.firstSweepAtMillis >= DAY);
+      const manual = tracker.pending === true, completed = swept && !manual;
       await db.runTransaction(async tx => {
         const latest = await tx.get(ref);
         if (latest.data()?.lease !== lease) return;
+        const job = latest.data();
+        // Never report completion while external copies remain. After the final
+        // sweep the job parks in "verifying" for manual follow-up (no retries).
+        const followUp = manual ? { manualFollowUp: true, externalCleanup: { status: "pending-manual",
+          items: job.trackerErasure?.manualItems || ["external-workbook-and-mailbox"],
+          recordedAtMillis: job.externalCleanup?.recordedAtMillis || now(),
+          ...(swept ? { parkedAtMillis: job.externalCleanup?.parkedAtMillis || now() } : {}) } }
+          : job.manualFollowUp ? { manualFollowUp: false, externalCleanup: { ...job.externalCleanup, status: "resolved", resolvedAtMillis: now() } } : {};
         tx.update(ref, { state: completed ? "completed" : "verifying", leaseUntilMillis: 0,
           firstSweepAtMillis: subject.firstSweepAtMillis || now(), updatedAtMillis: now(),
-          ...(completed ? { completedAtMillis: now() } : {}) });
+          ...(completed ? { completedAtMillis: now() } : {}), ...followUp });
       });
     } catch (error) {
       await db.runTransaction(async tx => {
@@ -388,6 +398,11 @@ function createAccountDeletion({ db, authDirectory, bucket, FieldValue, HttpsErr
     if (config?.enabled !== true || config?.verifiedManifestVersion !== 1 || config?.warehouseReviewed !== true || !Array.isArray(config?.bigQueryTables)) return;
     // Ordered traversal avoids a persistent failed job starving later requests.
     await scan(JOBS, async doc => { if (doc.data().state !== "completed") {
+        // A job parked after its final sweep only waits for operator cleanup
+        // of external tracker copies; retrying cannot progress until the
+        // reviewed reconciliation clears trackerErasure.pending.
+        const job = doc.data();
+        if (job.state === "verifying" && job.manualFollowUp === true && job.trackerErasure?.pending === true && Number.isFinite(job.externalCleanup?.parkedAtMillis)) return;
         // Fan out through the document trigger: a large/failed account must
         // not consume the scheduler's runtime and starve unrelated requests.
         await doc.ref.update({ retryRequestedAtMillis: now() });

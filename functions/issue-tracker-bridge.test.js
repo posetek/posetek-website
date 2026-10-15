@@ -294,11 +294,11 @@ test("deleted reporter sources and deletion triggers cannot enqueue new tracker 
   assert.equal(f.tasks.length, 0);
 });
 
-for (const boundary of ["prepare", "receipt"]) test(`deletion at tracker ${boundary} boundary fences mixed publication and acknowledgement`, async () => {
+for (const boundary of ["prepare", "receipt"]) test(`operator redaction at tracker ${boundary} boundary fences mixed publication and acknowledgement`, async () => {
   const { createTrackerErasure } = require("./account-deletion-tracker");
   const crypto = require("node:crypto");
   let f;
-  const erase = async () => createTrackerErasure({ db: f.db, now: () => AT })({ uid: "known-reporter", playerIds: [], coachIds: [] });
+  const erase = async () => createTrackerErasure({ db: f.db, now: () => AT })({ uid: "known-reporter", playerIds: [], coachIds: [] }, { redactPublicationState: true });
   f = fixture(boundary === "prepare" ? { normalize: async ({ seed }) => {
     await erase();
     return { changes: changes(ID), nextSeed: { counter: seed.counter + 1 } };
@@ -312,6 +312,59 @@ for (const boundary of ["prepare", "receipt"]) test(`deletion at tracker ${bound
   assert.equal(f.db.snapshot(PATHS.writer).revision, 0, "a receipt after erasure cannot republish local seed rows");
   assert.equal(f.db.snapshot(PATHS.writer).privacyErasurePending, true);
   assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${ID}`), undefined);
+});
+
+test("automatic deletion drops the deleting subject's queued work while unrelated issues keep publishing", async () => {
+  const { createTrackerErasure } = require("./account-deletion-tracker");
+  const crypto = require("node:crypto");
+  const OTHER = "c".repeat(64), subject = { uid: "known-reporter", playerIds: [], coachIds: [] };
+  let f, erased = false;
+  f = fixture({ normalize: async ({ outbox, seed }) => {
+    // The request's lock and the worker's first pass land while a batch is prepared.
+    if (!erased) { erased = true; await f.db.doc("accountDeletionLocks/known-reporter").set({ jobId: "job" }); await createTrackerErasure({ db: f.db, now: () => AT })(subject); }
+    return { changes: { actions: [], instances: outbox.map(job => ({ key: job.id, expectedMachineSha256: null, values: { "Occurrence ID": job.id } })), emails: [], dailyRows: [] }, nextSeed: { counter: seed.counter + 1 } };
+  } });
+  f.db.recursiveDelete = async ref => { for (const path of [...f.db.docs.keys()]) if (path === ref.path || path.startsWith(ref.path + "/")) f.db.docs.delete(path); };
+  await f.db.doc(`accountDeletionJobs/${crypto.createHash("sha256").update("uid:known-reporter").digest("hex")}`).set({ ...subject, state: "deleting" });
+  await f.db.doc(`userIssueOutbox/${OTHER}`).set({ type: "incident", issueId: ISSUE, createdAtMillis: AT, status: "pending" });
+  await f.db.doc(`userIssueOccurrences/${OTHER}`).set({ issueId: ISSUE, source: "client", reporterUid: "other-reporter" });
+  await f.service.observeOutbox(ID); await f.service.observeOutbox(OTHER);
+  await assert.rejects(f.service.drain(), { code: "tracker_subject_deleting" });
+  assert.equal(f.sent.length, 0);
+  assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${ID}`), undefined);
+  assert.equal(f.db.snapshot(PATHS.writer).privacyErasurePending, undefined);
+  f.advance(5000);
+  assert.equal((await f.service.drain()).applied, true);
+  assert.deepEqual(f.sent[0].changes.instances.map(row => row.key), [OTHER]);
+  assert.equal(f.db.snapshot(PATHS.writer).revision, 1);
+  assert.equal(f.db.snapshot(`${PATHS.queue}/outbox-${OTHER}`).pending, false);
+});
+
+test("a receipt landing after automatic deletion is acknowledged coherently and the next worker pass removes re-created rows", async () => {
+  const { createTrackerErasure } = require("./account-deletion-tracker");
+  const { rowDocumentId } = require("./issue-tracker-bridge-seed");
+  const crypto = require("node:crypto");
+  const subject = { uid: "known-reporter", playerIds: [], coachIds: [] }, rowPath = `issueTrackerRows/${rowDocumentId("instances", ID)}`;
+  const jobPath = `accountDeletionJobs/${crypto.createHash("sha256").update("uid:known-reporter").digest("hex")}`;
+  let f;
+  const erase = () => createTrackerErasure({ db: f.db, now: () => AT })(subject);
+  f = fixture({
+    normalize: async ({ seed }) => ({ changes: changes(ID), nextSeed: { counter: seed.counter + 1, rows: { instances: { [ID]: { values: { "Recorded actor UID": "known-reporter", "Occurrence ID": ID } } } } } }),
+    send: async batch => { await f.db.doc("accountDeletionLocks/known-reporter").set({ jobId: "job" }); await erase(); return receipt(batch); },
+  });
+  f.db.recursiveDelete = async ref => { for (const path of [...f.db.docs.keys()]) if (path === ref.path || path.startsWith(ref.path + "/")) f.db.docs.delete(path); };
+  await f.db.doc(jobPath).set({ ...subject, state: "deleting" });
+  await f.service.observeOutbox(ID); await f.service.drain();
+  assert.equal(f.db.snapshot(PATHS.writer).revision, 1, "the external write is acknowledged, never orphaned");
+  assert.equal(f.db.snapshot(PATHS.writer).privacyErasurePending, undefined);
+  assert.deepEqual(f.db.snapshot(jobPath).trackerErasure.manualItems, ["active-batch-unknown-outcome", "external-workbook-and-mailbox"]);
+  assert.ok(f.db.snapshot(rowPath));
+  assert.deepEqual(await erase(), { pending: true });
+  assert.equal(f.db.snapshot(rowPath), undefined);
+  const batch = f.db.snapshot(`${PATHS.batches}/${f.sent[0].batchId}`);
+  assert.equal(batch.state, "privacy-erased"); assert.deepEqual(batch.payload.changes.instances, []);
+  assert.equal(f.db.snapshot(PATHS.seed).counts.instances, 1, "aggregate counts still match the workbook");
+  assert.deepEqual(f.db.snapshot(jobPath).trackerErasure.manualItems, ["external-workbook-and-mailbox"]);
 });
 
 test("erased exact mail or source IDs suppress re-import while unrelated mail still queues", async () => {

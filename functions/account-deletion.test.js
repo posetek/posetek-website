@@ -271,21 +271,59 @@ test("an active worker lease prevents overlapping cleanup and an expired lease i
   assert.notEqual(h.db.snapshot(`accountDeletionJobs/${h.key()}`).lease, "old-worker");
 });
 
-test("tracker external-copy hold cannot be mistaken for completed account erasure", async () => {
+test("external tracker copies park the job for manual follow-up without retries, a publication hold or false completion", async () => {
   const h = harness({
     "userIssueOccurrences/report": { reporterUid: "athlete" },
     "issueTrackerRows/row": { group: "instances", key: "report", value: { values: { "Recorded actor UID": "athlete", "User who acted / reported": "Private name" } } },
+    "issueTrackerState/writer": { revision: 3 },
   });
   await h.api.request(payload, actor());
-  await assert.rejects(h.api.process(h.key()), /cleanup needs retry/);
+  await h.api.process(h.key());
+  const jobPath = `accountDeletionJobs/${h.key()}`;
   assert.equal(h.db.snapshot("issueTrackerRows/row"), undefined);
   assert.equal(h.db.snapshot("players/profile"), undefined);
-  assert.equal((await h.api.status({ receiptToken: token })).state, "retrying");
-  assert.equal(h.authActions.some(([method]) => method === "deleteUser"), false);
-  h.advance(86400001);
-  await assert.rejects(h.api.process(h.key()), /cleanup needs retry/);
-  assert.equal((await h.api.status({ receiptToken: token })).completedAtMillis, null);
-  assert.equal(h.db.snapshot("issueTrackerState/writer").privacyErasurePending, true);
+  assert.deepEqual(h.authActions.map(([method]) => method), ["updateUser", "revokeRefreshTokens", "deleteUser"], "sign-in and Auth deletion complete");
+  assert.deepEqual(h.db.snapshot("issueTrackerState/writer"), { revision: 3 }, "shared publication is never held");
+  assert.equal((await h.api.status({ receiptToken: token })).state, "verifying");
+  assert.equal(h.db.snapshot(jobPath).manualFollowUp, true);
+  assert.deepEqual(h.db.snapshot(jobPath).externalCleanup, { status: "pending-manual", items: ["external-workbook-and-mailbox"], recordedAtMillis: baseTime });
+  // The 24-hour verification sweeps still run before the job parks.
+  await h.api.runPending();
+  assert.equal(h.db.snapshot(jobPath).retryRequestedAtMillis, baseTime);
+  h.advance(86400001); await h.api.process(h.key());
+  const status = await h.api.status({ receiptToken: token });
+  assert.deepEqual(Object.keys(status).sort(), ["completedAtMillis", "requestedAtMillis", "state"]);
+  assert.equal(status.state, "verifying"); assert.equal(status.completedAtMillis, null);
+  assert.equal(h.db.snapshot(jobPath).externalCleanup.parkedAtMillis, baseTime + 86400001);
+  h.advance(3600000); await h.api.runPending();
+  assert.equal(h.db.snapshot(jobPath).retryRequestedAtMillis, baseTime, "a parked job is not retried hourly");
+  await h.db.doc(jobPath).update({ state: "retrying" });
+  await h.api.runPending();
+  assert.equal(h.db.snapshot(jobPath).retryRequestedAtMillis, baseTime + 86400001 + 3600000, "a failed re-run is still retried");
+  await h.api.process(h.key());
+  assert.equal((await h.api.status({ receiptToken: token })).state, "verifying");
+  // Reviewed reconciliation clears the tracker hold; normal sweeps then finish.
+  await h.db.doc(jobPath).update({ "trackerErasure.pending": false });
+  h.advance(1000); await h.api.runPending();
+  assert.equal(h.db.snapshot(jobPath).retryRequestedAtMillis, baseTime + 86400001 + 3600000 + 1000);
+  await h.api.process(h.key());
+  assert.equal((await h.api.status({ receiptToken: token })).state, "completed");
+  assert.equal(h.db.snapshot(jobPath).manualFollowUp, false);
+  assert.equal(h.db.snapshot(jobPath).externalCleanup.status, "resolved");
+});
+
+test("an empty reviewed warehouse inventory is accepted and makes no warehouse request", async () => {
+  const { createWarehouseEraser } = require("./account-deletion-warehouse");
+  let tokens = 0, requests = 0;
+  const eraseWarehouse = createWarehouseEraser({ accessToken: async () => { tokens++; return "synthetic"; }, fetchImpl: async () => { requests++; throw new Error("no warehouse"); } });
+  const h = harness();
+  const api = createAccountDeletion({ db: h.db, FieldValue, HttpsError, bucket: { getFiles: async () => [[]] }, eraseGatewayStorage: async () => {}, eraseWarehouse,
+    authDirectory: { updateUser: async () => {}, revokeRefreshTokens: async () => {}, deleteUser: async () => {} }, now: () => baseTime });
+  await api.request(payload, actor()); await api.process(h.key());
+  assert.equal((await api.status({ receiptToken: token })).state, "verifying");
+  assert.deepEqual([tokens, requests], [0, 0]);
+  await h.db.doc("config/accountDeletion").update({ warehouseReviewed: false });
+  await assert.rejects(api.request({ ...payload, receiptToken: "c".repeat(64) }, actor()), { code: "failed-precondition" });
 });
 
 for (const targetType of ["player", "coach"]) test(`${targetType} aliases cannot bypass reserved account-root validation`, async () => {
