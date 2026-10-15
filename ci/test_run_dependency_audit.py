@@ -68,7 +68,7 @@ class AuditRunnerTests(unittest.TestCase):
 
     def test_timeout_fails(self):
         with patch.object(candidate.subprocess, "run", side_effect=subprocess.TimeoutExpired("npm", 120)):
-            self.assertEqual(candidate.run("functions", self.baseline), 2)
+            self.assertEqual(candidate.run("app", self.baseline), 2)
 
 
 if __name__ == "__main__":

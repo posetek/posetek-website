@@ -1,14 +1,14 @@
-// Resolve only explicitly reviewed private mobile rules for local test use.
+// Resolve only explicitly reviewed private Backend rules for local test use.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { lstatSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 const canonicalRemotes = new Set([
-  'git@github.com:posetek/posetek-mobile-app.git',
-  'https://github.com/posetek/posetek-mobile-app.git',
-  'https://github.com/posetek/posetek-mobile-app',
-  'ssh://git@github.com/posetek/posetek-mobile-app.git',
+  'git@github.com:posetek/posetek-backend.git',
+  'https://github.com/posetek/posetek-backend.git',
+  'https://github.com/posetek/posetek-backend',
+  'ssh://git@github.com/posetek/posetek-backend.git',
 ]);
 const ruleNames = ['firestore.rules', 'storage.rules'];
 
@@ -16,17 +16,17 @@ function git(cwd, ...args) {
   return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 }
 
-export function reviewedMobileRules(repoInput, shaInput) {
-  assert.ok(repoInput && path.isAbsolute(repoInput), 'POSETEK_MOBILE_REPO must be an explicit absolute mobile checkout path');
-  assert.match(shaInput || '', /^[0-9a-f]{40}$/, 'POSETEK_MOBILE_SHA must be the reviewed full lowercase commit SHA');
+export function reviewedBackendRules(repoInput, shaInput) {
+  assert.ok(repoInput && path.isAbsolute(repoInput), 'POSETEK_BACKEND_REPO must be an explicit absolute Backend checkout path');
+  assert.match(shaInput || '', /^[0-9a-f]{40}$/, 'POSETEK_BACKEND_SHA must be the reviewed full lowercase commit SHA');
   const repo = realpathSync(repoInput);
   assert.equal(realpathSync(git(repo, 'rev-parse', '--show-toplevel')), repo,
-    'POSETEK_MOBILE_REPO must name the mobile repository root');
+    'POSETEK_BACKEND_REPO must name the Backend repository root');
   assert.ok(canonicalRemotes.has(git(repo, 'remote', 'get-url', 'origin')),
-    'mobile checkout origin must be the canonical posetek/posetek-mobile-app repository');
-  assert.equal(git(repo, 'rev-parse', 'HEAD'), shaInput, 'mobile checkout HEAD differs from POSETEK_MOBILE_SHA');
+    'Backend checkout origin must be the canonical posetek/posetek-backend repository');
+  assert.equal(git(repo, 'rev-parse', 'HEAD'), shaInput, 'Backend checkout HEAD differs from POSETEK_BACKEND_SHA');
   const firebase = path.join(repo, 'firebase');
-  assert.equal(lstatSync(firebase).isSymbolicLink(), false, 'mobile firebase directory cannot be a symlink');
+  assert.equal(lstatSync(firebase).isSymbolicLink(), false, 'Backend firebase directory cannot be a symlink');
   const rules = Object.fromEntries(ruleNames.map(name => {
     const relative = `firebase/${name}`;
     const file = path.join(firebase, name);

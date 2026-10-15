@@ -1,0 +1,218 @@
+[
+  {
+    "name": "mixed qualified observations",
+    "reps": [
+      {
+        "repType": "sprint",
+        "max_velocity": 7,
+        "max_acceleration": 6.2,
+        "totalTime": 2,
+        "resultStatus": {
+          "qualified": true,
+          "duplicate": false
+        }
+      },
+      {
+        "repType": "sprint",
+        "max_velocity": 8,
+        "max_acceleration": 5.4,
+        "totalTime": 1.84,
+        "resultStatus": {
+          "qualified": true,
+          "duplicate": false
+        }
+      },
+      {
+        "repType": "shooting",
+        "velocity": 29,
+        "resultStatus": {
+          "qualified": true,
+          "duplicate": false
+        }
+      },
+      {
+        "repType": "jump",
+        "jumpHeight": 0.5,
+        "resultStatus": {
+          "qualified": true,
+          "duplicate": false
+        }
+      },
+      {
+        "repType": "broadJump",
+        "broadJumpDistance": 2.1,
+        "resultStatus": {
+          "qualified": true,
+          "duplicate": false
+        }
+      },
+      {
+        "repType": "changeOfDirection",
+        "totalTime": 5,
+        "phase1Time": 2,
+        "phase2Time": 1.2,
+        "phase3Time": 1.8,
+        "resultStatus": {
+          "qualified": true,
+          "duplicate": false
+        }
+      },
+      {
+        "repType": "dribbling",
+        "totalTime": 6.8,
+        "avgBallDistance": 0.6,
+        "phase1Time": 2.8,
+        "phase2Time": 2.5,
+        "phase3Time": 1.5,
+        "resultStatus": {
+          "qualified": true,
+          "duplicate": false
+        }
+      }
+    ],
+    "expectedAxes": [
+      {
+        "key": "power",
+        "label": "Power",
+        "measuredScore": 112.09536491688539
+      },
+      {
+        "key": "speed",
+        "label": "Speed",
+        "measuredScore": 108.6749295774648
+      },
+      {
+        "key": "agility",
+        "label": "Agility",
+        "measuredScore": 96.66388888888889
+      },
+      {
+        "key": "ballControl",
+        "label": "Ball Control",
+        "measuredScore": 92.71499091388668
+      },
+      {
+        "key": "striking",
+        "label": "Striking",
+        "measuredScore": 86.49501333333333
+      }
+    ]
+  },
+  {
+    "name": "unmeasured axes remain null",
+    "reps": [
+      {
+        "repType": "sprint",
+        "max_velocity": 7,
+        "resultStatus": {
+          "qualified": true
+        }
+      }
+    ],
+    "expectedAxes": [
+      {
+        "key": "power",
+        "label": "Power",
+        "measuredScore": null
+      },
+      {
+        "key": "speed",
+        "label": "Speed",
+        "measuredScore": 110.27169014084508
+      },
+      {
+        "key": "agility",
+        "label": "Agility",
+        "measuredScore": null
+      },
+      {
+        "key": "ballControl",
+        "label": "Ball Control",
+        "measuredScore": null
+      },
+      {
+        "key": "striking",
+        "label": "Striking",
+        "measuredScore": null
+      }
+    ]
+  },
+  {
+    "name": "no observations",
+    "reps": [],
+    "expectedAxes": [
+      {
+        "key": "power",
+        "label": "Power",
+        "measuredScore": null
+      },
+      {
+        "key": "speed",
+        "label": "Speed",
+        "measuredScore": null
+      },
+      {
+        "key": "agility",
+        "label": "Agility",
+        "measuredScore": null
+      },
+      {
+        "key": "ballControl",
+        "label": "Ball Control",
+        "measuredScore": null
+      },
+      {
+        "key": "striking",
+        "label": "Striking",
+        "measuredScore": null
+      }
+    ]
+  },
+  {
+    "name": "duplicate and unqualified observations",
+    "reps": [
+      {
+        "repType": "sprint",
+        "max_velocity": 20,
+        "resultStatus": {
+          "qualified": true,
+          "duplicate": true
+        }
+      },
+      {
+        "repType": "shooting",
+        "velocity": 90,
+        "resultStatus": {
+          "qualified": false
+        }
+      }
+    ],
+    "expectedAxes": [
+      {
+        "key": "power",
+        "label": "Power",
+        "measuredScore": null
+      },
+      {
+        "key": "speed",
+        "label": "Speed",
+        "measuredScore": null
+      },
+      {
+        "key": "agility",
+        "label": "Agility",
+        "measuredScore": null
+      },
+      {
+        "key": "ballControl",
+        "label": "Ball Control",
+        "measuredScore": null
+      },
+      {
+        "key": "striking",
+        "label": "Striking",
+        "measuredScore": null
+      }
+    ]
+  }
+]

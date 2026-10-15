@@ -1,0 +1,262 @@
+{
+  "period": {
+    "startDate": "2026-09-20",
+    "endDate": "2026-09-21",
+    "timeZone": "America/Los_Angeles",
+    "startMillis": 1789887600000,
+    "endMillis": 1790060400000
+  },
+  "now": 1790078400000,
+  "base": {
+    "id": "one",
+    "_workoutSource": "personalWorkoutLogs",
+    "source": "personal",
+    "workoutId": "one",
+    "startedAt": 1789887601000,
+    "endedAt": 1789888201000,
+    "endReason": "completed",
+    "activeSeconds": 300
+  },
+  "cases": [
+    {
+      "name": "timer, zero and estimate",
+      "logs": [
+        {
+          "id": "one",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "one",
+          "startedAt": 1789887601000,
+          "endedAt": 1789888201000,
+          "endReason": "completed",
+          "activeSeconds": 300
+        },
+        {
+          "id": "two",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "two",
+          "startedAt": 1789887601000,
+          "endedAt": 1789888201000,
+          "endReason": "completed",
+          "activeSeconds": 0
+        },
+        {
+          "id": "three",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "three",
+          "startedAt": 1789887601000,
+          "endedAt": 1789888201000,
+          "endReason": "completed"
+        }
+      ],
+      "expected": {
+        "completed": 3,
+        "timerMinutes": 5,
+        "estimatedMinutes": 10,
+        "timerRecords": 2,
+        "estimatedRecords": 1
+      }
+    },
+    {
+      "name": "linked duplicate",
+      "logs": [
+        {
+          "id": "one",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "plan",
+          "workoutId": "one",
+          "startedAt": 1789887601000,
+          "endedAt": 1789888201000,
+          "endReason": "completed",
+          "activeSeconds": 300,
+          "planId": "plan",
+          "workoutSnapshot": {
+            "blocks": []
+          }
+        },
+        {
+          "id": "legacy",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "plan",
+          "workoutId": "one",
+          "startedAt": 1789887601000,
+          "endedAt": 1789888201000,
+          "endReason": "completed",
+          "activeSeconds": 999,
+          "planId": "plan"
+        }
+      ],
+      "expected": {
+        "completed": 1,
+        "timerMinutes": 5,
+        "estimatedMinutes": 0,
+        "timerRecords": 1,
+        "estimatedRecords": 0
+      }
+    },
+    {
+      "name": "pain and ongoing",
+      "logs": [
+        {
+          "id": "one",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "one",
+          "startedAt": 1789887601000,
+          "endedAt": 1789888201000,
+          "endReason": "pain",
+          "activeSeconds": 300
+        },
+        {
+          "id": "two",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "two",
+          "startedAt": 1789887601000,
+          "endedAt": null,
+          "endReason": "completed",
+          "activeSeconds": 300
+        }
+      ],
+      "expected": {
+        "completed": 0,
+        "timerMinutes": 10,
+        "estimatedMinutes": 0,
+        "timerRecords": 2,
+        "estimatedRecords": 0
+      }
+    },
+    {
+      "name": "ended inside but started before",
+      "logs": [
+        {
+          "id": "one",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "one",
+          "startedAt": 1789887599000,
+          "endedAt": 1789888201000,
+          "endReason": "completed",
+          "activeSeconds": 300
+        }
+      ],
+      "expected": {
+        "completed": 1,
+        "timerMinutes": 5,
+        "estimatedMinutes": 0,
+        "timerRecords": 1,
+        "estimatedRecords": 0
+      }
+    },
+    {
+      "name": "started inside but ended outside",
+      "logs": [
+        {
+          "id": "one",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "one",
+          "startedAt": 1789887601000,
+          "endedAt": 1790060400000,
+          "endReason": "completed",
+          "activeSeconds": 300
+        }
+      ],
+      "expected": {
+        "completed": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 0,
+        "timerRecords": 0,
+        "estimatedRecords": 0
+      }
+    },
+    {
+      "name": "future or reversed ending",
+      "logs": [
+        {
+          "id": "one",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "one",
+          "startedAt": 1789887601000,
+          "endedAt": 1790078400001,
+          "endReason": "completed",
+          "activeSeconds": 300
+        },
+        {
+          "id": "two",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "two",
+          "startedAt": 1789887601000,
+          "endedAt": 1789887600999,
+          "endReason": "completed",
+          "activeSeconds": 300
+        }
+      ],
+      "expected": {
+        "completed": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 0,
+        "timerRecords": 0,
+        "estimatedRecords": 0
+      }
+    },
+    {
+      "name": "future or missing start",
+      "logs": [
+        {
+          "id": "one",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "one",
+          "startedAt": 1790078400001,
+          "endedAt": 1789888201000,
+          "endReason": "completed",
+          "activeSeconds": 300
+        },
+        {
+          "id": "two",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "two",
+          "startedAt": null,
+          "endedAt": 1789888201000,
+          "endReason": "completed",
+          "activeSeconds": 300
+        }
+      ],
+      "expected": {
+        "completed": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 0,
+        "timerRecords": 0,
+        "estimatedRecords": 0
+      }
+    },
+    {
+      "name": "local ending boundary",
+      "logs": [
+        {
+          "id": "one",
+          "_workoutSource": "personalWorkoutLogs",
+          "source": "personal",
+          "workoutId": "one",
+          "startedAt": 1789884000000,
+          "endedAt": 1789887599999,
+          "endReason": "completed",
+          "activeSeconds": 300
+        }
+      ],
+      "expected": {
+        "completed": 0,
+        "timerMinutes": 0,
+        "estimatedMinutes": 0,
+        "timerRecords": 0,
+        "estimatedRecords": 0
+      }
+    }
+  ]
+}
