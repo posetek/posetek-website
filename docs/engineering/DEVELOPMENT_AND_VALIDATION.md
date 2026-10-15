@@ -66,7 +66,7 @@ not turn missing input into a green skip.
 | --- | --- | --- |
 | Canonical mobile contract parity | Set `POSETEK_MOBILE_REPO` to the reviewed lowercase `posetek-mobile-app` checkout and record `git -C "$POSETEK_MOBILE_REPO" rev-parse HEAD`; run `node --test functions/device-performance-parity.integration.cjs`. | Two dedicated assertions compare both server and frontend pinned schema/fixture bytes to canonical mobile source. Missing source fails. The local pinned README digest table still guards frontend bytes; private source README prose is deliberately excluded from the artifact. The [source artifact workflow candidate](../../ci/mobile-contract-pr-job.yml) is inactive and its ordinary PR consumer is mutable. |
 | Canonical rules | Set `RULES_PATH` and `STORAGE_RULES_PATH` to reviewed mobile `firebase/firestore.rules` and `firebase/storage.rules`, select a free `RULES_PORT_OFFSET`, and run `node scripts/run-rules-tests.mjs`. | Authorization suites run against the private canonical rule bytes and verify they did not change mid-run. Requires Java/Firebase emulators; no public rule artifact. |
-| Authenticated browser journey | With cached Java 21, Firebase binaries, Chromium, installed local dependencies, explicit absolute `POSETEK_MOBILE_REPO`, and reviewed full lowercase `POSETEK_MOBILE_SHA`, run `node scripts/authenticated-emulator-smoke.mjs`. | Synthetic signup and four local Auth/Firestore/Functions/Storage emulators; exact demo project and loopback ports; no cloud credentials or live service. The harness checks canonical mobile Git origin, exact HEAD and private rule bytes against that commit, plus free local ports before launch. This is local trusted-code evidence, not a public PR gate. |
+| Authenticated browser journey | With cached Java 21, Firebase binaries, Chromium, installed local dependencies, explicit absolute `POSETEK_BACKEND_REPO` checked out at the committed `backend-source.json` pin, run `node scripts/authenticated-emulator-smoke.mjs`. | Synthetic signup and four local Auth/Firestore/Functions/Storage emulators; exact demo project and loopback ports; no cloud credentials or live service. The harness checks canonical Backend Git origin, exact pinned HEAD and private rule bytes against that commit, plus free local ports before launch. This is local trusted-code evidence, not a public PR gate. |
 | Production assembly | Follow [release and operations](RELEASE_AND_OPERATIONS.md); use the current captured live baseline and production build scripts. | Preserves existing deployed files and proves intended additions/changes. A plain Astro build is insufficient and historic file counts must not be hard-coded. |
 
 For local rules work, supply an absolute path to a reviewed checkout of the
@@ -85,10 +85,10 @@ owns backend suites and exact recorded results.
 ### Reproducing the local authenticated journey
 
 This is the documented macOS validation setup, not a cloud deployment command.
-Prepare the app and Functions dependencies from their lockfiles, install a
-compatible Firebase CLI on `PATH`, and provision Java 21 plus the Firebase
-Firestore/Storage emulator cache. Replace the mobile path and SHA below with
-the checkout and full commit you reviewed. The cache paths match the recorded
+Prepare Web app and pinned Backend Functions/Firebase dependencies from their
+lockfiles, expose Backend's installed Firebase CLI on `PATH`, and provision Java 21 plus the Firebase
+Firestore/Storage emulator cache. Replace the Backend path below with the checkout at the exact
+`backend-source.json` commit. The cache paths match the recorded
 local validation; their existence is a prerequisite, not guaranteed on a new
 machine.
 
@@ -96,8 +96,9 @@ machine.
 export JAVA_HOME='/private/tmp/posetek-mobile-java21/jdk-21.0.12.1+1/Contents/Home'
 export FIREBASE_EMULATORS_PATH='/private/tmp/posetek-mobile-emulators'
 export PLAYWRIGHT_BROWSERS_PATH='/private/tmp/posetek-website-playwright-browsers'
-export POSETEK_MOBILE_REPO='/absolute/path/to/reviewed/posetek-mobile-app'
-export POSETEK_MOBILE_SHA='REPLACE_WITH_REVIEWED_FULL_LOWERCASE_COMMIT_SHA'
+export POSETEK_BACKEND_REPO='/absolute/path/to/pinned/posetek-backend'
+export PATH="$POSETEK_BACKEND_REPO/firebase/node_modules/.bin:$PATH"
+python3 scripts/backend.py verify
 command -v firebase
 "$JAVA_HOME/bin/java" -version
 node app/node_modules/playwright/cli.js install chromium

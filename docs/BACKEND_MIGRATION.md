@@ -9,10 +9,12 @@ not changed, and held candidates are not released by this source migration.
 
 ## Checkout and development
 
-`backend-source.json` pins an immutable Backend commit. These task commits are local
-and unpushed: the pin must be reachable in GitHub before client changes merge.
-Publish/merge Backend first; after any merge commit, update this pin to the final
-reviewed Backend commit. Then run both required CI and the repository review process.
+`backend-source.json` pins the immutable reviewed Backend source commit. Backend
+integrates first, preserving this commit as an ancestor of main; then client
+removals merge after both independent reviews and required CI pass. Documentation
+or merge commits do not require changing the source pin. Clone and check out that
+exact pin for local tools. Final review results and coordinated PR/check links
+are recorded in Backend's `migration/REVIEW.md`.
 
 ```sh
 git clone git@github.com:posetek/posetek-backend.git ../posetek-backend
