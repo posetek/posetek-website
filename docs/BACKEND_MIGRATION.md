@@ -65,3 +65,12 @@ They record every move, adaptation, result and unexecuted qualification.
 Reverting this source migration restores the original code/pins through Git; no
 cloud rollback is needed. The external Mobile-based rules drift monitor requires
 an operator handover after publishing the coordinated branches, as documented in Backend.
+
+## Review follow-up
+
+The final migration is reconciled with current main; Backend records the exact
+source revisions in `migration/source-manifest.json`. Use the committed
+`backend-source.json` revision, not a floating Backend branch.
+
+The independent review findings, repairs, inherited dependency exceptions and
+validation limits are recorded in Backend's `migration/REVIEW.md`.
