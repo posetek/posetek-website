@@ -3,11 +3,14 @@
   "exceptions": [
     {
       "advisory": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
-      "path": ["firebase-admin", "node-forge"],
+      "path": [
+        "firebase-admin",
+        "node-forge"
+      ],
       "severity": "high",
       "owner": "taiyyoson",
-      "reason": "Orchestrator-delegated seven-day acceptance: firebase-admin uses node-forge only to parse a trusted service-account private key in credential-internal.js; the affected RSA PKCS#1 v1.5 public signature-verification API is not called in the inspected SDK path. No patched node-forge version exists. Reassess on SDK or credential-path changes.",
-      "expires": "2026-10-14"
+      "reason": "Orchestrator-delegated seven-day acceptance: firebase-admin uses node-forge only to parse a trusted service-account private key in credential-internal.js; the affected RSA PKCS#1 v1.5 public signature-verification API is not called in the inspected SDK path. No patched node-forge version exists. Reassess on SDK or credential-path changes. Renewed 2026-10-14 for seven days by the WX release (Nolan): no dependency, adapter or runtime change since the original acceptance.",
+      "expires": "2026-10-21"
     }
   ]
 }
