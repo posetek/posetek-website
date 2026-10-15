@@ -33,9 +33,9 @@ branch-protection enforcement remains separate. Its current jobs are:
 | Lane | What to run locally | What it protects |
 | --- | --- | --- |
 | Policy | `python -m pip install -r ci/requirements.txt`; `python -m unittest discover -s ci -p 'test_*.py'` | Workflow, review input/report, contract artifact/source, and dependency policy invariants; offline mocked tests, not remote controls. |
-| Dependencies | `python3 ci/run_dependency_audit.py app --baseline ci/dependency-exceptions/app.json` and same command for `functions` and `legacy` with their files | Production high/critical advisory identity and dependency path, severity increases, exception expiry, malformed report, scanner errors. Registry access is required. |
+| Dependencies | `python3 ci/run_dependency_audit.py app --baseline ci/dependency-exceptions/app.json` (Functions and legacy audits now run in Backend) | Production high/critical advisory identity and dependency path, severity increases, exception expiry, malformed report, scanner errors. Registry access is required. |
 | Unit | `npm --prefix app ci --ignore-scripts --no-audit --no-fund`; `npm --prefix app test`; `npm --prefix app run lint` | Frontend behavior and lint. Preexisting warnings remain visible; don't silently bulk fix. |
-| Server | `npm --prefix functions ci --ignore-scripts --no-audit --no-fund`; `node --test functions/*.test.js scripts/*.test.cjs scripts/*.test.mjs`; `node --test functions/legacy-upload-processor/*.test.cjs`; `node --test ci/verify-mobile-contract-artifact.test.cjs` | Functions, legacy upload marker/routing guard, scripts, release/guard behavior, and artifact verifier logic without a private partner checkout. Three historical private-fixture skips are tracked in [exceptions](EXCEPTIONS.md). |
+| Server (retained job name) | `node --test scripts/*.test.cjs scripts/*.test.mjs` | Web-owned scripts, Hosting/release guards and data contracts. Functions, legacy handler and native artifact verification now run in Backend CI. |
 | Build and browser | `npm --prefix app run check:svelte`; `npm --prefix app run build`; `npm --prefix app run build:marketing`; `node --test ci/check-static-firestore-transport.test.mjs`; `node scripts/check-static-firestore-transport.mjs`; `node --test scripts/browser-smoke.mjs` | Type/Svelte/Astro output, static-browser gRPC assumption, and guest Chromium navigation on the generated `app/astro-dist`. Install local Playwright Chromium only if authorized and absent. |
 
 `scripts/browser-smoke.mjs` uses a disposable loopback preview, distinct guest
@@ -64,23 +64,19 @@ not turn missing input into a green skip.
 
 | Batch | Source and command | Protected behavior and current limit |
 | --- | --- | --- |
-| Canonical mobile contract parity | Set `POSETEK_MOBILE_REPO` to the reviewed lowercase `posetek-mobile-app` checkout and record `git -C "$POSETEK_MOBILE_REPO" rev-parse HEAD`; run `node --test functions/device-performance-parity.integration.cjs`. | Two dedicated assertions compare both server and frontend pinned schema/fixture bytes to canonical mobile source. Missing source fails. The local pinned README digest table still guards frontend bytes; private source README prose is deliberately excluded from the artifact. The [source artifact workflow candidate](../../ci/mobile-contract-pr-job.yml) is inactive and its ordinary PR consumer is mutable. |
-| Canonical rules | Set `RULES_PATH` and `STORAGE_RULES_PATH` to reviewed mobile `firebase/firestore.rules` and `firebase/storage.rules`, select a free `RULES_PORT_OFFSET`, and run `node scripts/run-rules-tests.mjs`. | Authorization suites run against the private canonical rule bytes and verify they did not change mid-run. Requires Java/Firebase emulators; no public rule artifact. |
+| Canonical mobile contract parity | Set absolute `POSETEK_MOBILE_REPO` to the reviewed `posetek-mobile-app` checkout and record its HEAD. In Web run `node --test scripts/device-performance-parity.integration.cjs`; in the reviewed Backend checkout run `node --test functions/device-performance-parity.integration.cjs`. | Separate owner-repository assertions preserve frontend and server parity with Mobile schema/fixtures; missing source fails. Web retains the original data-only digest table. The [Backend artifact candidate](https://github.com/posetek/posetek-backend/blob/main/ci/mobile-contract-pr-job.yml) remains inactive and now checks Backend only. |
+| Canonical rules | Use the exact Backend checkout from `backend-source.json`, set `POSETEK_BACKEND_REPO` when nonstandard, and run `python3 scripts/backend.py rules`. | Runs both canonical SDK and relocated Web authorization suites in Backend. Requires installed Backend dependencies and Java/Firebase emulators; no public rule artifact. |
 | Authenticated browser journey | With cached Java 21, Firebase binaries, Chromium, installed local dependencies, explicit absolute `POSETEK_BACKEND_REPO` checked out at the committed `backend-source.json` pin, run `node scripts/authenticated-emulator-smoke.mjs`. | Synthetic signup and four local Auth/Firestore/Functions/Storage emulators; exact demo project and loopback ports; no cloud credentials or live service. The harness checks canonical Backend Git origin, exact pinned HEAD and private rule bytes against that commit, plus free local ports before launch. This is local trusted-code evidence, not a public PR gate. |
 | Production assembly | Follow [release and operations](RELEASE_AND_OPERATIONS.md); use the current captured live baseline and production build scripts. | Preserves existing deployed files and proves intended additions/changes. A plain Astro build is insufficient and historic file counts must not be hard-coded. |
 
-For local rules work, supply an absolute path to a reviewed checkout of the
-canonical private mobile repository and record its full commit SHA. The
-four-emulator harness refuses a missing, short, different or dirty source and
-requires the `posetek/posetek-mobile-app` Git origin; it does not search for
-rules or use a website copy. Its present local runner also requires cached
-emulator binaries under `/private/tmp/`, a Java 21 `JAVA_HOME` path containing
-`jdk-21`, and cached Playwright Chromium. These are explicit local prerequisites,
-not a portable hosted lane. Choose an unused rules offset only after checking
-local listeners; never kill another runner's process to make a test pass. The
-[mobile build and testing guide](https://github.com/posetek/posetek-mobile-app/blob/main/docs/BUILD_AND_TESTING.md)
-owns mobile-specific native and emulator detail. The [backend baseline](https://github.com/posetek/posetek-backend/blob/main/docs/engineering/BACKEND_BASELINE_20261007.md)
-owns backend suites and exact recorded results.
+For local rules work, use the exact pinned private Backend checkout. The browser
+harness requires an absolute path, canonical `posetek/posetek-backend` origin,
+matching HEAD and unchanged source bytes. It also requires cached emulator binaries
+under `/private/tmp/`, a Java 21 `JAVA_HOME` containing `jdk-21`, and cached
+Playwright Chromium. These are explicit local prerequisites, not a hosted lane.
+Never kill another runner's process to free ports. Native build requirements stay
+in the [Mobile build guide](https://github.com/posetek/posetek-mobile-app/blob/main/docs/BUILD_AND_TESTING.md);
+shared local setup is in [Backend dev/README](https://github.com/posetek/posetek-backend/blob/main/dev/README.md).
 
 ### Reproducing the local authenticated journey
 
@@ -121,23 +117,21 @@ credentials or publish private rule bytes to reproduce this test.
 
 ## Diagnosing a red lane
 
-For the separate canonical-rules runner, use the same reviewed mobile checkout,
-an installed Firebase CLI and Java 21. After selecting an unused port offset,
-the command is:
+For the relocated Web rules runner, use the reviewed Backend checkout directly
+when selecting a named suite or port offset:
 
 ```sh
-export RULES_PATH="$POSETEK_MOBILE_REPO/firebase/firestore.rules"
-export STORAGE_RULES_PATH="$POSETEK_MOBILE_REPO/firebase/storage.rules"
-export FIREBASE_BIN='/absolute/path/to/firebase'
+cd "$POSETEK_BACKEND_REPO"
+export FIREBASE_BIN="$PWD/firebase/node_modules/.bin/firebase"
 export RULES_PORT_OFFSET='1000'
 node scripts/run-rules-tests.mjs
 ```
 
 `1000` is an example offset to check for availability, not a reserved range.
-`FIREBASE_BIN` may be omitted when `firebase` is already on `PATH`. Preserve
-the reviewed `JAVA_HOME`/Java runtime and canonical rule files; the runner checks
-rule hashes before and after execution. See [rules suite documentation](../../app/rules-tests/README.md)
-for named-suite selection and its exact port behavior.
+The Backend runner resolves canonical local rules by default and checks hashes
+before and after execution. The Web helper deliberately runs both complete suites;
+its named-suite commands now belong in Backend. The separate canonical SDK runner
+uses its own fixed configuration; do not assume this offset applies to it.
 
 - First check the exact SHA, Node/Python version, lockfile and dependency
   installation. A stale `node_modules` tree can fail to load a package already

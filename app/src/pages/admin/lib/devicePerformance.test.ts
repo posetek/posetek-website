@@ -24,7 +24,7 @@ import type {
 import { PREVIEW_SCENARIOS, previewDevice, previewFleet } from "./devicePerformancePreview";
 
 // MARK: - Self-contained pinned fixture checks. Cross-repository byte parity
-// runs explicitly in functions/device-performance-parity.integration.cjs.
+// runs explicitly in scripts/device-performance-parity.integration.cjs.
 
 // Contracts v1.2.2 (mobile main 7a0f624); v1.2.1 was 95343aae…, v1.0 was 906c843c….
 const SCHEMA_SHA256 = "e8a09d63a84ed2d95130015489e97ce6884f5e8fef0655caf2115ff16d08e0d3";
