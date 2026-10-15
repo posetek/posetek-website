@@ -38,11 +38,12 @@ function fixture(extra = {}) {
   return { db, erase: createTrackerErasure({ db, now: () => 1000 }) };
 }
 
-test("exact tracker erasure preserves mixed-user cells and holds invalidated publication", async () => {
+const operator = { redactPublicationState: true };
+test("operator redaction preserves mixed-user cells and holds invalidated publication", async () => {
   const { db, erase } = fixture();
   const keep = ["issueTrackerQueue/outbox-other", "issueTrackerRows/other", "issueTrackerRows/action", "issueTrackerIndices/other", "issueTrackerBatches/mixed/rows/other", "issueTrackerBatches/mixed/indices/other"];
   const before = Object.fromEntries(keep.map(path => [path, db.snapshot(path)]));
-  assert.deepEqual(await erase(subject), { pending: true });
+  assert.deepEqual(await erase(subject, operator), { pending: true });
   for (const path of keep) assert.deepEqual(db.snapshot(path), before[path], path);
   for (const path of ["issueTrackerQueue/outbox-owned", "issueTrackerRows/owned", "issueTrackerRows/mail", "issueTrackerIndices/owned", "issueTrackerIndices/alias", "issueTrackerBatches/mixed/rows/owned", "issueTrackerBatches/mixed/indices/owned"]) assert.equal(db.snapshot(path), undefined, path);
   const batch = db.snapshot("issueTrackerBatches/mixed");
@@ -57,18 +58,70 @@ test("exact tracker erasure preserves mixed-user cells and holds invalidated pub
   assert.equal(JSON.stringify(db.snapshot(jobPath)).includes("Name owner"), false);
   await db.doc("userIssueOccurrences/owned").delete();
   const erased = JSON.stringify([...db.docs]);
-  assert.deepEqual(await erase(subject), { pending: true });
+  assert.deepEqual(await erase(subject, operator), { pending: true });
   assert.equal(JSON.stringify([...db.docs]), erased, "retry must neither restore data nor drop the hold");
 });
 
-test("publication hold is explicit while unrelated source ingestion stays available", async () => {
+test("operator publication hold is explicit while unrelated source ingestion stays available", async () => {
   const { db, erase } = fixture({ "issueTrackerSettings/current": { enabled: true, seedVerified: true, connectionVerified: true, workbookKey: "book" } });
-  await erase(subject);
+  await erase(subject, operator);
   const other = "b".repeat(64);
   await db.doc(`userIssueOccurrences/${other}`).set({ reporterUid: "other", issueId: "issue" });
   const bridge = createIssueTrackerBridge({ db, now: () => 1000, scheduleTask: async () => {}, normalize: async () => { throw new Error("must not normalize held seed"); }, transport: { send: async () => { throw new Error("must not send"); } } });
   assert.equal((await bridge.observeOccurrence(other)).queued, true);
   await assert.rejects(bridge.drain(), { code: "tracker_privacy_erasure_pending" });
+});
+
+test("automatic erasure removes personal copies, releases an unsent blocked batch and never holds the writer", async () => {
+  const { db, erase } = fixture();
+  const sealed = ["issueTrackerState/seed", "issueTrackerIndexBases/base", "issueTrackerIndices/owned", "issueTrackerIndices/other", "issueTrackerIndices/alias"];
+  const keep = ["issueTrackerQueue/outbox-other", "issueTrackerRows/other", "issueTrackerRows/action", "issueTrackerBatches/mixed/rows/other", "issueTrackerBatches/mixed/indices/other", ...sealed];
+  const before = Object.fromEntries(keep.map(path => [path, db.snapshot(path)]));
+  assert.deepEqual(await erase(subject), { pending: true });
+  for (const path of keep) assert.deepEqual(db.snapshot(path), before[path], path);
+  for (const path of ["issueTrackerQueue/outbox-owned", "issueTrackerRows/owned", "issueTrackerRows/mail", "issueTrackerBatches/mixed/rows/owned", "issueTrackerBatches/mixed/indices/owned"]) assert.equal(db.snapshot(path), undefined, path);
+  const writer = db.snapshot("issueTrackerState/writer");
+  assert.equal(writer.privacyErasurePending, undefined, "unrelated publication must not freeze");
+  assert.equal(writer.activeBatchId, null, "a never-sent batch carrying the subject is released");
+  assert.equal(writer.revision, 4);
+  const batch = db.snapshot("issueTrackerBatches/mixed");
+  assert.equal(batch.state, "privacy-erased");
+  assert.deepEqual(batch.payload.changes.instances.map(row => row.key), ["other"]);
+  assert.equal(batch.payload.payloadSha256, undefined);
+  const job = db.snapshot(jobPath);
+  assert.equal(job.trackerErasure.pending, true);
+  assert.deepEqual(job.trackerErasure.sourceIds, ["owned"]);
+  assert.deepEqual(job.trackerErasure.manualItems, ["external-workbook-and-mailbox", "publication-joins"]);
+  assert.equal(JSON.stringify(job).includes("Name owner"), false);
+  const erased = JSON.stringify([...db.docs]);
+  assert.deepEqual(await erase(subject), { pending: true });
+  assert.equal(JSON.stringify([...db.docs]), erased, "retry is idempotent");
+});
+
+test("an attempted active batch with the subject stays intact for an operator without a global hold", async () => {
+  const { db, erase } = fixture();
+  await db.doc("issueTrackerBatches/mixed").update({ attempts: 1, lastAttemptAtMillis: 900 });
+  const batch = db.snapshot("issueTrackerBatches/mixed"), row = db.snapshot("issueTrackerBatches/mixed/rows/owned");
+  assert.deepEqual(await erase(subject), { pending: true });
+  assert.deepEqual(db.snapshot("issueTrackerBatches/mixed"), batch, "unknown remote outcome keeps the sealed payload");
+  assert.deepEqual(db.snapshot("issueTrackerBatches/mixed/rows/owned"), row);
+  assert.equal(db.snapshot("issueTrackerState/writer").activeBatchId, "mixed");
+  assert.equal(db.snapshot("issueTrackerState/writer").privacyErasurePending, undefined);
+  assert.equal(db.snapshot("issueTrackerRows/owned"), undefined);
+  assert.deepEqual(db.snapshot(jobPath).trackerErasure.manualItems, ["active-batch-unknown-outcome", "external-workbook-and-mailbox", "publication-joins"]);
+});
+
+test("only actual tracker presence creates manual follow-up; sealed joins alone are recorded, not rewritten", async () => {
+  const none = new FakeFirestore({ [jobPath]: { ...subject, state: "deleting" }, "userIssueOccurrences/owned": { reporterUid: "owner" },
+    "issueTrackerRows/other": { group: "instances", key: "other", value: instance("other", "q") } });
+  assert.deepEqual(await createTrackerErasure({ db: none })(subject), { pending: false });
+  assert.equal(none.snapshot(jobPath).trackerErasure, undefined);
+  const index = { group: "providerOccurrences", key: "provider", value: "owned", sha256: "old" };
+  const joins = new FakeFirestore({ [jobPath]: { ...subject, state: "deleting" }, "userIssueOccurrences/owned": { reporterUid: "owner" }, "issueTrackerIndices/owned": index });
+  assert.deepEqual(await createTrackerErasure({ db: joins, now: () => 1000 })(subject), { pending: true });
+  assert.deepEqual(joins.snapshot("issueTrackerIndices/owned"), index);
+  assert.deepEqual(joins.snapshot(jobPath).trackerErasure, { pending: true, sourceIds: ["owned"], emailIds: [], providerIds: ["provider"], requestedAtMillis: 1000,
+    manualItems: ["external-workbook-and-mailbox", "publication-joins"] });
 });
 
 test("ambiguous names never authorize deleting unrelated tracker records", async () => {
@@ -78,7 +131,7 @@ test("ambiguous names never authorize deleting unrelated tracker records", async
   assert.deepEqual(db.snapshot("issueTrackerRows/ambiguous"), before);
 });
 
-test("legacy seed-only identity discovers linked mail and indices without surviving source records", async () => {
+test("operator redaction of legacy seed-only identity discovers linked mail and indices without surviving source records", async () => {
   const db = new FakeFirestore({
     [jobPath]: { ...subject, state: "deleting" },
     "issueTrackerState/seed": { counter: 4, rows: { instances: { lost: instance("owner", "p"), keep: instance("other", "q") },
@@ -89,7 +142,7 @@ test("legacy seed-only identity discovers linked mail and indices without surviv
     "issueTrackerIndices/alias": { group: "emailCanonicalAliases", key: "alias", value: "canonical" },
   });
   db.recursiveDelete = async ref => { db.docs.delete(ref.path); };
-  assert.equal((await createTrackerErasure({ db })(subject)).pending, true);
+  assert.equal((await createTrackerErasure({ db })(subject, operator)).pending, true);
   const seed = db.snapshot("issueTrackerState/seed");
   assert.deepEqual(Object.keys(seed.rows.instances), ["keep"]);
   assert.deepEqual(Object.keys(seed.rows.emails), ["unrelated"]);

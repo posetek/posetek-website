@@ -2,8 +2,13 @@
 
 // Exact source keys and structured identity columns only. Never match names,
 // email text, substrings or arbitrary serialized cell content. Tracker seals
-// describe an external workbook revision: redaction intentionally invalidates
-// affected seals and holds publication until an operator reconciles that copy.
+// describe an external workbook revision. The automatic deletion worker erases
+// local personal copies outside that seal chain (queue, row shards, evidence,
+// historical batches), never freezes the shared writer, and reports the
+// external workbook/mailbox copies and retained opaque joins for manual
+// follow-up. Only the explicit operator path (`redactPublicationState`) also
+// redacts sealed seed/index state; that invalidates the seals, so it holds
+// publication until the reviewed reconciliation releases it.
 const crypto = require("node:crypto");
 const { digest } = require("./issue-tracker-bridge-model");
 const { MAILBOX } = require("./issue-tracker-graph-reader");
@@ -24,7 +29,7 @@ function createTrackerErasure({ db, now = Date.now }) {
       cursor = page.docs.at(-1).id;
     }
   }
-  return async function eraseTracker(subject) {
+  return async function eraseTracker(subject, { redactPublicationState = false } = {}) {
     const jobRef = db.doc(`accountDeletionJobs/${keyFor(subject)}`);
     const prior = (await jobRef.get()).data()?.trackerErasure;
     const sources = new Set(prior?.sourceIds || []), emails = new Set(prior?.emailIds || []);
@@ -118,14 +123,17 @@ function createTrackerErasure({ db, now = Date.now }) {
     for (const key of sources) if (!playerSegment(key)) throw new Error("Invalid tracker source join");
     for (const key of [...emails, ...providers]) if (typeof key !== "string" || !key.trim() || key.length > 4096 || /[\u0000-\u001f]/.test(key)) throw new Error("Invalid tracker external join");
     let touched = prior?.pending === true, held = false;
+    const manual = new Set();
+    // Persist the exact opaque joins (retry + re-import suppression) before the
+    // first local mutation. Only the operator path also holds the shared writer.
     async function hold() {
       if (held) return;
       await db.runTransaction(async tx => {
         const job = await tx.get(jobRef);
         if (!job.exists) throw new Error("Tracker erasure requires a durable deletion job");
-        const writer = await tx.get(writerRef);
+        const writer = redactPublicationState ? await tx.get(writerRef) : null;
         tx.update(jobRef, { trackerErasure: { pending: true, sourceIds: [...sources].sort(), emailIds: [...emails].sort(), providerIds: [...providers].sort(), requestedAtMillis: prior?.requestedAtMillis || now() } });
-        tx.set(writerRef, { ...(writer.exists ? {} : { revision: 0 }), privacyErasurePending: true,
+        if (redactPublicationState) tx.set(writerRef, { ...(writer.exists ? {} : { revision: 0 }), privacyErasurePending: true,
           privacyErasureReason: "External workbook erasure and seed reconciliation required", leaseId: null, leaseUntilMillis: 0 }, { merge: true });
       });
       touched = true; held = true;
@@ -160,14 +168,46 @@ function createTrackerErasure({ db, now = Date.now }) {
       drop("emailCanonicalAliases", (_, row) => groups.has(row));
       return changed;
     }
-    function metadata(value) {
+    function inlineRows(value) {
       if (!value || typeof value !== "object") return false;
-      let changed = maps(value);
+      let changed = false;
       for (const [group, rows] of Object.entries(value.rows || {})) {
         for (const [key, row] of Object.entries(rows || {})) if (ownRow(group, key, row)) { delete rows[key]; changed = true; }
       }
       if (changed) value.privacyErased = true;
       return changed;
+    }
+    function metadata(value) {
+      if (!value || typeof value !== "object") return false;
+      const changed = maps(value);
+      if (!inlineRows(value) && !changed) return false;
+      value.privacyErased = true;
+      return true;
+    }
+    // Only the writer's active batch can still be sent. A batch carrying this
+    // subject can never pass the send-time deletion fence, so a never-attempted
+    // one is released and its unrelated queued work is prepared again. An
+    // attempted batch has an unknown remote outcome and stays for an operator.
+    async function releaseActiveBatch(doc) {
+      // Applied or erased history is never sent again; only a prepared batch
+      // can be (or have been) the writer's active batch.
+      if (doc.data().state !== "prepared" || (await writerRef.get()).data()?.activeBatchId !== doc.id) return true;
+      const batch = doc.data();
+      let blocking = (batch.selected || []).some(item => typeof item?.id === "string" && item.id.startsWith("outbox-") && sources.has(item.id.slice(7)))
+        || Object.entries(batch.payload?.changes || {}).some(([group, rows]) => Array.isArray(rows) && rows.some(row => ownRow(group, row?.key, row)));
+      if (!blocking) await scan(`${doc.ref.path}/rows`, row => { const value = row.data(); if (ownRow(value.group, value.key, value.value)) blocking = true; });
+      if (!blocking) return false;
+      await hold();
+      const released = await db.runTransaction(async tx => {
+        const writer = await tx.get(writerRef), fresh = await tx.get(doc.ref);
+        if (writer.data()?.activeBatchId !== doc.id) return true;
+        if (fresh.data()?.attempts > 0 || fresh.data()?.lastAttemptAtMillis) return false;
+        tx.update(writerRef, { activeBatchId: null, leaseId: null, leaseUntilMillis: 0 });
+        tx.update(doc.ref, { state: "privacy-erased", privacyErased: true, releasedAtMillis: now() });
+        return true;
+      });
+      if (!released) manual.add("active-batch-unknown-outcome");
+      return released;
     }
 
     const mailboxPrefix = `${MAILBOX}/`;
@@ -186,11 +226,23 @@ function createTrackerErasure({ db, now = Date.now }) {
     await scan("issueTrackerRows", async doc => {
       const row = doc.data(); if (ownRow(row.group, row.key, row.value)) await remove(doc.ref);
     });
-    await rewrite(db.doc("issueTrackerState/seed"), metadata);
-    await scan("issueTrackerIndexBases", doc => rewrite(doc.ref, value => {
-      if (!maps(value.maps)) return false;
-      value.privacyErased = true; return true;
-    }));
+    // Seed maps, content-addressed index bases and index shards form the
+    // publication seal chain and hold only opaque joins. Without an explicit
+    // operator hold they are reported, never rewritten under a live writer.
+    if (redactPublicationState) await rewrite(db.doc("issueTrackerState/seed"), metadata);
+    else {
+      // Inline rows cannot coexist with a publishable seed (sharding is
+      // required), so removing them never invalidates an active batch seal.
+      await rewrite(db.doc("issueTrackerState/seed"), inlineRows);
+      if (maps(copy((await db.doc("issueTrackerState/seed").get()).data() || {}))) manual.add("publication-joins");
+    }
+    await scan("issueTrackerIndexBases", async doc => {
+      if (!redactPublicationState) { if (maps(copy(doc.data().maps || {}))) manual.add("publication-joins"); return; }
+      await rewrite(doc.ref, value => {
+        if (!maps(value.maps)) return false;
+        value.privacyErased = true; return true;
+      });
+    });
     // Shards are removed by exact semantic key/value, never by digest-prefix.
     function ownedIndex(row) {
       return row.group === "outboxOccurrences" && (sources.has(row.key) || sources.has(row.value))
@@ -200,8 +252,12 @@ function createTrackerErasure({ db, now = Date.now }) {
         || row.group === "emailCanonicalItems" && emails.has(row.value?.primaryId)
         || row.group === "emailCanonicalAliases" && canonicalGroups.has(row.value);
     }
-    await scan("issueTrackerIndices", async doc => { if (ownedIndex(doc.data())) await remove(doc.ref); });
+    await scan("issueTrackerIndices", async doc => {
+      if (!ownedIndex(doc.data())) return;
+      if (redactPublicationState) await remove(doc.ref); else manual.add("publication-joins");
+    });
     await scan("issueTrackerBatches", async doc => {
+      if (!redactPublicationState && !(await releaseActiveBatch(doc))) return;
       const removedRows = new Set(), removedIndices = new Set();
       await scan(`${doc.ref.path}/rows`, async row => {
         const value = row.data(); if (ownRow(value.group, value.key, value.value)) { removedRows.add(row.id); await remove(row.ref); }
@@ -228,6 +284,15 @@ function createTrackerErasure({ db, now = Date.now }) {
         return true;
       });
     });
+    if (!redactPublicationState && (touched || manual.size)) {
+      // External workbook/mailbox copies can only be erased and reconciled by
+      // an operator. Record that on the job instead of retrying or holding.
+      if (!touched) await hold();
+      const items = ["external-workbook-and-mailbox", ...manual].sort();
+      if (JSON.stringify((await jobRef.get()).data()?.trackerErasure?.manualItems) !== JSON.stringify(items)) {
+        await jobRef.update({ "trackerErasure.manualItems": items });
+      }
+    }
     return { pending: touched };
   };
 }
