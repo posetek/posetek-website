@@ -106,6 +106,7 @@ async function visit(page, route, hydrated = true) {
   const response = await page.goto(origin + route, { waitUntil: 'domcontentloaded' });
   assert.equal(response.status(), 200);
   if (hydrated) await page.waitForFunction(() => !document.querySelector('astro-island[ssr]'));
+  else await page.waitForLoadState('load'); // With scripts disabled, DOMContentLoaded does not wait for external CSS.
   await page.getByRole('heading', { level: 1 }).waitFor({ state: 'visible' });
   await page.evaluate(() => document.fonts.ready);
 }
