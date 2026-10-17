@@ -11,3 +11,7 @@ proof that the endpoint is deployed. `ballStriking.test.ts` consumes them throug
 the same parser the admin viewer uses. Refresh only from a reviewed compatible
 Backend implementation; preserve synthetic provenance and never copy production
 session traces here.
+
+`admin-detail-context.json` is the additive per-turn prior-rep/chat projection
+from the refreshed handler. The earlier active/ended pairs remain unchanged to
+exercise compatibility with traces that omit those optional snapshots.

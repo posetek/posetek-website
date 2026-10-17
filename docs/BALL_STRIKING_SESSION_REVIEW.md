@@ -22,6 +22,12 @@ quality notes. Failed and uncertain turns show explicit errors and response time
 missing measurements remain Unavailable. End-before-start records have no saved
 reference and are identified as closed before start.
 
+Per-turn context also includes the compact prior reps and user/coach exchanges
+actually supplied to that turn: at most six of each. These snapshots stay inside
+the existing Context & evidence disclosure, distinct from the latest session
+memory above. Older traces without snapshots say they were not recorded; absence
+is not presented as proof that no earlier context existed.
+
 Coach replies are generated text. They do not establish audible delivery or
 acknowledgement. The viewer makes that distinction once beside session memory.
 It does not expose system prompts, hidden reasoning, provider blocks, arbitrary
@@ -132,3 +138,10 @@ No live authenticated gateway/App Check/CORS acceptance, production artifact
 assembly/baseline reconciliation, hosted CI or physical-device delivery acceptance
 was run. No source deployment, Git push, real provider call or production write
 is part of this work.
+
+The additive per-turn prior-context follow-up passed 26 focused parser, transport
+and rendering tests, scoped lint and TypeScript. The full standing results above
+are from the initial feature candidate; they were not rerun for this bounded
+follow-up. Refreshed actual Backend active/ended/tombstone details and both list
+DTOs passed the client parser; prior-rep/chat arrays match their supplied snapshots
+exactly. The new context fixture preserves this integration regression coverage.

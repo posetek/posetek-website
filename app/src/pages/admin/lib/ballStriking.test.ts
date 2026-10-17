@@ -21,6 +21,36 @@ describe("ball striking audit projection boundary", () => {
     expect(value.turns[0].tools[0].evidence[0].athlete).toBeNull();
     expect(value.turns[2]).toMatchObject({ status: "uncertain", spokenOutput: "", decisionSummary: "" });
   });
+  it("keeps exact prior context snapshots while discarding extra fields and accepting older traces", () => {
+    const source = detail(), prior = source.session.memory.recentReps[0];
+    const withContext = { ...source, turns: source.turns.map(turn => ({ ...turn, input: { ...turn.input,
+      recentReps: [{ ...prior, hiddenPrompt: "private rep context" }],
+      recentChat: [{ user: "What did you mean?", assistant: "Keep the same focus for the next rep.", thinking: "private thought" }],
+    } })) };
+    const result = normalizeTechniqueSessionDetail(withContext, identity);
+    expect(result.turns[0].input.recentReps).toEqual([prior]);
+    expect(result.turns[0].input.recentChat).toEqual([{ user: "What did you mean?", assistant: "Keep the same focus for the next rep." }]);
+    expect(result.turns[0].input.recentReps?.[0]).not.toHaveProperty("hiddenPrompt");
+    expect(result.turns[0].input.recentChat?.[0]).not.toHaveProperty("thinking");
+    for (const turn of source.turns) { delete turn.input.recentReps; delete turn.input.recentChat; }
+    const older = normalizeTechniqueSessionDetail(source, identity);
+    expect(older.turns[0].input).not.toHaveProperty("recentReps");
+    expect(older.turns[0].input).not.toHaveProperty("recentChat");
+  });
+  it("rejects malformed or oversized optional prior snapshots instead of silently truncating", () => {
+    const source = detail(), prior = source.session.memory.recentReps[0];
+    for (const invalid of [
+      { recentReps: null }, { recentChat: null }, { recentReps: Array(7).fill(prior) },
+      { recentReps: [{ ...prior, cue: "x".repeat(241) }] }, { recentReps: [{ ...prior, evidenceIds: Array(13).fill("evidence") }] },
+      { recentChat: Array(7).fill({ user: "Question", assistant: "Reply" }) },
+      { recentChat: [{ user: "x".repeat(1001), assistant: "Reply" }] },
+      { recentChat: [{ user: "Question", assistant: "x".repeat(1201) }] },
+      { recentChat: [{ user: "Question", assistant: { secret: "not text" } }] },
+    ]) {
+      const malformed = { ...source, turns: [{ ...source.turns[0], input: { ...source.turns[0].input, ...invalid } }] };
+      expect(() => normalizeTechniqueSessionDetail(malformed, identity)).toThrow();
+    }
+  });
   it("accepts closed-before-start tombstones and optional display names without inventing identity/reference", () => {
     const source = detail(); source.session.status = "ended"; source.session.reference = null; source.session.playerDisplayName = null;
     source.session.goal = ""; source.session.repCount = 0; source.session.memory.goal = ""; source.session.memory.focuses = []; source.session.memory.recentReps = [];
@@ -68,6 +98,16 @@ describe("ball striking audit projection boundary", () => {
 });
 
 describe("actual Backend synthetic handler responses (2026-10-17)", () => {
+  it("preserves the exact prior-rep/chat input snapshots from the updated handler", () => {
+    const source = JSON.parse(readFileSync(new URL("./__fixtures__/ball-striking-v1/admin-detail-context.json", import.meta.url), "utf8"));
+    const result = normalizeTechniqueSessionDetail(source, source.session);
+    expect(result.turns.some(turn => turn.input.recentReps?.length)).toBe(true);
+    expect(result.turns.some(turn => turn.input.recentChat?.length)).toBe(true);
+    for (let index = 0; index < result.turns.length; index++) {
+      expect(result.turns[index].input.recentReps).toEqual(source.turns[index].input.recentReps);
+      expect(result.turns[index].input.recentChat).toEqual(source.turns[index].input.recentChat);
+    }
+  });
   for (const state of ["active", "ended"]) {
     it(`reads the ${state} list and chronological detail from the real handler`, () => {
       const list = JSON.parse(readFileSync(new URL(`./__fixtures__/ball-striking-v1/admin-list-${state}.json`, import.meta.url), "utf8"));

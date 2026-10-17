@@ -156,6 +156,17 @@ export function TechniqueTurn({ turn }: { turn: TechniqueAuditTurn }) {
       <div><dt>Session memory</dt><dd>Revision {turn.input.memoryRevision}{turn.input.focuses.length ? ` · ${turn.input.focuses.map(focus => focus.label).join("; ")}` : " · No active focus"}</dd></div>
       {turn.input.message && <div><dt>Follow-up question</dt><dd className="technique-prose">{turn.input.message}</dd></div>}
     </dl></section>
+    {turn.input.recentReps !== undefined && <section className="technique-prior-context" aria-label="Prior reps supplied to this turn"><h4>Prior reps supplied</h4>
+      {turn.input.recentReps.length ? <ol>{turn.input.recentReps.map((rep, index) => <li key={`${rep.repId}:${index}`}><h5>Rep {rep.ordinal}</h5><p className="technique-prose">{rep.cue}</p>
+        {rep.resultSummary && rep.resultSummary !== rep.cue && <p>{rep.resultSummary}</p>}<Notes notes={rep.qualityNotes} /></li>)}</ol>
+        : <p className="technique-note">No prior reps were supplied.</p>}
+    </section>}
+    {turn.input.recentChat !== undefined && <section className="technique-prior-context" aria-label="Prior conversation supplied to this turn"><h4>Prior conversation supplied</h4>
+      {turn.input.recentChat.length ? <ol>{turn.input.recentChat.map((pair, index) => <li key={index}><h5>Question</h5><p className="technique-prose">{pair.user}</p>
+        <h5>Coach reply</h5><p className="technique-prose">{pair.assistant}</p></li>)}</ol>
+        : <p className="technique-note">No prior conversation was supplied.</p>}
+    </section>}
+    {turn.input.recentReps === undefined && turn.input.recentChat === undefined && <p className="technique-note technique-prior-context">Prior rep and conversation snapshots were not recorded for this turn.</p>}
     {turn.tools.length > 0 && <section className="technique-tools" aria-label="Evidence and tool actions"><h4>Evidence &amp; tool actions</h4>{turn.tools.map((tool, index) => <section className="technique-tool" key={`${tool.name}:${index}`}>
       <div className="technique-tool-heading"><span>{readable(tool.name)}{tool.section ? ` · ${readable(tool.section)}` : ""}{tool.phase ? ` · ${readable(tool.phase)}` : ""}</span><span>{tool.returnedCount} of {tool.availableCount} available</span></div>
       {tool.evidence.length ? <div className="technique-evidence-scroll"><table><caption>{readable(tool.name)} evidence</caption><thead><tr><th scope="col">Evidence</th><th scope="col">Athlete</th><th scope="col">Reference</th><th scope="col">Quality</th></tr></thead><tbody>{tool.evidence.map(row => <tr key={row.id}>

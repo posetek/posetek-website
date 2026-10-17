@@ -29,6 +29,20 @@ describe("readable ball striking session review", () => {
     expect(markup).toContain("&lt;img"); expect(markup).not.toContain("<img"); expect(markup).not.toContain('onerror="');
     expect(markup).not.toContain("HIDDEN_THOUGHT"); expect(markup).not.toContain("PRIVATE_PROMPT");
   });
+  it("shows the supplied prior reps/chat inside collapsed context, with an honest older-trace fallback", () => {
+    const turn = structuredClone(TECHNIQUE_PREVIEW_DETAIL.turns[1]);
+    turn.input.recentReps = [{ ...TECHNIQUE_PREVIEW_DETAIL.session.memory.recentReps[0], cue: "Earlier plant-foot cue supplied to this turn.", resultSummary: "Only the earlier rep was available." }];
+    turn.input.recentChat = [{ user: '<script>Question from the earlier turn</script>', assistant: "Earlier coach reply supplied as context." }];
+    const markup = html(<TechniqueTurn turn={turn} />);
+    expect(markup).toContain('<details class="technique-context">');
+    for (const value of ["Prior reps supplied", "Earlier plant-foot cue", "Only the earlier rep", "Prior conversation supplied", "Earlier coach reply supplied as context."]) expect(markup).toContain(value);
+    expect(markup).toContain("&lt;script&gt;Question"); expect(markup).not.toContain("<script>");
+    expect(markup).not.toContain("Session memory now");
+    delete turn.input.recentReps; delete turn.input.recentChat;
+    const older = html(<TechniqueTurn turn={turn} />);
+    expect(older).toContain("snapshots were not recorded for this turn");
+    expect(older).not.toContain("No prior reps were supplied"); expect(older).not.toContain("No prior conversation was supplied");
+  });
   it("has an honest empty state and isolated sample preview", () => {
     expect(html(<TechniqueSessionList sessions={[]} />)).toContain("No coaching sessions yet");
     const markup = html(<BallStrikingSessions preview />);

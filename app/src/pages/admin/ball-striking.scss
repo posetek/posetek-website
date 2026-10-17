@@ -48,7 +48,7 @@
   .technique-memory-history summary { cursor: pointer; color: var(--admin-dim); font-size: 13px; padding: 6px 0; }
   .technique-memory-history ol { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 16px; }
   .technique-memory-history h3 { font-size: 13px; margin-bottom: 4px; }
-  .technique-memory-history p { font-size: 13px; }
+  .technique-memory-history p { font-size: 13px; overflow-wrap: anywhere; }
   .technique-memory-disclaimer { margin-top: 20px; }
   .technique-history { margin-top: 36px; }
   .technique-section-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 16px; }
@@ -65,6 +65,12 @@
   .technique-context { border-top: 1px solid var(--admin-line); margin-top: 24px; padding-top: 14px; }
   .technique-context > summary { cursor: pointer; font-size: 13px; color: var(--admin-dim); padding: 8px 0; }
   .technique-model { margin-top: 18px; }
+  .technique-prior-context { margin-top: 24px; }
+  .technique-prior-context ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+  .technique-prior-context li { border-left: 2px solid var(--admin-line); padding-left: 14px; min-width: 0; }
+  .technique-prior-context h5 { margin: 0 0 4px; color: var(--admin-dim); font-size: 12px; font-weight: 600; }
+  .technique-prior-context p { font-size: 13px; overflow-wrap: anywhere; }
+  .technique-prior-context p + p, .technique-prior-context p + h5 { margin-top: 8px; }
   .technique-prose { color: var(--admin-text); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
   .technique-tool { border: 1px solid var(--admin-line); border-radius: 10px; margin-top: 10px; min-width: 0; overflow: hidden; }
   .technique-tool-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 14px 16px; font-size: 13px; }

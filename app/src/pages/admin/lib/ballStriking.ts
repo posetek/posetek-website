@@ -1,5 +1,6 @@
 // Readable, allowlisted audit projections. Never render arbitrary run/provider maps.
 export interface TechniqueFocus { id: string; label: string; evidenceIds: string[]; sourceRepIds: string[] }
+export interface TechniquePriorRep { repId: string; ordinal: number; cue: string; evidenceIds: string[]; resultSummary: string; qualityNotes: string[] }
 export interface TechniqueSessionSummary {
   sessionId: string; playerId: string; playerDisplayName: string | null; actorUid: string; status: "active" | "ended";
   goal: string; reference: { referenceId: string; versionId: string; title: string } | null;
@@ -7,7 +8,7 @@ export interface TechniqueSessionSummary {
 }
 export interface TechniqueMemory {
   schemaVersion: 1; goal: string; focuses: TechniqueFocus[];
-  recentReps: { repId: string; ordinal: number; cue: string; evidenceIds: string[]; resultSummary: string; qualityNotes: string[] }[];
+  recentReps: TechniquePriorRep[];
   trendSummary: string;
 }
 export interface TechniqueEvidence {
@@ -17,7 +18,8 @@ export interface TechniqueEvidence {
 export interface TechniqueAuditTurn {
   requestId: string; kind: "rep" | "chat" | "end"; ordinal: number | null; repId: string | null;
   createdAt: string; status: "complete" | "failed" | "uncertain";
-  input: { goal: string; referenceTitle: string; memoryRevision: number; focuses: TechniqueFocus[]; message: string | null };
+  input: { goal: string; referenceTitle: string; memoryRevision: number; focuses: TechniqueFocus[]; message: string | null;
+    recentReps?: TechniquePriorRep[]; recentChat?: { user: string; assistant: string }[] };
   tools: { name: string; section: string | null; phase: string | null; availableCount: number; returnedCount: number; evidence: TechniqueEvidence[] }[];
   decisionSummary: string; spokenOutput: string; qualityNotes: string[];
   model: { id: "claude-opus-5-5"; provider: "anthropic_direct"; effort: "medium" };
@@ -77,14 +79,15 @@ function summary(value: unknown): TechniqueSessionSummary {
     revision: integer(data.revision), repCount: integer(data.repCount), createdAt: date(data.createdAt), updatedAt: date(data.updatedAt),
     endedAt: nullable(data.endedAt, date) };
 }
+function priorRep(value: unknown): TechniquePriorRep {
+  const rep = record(value);
+  return { repId: playerId(rep.repId), ordinal: integer(rep.ordinal, 1), cue: text(rep.cue, 240, true),
+    evidenceIds: strings(rep.evidenceIds, 12, 200), resultSummary: text(rep.resultSummary, 300), qualityNotes: strings(rep.qualityNotes, 6) };
+}
 function memory(value: unknown): TechniqueMemory {
   const data = record(value); schema(data.schemaVersion);
   return { schemaVersion: 1, goal: text(data.goal, 300), focuses: list(data.focuses, 2, focus),
-    recentReps: list(data.recentReps, 6, value => {
-      const rep = record(value);
-      return { repId: playerId(rep.repId), ordinal: integer(rep.ordinal, 1), cue: text(rep.cue, 240, true),
-        evidenceIds: strings(rep.evidenceIds, 12, 200), resultSummary: text(rep.resultSummary, 300), qualityNotes: strings(rep.qualityNotes, 6) };
-    }), trendSummary: text(data.trendSummary, 400) };
+    recentReps: list(data.recentReps, 6, priorRep), trendSummary: text(data.trendSummary, 400) };
 }
 function measurement(value: unknown): number | null { return value === null ? null : typeof value === "number" && Number.isFinite(value) ? value : invalid(); }
 function evidence(value: unknown): TechniqueEvidence {
@@ -98,7 +101,11 @@ function turn(value: unknown): TechniqueAuditTurn {
     ordinal: nullable(data.ordinal, value => integer(value, 1)), repId: nullable(data.repId, playerId), createdAt: date(data.createdAt),
     status: choice(data.status, ["complete", "failed", "uncertain"]),
     input: { goal: text(input.goal, 300), referenceTitle: text(input.referenceTitle, 80), memoryRevision: integer(input.memoryRevision),
-      focuses: list(input.focuses, 2, focus), message: nullable(input.message, value => text(value, 1000, true)) },
+      focuses: list(input.focuses, 2, focus), message: nullable(input.message, value => text(value, 1000, true)),
+      ...(input.recentReps === undefined ? {} : { recentReps: list(input.recentReps, 6, priorRep) }),
+      ...(input.recentChat === undefined ? {} : { recentChat: list(input.recentChat, 6, value => {
+        const pair = record(value); return { user: text(pair.user, 1000, true), assistant: text(pair.assistant, 1200, true) };
+      }) }) },
     tools: list(data.tools, 8, value => {
       const tool = record(value);
       return { name: text(tool.name, 120, true), section: nullable(tool.section, value => text(value, 120)), phase: nullable(tool.phase, value => text(value, 120)),
