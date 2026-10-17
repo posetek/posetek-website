@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { adminAccountResetPath, adminDirectoryPath, adminPlayerPath, adminPlayerReturn, adminPlannerPath, adminPlayerLinkFromReport, adminToolKey, adminToolPath, legacyOrganizationsPath, legacyAdminWorkspacePath, parseAdminDirectoryState, supportsAdminScope, validatedAdminReturn, workspaceReportSearch, workspaceReportRequest, withWorkspaceReport, directoryLevelOf, selectDirectoryScope } from "./adminNavigation";
 import { accountDestination } from "../../landing/account-entry";
 
+it("clears session identity on account change and keeps session/player cursors out of other tools", () => {
+  expect(adminAccountResetPath("/admin/ball-striking-sessions/session-id")).toBe("/admin/ball-striking-sessions");
+  expect(adminToolPath("/admin/ball-striking-sessions", "/admin/accounts", "?orgId=club&teamId=team&preview=1")).toBe("/admin/ball-striking-sessions?preview=1");
+  expect(adminToolPath("/admin/analysis", "/admin/ball-striking-sessions/session-id", "?playerId=private-player&cursor=private-cursor")).toBe("/admin/analysis");
+});
+
 describe("admin directory navigation", () => {
   it("round trips scope, lookup, tab, search and page", () => {
     const state = { orgId: "club", teamId: "u15", directoryTab: "staff" as const, search: "Ana & Jo", page: 3, directoryLookup: "all" as const };

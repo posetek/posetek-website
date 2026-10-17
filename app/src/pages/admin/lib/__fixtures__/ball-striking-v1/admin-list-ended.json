@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "sessions": [
+    {
+      "schemaVersion": 1,
+      "sessionId": "bec1b0ea-f6db-4014-a4e0-1b43c8bf99cc",
+      "revision": 3,
+      "status": "ended",
+      "reference": {
+        "referenceId": "6bcf6527-5315-4d07-9193-84b1557fad40",
+        "versionId": "6bcf6527-5315-4d07-9193-84b1557fad40",
+        "title": "Synthetic reference"
+      },
+      "goal": "",
+      "repCount": 1,
+      "playerId": "p",
+      "actorUid": "athlete",
+      "playerDisplayName": "Synthetic",
+      "createdAt": "2026-10-17T21:12:48.765884+00:00",
+      "updatedAt": "2026-10-17T21:12:48.770282+00:00",
+      "endedAt": "2026-10-17T21:12:48.770281+00:00"
+    }
+  ],
+  "nextCursor": null
+}

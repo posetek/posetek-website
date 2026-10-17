@@ -1,5 +1,12 @@
 # Admin section menu
 
+## Unreleased ball striking session review (2026-10-17)
+
+Coaching hub includes **Ball striking sessions**, a read-only session list and
+chronological rep/follow-up viewer. Backend release qualification and legitimate
+Web App Check/CORS configuration remain outstanding. See
+[the source handoff](BALL_STRIKING_SESSION_REVIEW.md); this is not a website release.
+
 ## Current organization manager navigation release
 
 Website `6ac6c5c6cebb1cb580004fae`, runtime `0a7fe6d`, was published October 7,
