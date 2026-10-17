@@ -1,5 +1,13 @@
 # PoseTek website
 
+## Public-site revamp candidate (October 17, 2026)
+
+Players and Coaches have a new continuous, light-grid public experience with
+shared navigation, optional sound and an accessible closing chapter. Existing
+product demonstrations and destinations remain connected. Read the
+[implementation and acceptance guide](docs/PUBLIC_SITE_REVAMP.md). This is a PR
+candidate; production promotion and baseline reconciliation remain separate.
+
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release
 

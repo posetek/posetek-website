@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6acfa49a07f33b1d9fb64abf",
-  "sourceCommit": "57e9e03e139a287accfad7889d96747b3ad6ecc3",
-  "url": "https://6acfa49a07f33b1d9fb64abf--posetek.netlify.app",
+  "deploymentId": "6ad02adfcc90dffdb496f811",
+  "sourceCommit": "23e2ebed988e1677f6028ea6d7b5589273291ea1",
+  "url": "https://6ad02adfcc90dffdb496f811--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "7f4e298fd586f0f736e7309770a3aecf62659f5f",
-    "size": 3755,
+    "sha": "a8c4f86a2f7368d3309035204e06c84a62595bfe",
+    "size": 4231,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -809,6 +809,11 @@
       "path": "/_astro/applicationroot.d0fv3ggw.js",
       "sha": "4157de0bba767661c1f59973175464fa4a32c58a",
       "size": 17617
+    },
+    {
+      "path": "/_astro/applicationroot.d8vnghli.js",
+      "sha": "faf1119f1f91323e53ac27041422c49ef35bb520",
+      "size": 18124
     },
     {
       "path": "/_astro/applicationroot.dh_1awai.js",
@@ -2941,6 +2946,11 @@
       "size": 22449
     },
     {
+      "path": "/_astro/privacypage.dg_bibeq.js",
+      "sha": "29fbf993ab9591fd34be20c1cf71ed14a263ddcf",
+      "size": 34820
+    },
+    {
       "path": "/_astro/privacypage.tlrm8bhf.css",
       "sha": "a9e4bb26e87602eeca7fe389e6f756df06a9a40f",
       "size": 4116
@@ -3334,6 +3344,11 @@
       "path": "/_astro/supportpage.bxdl5ego.css",
       "sha": "fd1c3ba2007c76831da2745867de52a91df252b5",
       "size": 3867
+    },
+    {
+      "path": "/_astro/supportpage.ccc58z2d.js",
+      "sha": "1fa53fd479e89388ce63e800594b32c4c5dbd114",
+      "size": 13704
     },
     {
       "path": "/_astro/supportpage.cmlh-icz.js",
@@ -9958,6 +9973,7 @@
       "localPath": "videopage.html"
     }
   ],
+  "applicationSourceCommit": "57e9e03e139a287accfad7889d96747b3ad6ecc3",
   "coachEnrollmentSourceCommit": "8eaf3ffd35848c3cf7ca753cc9fd4030cc4fb524",
-  "sourceNote": "Runtime freeze codex/coach-overview-runtime contains merged coach overview source while preserving approved privacy/support source from 139162a04a1aa2afefda78c62bf2715d9667acbc. Held candidate remains on main. Isolated coach enrollment and feedback entries retain verified predecessor bytes."
+  "sourceNote": "October 15 automatic main deployment retained every prior protected byte and added three unreferenced application chunks. Active application runtime is 57e9e03e139a287accfad7889d96747b3ad6ecc3. Runtime freeze codex/coach-overview-runtime contains merged coach overview source while preserving approved privacy/support source from 139162a04a1aa2afefda78c62bf2715d9667acbc. Held candidate remains on main. Isolated coach enrollment and feedback entries retain verified predecessor bytes."
 }

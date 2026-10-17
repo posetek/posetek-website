@@ -1,5 +1,12 @@
 # PoseTek website project context
 
+## Public-site revamp candidate (October 17, 2026)
+
+The approved Lain Works adaptation is implemented for the public Players and
+Coaches pages. See [scope, interactions, checks and release boundary](docs/PUBLIC_SITE_REVAMP.md).
+Authenticated runtime and held content remain protected by the ordinary
+`build-production.mjs` assembly. This candidate is not a new production receipt.
+
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release
 

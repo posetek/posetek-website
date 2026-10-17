@@ -1,5 +1,9 @@
 # PoseTek engineering handbook
 
+Current public-site work: [revamp candidate and browser acceptance](../PUBLIC_SITE_REVAMP.md).
+Its ordinary guarded artifact preserves the application; do not substitute the
+full application release builder or infer production approval from a green PR.
+
 Migration branch: [Backend source consolidation, stage 1](../BACKEND_MIGRATION.md) is implemented for validation. Production ownership has not switched.
 
 This is the entry point for engineering work across the website, private mobile

@@ -5,12 +5,16 @@ export type DrillMediaAsset = { name: string; video: string; poster: string };
 export const drillMedia: Record<DemoDrillId, DrillMediaAsset> = {
   "DRB-006": {
     name: "Figure-8 dribble",
-    video: new URL("./media/figure-8.mp4", import.meta.url).href,
-    poster: new URL("./media/figure-8.jpg", import.meta.url).href,
+    video: figure8Video,
+    poster: figure8Poster,
   },
   "PAS-001": {
     name: "Wall pass rhythm",
-    video: new URL("./media/wall-pass.mp4", import.meta.url).href,
-    poster: new URL("./media/wall-pass.jpg", import.meta.url).href,
+    video: wallPassVideo,
+    poster: wallPassPoster,
   },
 };
+import figure8Video from "./media/figure-8.mp4?url";
+import figure8Poster from "./media/figure-8.jpg?url";
+import wallPassVideo from "./media/wall-pass.mp4?url";
+import wallPassPoster from "./media/wall-pass.jpg?url";
