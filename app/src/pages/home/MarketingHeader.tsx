@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
+import { Fragment, useEffect, useId, useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
 import { menuButtonLabel } from "./home-logic";
 import { initializeMarketingSound, playMarketingSound, setMarketingSoundEnabled, subscribeMarketingSound } from "./marketing-sound";
 import "./marketing-header.css";
@@ -21,9 +21,21 @@ function Brand() {
   return <><img className="pt-marketing-mark" src="/brand/posetek-p.svg" alt="" width="48" height="48" /><span className="pt-marketing-wordmark">POSETEK</span></>;
 }
 
+/** Words wrap together; the link supplies one readable name for this decoration. */
+function MenuLabel({ label, row }: { label: string; row: number }) {
+  let character = 0;
+  return <strong aria-hidden="true">{label.split(" ").map((word, index) => <Fragment key={`${word}-${index}`}>
+    {index > 0 ? " " : null}<span className="pt-menu-word">{Array.from(word).map((letter, letterIndex) => {
+      const delay = row * 90 + Math.min(character++, 12) * 16;
+      return <span className="pt-menu-letter-mask" key={letterIndex}><span className="pt-menu-letter" style={{ animationDelay: `${delay}ms` }}>{letter}</span></span>;
+    })}</span>
+  </Fragment>)}</strong>;
+}
+
 /** Public navigation remains separate from the authenticated application. */
 export function MarketingHeader({ audience }: { audience: MarketingAudience }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuLettersRevealing, setMenuLettersRevealing] = useState(true);
   const soundEnabled = useSyncExternalStore(subscribeMarketingSound, initializeMarketingSound, () => false);
   const menuId = useId();
   const menuTitleId = useId();
@@ -131,22 +143,22 @@ export function MarketingHeader({ audience }: { audience: MarketingAudience }) {
         <a className="pt-marketing-signin" href="/signin" onClick={() => playMarketingSound("action")}>Sign in</a>
         <a className="pt-marketing-cta" href={cta.href} onClick={() => playMarketingSound("action")}>{cta.label}<span aria-hidden="true">↗</span></a>
         {soundControl}
-        <button className="pt-marketing-menu-button" type="button" ref={menuButton} aria-label={menuButtonLabel(menuOpen)} aria-controls={menuId} aria-expanded={menuOpen} aria-haspopup="dialog" onClick={() => { playMarketingSound("open"); setMenuOpen(true); }}>
+        <button className="pt-marketing-menu-button" type="button" ref={menuButton} aria-label={menuButtonLabel(menuOpen)} aria-controls={menuId} aria-expanded={menuOpen} aria-haspopup="dialog" onClick={() => { playMarketingSound("open"); setMenuLettersRevealing(true); setMenuOpen(true); }}>
           <span>Menu</span><span className="pt-menu-glyph" aria-hidden="true"><i /><i /></span>
         </button>
       </div>
     </nav>
-    <div ref={dialog} className="pt-marketing-menu" id={menuId} role="dialog" aria-modal="true" aria-labelledby={menuTitleId} hidden={!menuOpen}>
+    <div ref={dialog} className="pt-marketing-menu" id={menuId} role="dialog" aria-modal="true" aria-labelledby={menuTitleId} hidden={!menuOpen} data-letter-reveal={menuLettersRevealing} onPointerDownCapture={() => setMenuLettersRevealing(false)} onKeyDownCapture={() => setMenuLettersRevealing(false)} onClickCapture={() => setMenuLettersRevealing(false)}>
       <div className="pt-menu-top">
         <a className="pt-marketing-brand" href="/" aria-label="PoseTek home" onClick={() => playMarketingSound("action")}><Brand /></a>
         <div className="pt-menu-top-controls">{soundControl}<button ref={closeButton} className="pt-marketing-menu-button" type="button" aria-label="Close navigation" onClick={closeMenu}><span>Close</span><span className="pt-menu-close-glyph" aria-hidden="true">×</span></button></div>
       </div>
       <div className="pt-menu-content">
         <p className="pt-menu-eyebrow" id={menuTitleId}>Explore PoseTek</p>
-        <nav className="pt-menu-pages" aria-label="Audience navigation">
-          <a href="/" onClick={() => playMarketingSound("action")}><span>01</span><strong>Players</strong><span className="pt-menu-link-arrow" aria-hidden="true">↗</span></a>
-          <a href="/coaches" onClick={() => playMarketingSound("action")}><span>02</span><strong>Coaches</strong><span className="pt-menu-link-arrow" aria-hidden="true">↗</span></a>
-          <a href={cta.href} onClick={() => playMarketingSound("action")}><span>03</span><strong>{audience === "coaches" ? "Get in touch" : "Book a test"}</strong><span className="pt-menu-link-arrow" aria-hidden="true">↗</span></a>
+        <nav className="pt-menu-pages" aria-label="Audience navigation" onFocusCapture={() => setMenuLettersRevealing(false)}>
+          <a href="/" aria-label="Players" onClick={() => playMarketingSound("action")}><span aria-hidden="true">01</span><MenuLabel label="Players" row={0}/><span className="pt-menu-link-arrow" aria-hidden="true">↗</span></a>
+          <a href="/coaches" aria-label="Coaches" onClick={() => playMarketingSound("action")}><span aria-hidden="true">02</span><MenuLabel label="Coaches" row={1}/><span className="pt-menu-link-arrow" aria-hidden="true">↗</span></a>
+          <a href={cta.href} aria-label={audience === "coaches" ? "Get in touch" : "Book a test"} onClick={() => playMarketingSound("action")}><span aria-hidden="true">03</span><MenuLabel label={audience === "coaches" ? "Get in touch" : "Book a test"} row={2}/><span className="pt-menu-link-arrow" aria-hidden="true">↗</span></a>
         </nav>
         <div className="pt-menu-bottom">
           <nav className="pt-menu-sections" aria-label="On this page">{sectionLinks[audience].map(([label, href]) => <a key={href} href={href} onClick={event => followSection(event, href)}>{label}<span aria-hidden="true">↘</span></a>)}</nav>

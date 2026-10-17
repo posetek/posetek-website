@@ -95,9 +95,9 @@
 
   /* Media sits on the grid with sharp frames and registration marks. */
   .reveal-frame { position: relative; min-width: 0; }
-  .reveal-frame::before, .reveal-frame::after { content: "+"; position: absolute; z-index: 2; font: 300 22px/1 Inter,sans-serif; color: #657167; pointer-events: none; }
-  .reveal-frame::before { left: -7px; top: -11px; }
-  .reveal-frame::after { right: -7px; bottom: -10px; }
+  .reveal-frame::before, .reveal-frame::after { content: ""; position: absolute; z-index: 2; width: 14px; height: 14px; color: #657167; pointer-events: none; background: linear-gradient(currentColor,currentColor) center/100% 1px no-repeat, linear-gradient(currentColor,currentColor) center/1px 100% no-repeat; }
+  .reveal-frame::before { left: -7px; top: -7px; }
+  .reveal-frame::after { right: -7px; bottom: -7px; }
   .pixel-reveal { position: absolute; inset: 0; z-index: 3; pointer-events: none; display: grid; grid-template-columns: repeat(8,1fr); grid-template-rows: repeat(4,1fr); }
   .pixel-reveal i { background: #dfe2df; animation: pt-pixel-open 360ms steps(3,end) forwards; transform-origin: bottom; }
   .homepage-demo, .profile-demo, .hero-art, .coach-hero-workspace, .coach-development, .cx-club, .cx-evidence {

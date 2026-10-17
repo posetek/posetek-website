@@ -10,25 +10,36 @@ import { chromium } from '../app/node_modules/playwright/index.mjs';
 import { createHomepagePreviewServer } from './serve-homepage-preview.mjs';
 
 const output = process.env.MARKETING_OUTPUT ? resolve(process.env.MARKETING_OUTPUT) : fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
-const artifacts = fileURLToPath(new URL('../artifacts/marketing-revamp/', import.meta.url));
+const artifacts = process.env.MARKETING_ARTIFACTS ? resolve(process.env.MARKETING_ARTIFACTS) : fileURLToPath(new URL('../artifacts/marketing-revamp/', import.meta.url));
+const previewOrigin = process.env.MARKETING_ORIGIN;
+if (previewOrigin && !/^https:\/\/[a-f0-9]{24}--posetek\.netlify\.app$/.test(previewOrigin)) {
+  throw new Error('MARKETING_ORIGIN must be an immutable PoseTek Netlify draft URL; production and arbitrary hosts are not accepted.');
+}
 // Deterministic offline checks by default. Opt in to GET-only Google font requests
 // for visual review; every other external HTTP request and every WebSocket is blocked.
 const allowFonts = process.env.MARKETING_ALLOW_FONTS === '1';
-const evidence = { output, networkPolicy: allowFonts ? 'loopback GET/HEAD + Google fonts GET; all other HTTP and WebSockets blocked' : 'loopback GET/HEAD only; external HTTP and all WebSockets blocked', checks: [], screenshots: [], requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0 }, measurements: [] };
+const originPolicy = previewOrigin ? 'immutable PoseTek draft origin GET/HEAD' : 'loopback GET/HEAD';
+const evidence = { output, previewOrigin, networkPolicy: `${originPolicy}${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`, checks: [], screenshots: [], requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, expectedOriginFailures: 0, unexpectedOriginFailures: 0 }, injectedFailures: [], measurements: [] };
 const pages = [
   { route: '/', name: 'players', chapters: ['tests', 'profile', 'training', 'ai-coach', 'technique', 'mobile-app'], title: 'PoseTek | Start with evidence. Train what’s next.' },
   { route: '/coaches', name: 'coaches', chapters: ['club', 'players', 'development', 'contact'], title: 'PoseTek for Coaches & Clubs | Start with every player.' },
 ];
+// Netlify Pretty URLs rewrites the existing .html booking link to this preserved
+// alias in served HTML. Accept exactly those two established destinations.
+const bookingLinks = 'a:is([href="/bookPerformanceTest.html"],[href="/bookperformancetest"])';
 let server, browser, origin;
 
 before(async () => {
   try {
     for (const entry of ['index.html', 'coaches/index.html']) await stat(resolve(output, entry));
     await mkdir(artifacts, { recursive: true });
-    server = createHomepagePreviewServer({ marketingRoot: output, referenceRoot: output });
-    server.listen(0, '127.0.0.1');
-    await once(server, 'listening');
-    origin = `http://127.0.0.1:${server.address().port}`;
+    if (previewOrigin) origin = previewOrigin;
+    else {
+      server = createHomepagePreviewServer({ marketingRoot: output, referenceRoot: output });
+      server.listen(0, '127.0.0.1');
+      await once(server, 'listening');
+      origin = `http://127.0.0.1:${server.address().port}`;
+    }
     browser = await chromium.launch();
     evidence.setup = { status: 'ready' };
   } catch (error) { evidence.setup = { status: 'failed', error: error.message }; throw error; }
@@ -54,6 +65,7 @@ function check(name, run) {
 async function fixture(t, options = {}) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block', ...options });
   const errors = [], localFailures = [];
+  let closing = false;
   await context.route('**/*', route => {
     const request = route.request(), url = new URL(request.url());
     if (!['GET', 'HEAD'].includes(request.method())) { evidence.requests.writesBlocked++; return route.abort('blockedbyclient'); }
@@ -69,13 +81,18 @@ async function fixture(t, options = {}) {
   const page = await context.newPage();
   page.setDefaultTimeout(12_000);
   page.on('pageerror', error => errors.push(error.message));
-  page.on('requestfailed', request => { if (new URL(request.url()).origin === origin) localFailures.push(request.url()); });
+  page.on('requestfailed', request => { if (!closing && new URL(request.url()).origin === origin) localFailures.push(request.url()); });
   const state = { page, context, errors, localFailures, expectedLocalFailures: false };
   t.after(async () => {
+    // Explicit fixture teardown can cancel a harmless in-flight lazy asset.
+    // Failures while the tested page is alive remain recorded and asserted.
+    closing = true;
     await context.close();
+    evidence.requests[state.expectedLocalFailures ? 'expectedOriginFailures' : 'unexpectedOriginFailures'] += localFailures.length;
+    if (state.expectedLocalFailures && localFailures.length) evidence.injectedFailures.push({ check: t.name, paths: localFailures.map(url => new URL(url).pathname) });
     try {
       assert.deepEqual(errors, [], 'uncaught browser exceptions');
-      if (!state.expectedLocalFailures) assert.deepEqual(localFailures, [], 'unexpected local request failure');
+      if (!state.expectedLocalFailures) assert.deepEqual(localFailures, [], 'unexpected request failure from the tested origin');
     } catch (error) {
       const result = evidence.checks.find(item => item.name === t.name);
       if (result) { result.status = 'failed'; result.error = error.message; }
@@ -109,6 +126,19 @@ async function scrollSection(page, id) {
   await page.waitForFunction(() => !document.querySelector('.pixel-reveal'));
 }
 
+async function waitAtAnchor(page, id) {
+  await page.waitForFunction(id => Math.abs(document.getElementById(id).getBoundingClientRect().top) < 180, id);
+  await page.evaluate(() => new Promise(done => {
+    let previous = scrollY, settled = 0;
+    const frame = () => {
+      settled = Math.abs(scrollY - previous) < .5 ? settled + 1 : 0;
+      previous = scrollY;
+      if (settled >= 4) done(); else requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }));
+}
+
 async function demoReady(page, kind) {
   const demo = page.locator(`[data-demo="${kind}"]`);
   await demo.scrollIntoViewIfNeeded();
@@ -130,7 +160,8 @@ async function unclippedText(locator, label) {
     const issues = [], walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     while (walk.nextNode()) {
       const node = walk.currentNode, parent = node.parentElement;
-      if (!node.textContent.trim() || !parent || parent.closest('[aria-hidden="true"],svg,style,script,[hidden],.pd-sr-only')) continue;
+      if (!node.textContent.trim() || !parent || parent.closest('svg,style,script,[hidden],.pd-sr-only')) continue;
+      if (parent.closest('[aria-hidden="true"]') && !parent.closest('.pt-menu-pages strong')) continue;
       if (!parent.getClientRects().length || getComputedStyle(parent).visibility === 'hidden') continue;
       const range = document.createRange(); range.selectNodeContents(node);
       for (const rect of range.getClientRects()) {
@@ -171,7 +202,7 @@ for (const config of pages) {
       await page.locator('footer').scrollIntoViewIfNeeded();
       await noOverflow(page, `${config.name} footer ${width}`);
       assert.equal(await page.locator('.marketing-footer-next').getAttribute('href'), config.name === 'players' ? '/coaches' : '/');
-      assert.ok(await page.locator('a[href="/bookPerformanceTest.html"]').count() > 0);
+      assert.ok(await page.locator(bookingLinks).count() > 0);
       assert.ok(await page.locator('a[href="/signin"]').count() > 0);
       assert.ok(await page.locator('a[href="mailto:dylank@posetek.net?subject=PoseTek%20team%20enquiry"]').count() > 0);
       if ([390, 1440].includes(width)) {
@@ -192,6 +223,13 @@ for (const config of pages) {
     await page.keyboard.press('Enter');
     const dialog = page.getByRole('dialog', { name: 'Explore PoseTek' });
     await dialog.waitFor({ state: 'visible' });
+    const lettering = dialog.locator('.pt-menu-letter');
+    assert.ok(await lettering.count() > 10, 'menu has real per-letter entrance elements');
+    const entrances = await lettering.evaluateAll(nodes => nodes.map(node => ({ animation: getComputedStyle(node).animationName, delay: getComputedStyle(node).animationDelay })));
+    assert.ok(entrances.every(item => item.animation === 'pt-menu-letter-enter'), 'opening animates every menu letter');
+    assert.ok(new Set(entrances.map(item => item.delay)).size > 1, 'letters enter with staggered timing');
+    assert.equal(await dialog.getByRole('link', { name: 'Players', exact: true }).count(), 1, 'stagger preserves complete accessible link names');
+    assert.equal(await dialog.getByRole('link', { name: 'Coaches', exact: true }).count(), 1);
     assert.equal(await dialog.getByRole('button', { name: 'Close navigation', exact: true }).evaluate(node => node === document.activeElement), true);
     assert.equal(await page.locator('main').evaluate(node => node.inert), true);
     assert.equal(await page.locator('footer').evaluate(node => node.inert), true);
@@ -200,6 +238,7 @@ for (const config of pages) {
     assert.equal(await links.first().evaluate(node => node === document.activeElement), true, 'Tab wraps to first dialog control');
     await page.keyboard.press('Shift+Tab');
     assert.equal(await links.last().evaluate(node => node === document.activeElement), true, 'Shift+Tab wraps to last dialog control');
+    assert.equal(await lettering.evaluateAll(nodes => nodes.every(node => getComputedStyle(node).animationName === 'none')), true, 'keyboard interaction finishes the decorative entrance');
     await screenshot(page, `${config.name}-${menuWidth}-menu`);
     await page.keyboard.press('Escape');
     await dialog.waitFor({ state: 'hidden' });
@@ -214,12 +253,20 @@ for (const config of pages) {
     catch (error) { t.diagnostic(JSON.stringify(await page.evaluate(() => ({ hash: location.hash, activeTag: document.activeElement.tagName, activeId: document.activeElement.id, scroll: scrollY })))); throw error; }
     await page.locator(`.chapter-nav a[href="#${config.chapters[2]}"]`).click();
     await page.waitForURL(url => url.hash === '#' + config.chapters[2]);
+    const targetBeforeSettling = await page.locator('#' + config.chapters[2]).evaluate(node => node.getBoundingClientRect().top);
+    // Let native smooth navigation finish before testing back/forward. Otherwise
+    // the browser correctly records an intermediate scroll position in history.
+    await waitAtAnchor(page, config.chapters[2]);
     await page.goBack();
     await page.waitForURL(url => url.hash === '#' + target);
     await page.goForward();
     await page.waitForURL(url => url.hash === '#' + config.chapters[2]);
+    await waitAtAnchor(page, config.chapters[2]);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(id => Math.abs(document.getElementById(id).getBoundingClientRect().top) < 180, config.chapters[2]);
+    try { await page.waitForFunction(id => Math.abs(document.getElementById(id).getBoundingClientRect().top) < 180, config.chapters[2]); }
+    catch (error) { t.diagnostic(JSON.stringify(await page.evaluate(id => ({ hash: location.hash, targetTop: document.getElementById(id).getBoundingClientRect().top, scroll: scrollY, fontStatus: document.fonts.status, pendingHydration: !!document.querySelector('astro-island[ssr]') }), config.chapters[2]))); throw error; }
+    evidence.historyMeasurements ??= [];
+    evidence.historyMeasurements.push({ audience: config.name, width: menuWidth, targetBeforeSettling, targetAfterHistoryAndReload: await page.locator('#' + config.chapters[2]).evaluate(node => node.getBoundingClientRect().top) });
   });
 
   check(`${config.name}: SSR remains usable without JavaScript`, async t => {
@@ -233,7 +280,7 @@ for (const config of pages) {
       assert.equal(await page.locator(`#${id} h2`).isVisible(), true);
     }
     assert.ok(await page.locator('a[href="/signin"]:visible').count() > 0);
-    assert.ok(await page.locator('a[href="/bookPerformanceTest.html"]:visible').count() > 0);
+    assert.ok(await page.locator(`${bookingLinks}:visible`).count() > 0);
     await noOverflow(page, `${config.name} no-JavaScript`);
     await screenshot(page, `${config.name}-390-nojs`, true);
   });
@@ -248,6 +295,10 @@ for (const config of pages) {
     assert.equal(await page.locator('.marketing-footer-mark').getAttribute('data-mark-state'), 'static');
     assert.equal(await page.locator('.marketing-footer-mark canvas').count(), 0);
     assert.equal(await page.locator('.marketing-footer-mark-fallback').isVisible(), true);
+    await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
+    const lettering = page.getByRole('dialog', { name: 'Explore PoseTek' }).locator('.pt-menu-letter');
+    assert.ok(await lettering.count() > 10);
+    assert.equal(await lettering.evaluateAll(nodes => nodes.every(node => getComputedStyle(node).animationName === 'none' && getComputedStyle(node).transform === 'none')), true, 'reduced motion leaves menu letters static');
     await noOverflow(page, `${config.name} reduced motion`);
   });
 
@@ -532,7 +583,7 @@ check('360px long test labels and expanded booking navigation remain readable', 
   const dialog = page.getByRole('dialog', { name: 'Explore PoseTek' });
   // Test-only text expansion exercises a long real destination label. This does
   // not modify source, application data, or navigation behavior.
-  await dialog.locator('.pt-menu-pages a[href="/bookPerformanceTest.html"] strong').evaluate(node => { node.textContent = 'Book a performance test'; });
+  await dialog.locator(`.pt-menu-pages ${bookingLinks} strong`).evaluate(node => { node.textContent = 'Book a performance test'; });
   await unclippedText(dialog.locator('.pt-menu-pages'), 'expanded booking menu label');
   await screenshot(page, 'players-360-long-navigation-label');
 });

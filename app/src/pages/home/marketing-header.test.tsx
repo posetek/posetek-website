@@ -51,6 +51,17 @@ describe("marketing audience navigation", () => {
     const html = renderToStaticMarkup(<MarketingHeader audience="players" />);
     expect(html.match(/class="pt-marketing-mark" src="\/brand\/posetek-p.svg"/g)).toHaveLength(2);
   });
+
+  it.each(["players", "coaches"] as const)("keeps each animated %s menu label one coherent accessible name", audience => {
+    const html = renderToStaticMarkup(<MarketingHeader audience={audience} />);
+    const pages = html.match(/<nav class="pt-menu-pages"[^>]*>([\s\S]*?)<\/nav>/)?.[1] || "";
+    const links = Array.from(pages.matchAll(/<a href="[^"]+" aria-label="([^"]+)">([\s\S]*?)<\/a>/g));
+    expect(links.map(link => link[1])).toEqual(["Players", "Coaches", audience === "players" ? "Book a test" : "Get in touch"]);
+    for (const [, label, content] of links) {
+      const visual = content.match(/<strong aria-hidden="true">([\s\S]*?)<\/strong>/)?.[1];
+      expect(visual?.replace(/<[^>]+>/g, "")).toBe(label);
+    }
+  });
 });
 
 describe("optional public interface sound", () => {
