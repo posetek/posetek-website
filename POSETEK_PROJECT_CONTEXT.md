@@ -6,6 +6,8 @@ The approved Lain Works adaptation is implemented for the public Players and
 Coaches pages. See [scope, interactions, checks and release boundary](docs/PUBLIC_SITE_REVAMP.md).
 Authenticated runtime and held content remain protected by the ordinary
 `build-production.mjs` assembly. This candidate is not a new production receipt.
+The detailed REA pass and deliberate native-navigation adaptations are recorded
+in [the interaction ledger](docs/PUBLIC_SITE_INTERACTION_DETAILS.md).
 
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release

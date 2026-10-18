@@ -325,6 +325,44 @@ for (const config of audiences) {
     const box = await controls.last().boundingBox();
     assert.ok(box.width >= 43.9 && box.height >= 43.9);
     await capture(page, `${config.name}-touch-detail`);
+    // A raw scrollIntoView + screenshot can precede the footer observer/RAF.
+    // Verify actual settled text and controls, then capture both mobile regions.
+    await place(page, '.marketing-footer', 'inside');
+    const footerEntry = await page.locator('.marketing-footer').evaluate(footer => ({ top: footer.getBoundingClientRect().top, absoluteTop: footer.getBoundingClientRect().top + scrollY, scroll: scrollY, documentHeight: document.documentElement.scrollHeight }));
+    await waitData(page, '.marketing-footer', 'footer-state', 'in');
+    try { await page.waitForFunction(() => {
+      const footer = document.querySelector('.marketing-footer');
+      return Number(getComputedStyle(footer.querySelector('.marketing-footer-invitation')).opacity) >= .99
+        && !footer.getAnimations({ subtree: true }).some(animation => animation.playState === 'running');
+    }); } catch (error) {
+      const state = await page.locator('.marketing-footer').evaluate(footer => ({ top: footer.getBoundingClientRect().top, viewport: innerHeight, scroll: scrollY, state: footer.dataset.footerState, progress: footer.style.getPropertyValue('--footer-grid-progress'), opacity: getComputedStyle(footer.querySelector('.marketing-footer-invitation')).opacity, animations: footer.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running').map(animation => ({ target: animation.effect.target.className, time: animation.currentTime, duration: animation.effect.getTiming().duration })) }));
+      evidence.observations.push({ check: t.name, footerEntry, footerSettlementFailure: state });
+      throw new Error(`${error.message}: ${JSON.stringify({ footerEntry, final: state })}`, { cause: error });
+    }
+    const footerSettled = await page.locator('.marketing-footer').evaluate(footer => ({ top: footer.getBoundingClientRect().top, absoluteTop: footer.getBoundingClientRect().top + scrollY, scroll: scrollY, documentHeight: document.documentElement.scrollHeight, progress: footer.style.getPropertyValue('--footer-grid-progress') }));
+    const footerVisibility = await page.locator('.marketing-footer').evaluate(footer => {
+      const selectors = ['.marketing-footer-title-character', '.marketing-footer-contact', '.marketing-footer-cta', '.marketing-footer-secondary', '.marketing-footer-next'];
+      return selectors.flatMap(selector => Array.from(footer.querySelectorAll(selector), node => {
+        const box = node.getBoundingClientRect();
+        let opacity = 1;
+        for (let ancestor = node; ancestor && ancestor !== footer.parentElement; ancestor = ancestor.parentElement) opacity *= Number(getComputedStyle(ancestor).opacity);
+        return { selector, opacity, left: box.left, right: box.right, width: box.width, height: box.height };
+      }));
+    });
+    assert.ok(footerVisibility.length > 20, 'footer invitation and actionable links are present');
+    assert.ok(footerVisibility.every(item => item.opacity >= .99 && item.width > 0 && item.height > 0 && item.left >= 0 && item.right <= 390), `footer content is visible and horizontally contained: ${JSON.stringify(footerVisibility)}`);
+    await capture(page, `${config.name}-390-footer-invitation-settled`);
+    // Frame the preview away from viewport edges. scrollIntoViewIfNeeded can
+    // leave a fractional bottom pixel beyond the viewport after CSS layout.
+    await place(page, '.marketing-footer-next', 'inside');
+    await waitData(page, '.marketing-footer', 'footer-state', 'in');
+    const previewVisibility = await page.locator('.marketing-footer-next').evaluate(node => {
+      const box = node.getBoundingClientRect();
+      return { top: box.top, bottom: box.bottom, viewport: innerHeight, opacity: Number(getComputedStyle(node).opacity), scroll: scrollY };
+    });
+    assert.ok(previewVisibility.top >= 74 && previewVisibility.bottom <= previewVisibility.viewport && previewVisibility.opacity >= .99, `the complete audience preview is visible within the mobile viewport: ${JSON.stringify(previewVisibility)}`);
+    await capture(page, `${config.name}-390-footer-preview-settled`);
+    evidence.observations.push({ check: t.name, mobileFooter: 'observer, grid opacity and finite transitions settled; invitation and audience preview captured separately', footerEntry, footerSettled });
   });
 }
 
@@ -444,6 +482,10 @@ for (const config of audiences) {
     const opening = await dialog.evaluate(node => ({ contentOpacity: Number(getComputedStyle(node.querySelector('.pt-menu-content')).opacity), minimumCover: Math.min(...Array.from(node.querySelectorAll('.pt-menu-curtain-slice'), slice => new DOMMatrixReadOnly(getComputedStyle(slice).transform).d)) }));
     if (opening.minimumCover < .5) assert.ok(opening.contentOpacity < .05, 'menu content stays hidden while the curtain leaves the page exposed');
     evidence.observations.push({ check: t.name, opening });
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('.pt-menu-curtain-slice')).some(slice => {
+      const cover = new DOMMatrixReadOnly(getComputedStyle(slice).transform).d;
+      return cover > .15 && cover < .85;
+    }), undefined, { timeout: 2_000 });
     await capture(page, `${config.name}-menu-curtain-opening`);
     await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.pt-menu-content')).opacity) >= .99);
     const peek = dialog.locator('.pt-menu-peek');
@@ -462,6 +504,26 @@ for (const config of audiences) {
     assert.equal(await peek.getAttribute('aria-hidden'), 'true');
     assert.equal(await dialog.getByRole('link', { name: 'Coaches', exact: true }).count(), 1);
     assert.equal(await target.locator('.pt-menu-letter').evaluateAll(nodes => nodes.every(node => !getComputedStyle(node).animationName.includes('hover'))), true, 'giant lettering does not restart a hover roll');
+    // The curtain samples above deliberately capture motion; this separate
+    // preview documents the finished lettering and miniature after their
+    // finite entrance/hover animations, not half-clipped letter masks.
+    await page.waitForFunction(() => !document.querySelector('.pt-marketing-menu').getAnimations({ subtree: true }).some(animation => animation.playState === 'running'), undefined, { timeout: 5_000 });
+    const contrast = await dialog.evaluate(node => {
+      const channels = color => color.match(/[\d.]+/g).map(Number);
+      const background = channels(getComputedStyle(node.querySelector('.pt-menu-curtain-slice')).backgroundColor);
+      const luminance = rgb => rgb.slice(0, 3).map(channel => channel / 255).map(channel => channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4).reduce((sum, channel, index) => sum + channel * [.2126, .7152, .0722][index], 0);
+      return Array.from(node.querySelectorAll('.pt-menu-pages a strong'), label => {
+        const foreground = channels(getComputedStyle(label).color);
+        let alpha = foreground[3] ?? 1;
+        for (let ancestor = label; ancestor && ancestor !== node.parentElement; ancestor = ancestor.parentElement) alpha *= Number(getComputedStyle(ancestor).opacity);
+        const composite = foreground.slice(0, 3).map((channel, index) => channel * alpha + background[index] * (1 - alpha));
+        const foregroundLuminance = luminance(composite), backgroundLuminance = luminance(background);
+        return { label: label.textContent, opacity: alpha, ratio: (Math.max(foregroundLuminance, backgroundLuminance) + .05) / (Math.min(foregroundLuminance, backgroundLuminance) + .05), backgroundAlpha: background[3] ?? 1 };
+      });
+    });
+    assert.equal(contrast.length, 3);
+    assert.ok(contrast.every(item => item.backgroundAlpha === 1 && item.ratio >= 4.5), `settled menu labels retain text contrast over their opaque curtain, including dimmed siblings: ${JSON.stringify(contrast)}`);
+    evidence.observations.push({ check: t.name, contrast });
     await capture(page, `${config.name}-desktop-menu-preview`);
     await dialog.getByRole('button', { name: 'Close navigation', exact: true }).hover();
     await waitData(page, '.pt-menu-peek', 'visible', 'false');
@@ -501,17 +563,18 @@ for (const config of audiences) {
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
     await frames(page);
     const address = page.url();
-    await next.scrollIntoViewIfNeeded();
-    await next.hover();
+    await place(page, '.marketing-footer-next', 'inside');
+    await page.waitForFunction(() => !document.querySelector('.marketing-footer-next').getAnimations().some(animation => animation.playState === 'running'));
     // Use explicit points within the now-visible link. A second locator hover
     // can auto-scroll a partly clipped link and intentionally hide the cursor.
     const linkBox = await next.boundingBox();
     const cursorY = Math.min(940, Math.max(120, linkBox.y + linkBox.height * .4));
-    await page.mouse.move(linkBox.x + 35, cursorY);
+    assert.equal(await next.evaluate((node, point) => node.contains(document.elementFromPoint(point.x, point.y)), { x: linkBox.x + 35, y: cursorY }), true, 'cursor probe is over the actual linked preview');
+    await page.mouse.move(linkBox.x + 35, cursorY, { steps: 3 });
     await waitData(page, '.marketing-cursor', 'visible', 'true'); await frames(page);
     await cursorInsideViewport(page);
     const pointer1 = await page.locator('.marketing-cursor').boundingBox();
-    await page.mouse.move(linkBox.x + linkBox.width - 35, cursorY);
+    await page.mouse.move(linkBox.x + linkBox.width - 35, cursorY, { steps: 3 });
     await waitData(page, '.marketing-cursor', 'visible', 'true'); await frames(page);
     const pointer2 = await page.locator('.marketing-cursor').boundingBox();
     assert.ok(Math.abs(pointer1.x - pointer2.x) > 20, `footer cursor follows the pointer over its linked preview: ${JSON.stringify({ pointer1, pointer2 })}`);
@@ -557,7 +620,9 @@ for (const config of audiences) {
     const destination = config.name === 'players' ? '/coaches' : '/';
     assert.equal(await next.getAttribute('href'), destination);
     await page.keyboard.press('Enter');
-    await page.waitForURL(url => url.pathname === destination);
+    // Netlify Pretty URLs canonicalizes this real /coaches link to /coaches/.
+    // Keep the authored href assertion above and accept only that alias here.
+    await page.waitForURL(url => url.origin === origin && (url.pathname === destination || (destination === '/coaches' && url.pathname === '/coaches/')));
   });
 }
 

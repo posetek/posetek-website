@@ -15,12 +15,15 @@ chips navigate; only the existing movement selectors filter recordings.
 Players retains testing → profile → training → AI Coach/retesting → technique →
 mobile preview. Coaches retains club → player evidence → development → enquiry.
 Sample and illustrative labels remain visible. No Lain code, media or branding is
-shipped. REA desktop and 390px browser observations established the design; the
-reference capture did not recover every JavaScript/network response body.
+shipped. REA desktop and 390px browser observations established the design. The
+[detail pass](PUBLIC_SITE_INTERACTION_DETAILS.md) adds exact public JavaScript/CSS
+evidence and timed hover/scroll observations, with coverage limits recorded.
 
-Shared components provide a fullscreen green menu, numbered chapter indicator,
-staggered masked menu lettering, masked headings, short tiled reveals, decorative pointer labels and bracket
-feedback. Reveals stop on focus/pointer interaction. The closing invitation and
+Shared components provide a ten-slice fullscreen green menu, moving destination
+miniatures, numbered chapter indicator, resolving link labels, masked lettering,
+repeatable tiled reveals, visual hover tilt/sharpening, decorative pointer labels
+and bracket feedback. Reveals stop on focus/pointer interaction; actual control
+hit areas remain stationary. The closing invitation and
 approved P extrusion respond to scrolling; the audience preview always needs an
 explicit click. Optional original Web Audio cues default off, remember only the
 browsing session and never initialize an audio context before opt-in interaction.
@@ -40,6 +43,8 @@ provenance are unchanged.
 
 - Visible keyboard focus, 44px public navigation targets, Escape-to-close, menu
   focus containment/restoration and inert background while the menu is open.
+- Menu sibling dimming retains at least 4.5:1 main-label contrast. Pointer effects
+  exclude controls and interactive SVG geometry; focused controls stop motion.
 - Real links preserve direct hashes, browser history and document navigation.
 - Essential headings, text and destinations render before JavaScript. Interactive
   demonstrations require JavaScript; static content and links remain usable.
@@ -59,6 +64,7 @@ node --test scripts/marketing-revamp.browser.mjs
 MARKETING_ALLOW_FONTS=1 node --test scripts/marketing-revamp.browser.mjs
 node scripts/build-production.mjs
 MARKETING_OUTPUT=production-dist MARKETING_ALLOW_FONTS=1 node --test scripts/marketing-revamp.browser.mjs
+MARKETING_OUTPUT=production-dist MARKETING_ALLOW_FONTS=1 node --test scripts/marketing-detail.browser.mjs
 ```
 
 Browser acceptance uses disposable guest contexts. Only local GET/HEAD requests
@@ -66,7 +72,9 @@ are allowed by default; the optional visual run also permits Google font GETs.
 For hosted acceptance, `MARKETING_ORIGIN` accepts only an immutable PoseTek draft
 URL; `MARKETING_ARTIFACTS` selects its evidence folder. All writes, analytics,
 external application traffic and WebSockets are blocked.
-Screenshots and detailed receipts are under ignored `artifacts/marketing-revamp/`.
+Initial revamp evidence is under ignored `artifacts/marketing-revamp/`; the latest
+interaction pass, motion captures and exact-candidate evidence are under
+`artifacts/marketing-detail/`.
 These checks do not claim authenticated production or physical-device acceptance.
 
 The interaction checklist covers both audiences at 360, 390, 430, 768, 1440 and
@@ -110,14 +118,14 @@ of the revamp is claimed by this candidate document.
 
 ## Verified candidate and interaction checklist
 
-The exact guarded [Players preview](https://6ad405d1f124f04f96f5fe3a--posetek.netlify.app/)
-and [Coaches preview](https://6ad405d1f124f04f96f5fe3a--posetek.netlify.app/coaches)
+The exact guarded [Players preview](https://6ad411febfdfb38ea6919829--posetek.netlify.app/)
+and [Coaches preview](https://6ad411febfdfb38ea6919829--posetek.netlify.app/coaches)
 are ready for visual acceptance. [PR #85](https://github.com/posetek/posetek_website/pull/85)
 contains the source; its checks and advisory comment record latest-revision review.
 The [candidate receipt](../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json) identifies
-runtime commit `40cd42a35f838c95c9d3d49b99f8e56f4c46a725`, deploy
-`6ad405d1f124f04f96f5fe3a`, and manifest SHA-256
-`686d75a4dfa750bec333cd2e1ae2ede4a82f90000403941a0a6d5cb86957f77e`.
+runtime commit `b32e499ffa5b3daab920c6cfb25ddf4557c4dd9d`, deploy
+`6ad411febfdfb38ea6919829`, and manifest SHA-256
+`f38602c489aa4aea371c9e9dfad815b698789b1f0b09cd41657ab0c4d9077a11`.
 
 All 2,072 local files match the hosted provider inventory by hash and size.
 Netlify normalizes inventory path case; there are no normalized path collisions.
@@ -127,35 +135,53 @@ No functions or edge functions were deployed. Production remains unchanged.
 
 | Acceptance | Result |
 | --- | --- |
-| Both audiences at 360/390/430/768/1440/1920px | Passed locally and on the exact hosted draft |
+| Both audiences at 360/390/430/768/1440/1920px | Passed on the exact hosted draft |
 | Native chapters, direct hashes, back/forward, reload and focus | Passed |
-| Menu lettering, keyboard containment, Escape and focus restoration | Passed |
+| Menu curtain/lettering, moving previews, keyboard containment, Escape and focus restoration | Passed; dimmed main labels measure 4.84:1 contrast |
+| Scramble layout stability, artwork hover, first-click controls and SVG joint hit areas | Passed |
+| Directional scroll replay, partial bottom-edge behavior, state retention, live reduced motion and hidden-page cancellation | Passed |
 | Touch targets, long labels, orientation, horizontal overflow | Passed; 200% desktop CSS-viewport equivalent also checked |
 | Six recordings, playback, skills, workouts, AI handoff, technique and mobile media | Passed |
 | Coach team/player selections and Plan → Train → Retest | Passed |
 | Sound opt-in/session behavior | Passed |
+| Footer reverse entrance, pointer-reactive P, visual bottom pull and explicit navigation | Passed; settled mobile invitation and audience-preview captures included |
 | No JavaScript, reduced motion, no WebGL, failed media and rejected imports | Passed; failures remain isolated and recovery is explicit |
-| Local guarded browser suite / exact hosted suite | 33/33 each; 43 screenshots each |
-| Unexpected origin failures / browser exceptions / attempted writes | Zero in both final runs |
-| CI for runtime source | All lanes pass: 1,975 frontend tests, 76 tooling/release tests, 32 policy tests, 7 guest smoke cases, builds/types/Svelte/lint/transport/dependency checks |
+| Exact hosted browser suites | 20 detail + 33 original regression checks pass; 72 screenshots |
+| Local browser suites | Earlier full 20 + 33 pass before the final opacity-only correction; final candidate passes 4 focused menu/touch checks with 12 captures |
+| Unexpected origin failures / browser exceptions / attempted writes | Zero in the final hosted runs; three deliberately injected media/import failures remain expected |
+| CI for runtime source | All lanes pass: 1,977 frontend tests, 76 tooling/release tests, 32 policy tests, 7 guest smoke cases, builds/types/Svelte/lint/transport/dependency checks |
 
-The final hosted suite corrected a test readiness race: with JavaScript disabled,
-DOMContentLoaded can precede remote stylesheet completion. That case now waits for
-load before reading layout. Native history checks also wait for smooth scrolling
-to settle. These changes preserve the assertions and require no runtime rebuild.
+The browser harness samples intermediate motion separately from settled screens.
+It waits for actual observer/transition state, measures control geometry, and
+accepts Netlify's native `/coaches/` normalization while retaining the authored
+`/coaches` link assertion. An immediate mobile-footer screenshot was confirmed to
+precede the observer/entrance; the new settled captures show all content. One
+preliminary hosted footer-settling wait separately timed out without geometry
+diagnostics. It did not recur in two isolated strict checks or the complete strict
+rerun; its cause remains unresolved. Assertions were retained and diagnostics
+added. These harness changes do not change the compiled artifact.
 
-Evidence lives in ignored `artifacts/marketing-revamp/`: `acceptance.json`,
-`hosted-final/acceptance.json`, `performance.json`, `artifact-manifest.json`,
-`draft-verification.json` and `rollback/verification.json`. Representative captures
-are `players-1440-hero.png`, `players-390-hero.png`, `players-390-menu.png`,
-`coaches-1440-footer.png`, and matching hosted captures under `hosted-final/`.
-These contain existing sample data only. A guarded local preview is available at
-`http://127.0.0.1:4177` during this workstation session.
+Evidence lives in ignored `artifacts/marketing-detail/`: the two final reports are
+`hosted-final/detail-acceptance.json` and `hosted-regression-final/acceptance.json`.
+The folder also contains `local-final-focused/detail-acceptance.json`,
+`performance.json`, `artifact-manifest.json`, `draft-verification.json`, source
+findings and the exported REA bundle. The previous marketing recovery evidence
+remains at `artifacts/marketing-revamp/rollback/verification.json`.
 
-Three cold-context local samples show initial JS+CSS decreases of 73,503 bytes
-(Players) and 72,534 bytes (Coaches), with unchanged request counts and zero initial
+Representative final screenshots are `hosted-regression-final/players-1440-hero.png`,
+`hosted-regression-final/players-390-hero.png`,
+`hosted-final/coaches-desktop-menu-preview.png`,
+`hosted-final/players-menu-curtain-opening.png`, and
+`hosted-final/coaches-390-footer-preview-settled.png`. The older regression suite's
+immediate footer captures are entry snapshots; use the detail suite's explicitly
+settled mobile views for the complete invitation. Captures contain existing sample
+data only. A guarded local preview is available at `http://127.0.0.1:4177` during
+this workstation session; both HTML documents match the exact candidate.
+
+Three cold-context local samples show initial JS+CSS decreases of 47,918 bytes
+(Players) and 46,880 bytes (Coaches), with unchanged request counts and zero initial
 requests for decorative logo helpers. All 27 content/media/brand files (3,934,045
-bytes) are identical. Median local first paint was 52→68ms and 60→72ms respectively.
+bytes) are identical. Median local first paint was 44→68ms and 44→60ms respectively.
 The comparison uses the existing October 14 compiled artifact, uncompressed local
 servers and blocked external fonts; it does not establish CDN, mobile or field
 speed, or attribute every dependency difference to this revamp.

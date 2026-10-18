@@ -7,6 +7,9 @@ shared navigation, optional sound and an accessible closing chapter. Existing
 product demonstrations and destinations remain connected. Read the
 [implementation and acceptance guide](docs/PUBLIC_SITE_REVAMP.md). This is a PR
 candidate; production promotion and baseline reconciliation remain separate.
+The [REA interaction ledger](docs/PUBLIC_SITE_INTERACTION_DETAILS.md) maps the
+reference's hover, scroll replay, menu curtain/previews and closing details to
+PoseTek's controls and accessibility behavior.
 
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release
