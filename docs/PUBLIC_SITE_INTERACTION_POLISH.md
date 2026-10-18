@@ -1,5 +1,9 @@
 # Public-site interaction polish
 
+This exact candidate was subsequently published on October 18, 2026. See the
+[current production handoff](PUBLIC_SITE_REVAMP_RELEASE.md). The acceptance
+records below describe its pre-publication verification.
+
 This October 18 follow-up refines the existing Players and Coaches candidate.
 It preserves the continuous chapter order, demonstrations, public destinations
 and worker-owned rendering described in [the first-interaction guide](PUBLIC_SITE_FIRST_INTERACTION.md).

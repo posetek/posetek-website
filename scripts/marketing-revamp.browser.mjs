@@ -1,5 +1,5 @@
 // Run separately after build:marketing: node --test scripts/marketing-revamp.browser.mjs
-// Guest-only acceptance. No credentials, production reads, writes, email, or model calls.
+// Guest-only acceptance. No credentials, application writes, email, or model calls.
 import assert from 'node:assert/strict';
 import { before, after, test } from 'node:test';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
@@ -12,13 +12,14 @@ import { createHomepagePreviewServer } from './serve-homepage-preview.mjs';
 const output = process.env.MARKETING_OUTPUT ? resolve(process.env.MARKETING_OUTPUT) : fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
 const artifacts = process.env.MARKETING_ARTIFACTS ? resolve(process.env.MARKETING_ARTIFACTS) : fileURLToPath(new URL('../artifacts/marketing-revamp/', import.meta.url));
 const previewOrigin = process.env.MARKETING_ORIGIN;
-if (previewOrigin && !/^https:\/\/[a-f0-9]{24}--posetek\.netlify\.app$/.test(previewOrigin)) {
-  throw new Error('MARKETING_ORIGIN must be an immutable PoseTek Netlify draft URL; production and arbitrary hosts are not accepted.');
+const productionOrigin = previewOrigin === 'https://posetek.net';
+if (previewOrigin && !productionOrigin && !/^https:\/\/[a-f0-9]{24}--posetek\.netlify\.app$/.test(previewOrigin)) {
+  throw new Error('MARKETING_ORIGIN must be https://posetek.net or an immutable PoseTek Netlify draft URL.');
 }
 // Deterministic offline checks by default. Opt in to GET-only Google font requests
 // for visual review; every other external HTTP request and every WebSocket is blocked.
 const allowFonts = process.env.MARKETING_ALLOW_FONTS === '1';
-const originPolicy = previewOrigin ? 'immutable PoseTek draft origin GET/HEAD' : 'loopback GET/HEAD';
+const originPolicy = productionOrigin ? 'PoseTek production origin GET/HEAD' : previewOrigin ? 'immutable PoseTek draft origin GET/HEAD' : 'loopback GET/HEAD';
 const evidence = { output, previewOrigin, networkPolicy: `${originPolicy}${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`, checks: [], screenshots: [], requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, expectedOriginFailures: 0, unexpectedOriginFailures: 0 }, injectedFailures: [], measurements: [] };
 const pages = [
   { route: '/', name: 'players', chapters: ['tests', 'profile', 'training', 'ai-coach', 'technique', 'mobile-app'], title: 'PoseTek | Start with evidence. Train what’s next.' },
@@ -70,7 +71,7 @@ async function fixture(t, options = {}) {
     const request = route.request(), url = new URL(request.url());
     if (!['GET', 'HEAD'].includes(request.method())) { evidence.requests.writesBlocked++; return route.abort('blockedbyclient'); }
     if (url.origin === origin) return route.continue();
-    if (allowFonts && url.protocol === 'https:' && ['fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname)) {
+    if (allowFonts && request.method() === 'GET' && url.protocol === 'https:' && ['fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname)) {
       evidence.requests.fontsAllowed++; return route.continue();
     }
     evidence.requests.externalBlocked++;

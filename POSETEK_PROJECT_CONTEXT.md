@@ -1,21 +1,27 @@
 # PoseTek website project context
 
-## Public-site revamp candidate (October 18, 2026)
+## Current public-site release (October 18, 2026)
 
-The approved Lain Works adaptation is implemented for the public Players and
-Coaches pages. See [scope, interactions, checks and release boundary](docs/PUBLIC_SITE_REVAMP.md).
-Authenticated runtime and held content remain protected by the ordinary
-`build-production.mjs` assembly. This candidate is not a new production receipt.
-The detailed REA pass and deliberate native-navigation adaptations are recorded
-in [the interaction ledger](docs/PUBLIC_SITE_INTERACTION_DETAILS.md).
+The accepted Players/Coaches revamp is live at [posetek.net](https://posetek.net).
+Deploy `6ad536a9103351c79863f77f` was promoted unchanged at 14:42:52 PDT from
+runtime `9fa587ac341c993023ee0174b7bfe1e96a44d247`. All 2,003 artifact files match
+production; all 1,985 previous protected files remain byte-identical, including
+application, feedback and coach enrollment. The reconciled baseline protects
+2,001 files, adding only the 16 retained assets from this artifact.
 
-The [first-interaction and pacing follow-up](docs/PUBLIC_SITE_FIRST_INTERACTION.md)
-adds hydration-independent navigation, worker-owned 3D and sequential chapters
-with compact, inline-expandable demonstrations. The current guarded candidate and
-acceptance evidence are recorded in
-[the candidate receipt](deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json). Production
-promotion remains a separate step. The [interaction polish follow-up](docs/PUBLIC_SITE_INTERACTION_POLISH.md)
-records the fresh desktop/phone comparison and interrupted-menu correction.
+Live acceptance passed 82 public interaction checks, 29 cold-start checks and
+four WebKit support checks. Desktop and mobile viewport evidence includes
+360/390/430/768/1440/1920px; physical-phone acceptance is not claimed. No backend,
+authentication or persisted-data changes were published. Approved application
+policy/support bytes and separate native/content holds remain preserved.
+Read the [release handoff](docs/PUBLIC_SITE_REVAMP_RELEASE.md) and
+[production receipt](deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json).
+
+The implementation history remains in [the revamp guide](docs/PUBLIC_SITE_REVAMP.md),
+[REA interaction ledger](docs/PUBLIC_SITE_INTERACTION_DETAILS.md),
+[first-interaction follow-up](docs/PUBLIC_SITE_FIRST_INTERACTION.md) and
+[final polish](docs/PUBLIC_SITE_INTERACTION_POLISH.md). Their candidate receipts
+record pre-publication checkpoints; the production receipt above is current.
 
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release

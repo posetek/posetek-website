@@ -14,7 +14,8 @@ import { createHomepagePreviewServer } from './serve-homepage-preview.mjs';
 const output = process.env.MARKETING_OUTPUT ? resolve(process.env.MARKETING_OUTPUT) : fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
 const artifacts = process.env.MARKETING_ARTIFACTS ? resolve(process.env.MARKETING_ARTIFACTS) : fileURLToPath(new URL('../artifacts/marketing-cold/', import.meta.url));
 const previewOrigin = process.env.MARKETING_ORIGIN;
-if (previewOrigin && !/^https:\/\/[a-f0-9]{24}--posetek\.netlify\.app$/.test(previewOrigin)) throw new Error('MARKETING_ORIGIN must be an immutable PoseTek Netlify draft URL.');
+const productionOrigin = previewOrigin === 'https://posetek.net';
+if (previewOrigin && !productionOrigin && !/^https:\/\/[a-f0-9]{24}--posetek\.netlify\.app$/.test(previewOrigin)) throw new Error('MARKETING_ORIGIN must be https://posetek.net or an immutable PoseTek Netlify draft URL.');
 const headless = process.env.MARKETING_COLD_HEADLESS === '1';
 const traceAll = process.env.MARKETING_COLD_TRACE_ALL === '1';
 const cpuRate = Number(process.env.MARKETING_COLD_CPU_RATE || 1);
@@ -32,7 +33,7 @@ const evidence = {
   runtime: { platform: process.platform, architecture: process.arch, node: process.version },
   mode: lane === 'webkit' ? 'WebKit support checks; no timing or physical-mobile acceptance' : headless || cpuRate !== 1 || disableTileBlur ? `diagnostic: ${headless ? 'headless' : 'headful'}, ${cpuRate}x CPU${disableTileBlur ? ', pixel tile blur disabled' : ''}; no hardware acceptance` : 'headful hardware acceptance',
   limitations: ['390px touch is desktop emulation, not physical iOS or Android.', 'Fresh browser HTTP caches and workers; OS/driver shader caches are not cleared.', 'In-page event/RAF observers add measurement overhead; traces independently include compositor work.', 'The optional 4x CPU lane throttles renderer CPU scheduling; it does not emulate a phone GPU, memory, network or operating system.', 'Native background-tab/window minimization did not change document.visibilityState in this host even with focus emulation disabled; visibility lifecycle coverage explicitly injects visibility properties and events, not an actual hidden tab.'],
-  networkPolicy: `${previewOrigin ? 'immutable draft' : 'loopback'} origin GET/HEAD${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`,
+  networkPolicy: `${productionOrigin ? 'PoseTek production' : previewOrigin ? 'immutable draft' : 'loopback'} origin GET/HEAD${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`,
   checks: [], runs: [], screenshots: [], traces: [], requests: { writesBlocked: 0, externalBlocked: 0, injectedFailures: 0, unexpectedOriginFailures: 0 },
 };
 let server, origin;

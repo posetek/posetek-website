@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6ad02adfcc90dffdb496f811",
-  "sourceCommit": "23e2ebed988e1677f6028ea6d7b5589273291ea1",
-  "url": "https://6ad02adfcc90dffdb496f811--posetek.netlify.app",
+  "deploymentId": "6ad536a9103351c79863f77f",
+  "sourceCommit": "9fa587ac341c993023ee0174b7bfe1e96a44d247",
+  "url": "https://6ad536a9103351c79863f77f--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "a8c4f86a2f7368d3309035204e06c84a62595bfe",
-    "size": 4231,
+    "sha": "701c974f34301cd31b6c6aff6864718c6456130a",
+    "size": 3750,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -736,6 +736,11 @@
       "size": 14616
     },
     {
+      "path": "/_astro/applicationroot.b_haeure.js",
+      "sha": "e35788ac2f9d037fa78a0249a3aa575d823e0b57",
+      "size": 18127
+    },
+    {
       "path": "/_astro/applicationroot.b-jhqocz.js",
       "sha": "b2bf8fef796f63791a17ee3b3f8b786b5dedf50c",
       "size": 17370
@@ -1101,9 +1106,19 @@
       "size": 184056
     },
     {
+      "path": "/_astro/client.l7evtj6k.js",
+      "sha": "f9767f97a83ea4a0d24ec135c71be8f7ee657ceb",
+      "size": 180625
+    },
+    {
       "path": "/_astro/client.svelte.d7w2oqjr.js",
       "sha": "afd11adcf78abcaf071581cf0f2e488153bf76c8",
       "size": 889
+    },
+    {
+      "path": "/_astro/client.svelte.dkxaz191.js",
+      "sha": "ea955d2cc65726351291aebecad5c6153eb38ddf",
+      "size": 24605
     },
     {
       "path": "/_astro/coach-navigation.c97g-wgo.js",
@@ -1119,6 +1134,11 @@
       "path": "/_astro/coachdemo.d9gvo4xy.js",
       "sha": "84a56fdd765abd5e9d9fa8d9ac36c9de3712d109",
       "size": 6820
+    },
+    {
+      "path": "/_astro/coachdemo.fkyo6dag.js",
+      "sha": "049a3e760f961c67b27964d34a39408b01115ba3",
+      "size": 6967
     },
     {
       "path": "/_astro/coachdetail.b2psdlws.js",
@@ -1214,6 +1234,11 @@
       "path": "/_astro/coachenrollmentpage.dzvyt07_.js",
       "sha": "9ec7c3abc8d6fa2543974279b4b0ae9937649064",
       "size": 6506
+    },
+    {
+      "path": "/_astro/coachespage.cqi1kw46.js",
+      "sha": "14a3284915de2a3e45f695e6a701ad93749ab6c9",
+      "size": 26749
     },
     {
       "path": "/_astro/coachespage.dr2gsrl2.js",
@@ -1866,6 +1891,11 @@
       "size": 29231
     },
     {
+      "path": "/_astro/homepage.dr297vs3.js",
+      "sha": "f9b799eaf28b7bb9e6c28e57da89e82797d66a7a",
+      "size": 36964
+    },
+    {
       "path": "/_astro/identity.91emlxyr.js",
       "sha": "217ef957bf51f7e6b30241542eea8a429d187314",
       "size": 1120
@@ -2254,6 +2284,26 @@
       "path": "/_astro/logic.dboxvus1.js",
       "sha": "08b18000de45342316df34e7861aedfdd32a3349",
       "size": 16740
+    },
+    {
+      "path": "/_astro/marketing-demo-cards.be1xk4hf.css",
+      "sha": "66180f72aa8bb7ae08ef990ec7afd1bbc6392b4d",
+      "size": 143380
+    },
+    {
+      "path": "/_astro/marketing-demo-cards.bvwu9wgo.js",
+      "sha": "7c8fdaaf2a2375d5ab8ea82df25bb62d548f9a72",
+      "size": 43156
+    },
+    {
+      "path": "/_astro/marketingnavigation.astro_astro_type_script_index_0_lang.b-tjltga.js",
+      "sha": "e57dd05c7409bd91d83fa5f45898091783aa88d6",
+      "size": 4973
+    },
+    {
+      "path": "/_astro/marketingnavigation.dqxdi6og.css",
+      "sha": "9034fe6bd4534ba546c29a87a4987b975650039d",
+      "size": 158934
     },
     {
       "path": "/_astro/mobile-app-preview.bchmotu7.js",
@@ -2961,6 +3011,11 @@
       "size": 20078
     },
     {
+      "path": "/_astro/product-demo.dfuw2mrc.js",
+      "sha": "e3fbbe7a7c98f2757f5d5f7ec572aaf720a1200f",
+      "size": 126156
+    },
+    {
       "path": "/_astro/product-demo.djoryiof.js",
       "sha": "8508efe6d97149ee3772ad935b42a44368caa77c",
       "size": 4553
@@ -3041,9 +3096,19 @@
       "size": 1461
     },
     {
+      "path": "/_astro/react-dom.bqgx2hka.js",
+      "sha": "b2eb6291ab6deca9a11b1efa3512c2d62ebdbf3a",
+      "size": 3536
+    },
+    {
       "path": "/_astro/react.sifiwpqq.js",
       "sha": "14655da1fe3f9451a6add46c07d108beec019587",
       "size": 8185
+    },
+    {
+      "path": "/_astro/renderer.worker-chl0h-05.js",
+      "sha": "5ca99ff0c04842934797200cafa2c39a97c5372a",
+      "size": 596796
     },
     {
       "path": "/_astro/replay-tracking.dkuioebp.js",
@@ -3316,6 +3381,11 @@
       "size": 10366
     },
     {
+      "path": "/_astro/supportpage.bcfqtnuu.js",
+      "sha": "dc2227a335288401d233febce9f5237405fc4eb6",
+      "size": 13704
+    },
+    {
       "path": "/_astro/supportpage.bir1zv1m.js",
       "sha": "15c6da8db52d72a30c8a13dc0360d04ecd4aa2e0",
       "size": 10814
@@ -3454,6 +3524,11 @@
       "path": "/_astro/techniquedemo.bii80dqv.css",
       "sha": "66e84f19625cd070784c8fb24d7137db0914bc92",
       "size": 9075
+    },
+    {
+      "path": "/_astro/techniquedemo.bu5thjyw.js",
+      "sha": "c3c8641504f1e5b0afe493b61a2d1322c4c51cae",
+      "size": 55773
     },
     {
       "path": "/_astro/techniquedemo.wjtt5mj9.js",
@@ -3704,6 +3779,11 @@
       "path": "/_astro/workoutdemo.cbfcyysw.js",
       "sha": "fc7477a9633d751df29bcd33f1aff04eccad73b9",
       "size": 47892
+    },
+    {
+      "path": "/_astro/workoutdemo.vcesa5kq.js",
+      "sha": "6ef3528741c7b8d575eb5e0ce23e23ebfd9d2020",
+      "size": 48109
     },
     {
       "path": "/_astro/workouteditor.bjgp6ig-.js",
@@ -9975,5 +10055,5 @@
   ],
   "applicationSourceCommit": "57e9e03e139a287accfad7889d96747b3ad6ecc3",
   "coachEnrollmentSourceCommit": "8eaf3ffd35848c3cf7ca753cc9fd4030cc4fb524",
-  "sourceNote": "October 15 automatic main deployment retained every prior protected byte and added three unreferenced application chunks. Active application runtime is 57e9e03e139a287accfad7889d96747b3ad6ecc3. Runtime freeze codex/coach-overview-runtime contains merged coach overview source while preserving approved privacy/support source from 139162a04a1aa2afefda78c62bf2715d9667acbc. Held candidate remains on main. Isolated coach enrollment and feedback entries retain verified predecessor bytes."
+  "sourceNote": "Public Players/Coaches artifact 9fa587ac341c993023ee0174b7bfe1e96a44d247 was promoted unchanged on October 18, 2026. All 1,985 previous protected records remain exact; 16 retained Astro assets were added. Active application runtime remains 57e9e03e139a287accfad7889d96747b3ad6ecc3. Runtime freeze codex/coach-overview-runtime preserves approved privacy/support source from 139162a04a1aa2afefda78c62bf2715d9667acbc. Held candidate remains on main. Isolated coach enrollment and feedback retain verified predecessor bytes. See deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json."
 }

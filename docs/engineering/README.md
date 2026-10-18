@@ -1,6 +1,9 @@
 # PoseTek engineering handbook
 
-Current public-site work: [interaction polish](../PUBLIC_SITE_INTERACTION_POLISH.md),
+Current production: [public-site release](../PUBLIC_SITE_REVAMP_RELEASE.md) and
+[verified receipt](../../deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json).
+
+Public-site implementation history: [interaction polish](../PUBLIC_SITE_INTERACTION_POLISH.md),
 continuing [first interaction and editorial pacing](../PUBLIC_SITE_FIRST_INTERACTION.md),
 building on the [revamp candidate](../PUBLIC_SITE_REVAMP.md).
 Its ordinary guarded artifact preserves the application; do not substitute the
@@ -15,9 +18,10 @@ all three repositories; website authenticated-emulator support is also merged. U
 Neither a merged CI workflow nor a green local command proves that secrets,
 remote protections, paid review, staging, or a production release are active.
 
-Current public marketing candidate: [artifact and acceptance receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json).
+Pre-publication marketing checkpoint: [artifact and acceptance receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json).
 The [composition checkpoint](../PUBLIC_SITE_COMPOSITION.md) is historical; its
-guarded preview has been superseded. Production promotion remains separate.
+guarded preview has been superseded by the exact candidate promoted on October 18.
+For future work, keep source integration separate from exact-artifact promotion.
 
 ## Start with the task
 

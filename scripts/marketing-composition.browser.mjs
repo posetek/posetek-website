@@ -12,11 +12,12 @@ import { createHomepagePreviewServer } from './serve-homepage-preview.mjs';
 const output = process.env.MARKETING_OUTPUT ? resolve(process.env.MARKETING_OUTPUT) : fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
 const artifacts = process.env.MARKETING_ARTIFACTS ? resolve(process.env.MARKETING_ARTIFACTS) : fileURLToPath(new URL('../artifacts/marketing-composition/acceptance/', import.meta.url));
 const previewOrigin = process.env.MARKETING_ORIGIN;
-if (previewOrigin && !/^https:\/\/[a-f0-9]{24}--posetek\.netlify\.app$/.test(previewOrigin)) throw new Error('MARKETING_ORIGIN must be an immutable PoseTek Netlify draft URL.');
+const productionOrigin = previewOrigin === 'https://posetek.net';
+if (previewOrigin && !productionOrigin && !/^https:\/\/[a-f0-9]{24}--posetek\.netlify\.app$/.test(previewOrigin)) throw new Error('MARKETING_ORIGIN must be https://posetek.net or an immutable PoseTek Netlify draft URL.');
 const allowFonts = process.env.MARKETING_ALLOW_FONTS === '1';
 const evidence = {
   output, previewOrigin,
-  networkPolicy: `${previewOrigin ? 'immutable PoseTek draft' : 'loopback'} origin GET/HEAD${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`,
+  networkPolicy: `${productionOrigin ? 'PoseTek production' : previewOrigin ? 'immutable PoseTek draft' : 'loopback'} origin GET/HEAD${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`,
   checks: [], screenshots: [], observations: [],
   requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, unexpectedOriginFailures: 0 },
 };
