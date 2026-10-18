@@ -158,6 +158,23 @@ async function place(page, selector, position) {
   await frames(page);
 }
 
+async function readPrecedingChapters(page) {
+  // Warm footer choreography starts after the story's lazy demonstrations have
+  // resolved; a single geometry sample taken before their expansion is stale.
+  for (const section of await page.locator('.marketing-gallery > section').all()) {
+    await section.scrollIntoViewIfNeeded();
+    await section.evaluate(node => new Promise((resolve, reject) => {
+      const started = performance.now();
+      const ready = () => {
+        if (Array.from(node.querySelectorAll('[data-demo]')).every(demo => demo.dataset.demoState === 'ready')) resolve();
+        else if (performance.now() - started > 10_000) reject(new Error('Preceding chapter lazy content did not become ready.'));
+        else requestAnimationFrame(ready);
+      }; ready();
+    }));
+    await frames(page);
+  }
+}
+
 async function waitData(page, selector, name, value) {
   await page.waitForFunction(({ selector, name, value }) => document.querySelector(selector)?.getAttribute(`data-${name}`) === value, { selector, name, value });
 }
@@ -395,8 +412,9 @@ for (const config of audiences) {
     const box = await controls.last().boundingBox();
     assert.ok(box.width >= 43.9 && box.height >= 43.9);
     await capture(page, `${config.name}-touch-detail`);
-    // A raw scrollIntoView + screenshot can precede the footer observer/RAF.
-    // Verify actual settled text and controls, then capture both mobile regions.
+    // Complete the preceding lazy chapters before measuring this warm footer
+    // placement. Cold entry and fragment navigation are tested separately.
+    await readPrecedingChapters(page);
     await place(page, '.marketing-footer', 'inside');
     const footerEntry = await page.locator('.marketing-footer').evaluate(footer => ({ top: footer.getBoundingClientRect().top, absoluteTop: footer.getBoundingClientRect().top + scrollY, scroll: scrollY, documentHeight: document.documentElement.scrollHeight }));
     await waitData(page, '.marketing-footer', 'footer-state', 'in');
@@ -451,6 +469,17 @@ check('Coaches: centered preview cursor stays inert and the first click follows 
   const second = await cursor.boundingBox();
   assert.ok(Math.abs(first.x - second.x) < 2 && Math.abs(first.y - second.y) < 2, 'the media cursor is centered rather than following the pointer');
   assert.ok(Math.abs(second.x + second.width / 2 - (box.x + box.width / 2)) < 3 && Math.abs(second.y + second.height / 2 - (box.y + box.height / 2)) < 3, 'label is centered on its real media link');
+  // Native scrolling must keep the hint attached while the pointer remains over
+  // the preview, then clear it when that same pointer is over another element.
+  await page.evaluate(() => window.scrollBy({ top: 24, behavior: 'instant' }));
+  await frames(page, 4);
+  assert.equal(await cursor.getAttribute('data-visible'), 'true', 'scroll does not blink a still-hovered preview hint');
+  const scrolledBox = await link.boundingBox(), scrolledCursor = await cursor.boundingBox();
+  assert.ok(Math.abs(scrolledCursor.y + scrolledCursor.height / 2 - (scrolledBox.y + scrolledBox.height / 2)) < 3, 'hint follows the media geometry during scroll');
+  await page.evaluate(() => window.scrollBy({ top: 120, behavior: 'instant' }));
+  await frames(page, 4);
+  assert.equal(await cursor.getAttribute('data-visible'), 'false', 'scrolling the preview away from the pointer clears the hint');
+  await link.hover();
   const hit = await link.evaluate(node => { const box = node.getBoundingClientRect(); return node.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)); });
   assert.equal(hit, true);
   assert.equal(new URL(page.url()).hash, '');
@@ -557,15 +586,14 @@ for (const config of audiences) {
   check(`${config.name}: menu previews follow hover, dim siblings and retain focus while closing`, async t => {
     const { page } = await fixture(t);
     await visit(page, config.route);
-    // This checks the finite visual choreography after initial rendering. The
-    // hero's first WebGL upload can occupy the entire JS sampling interval;
-    // no intermediate frames are established during that task. General usability
-    // is covered without this readiness gate by marketing-revamp.browser.mjs;
-    // that suite does not deliberately time input within the startup task.
+    // This checks warm visual choreography. The SVG exists during preparation,
+    // so its accessible label cannot establish that startup has finished.
+    // Cold first-input/worker contention is measured separately, without this
+    // readiness gate, by marketing-cold.browser.mjs.
     if (await page.locator('.hero-pose-viewer').count()) {
       await page.waitForFunction(() => {
         const hero = document.querySelector('.hero-pose-viewer');
-        return hero?.dataset.renderer === 'webgl' || hero?.querySelector('.pose-explorer')?.getAttribute('aria-label')?.startsWith('Static reconstructed');
+        return hero?.dataset.renderer === 'webgl' || (hero?.dataset.rendererState === 'failed' && hero.querySelector('.pose-explorer')?.getAttribute('aria-label')?.startsWith('Static reconstructed'));
       });
       await frames(page);
     }
@@ -657,18 +685,7 @@ for (const config of audiences) {
     // the intended 160px footer landing to 492px, outside the entry threshold.
     // Traverse real chapters and await their existing lazy content before the
     // one measured placement. Cold-input/fragment behavior has separate cases.
-    for (const section of await page.locator('.marketing-gallery > section').all()) {
-      await section.scrollIntoViewIfNeeded();
-      await section.evaluate(node => new Promise((resolve, reject) => {
-        const started = performance.now();
-        const ready = () => {
-          if (Array.from(node.querySelectorAll('[data-demo]')).every(demo => demo.dataset.demoState === 'ready')) resolve();
-          else if (performance.now() - started > 10_000) reject(new Error('Preceding chapter lazy content did not become ready.'));
-          else requestAnimationFrame(ready);
-        }; ready();
-      }));
-      await frames(page);
-    }
+    await readPrecedingChapters(page);
     await armFooterEntranceTrace(page);
     await place(page, '.marketing-footer', 'inside');
     try {
@@ -780,16 +797,6 @@ check('touch menu omits hover miniatures and closing preview needs an explicit t
 check('dimensional mark settles pointer tilt and stops rendering while offscreen or hidden', async t => {
   const { page, context } = await fixture(t);
   await context.addInitScript(() => {
-    window.__detailMarkDraws = 0;
-    for (const constructor of [window.WebGLRenderingContext, window.WebGL2RenderingContext].filter(Boolean)) {
-      for (const method of ['drawArrays', 'drawElements']) {
-        const original = constructor.prototype[method];
-        constructor.prototype[method] = function (...args) {
-          if (this.canvas?.closest('.marketing-footer-mark')) window.__detailMarkDraws++;
-          return original.apply(this, args);
-        };
-      }
-    }
     window.__detailHidden = false;
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => window.__detailHidden });
     window.__setDetailHidden = hidden => { window.__detailHidden = hidden; document.dispatchEvent(new Event('visibilitychange')); };
@@ -798,6 +805,21 @@ check('dimensional mark settles pointer tilt and stops rendering while offscreen
   const mark = page.locator('.marketing-footer-mark');
   await mark.scrollIntoViewIfNeeded();
   await waitData(page, '.marketing-footer-mark', 'mark-state', 'enhanced');
+  const renderedFrames = () => mark.evaluate(node => Number(node.dataset.rendererFrames || 0));
+  const quietFrames = async () => {
+    // Worker telemetry can arrive after the pause signal. Wait for that final
+    // message, then verify a separate interval without any additional draws.
+    const started = Date.now(); let previous = -1, same = 0;
+    while (Date.now() - started < 2500) {
+      const value = await renderedFrames();
+      if (value === previous) same++; else same = 0;
+      if (same >= 3) return value;
+      previous = value; await page.waitForTimeout(75);
+    }
+    assert.fail('Dimensional mark did not stop worker drawing within 2500ms');
+  };
+  assert.equal(await mark.getAttribute('data-renderer-owner'), 'worker');
+  assert.ok(await renderedFrames() > 0, 'enhanced mark has completed real worker draws');
   await page.mouse.move(1200, 800);
   await page.waitForFunction(() => Math.abs(Number(document.querySelector('.marketing-footer-mark').dataset.markTiltY)) > .005);
   const tilt = await mark.evaluate(node => ({ x: Number(node.dataset.markTiltX), y: Number(node.dataset.markTiltY), rise: Number(node.dataset.markRise) }));
@@ -807,21 +829,134 @@ check('dimensional mark settles pointer tilt and stops rendering while offscreen
   await page.mouse.move(4, 20); // The fixed header is outside the tall footer even at document bottom.
   await waitData(page, '.marketing-footer-mark', 'mark-motion', 'idle');
   await page.waitForFunction(() => Math.abs(Number(document.querySelector('.marketing-footer-mark').dataset.markTiltY)) < .001);
-  const idle = await page.evaluate(() => window.__detailMarkDraws);
+  const idle = await quietFrames();
   await frames(page, 18);
-  assert.equal(await page.evaluate(() => window.__detailMarkDraws), idle, 'settled mark has no perpetual render loop');
+  assert.equal(await renderedFrames(), idle, 'settled mark has no perpetual render loop');
   await place(page, '#club', 'inside'); await frames(page, 3);
-  const offscreen = await page.evaluate(() => window.__detailMarkDraws);
+  const offscreen = await quietFrames();
   await page.mouse.move(900, 400); await frames(page, 18);
-  assert.equal(await page.evaluate(() => window.__detailMarkDraws), offscreen, 'offscreen mark does not render');
+  assert.equal(await renderedFrames(), offscreen, 'offscreen mark does not render');
   await mark.scrollIntoViewIfNeeded();
   await page.evaluate(() => window.__setDetailHidden(true)); await frames(page, 3);
-  const hidden = await page.evaluate(() => window.__detailMarkDraws);
+  const hidden = await quietFrames();
   await page.mouse.move(1200, 800); await frames(page, 18);
-  assert.equal(await page.evaluate(() => window.__detailMarkDraws), hidden, 'simulated hidden document does not render');
+  assert.equal(await renderedFrames(), hidden, 'simulated hidden document does not render');
   await page.evaluate(() => window.__setDetailHidden(false));
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await waitData(page, '.marketing-footer-mark', 'mark-state', 'static');
   assert.equal(await page.locator('.marketing-footer-mark-fallback').isVisible(), true);
   evidence.observations.push({ check: t.name, tilt, drawsAtRest: idle, visibility: 'controlled document visibility-event injection; actual offscreen scrolling' });
+});
+
+// Warm choreography checks complement the separate cold first-input lane.
+// Sampling is armed before input so a short entrance cannot be missed by a
+// later protocol read; the browser's real Escape/click owns dismissal.
+for (const touch of [false, true]) {
+  check(`${touch ? 'touch' : 'desktop'}: partial menu dismissal preserves the current curtain instead of flashing full coverage`, async t => {
+    const { page } = await fixture(t, touch ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : {});
+    await visit(page, '/coaches');
+    const opener = page.getByRole('button', { name: 'Open navigation', exact: true });
+    for (const method of ['Escape', 'Close control']) {
+      await page.evaluate(() => {
+        const dialog = document.querySelector('.pt-marketing-menu');
+        const read = () => ({
+          at: performance.now(), phase: document.documentElement.dataset.marketingNavigation, hidden: dialog.hidden,
+          covers: [...dialog.querySelectorAll('.pt-menu-curtain-slice')].map(node => new DOMMatrixReadOnly(getComputedStyle(node).transform).d),
+          contentOpacity: Number(getComputedStyle(dialog.querySelector('.pt-menu-content')).opacity),
+          chromeOpacity: Number(getComputedStyle(dialog.querySelector('.pt-menu-top')).opacity),
+        });
+        const samples = [], started = performance.now();
+        const data = window.__detailInterruptedMenu = { samples, beforeDismiss: null, complete: false };
+        const beforeDismiss = event => {
+          if (dialog.hidden || dialog.dataset.closing === 'true') return;
+          if (event.type === 'keydown' && event.key !== 'Escape') return;
+          if (event.type === 'pointerdown' && !event.target.closest('[data-menu-close]')) return;
+          data.beforeDismiss = read();
+        };
+        window.addEventListener('keydown', beforeDismiss, true);
+        window.addEventListener('pointerdown', beforeDismiss, true);
+        const sample = () => {
+          const state = read(); samples.push(state);
+          if (data.beforeDismiss && state.hidden || performance.now() - started > 3000) {
+            window.removeEventListener('keydown', beforeDismiss, true);
+            window.removeEventListener('pointerdown', beforeDismiss, true);
+            data.complete = true; return;
+          }
+          requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      });
+      await opener.click();
+      await page.waitForFunction(() => window.__detailInterruptedMenu.samples.some(sample => sample.phase === 'opening' && Math.max(...sample.covers) > .06 && Math.max(...sample.covers) < .4));
+      if (method === 'Escape') await page.keyboard.press('Escape');
+      else {
+        const point = await page.locator('[data-menu-close]').evaluate(node => { const box = node.getBoundingClientRect(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 }; });
+        if (touch) await page.touchscreen.tap(point.x, point.y);
+        else await page.mouse.click(point.x, point.y);
+      }
+      await page.waitForFunction(() => window.__detailInterruptedMenu.complete);
+      const sample = await page.evaluate(() => window.__detailInterruptedMenu);
+      evidence.observations.push({ check: t.name, method, sample });
+      assert.ok(sample.beforeDismiss && Math.max(...sample.beforeDismiss.covers) > .03 && Math.max(...sample.beforeDismiss.covers) < .9, `real input interrupted a genuinely partial entrance: ${JSON.stringify(sample.beforeDismiss)}`);
+      const opening = sample.samples.filter(state => state.phase === 'opening' && !state.hidden);
+      assert.ok(opening.length > 0 && opening.every(state => state.chromeOpacity > .99), 'Close and sound controls remain visible from the first opening frame');
+      const closing = sample.samples.filter(state => state.phase === 'closing' && !state.hidden);
+      assert.ok(closing.length > 0, 'the interrupted closing animation is actually observed');
+      assert.ok(closing.every(state => state.covers.every((cover, index) => cover <= sample.beforeDismiss.covers[index] + .035)), 'no closing frame jumps to greater curtain coverage');
+      assert.ok(closing.some(state => state.covers.some((cover, index) => {
+        const initial = sample.beforeDismiss.covers[index];
+        return initial > .03 && cover > initial * .15 && cover < initial * .85;
+      })), 'interrupted curtains shrink through intermediate frames rather than switching discretely to zero');
+      assert.ok(closing.every(state => state.contentOpacity <= sample.beforeDismiss.contentOpacity + .02), 'still-hidden or partly visible navigation does not flash fully visible on dismissal');
+      assert.equal(await opener.evaluate(node => node === document.activeElement), true, 'dismissal restores the opener');
+      assert.equal(await page.locator('main').evaluate(node => Boolean(node.closest('[inert]'))), false, 'background is released after dismissal');
+      assert.equal(await page.locator('.pt-navigation-disclosure').getAttribute('open'), null);
+    }
+  });
+}
+
+check('desktop menu preview appears at its seeded position and returns from bounded pointer tilt', async t => {
+  const { page } = await fixture(t);
+  await visit(page, '/coaches');
+  await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
+  await page.waitForFunction(() => !document.querySelector('.pt-marketing-menu').getAnimations({ subtree: true }).some(animation => animation.playState === 'running'));
+  const link = page.locator('.pt-menu-pages [data-menu-page="coaches"]');
+  const linkBounds = await link.boundingBox();
+  for (const offset of [170, 420]) {
+    await page.mouse.move(20, 20);
+    await waitData(page, '.pt-menu-peek', 'visible', 'false');
+    await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.pt-menu-peek-panel')).opacity) < .01);
+    await page.evaluate(() => {
+      const samples = [], started = performance.now();
+      window.__detailSeededPreview = { samples, complete: false };
+      const sample = () => {
+        const preview = document.querySelector('.pt-menu-peek'), panel = preview.querySelector('.pt-menu-peek-panel');
+        const box = preview.getBoundingClientRect(), matrix = new DOMMatrixReadOnly(getComputedStyle(panel).transform);
+        samples.push({ at: performance.now(), visible: preview.dataset.visible, positioned: preview.dataset.positioned, opacity: Number(getComputedStyle(panel).opacity), x: box.left, y: box.top, width: box.width, height: box.height, angle: Math.atan2(matrix.b, matrix.a) * 180 / Math.PI });
+        if (performance.now() - started < 1100) requestAnimationFrame(sample);
+        else window.__detailSeededPreview.complete = true;
+      };
+      requestAnimationFrame(sample);
+    });
+    await page.mouse.move(linkBounds.x + offset, linkBounds.y + 35);
+    await page.waitForFunction(() => window.__detailSeededPreview.complete);
+    const data = await page.evaluate(() => window.__detailSeededPreview);
+    const visible = data.samples.filter(sample => sample.opacity > .01);
+    assert.ok(visible.length > 0);
+    assert.ok(visible.every(sample => sample.positioned === 'true'), 'the preview cannot become visible before its position is seeded');
+    const final = visible.at(-1);
+    assert.ok(visible.every(sample => Math.abs(sample.x - final.x) < 2 && Math.abs(sample.y - final.y) < 2), 'first appearance does not fly from the viewport origin or a stale location');
+    assert.ok(visible.every(sample => sample.x >= 0 && sample.y >= 0 && sample.x + sample.width <= 1440 && sample.y + sample.height <= 1000));
+    evidence.observations.push({ check: t.name, offset, samples: data.samples });
+  }
+  await page.mouse.move(linkBounds.x + 550, linkBounds.y + 45);
+  await page.waitForFunction(() => Math.abs(parseFloat(document.querySelector('.pt-menu-peek').style.getPropertyValue('--peek-angle'))) > .1);
+  const angle = await page.locator('.pt-menu-peek').evaluate(node => parseFloat(node.style.getPropertyValue('--peek-angle')));
+  assert.ok(Math.abs(angle) <= 8, 'pointer tilt is bounded');
+  await page.waitForFunction(() => document.querySelector('.pt-menu-peek').style.getPropertyValue('--peek-angle') === '0deg');
+  await page.waitForFunction(() => {
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(document.querySelector('.pt-menu-peek-panel')).transform);
+    return Math.abs(Math.atan2(matrix.b, matrix.a)) < .002;
+  });
+  await capture(page, 'desktop-menu-preview-seeded-and-settled');
 });

@@ -27,10 +27,18 @@ export function installMarketingNavigation(header: HTMLElement | null): (() => v
   const exitStyles: [HTMLElement, string][] = [];
   const captureOpening = () => {
     if (panel.dataset.letterReveal !== "true") return;
+    const curtainTransform = (node: HTMLElement) => {
+      const transform = getComputedStyle(node).transform;
+      const matrix = /^matrix(3d)?\(([^)]+)\)$/.exec(transform);
+      const scale = matrix ? Number(matrix[2].split(",")[matrix[1] ? 5 : 3]) : 1;
+      // Match the scaleY(0) endpoint's function. Interpolating a serialized
+      // matrix to a singular scale matrix can otherwise switch discretely.
+      return `scaleY(${Number.isFinite(scale) ? scale : 1})`;
+    };
     // Read the interrupted frame before changing any styles. Closing starts from
     // what is actually visible, including still-hidden delayed letters/content.
     const snapshots = [
-      ...Array.from(panel.querySelectorAll<HTMLElement>(".pt-menu-curtain-slice"), node => [node, "--curtain-exit-from", getComputedStyle(node).transform] as const),
+      ...Array.from(panel.querySelectorAll<HTMLElement>(".pt-menu-curtain-slice"), node => [node, "--curtain-exit-from", curtainTransform(node)] as const),
       ...Array.from(panel.querySelectorAll<HTMLElement>(".pt-menu-letter"), node => [node, "--letter-exit-from", getComputedStyle(node).transform] as const),
       ...Array.from(panel.querySelectorAll<HTMLElement>(":scope > :not(.pt-menu-curtain)"), node => [node, "--content-exit-from", getComputedStyle(node).opacity] as const),
     ];

@@ -111,7 +111,7 @@ describe("early navigation modal ownership", () => {
     operations.length = 0;
     page.dispatchEvent(Object.assign(new Event("keydown", { cancelable: true }), { key: "Escape" }));
     expect(operations).toEqual(["read", "read", "read", "write", "write", "write"]);
-    expect(slice.properties.get("--curtain-exit-from")).toBe(slice.computed.transform);
+    expect(slice.properties.get("--curtain-exit-from")).toBe("scaleY(0.07)");
     expect(letter.properties.get("--letter-exit-from")).toBe(letter.computed.transform);
     expect(content.properties.get("--content-exit-from")).toBe("0");
     expect(header.dataset.navigation).toBe("closing");
@@ -119,6 +119,25 @@ describe("early navigation modal ownership", () => {
     vi.advanceTimersByTime(1); expect(panel.hidden).toBe(true);
     expect(header.dataset.navigation).toBe("closed"); expect(slice.properties.size).toBe(0);
     cleanup?.();
+  });
+
+  it.each([
+    ["matrix(1, 0, 0, 1, 0, 0)", "scaleY(1)"],
+    ["matrix(1, 0, 0, 0, 0, 0)", "scaleY(0)"],
+    ["matrix(1, 0, 0, 1e-5, 0, 0)", "scaleY(0.00001)"],
+    ["matrix3d(1, 0, 0, 0, 0, 0.375, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)", "scaleY(0.375)"],
+    ["none", "scaleY(1)"],
+  ])("keeps the curtain exit interpolable from computed %s", (transform, expected) => {
+    const { header, opener, panel, close } = navigationEnvironment();
+    const slice = new TestElement(); slice.computed.transform = transform;
+    panel.collections[".pt-menu-curtain-slice"] = [slice];
+    const cleanup = installMarketingNavigation(header as unknown as HTMLElement);
+    opener.dispatchEvent(new Event("click"));
+    close.dispatchEvent(new Event("click"));
+    expect(slice.properties.get("--curtain-exit-from")).toBe(expected);
+    expect(header.dataset.navigation).toBe("closing");
+    vi.advanceTimersByTime(400); expect(panel.hidden).toBe(true);
+    expect(slice.properties.size).toBe(0); cleanup?.();
   });
 
   it("keeps an early pointer press on Close from completing the opening first", () => {
