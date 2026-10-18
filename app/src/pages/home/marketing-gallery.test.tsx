@@ -29,14 +29,14 @@ class TestKeyboardEvent extends Event {
   constructor(key: string) { super("keydown"); this.key = key; }
 }
 
-function fixture({ hash = "", fine = true, reduce = false } = {}) {
+function fixture({ hash = "", fine = true, reduce = false, wideLayout = true } = {}) {
   const node = new TestNode(), card = new TestNode(), control = new TestNode(), gap = new TestNode(), secondCard = new TestNode();
   card.parent = node; control.parent = card; control.control = true; node.children = [card];
   gap.offsetHeight = 80; node.gap = gap; secondCard.parent = node; secondCard.offsetHeight = 240; secondCard.marginTop = "230px"; node.children.push(secondCard);
   const windowState = Object.assign(new EventTarget(), { scrollY: 0, innerHeight: 1000, scrollBy: vi.fn(), setTimeout, IntersectionObserver: null as unknown, ResizeObserver: null as unknown });
   const documentState = Object.assign(new EventTarget(), { hidden: false, activeElement: null as TestNode | null, getElementById: (_id: string): TestNode | null => null });
   const desktop = Object.assign(new EventTarget(), { matches: fine });
-  const wide = Object.assign(new EventTarget(), { matches: true });
+  const wide = Object.assign(new EventTarget(), { matches: wideLayout });
   const reduced = Object.assign(new EventTarget(), { matches: reduce });
   let visible: (entries: { isIntersecting: boolean }[]) => void = () => {};
   const disconnect = vi.fn();
@@ -153,6 +153,71 @@ describe("marketing gallery native interaction boundaries", () => {
     f.windowState.dispatchEvent(new Event("wheel"));
     f.windowState.dispatchEvent(new Event("scrollend"));
     expect(f.windowState.scrollBy).not.toHaveBeenCalled(); f.destroy();
+  });
+
+  function mobileLanding(position = 99.73) {
+    const f = fixture({ hash: "#profile", fine: false, wideLayout: false });
+    f.windowState.scrollY = 2333;
+    let documentTop = f.windowState.scrollY + position;
+    f.documentState.getElementById = () => f.secondCard;
+    f.secondCard.getBoundingClientRect = () => {
+      const top = documentTop - f.windowState.scrollY;
+      return { top, bottom: top + 240, width: 358, height: 240 };
+    };
+    f.windowState.scrollBy.mockImplementation(({ top }: { top: number }) => { f.windowState.scrollY += top; });
+    f.resized(); f.flush();
+    return { ...f, grow: (pixels: number) => { documentTop += pixels; f.card.offsetHeight += pixels; f.resized(); f.flush(); } };
+  }
+
+  it.each([{ position: 99.73, history: false }, { position: 20, history: true }])("preserves a settled mobile fragment's relative position across late natural reflow: %j", ({ position, history }) => {
+    const f = mobileLanding(position);
+    f.windowState.dispatchEvent(new Event("scrollend"));
+    if (history) { f.windowState.dispatchEvent(new Event("popstate")); f.windowState.dispatchEvent(new Event("scrollend")); }
+    f.grow(266.25);
+    expect(f.windowState.scrollBy).toHaveBeenCalledExactlyOnceWith({ top: 266.25, behavior: "instant" });
+    expect(f.secondCard.getBoundingClientRect().top).toBeCloseTo(position);
+    expect(f.node.dataset.galleryLayout).toBeUndefined();
+    f.resized(); f.flush();
+    expect(f.windowState.scrollBy).toHaveBeenCalledTimes(1);
+    f.destroy();
+  });
+
+  it("defers mobile reflow correction until native fragment scrolling settles", () => {
+    const f = mobileLanding(110);
+    f.grow(266.25);
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
+    f.windowState.dispatchEvent(new Event("scrollend"));
+    expect(f.windowState.scrollBy).toHaveBeenCalledExactlyOnceWith({ top: 266.25, behavior: "instant" });
+    expect(f.secondCard.getBoundingClientRect().top).toBe(110);
+    f.destroy();
+  });
+
+  it.each(["wheel", "pointerdown", "focusin"])("releases mobile fragment correction after explicit %s takeover", eventName => {
+    const f = mobileLanding(110);
+    f.grow(100); // A correction is pending while the native scroll is active.
+    if (eventName === "wheel") f.windowState.dispatchEvent(new Event(eventName));
+    else {
+      const event = new Event(eventName);
+      Object.defineProperty(event, "target", { value: f.control });
+      f.documentState.activeElement = f.control;
+      f.node.dispatchEvent(event);
+    }
+    f.windowState.dispatchEvent(new Event("scrollend"));
+    f.grow(266.25);
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
+    if (eventName !== "wheel") expect(f.documentState.activeElement).toBe(f.control);
+    f.destroy();
+  });
+
+  it("retains the mobile fragment landing when navigation focuses its noninteractive heading", () => {
+    const f = mobileLanding(110);
+    const event = new Event("focusin");
+    Object.defineProperty(event, "target", { value: f.secondCard });
+    f.documentState.activeElement = f.secondCard; f.node.dispatchEvent(event);
+    f.windowState.dispatchEvent(new Event("scrollend")); f.grow(266.25);
+    expect(f.windowState.scrollBy).toHaveBeenCalledExactlyOnceWith({ top: 266.25, behavior: "instant" });
+    expect(f.documentState.activeElement).toBe(f.secondCard);
+    f.destroy();
   });
 
   it("locks before a same-document anchor default action while preserving modified clicks", () => {

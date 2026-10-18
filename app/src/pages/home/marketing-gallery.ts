@@ -11,6 +11,7 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
   let visible = false, blurred = false, navigationLocked = Boolean(location.hash);
   let navigationScrolling = navigationLocked, navigationTimer = 0, pendingHashLayout = false;
   let hovered: HTMLElement | null = null;
+  let fragmentAnchor: HTMLElement | null = null, fragmentDocumentTop: number | null = null;
 
   const hashTarget = () => {
     if (!location.hash) return null;
@@ -71,7 +72,12 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
     if (status() !== "active") { pause(); return; }
     if (!frame) frame = requestAnimationFrame(draw);
   };
-  const lockNavigation = () => { navigationLocked = true; navigationScrolling = true; pendingHashLayout = false; waitForNavigation(); pause(); };
+  const lockNavigation = () => {
+    navigationLocked = true; navigationScrolling = true; pendingHashLayout = false;
+    fragmentAnchor = hashTarget();
+    fragmentDocumentTop = fragmentAnchor ? fragmentAnchor.getBoundingClientRect().top + window.scrollY : null;
+    waitForNavigation(); pause();
+  };
   const navigation = (event: MouseEvent) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
     const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
@@ -83,6 +89,14 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
     if (event instanceof KeyboardEvent && (!SCROLL_KEYS.has(event.key) || (event.target instanceof Element && event.target.closest(SCROLL_CONTROL)))) return;
     if (!navigationLocked) return;
     navigationLocked = false; navigationScrolling = false; pendingHashLayout = false; clearTimeout(navigationTimer);
+    fragmentAnchor = null; fragmentDocumentTop = null;
+    pause();
+  };
+  const pointerDown = (event: PointerEvent) => { scrollIntent(event); pause(); };
+  const focusIn = (event: FocusEvent) => {
+    // A chapter heading receives focus after native navigation. Only actual
+    // controls take over from that landing; do not release it for the heading.
+    if (event.target instanceof Element && event.target.closest(`a[href],${SCROLL_CONTROL},[role=button]`)) scrollIntent(event);
     pause();
   };
   const enter = (event: PointerEvent) => {
@@ -114,6 +128,7 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
     // height. Initial top-of-page hydration must not initiate scrolling.
     const focused = document.activeElement instanceof HTMLElement && node.contains(document.activeElement) ? document.activeElement : null;
     const fragment = navigationLocked ? hashTarget() : null;
+    const previousFragmentTop = fragment === fragmentAnchor ? fragmentDocumentTop : null;
     const anchor = fragment || focused || cards.find(card => { const box = card.getBoundingClientRect(); return box.bottom > 100 && box.top < window.innerHeight; });
     const before = window.scrollY > 0 && anchor ? anchor.getBoundingClientRect().top : null;
     let changed = false;
@@ -131,8 +146,18 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
       if (node.dataset.galleryLayout) { delete node.dataset.galleryLayout; changed = true; }
       cards.forEach(card => { if (card.style.gridRowEnd) { card.style.removeProperty("grid-row-end"); changed = true; } });
     }
-    if (changed) {
-      if (before !== null && anchor) {
+    // A mobile card reflows naturally before ResizeObserver runs, without any
+    // grid span changing. Retain document-space geometry so a late demo/font
+    // load preserves the native/history landing rather than sampling it too late.
+    const nextFragmentTop = fragment ? fragment.getBoundingClientRect().top + window.scrollY : null;
+    const fragmentShift = previousFragmentTop !== null && nextFragmentTop !== null ? nextFragmentTop - previousFragmentTop : 0;
+    const fragmentMoved = Math.abs(fragmentShift) > .5;
+    if (changed || fragmentMoved) {
+      if (fragmentMoved) {
+        if (navigationScrolling) pendingHashLayout = true;
+        else window.scrollBy({ top: fragmentShift, behavior: "instant" });
+      }
+      else if (before !== null && anchor) {
         if (navigationScrolling) pendingHashLayout = Boolean(fragment);
         else {
           const shift = anchor.getBoundingClientRect().top - before;
@@ -142,6 +167,7 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
       pause();
       node.dispatchEvent(new Event("marketing-gallery-position", { bubbles: true }));
     }
+    fragmentAnchor = fragment; fragmentDocumentTop = nextFragmentTop;
   };
   const scheduleLayout = () => { if (!layoutFrame) layoutFrame = requestAnimationFrame(layout); };
   const resizeObserver = "ResizeObserver" in window ? new ResizeObserver(scheduleLayout) : null;
@@ -159,8 +185,8 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
   preference();
 
   cards.forEach(card => { card.addEventListener("pointerenter", enter); card.addEventListener("pointerleave", leave); });
-  node.addEventListener("pointerdown", pause, true);
-  node.addEventListener("focusin", pause);
+  node.addEventListener("pointerdown", pointerDown, true);
+  node.addEventListener("focusin", focusIn);
   node.addEventListener("focusout", focusOut);
   document.addEventListener("click", navigation, true);
   document.addEventListener("visibilitychange", pause);
@@ -184,8 +210,8 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
     disposed = true;
     observer?.disconnect(); resizeObserver?.disconnect(); cancelAnimationFrame(frame); cancelAnimationFrame(layoutFrame); clearTimeout(navigationTimer);
     cards.forEach(card => { card.removeEventListener("pointerenter", enter); card.removeEventListener("pointerleave", leave); });
-    node.removeEventListener("pointerdown", pause, true);
-    node.removeEventListener("focusin", pause); node.removeEventListener("focusout", focusOut);
+    node.removeEventListener("pointerdown", pointerDown, true);
+    node.removeEventListener("focusin", focusIn); node.removeEventListener("focusout", focusOut);
     document.removeEventListener("click", navigation, true); document.removeEventListener("visibilitychange", pause);
     window.removeEventListener("hashchange", lockNavigation); window.removeEventListener("popstate", lockNavigation); window.removeEventListener("pageshow", lockNavigation);
     window.removeEventListener("wheel", scrollIntent); window.removeEventListener("touchmove", scrollIntent); window.removeEventListener("keydown", scrollIntent);

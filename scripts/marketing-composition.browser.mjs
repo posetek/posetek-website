@@ -346,3 +346,50 @@ check('Players: AI Coach handoff reaches the reordered workout card and preserve
   await assertReadableCard(page.locator('#training'));
   await capture(page, 'players-workout-handoff-active-card');
 });
+
+check('Players: a delayed preceding movement import preserves the cold mobile profile hash landing', async t => {
+  const { page, context } = await fixture(t, { viewport: { width: 390, height: 1000 }, isMobile: true, hasTouch: true });
+  const isMovementModule = url => url.origin === origin && /^\/_astro\/MovementDemo\.[\w-]+\.js$/.test(url.pathname);
+  let releaseMovement;
+  const gate = new Promise(resolve => { releaseMovement = resolve; });
+  let heldURL;
+  // Hold only this tested-origin GET. Releasing it falls through to the same
+  // network policy as the rest of the suite; no response bytes are altered.
+  await context.route(isMovementModule, async route => {
+    assert.equal(route.request().method(), 'GET');
+    heldURL = route.request().url();
+    await gate;
+    await route.fallback();
+  });
+  const snapshot = () => page.evaluate(() => ({
+    scroll: scrollY, hash: location.hash,
+    profileTop: document.getElementById('profile').getBoundingClientRect().top,
+    testsHeight: document.getElementById('tests').getBoundingClientRect().height,
+    demo: document.querySelector('[data-demo="movement"]').dataset.demoState,
+  }));
+  try {
+    await Promise.all([
+      page.waitForRequest(request => isMovementModule(new URL(request.url()))),
+      visit(page, '/#profile'),
+    ]);
+    await anchorSettled(page, 'profile');
+    const before = await snapshot();
+    assert.equal(before.demo, 'pending', 'the preceding demo is still genuinely withheld');
+    assert.equal(before.hash, '#profile');
+    assert.ok(before.profileTop >= 74 && before.profileTop <= 150, `initial native hash landing: ${JSON.stringify(before)}`);
+    releaseMovement();
+    await page.waitForFunction(() => document.querySelector('[data-demo="movement"]').dataset.demoState === 'ready');
+    await page.waitForFunction(previous => {
+      const target = document.getElementById('profile'), preceding = document.getElementById('tests');
+      return preceding.getBoundingClientRect().height > previous.testsHeight + 1 && Math.abs(target.getBoundingClientRect().top - previous.profileTop) <= 2;
+    }, before);
+    await stableScroll(page);
+    const after = await snapshot();
+    assert.ok(after.testsHeight > before.testsHeight + 1, 'the delayed demo exercised a real preceding-card height change');
+    assert.ok(Math.abs(after.profileTop - before.profileTop) <= 2, `late content preserves the original fragment position: ${JSON.stringify({ before, after })}`);
+    assert.equal(after.hash, '#profile');
+    assert.ok(after.scroll > before.scroll, 'the browser position accounts for the new content without user scrolling');
+    evidence.observations.push({ check: t.name, delayedModule: heldURL, before, after });
+    await capture(page, 'players-390-delayed-movement-profile-anchor');
+  } finally { releaseMovement(); }
+});
