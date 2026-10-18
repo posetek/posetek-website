@@ -34,6 +34,7 @@
 .pt-revamp .marketing-header .pt-menu-curtain { position: fixed; inset: 0; z-index: -1; display: grid; grid-template-columns: repeat(10,1fr); pointer-events: none; }
 .pt-revamp .marketing-header .pt-menu-curtain-slice { background: #04130e; transform: scaleY(1); transform-origin: 50% 100%; }
 .pt-revamp .marketing-header .pt-marketing-menu:not([hidden])[data-letter-reveal="true"] .pt-menu-curtain-slice { animation: pt-menu-curtain-enter 450ms cubic-bezier(.76,0,.24,1) calc(var(--slice-order) * 10ms) both; }
+.pt-revamp .marketing-header .pt-marketing-menu:not([hidden])[data-letter-reveal="true"] > :not(.pt-menu-curtain) { animation: pt-menu-content-enter 160ms ease-out 420ms both; }
 .pt-revamp .marketing-header .pt-marketing-menu[data-closing="true"] .pt-menu-curtain-slice { transform-origin: 50% 0; animation: pt-menu-curtain-exit 310ms cubic-bezier(.76,0,.24,1) calc(var(--slice-order) * 9ms) both; }
 .pt-revamp .marketing-header .pt-menu-top { display: flex; align-items: center; justify-content: space-between; min-height: 88px; padding: 0 3.2vw; flex-shrink: 0; }
 .pt-revamp .marketing-header .pt-menu-top-controls { display: flex; align-items: center; gap: 35px; }
@@ -48,7 +49,7 @@
 .pt-revamp .marketing-header .pt-menu-word { display: inline-block; white-space: nowrap; }
 .pt-revamp .marketing-header .pt-menu-letter-mask { display: inline-block; overflow: hidden; vertical-align: top; padding-right: .08em; margin-right: -.08em; }
 .pt-revamp .marketing-header .pt-menu-letter { display: inline-block; transform: none; }
-.pt-revamp .marketing-header .pt-marketing-menu:not([hidden])[data-letter-reveal="true"] .pt-menu-letter { animation: pt-menu-letter-enter 420ms cubic-bezier(.22,1,.36,1) var(--enter-delay) both; }
+.pt-revamp .marketing-header .pt-marketing-menu:not([hidden])[data-letter-reveal="true"] .pt-menu-letter { animation: pt-menu-letter-enter 420ms cubic-bezier(.22,1,.36,1) calc(450ms + var(--enter-delay)) both; }
 .pt-revamp .marketing-header .pt-marketing-menu[data-closing="true"] > :not(.pt-menu-curtain) { animation: pt-menu-dismiss 400ms ease-in both; }
 .pt-revamp .marketing-header .pt-marketing-menu[data-closing="true"] .pt-menu-letter { animation: pt-menu-letter-exit 240ms cubic-bezier(.55,0,1,.45) var(--exit-delay) both; }
 .pt-revamp .marketing-header .pt-menu-link-arrow { margin-left: auto; flex-shrink: 0; font: 300 clamp(32px,4.5vw,65px)/1 Inter, sans-serif; color: #b7f34a; }
@@ -82,6 +83,7 @@
 .pt-revamp .marketing-header .pt-menu-peek-foot { padding-top: 5%; border-top: 1px solid #04130e20; font: 400 5px/1.4 "IBM Plex Mono",monospace; letter-spacing: .05em; }
 @keyframes pt-menu-curtain-enter { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes pt-menu-curtain-exit { from { transform: scaleY(1); } to { transform: scaleY(0); } }
+@keyframes pt-menu-content-enter { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pt-menu-letter-enter { from { transform: translateY(115%); } to { transform: none; } }
 @keyframes pt-menu-letter-exit { from { transform: none; } to { transform: translateY(-125%); } }
 @keyframes pt-menu-dismiss { 0%,65% { opacity: 1; } 100% { opacity: 0; } }

@@ -145,17 +145,22 @@ check('scrambled header, hero and footer labels retain intrinsic width throughou
     const link = page.locator(selector).first();
     await link.scrollIntoViewIfNeeded();
     if (selector.includes('footer')) await waitData(page, '.marketing-footer', 'footer-state', 'in');
-    await neutralPointer(page); await link.hover();
-    const samples = await link.locator('.interaction-text').first().evaluate(node => new Promise(done => {
-      const rows = [], started = performance.now();
-      const sample = () => {
-        const source = node.querySelector('.interaction-text-source');
-        const link = node.closest('a');
-        rows.push({ width: node.getBoundingClientRect().width, source: source.getBoundingClientRect().width, link: link.getBoundingClientRect().width, scrambling: node.dataset.scrambling });
-        if (performance.now() - started >= 580) done(rows); else setTimeout(sample, 30);
-      };
-      sample();
-    }));
+    await neutralPointer(page);
+    // Begin sampling in the pointer event itself. A footer WebGL upload can
+    // otherwise consume the whole 520ms effect before hover() returns to Node.
+    await link.evaluate(link => {
+      link.__detailWidths = new Promise(done => link.addEventListener('pointerenter', () => {
+        const node = link.querySelector('.interaction-text'), rows = [], started = performance.now();
+        const sample = () => {
+          const source = node.querySelector('.interaction-text-source');
+          rows.push({ width: node.getBoundingClientRect().width, source: source.getBoundingClientRect().width, link: link.getBoundingClientRect().width, scrambling: node.dataset.scrambling });
+          if (performance.now() - started >= 580) done(rows); else setTimeout(sample, 30);
+        };
+        sample();
+      }, { once: true }));
+    });
+    await link.hover();
+    const samples = await link.evaluate(node => node.__detailWidths);
     measurements.push({ selector, samples: samples.length, animatedSamples: samples.filter(row => row.scrambling === 'true').length, labelRange: [Math.min(...samples.map(row => row.width)), Math.max(...samples.map(row => row.width))], linkRange: [Math.min(...samples.map(row => row.link)), Math.max(...samples.map(row => row.link))] });
   }
   evidence.observations.push({ check: t.name, measurements });
@@ -372,13 +377,20 @@ check('technique joint hit areas stay stationary throughout hover, pointer down 
   const stage = demo.locator('.technique-stage');
   await stage.hover({ position: { x: 20, y: 20 } }); await frames(page);
   assert.equal(await stage.evaluate(node => getComputedStyle(node).transform), 'none', 'an SVG containing actual controls is excluded from preview tilt');
-  const before = await joint.boundingBox();
-  await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2); await frames(page);
-  const hovered = await joint.boundingBox();
-  assert.ok(['x', 'y', 'width', 'height'].every(key => Math.abs(before[key] - hovered[key]) < .5), 'hover preserves the actual joint hit box');
+  // SVG <g> ink bounds include the extra hover-outline stroke. Measure the
+  // actual circle's geometry in screen coordinates rather than that decoration.
+  const geometry = () => joint.locator('.technique-hit-area').evaluate(circle => {
+    const matrix = circle.getScreenCTM();
+    const center = new DOMPoint(circle.cx.baseVal.value, circle.cy.baseVal.value).matrixTransform(matrix);
+    return { x: center.x, y: center.y, radiusX: circle.r.baseVal.value * Math.hypot(matrix.a, matrix.b), radiusY: circle.r.baseVal.value * Math.hypot(matrix.c, matrix.d) };
+  });
+  const before = await geometry();
+  await page.mouse.move(before.x, before.y); await frames(page);
+  const hovered = await geometry();
+  assert.ok(Object.keys(before).every(key => Math.abs(before[key] - hovered[key]) < .5), `hover preserves the actual joint hit geometry: ${JSON.stringify({ before, hovered })}`);
   await page.mouse.down(); await frames(page);
-  const pressed = await joint.boundingBox();
-  assert.ok(['x', 'y', 'width', 'height'].every(key => Math.abs(before[key] - pressed[key]) < .5), 'pointer down cannot move the joint away from pointer up');
+  const pressed = await geometry();
+  assert.ok(Object.keys(before).every(key => Math.abs(before[key] - pressed[key]) < .5), 'pointer down cannot move the joint away from pointer up');
   await page.mouse.up();
   const expected = name.slice('Inspect '.length).split(' · ')[0];
   assert.equal(await demo.locator('.technique-measurement > div > small').first().innerText(), expected, 'one complete pointer action selects the saved measurement');
@@ -429,7 +441,11 @@ for (const config of audiences) {
     assert.equal(await curtain.getAttribute('aria-hidden'), 'true');
     assert.equal(await curtain.locator('.pt-menu-curtain-slice').count(), 10, 'menu opens through ten real curtain slices');
     assert.ok(await curtain.evaluate(node => node.getAnimations({ subtree: true }).some(animation => animation.playState === 'running' && animation.effect.getComputedTiming().progress < 1)), 'curtain has an actual intermediate opening animation');
+    const opening = await dialog.evaluate(node => ({ contentOpacity: Number(getComputedStyle(node.querySelector('.pt-menu-content')).opacity), minimumCover: Math.min(...Array.from(node.querySelectorAll('.pt-menu-curtain-slice'), slice => new DOMMatrixReadOnly(getComputedStyle(slice).transform).d)) }));
+    if (opening.minimumCover < .5) assert.ok(opening.contentOpacity < .05, 'menu content stays hidden while the curtain leaves the page exposed');
+    evidence.observations.push({ check: t.name, opening });
     await capture(page, `${config.name}-menu-curtain-opening`);
+    await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.pt-menu-content')).opacity) >= .99);
     const peek = dialog.locator('.pt-menu-peek');
     const target = dialog.locator('[data-menu-page="coaches"]');
     await target.hover({ position: { x: 170, y: 40 } });
@@ -485,18 +501,39 @@ for (const config of audiences) {
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
     await frames(page);
     const address = page.url();
-    await next.hover(); await waitData(page, '.marketing-cursor', 'visible', 'true');
+    await next.scrollIntoViewIfNeeded();
+    await next.hover();
+    // Use explicit points within the now-visible link. A second locator hover
+    // can auto-scroll a partly clipped link and intentionally hide the cursor.
+    const linkBox = await next.boundingBox();
+    const cursorY = Math.min(940, Math.max(120, linkBox.y + linkBox.height * .4));
+    await page.mouse.move(linkBox.x + 35, cursorY);
+    await waitData(page, '.marketing-cursor', 'visible', 'true'); await frames(page);
     await cursorInsideViewport(page);
     const pointer1 = await page.locator('.marketing-cursor').boundingBox();
-    const linkBox = await next.boundingBox();
-    await next.hover({ position: { x: Math.min(linkBox.width - 5, 100), y: 30 } });
-    await frames(page);
+    await page.mouse.move(linkBox.x + linkBox.width - 35, cursorY);
+    await waitData(page, '.marketing-cursor', 'visible', 'true'); await frames(page);
     const pointer2 = await page.locator('.marketing-cursor').boundingBox();
-    assert.ok(Math.abs(pointer1.x - pointer2.x) + Math.abs(pointer1.y - pointer2.y) > 3, 'footer cursor follows the pointer over its linked preview');
+    assert.ok(Math.abs(pointer1.x - pointer2.x) > 20, `footer cursor follows the pointer over its linked preview: ${JSON.stringify({ pointer1, pointer2 })}`);
     // Locator hover may scroll a partly visible preview back into view. Begin
     // the pull at the actual bottom, with the pointer on visible footer space.
     await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
-    await page.waitForFunction(() => scrollY >= document.documentElement.scrollHeight - innerHeight - 2);
+    // Entrance transforms can briefly change the document's visual overflow.
+    // Converge on the final scroll limit before sending the gesture under test.
+    try { await page.waitForFunction(() => {
+      const maximum = document.documentElement.scrollHeight - innerHeight;
+      const state = window.__detailBottomState ??= { maximum: -1, stable: 0 };
+      if (state.maximum !== maximum || scrollY < maximum - 2) {
+        state.stable = 0;
+        window.scrollTo({ top: maximum, behavior: 'instant' });
+      } else state.stable++;
+      state.maximum = maximum;
+      return state.stable >= 4;
+    }); }
+    catch (error) {
+      t.diagnostic(JSON.stringify(await page.evaluate(() => ({ scroll: scrollY, height: document.documentElement.scrollHeight, viewport: innerHeight, bodyHeight: document.body.scrollHeight, scrollElement: document.scrollingElement?.tagName, active: document.activeElement?.className, footerTop: document.querySelector('.marketing-footer').getBoundingClientRect().top }))));
+      throw error;
+    }
     await page.mouse.move(1000, 800);
     await page.mouse.wheel(0, 1800);
     await page.waitForFunction(() => Number(document.querySelector('.marketing-footer').style.getPropertyValue('--footer-pull')) > .1);
@@ -514,6 +551,7 @@ for (const config of audiences) {
     await waitData(page, '.marketing-footer', 'footer-state', 'in');
     assert.equal(await footer.evaluate(node => node.style.getPropertyValue('--footer-grid-progress')), '1', 'keyboard focus exposes footer immediately');
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.waitForFunction(() => !document.querySelector('.marketing-footer').hasAttribute('data-footer-motion'));
     assert.equal(await footer.getAttribute('data-footer-motion'), null);
     assert.equal(await footer.locator('.marketing-footer-title-character').evaluateAll(nodes => nodes.every(node => getComputedStyle(node).transform === 'none')), true);
     const destination = config.name === 'players' ? '/coaches' : '/';
