@@ -43,7 +43,7 @@
 .pt-revamp .marketing-header .pt-menu-eyebrow { margin: 0 0 25px; font: 400 10px/1.5 "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .1em; color: #b7f34a; }
 .pt-revamp .marketing-header .pt-menu-pages { display: grid; }
 .pt-revamp .marketing-header .pt-menu-pages a { display: flex; align-items: baseline; gap: 25px; padding-block: 10px; border-bottom: 1px solid #f1f1f326; transition: opacity 500ms cubic-bezier(.25,1,.5,1); }
-.pt-revamp .marketing-header .pt-menu-pages a[data-dimmed="true"] { opacity: .22; }
+.pt-revamp .marketing-header .pt-menu-pages a[data-dimmed="true"] { opacity: .5; }
 .pt-revamp .marketing-header .pt-menu-pages a > span:first-child { flex-shrink: 0; font: 400 10px/1.5 "IBM Plex Mono", monospace; color: #93a599; }
 .pt-revamp .marketing-header .pt-menu-pages strong { min-width: 0; font: 500 clamp(46px,7.2vw,106px)/1.1 Inter, sans-serif; letter-spacing: -.065em; transition: color .25s; }
 .pt-revamp .marketing-header .pt-menu-word { display: inline-block; white-space: nowrap; }
