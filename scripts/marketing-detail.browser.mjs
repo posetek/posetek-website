@@ -540,6 +540,7 @@ for (const config of audiences) {
     await armMenuOpeningSample(page);
     await opener.click();
     const dialog = page.getByRole('dialog', { name: 'Explore PoseTek' });
+    const curtain = dialog.locator('.pt-menu-curtain');
     const opening = await page.evaluate(() => window.__detailMenuOpeningSample);
     assert.equal(opening.timedOut, false, `opening produced an observable intermediate frame: ${JSON.stringify(opening)}`);
     assert.equal(opening.ariaHidden, 'true');
