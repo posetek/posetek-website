@@ -105,6 +105,44 @@ async function frames(page, count = 3) {
   await page.evaluate(count => new Promise(done => { const step = () => --count <= 0 ? done() : requestAnimationFrame(step); requestAnimationFrame(step); }), count);
 }
 
+async function armMenuOpeningSample(page) {
+  // Start before the real click: several protocol reads can outlast the finite
+  // wipe. Record an actual animation frame instead of waiting for an interval
+  // that may already have elapsed. This does not pause or alter the animation.
+  await page.evaluate(() => {
+    window.__detailMenuOpeningSample = new Promise(resolve => {
+      const started = performance.now();
+      let last = null, previousFrame = started;
+      const observedFrames = [];
+      const longTasks = [];
+      const observer = new PerformanceObserver(list => {
+        for (const entry of list.getEntries()) longTasks.push({ start: entry.startTime - started, duration: entry.duration });
+      });
+      observer.observe({ entryTypes: ['longtask'] });
+      const finish = result => { observer.disconnect(); resolve({ ...result, observedFrames, longTasks }); };
+      const sample = () => {
+        const now = performance.now(), frameGap = now - previousFrame;
+        previousFrame = now;
+        const dialog = document.querySelector('.pt-marketing-menu');
+        if (dialog && !dialog.hidden) {
+          const curtain = dialog.querySelector('.pt-menu-curtain');
+          const covers = Array.from(curtain.querySelectorAll('.pt-menu-curtain-slice'), slice => new DOMMatrixReadOnly(getComputedStyle(slice).transform).d);
+          const running = curtain.getAnimations({ subtree: true }).some(animation => {
+            const progress = animation.effect.getComputedTiming().progress;
+            return animation.playState === 'running' && progress !== null && progress < 1;
+          });
+          last = { elapsed: performance.now() - started, ariaHidden: curtain.getAttribute('aria-hidden'), covers, running, contentOpacity: Number(getComputedStyle(dialog.querySelector('.pt-menu-content')).opacity), minimumCover: Math.min(...covers) };
+          if (observedFrames.length < 40) observedFrames.push({ elapsed: last.elapsed, frameGap, minimumCover: last.minimumCover, maximumCover: Math.max(...covers), running, letterReveal: dialog.dataset.letterReveal, heroRenderer: document.querySelector('.hero-pose-viewer')?.dataset.renderer });
+          if (running && covers.some(cover => cover > .15 && cover < .85)) { finish({ ...last, timedOut: false }); return; }
+        }
+        if (performance.now() - started > 2500) { finish({ last, timedOut: true }); return; }
+        requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+  });
+}
+
 async function place(page, selector, position) {
   await page.locator(selector).evaluate((node, position) => {
     const box = node.getBoundingClientRect();
@@ -487,20 +525,29 @@ for (const config of audiences) {
   check(`${config.name}: menu previews follow hover, dim siblings and retain focus while closing`, async t => {
     const { page } = await fixture(t);
     await visit(page, config.route);
+    // This checks the finite visual choreography after initial rendering. The
+    // hero's first WebGL upload can occupy the entire JS sampling interval;
+    // no intermediate frames are established during that task. Immediate usability is
+    // covered separately by marketing-revamp.browser.mjs.
+    if (await page.locator('.hero-pose-viewer').count()) {
+      await page.waitForFunction(() => {
+        const hero = document.querySelector('.hero-pose-viewer');
+        return hero?.dataset.renderer === 'webgl' || hero?.querySelector('.pose-explorer')?.getAttribute('aria-label')?.startsWith('Static reconstructed');
+      });
+      await frames(page);
+    }
     const opener = page.getByRole('button', { name: 'Open navigation', exact: true });
+    await armMenuOpeningSample(page);
     await opener.click();
     const dialog = page.getByRole('dialog', { name: 'Explore PoseTek' });
-    const curtain = dialog.locator('.pt-menu-curtain');
-    assert.equal(await curtain.getAttribute('aria-hidden'), 'true');
-    assert.equal(await curtain.locator('.pt-menu-curtain-slice').count(), 10, 'menu opens through ten real curtain slices');
-    assert.ok(await curtain.evaluate(node => node.getAnimations({ subtree: true }).some(animation => animation.playState === 'running' && animation.effect.getComputedTiming().progress < 1)), 'curtain has an actual intermediate opening animation');
-    const opening = await dialog.evaluate(node => ({ contentOpacity: Number(getComputedStyle(node.querySelector('.pt-menu-content')).opacity), minimumCover: Math.min(...Array.from(node.querySelectorAll('.pt-menu-curtain-slice'), slice => new DOMMatrixReadOnly(getComputedStyle(slice).transform).d)) }));
+    const opening = await page.evaluate(() => window.__detailMenuOpeningSample);
+    assert.equal(opening.timedOut, false, `opening produced an observable intermediate frame: ${JSON.stringify(opening)}`);
+    assert.equal(opening.ariaHidden, 'true');
+    assert.equal(opening.covers.length, 10, 'menu opens through ten real curtain slices');
+    assert.equal(opening.running, true, 'curtain has an actual intermediate opening animation');
+    assert.ok(opening.covers.some(cover => cover > .15 && cover < .85), 'a live curtain slice reaches the required intermediate geometry');
     if (opening.minimumCover < .5) assert.ok(opening.contentOpacity < .05, 'menu content stays hidden while the curtain leaves the page exposed');
     evidence.observations.push({ check: t.name, opening });
-    await page.waitForFunction(() => Array.from(document.querySelectorAll('.pt-menu-curtain-slice')).some(slice => {
-      const cover = new DOMMatrixReadOnly(getComputedStyle(slice).transform).d;
-      return cover > .15 && cover < .85;
-    }), undefined, { timeout: 2_000 });
     await capture(page, `${config.name}-menu-curtain-opening`);
     await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.pt-menu-content')).opacity) >= .99);
     const peek = dialog.locator('.pt-menu-peek');

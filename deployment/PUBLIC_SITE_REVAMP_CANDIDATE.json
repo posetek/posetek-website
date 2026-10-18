@@ -3,20 +3,20 @@
   "date": "2026-10-17",
   "pullRequest": "https://github.com/posetek/posetek_website/pull/85",
   "baseCommit": "23e2ebed988e1677f6028ea6d7b5589273291ea1",
-  "runtimeSourceCommit": "b32e499ffa5b3daab920c6cfb25ddf4557c4dd9d",
-  "sourceNote": "Later commits contain acceptance harness/documentation only. Latest-head CI and advisory review are recorded on the PR.",
+  "runtimeSourceCommit": "8751f0528247db4d7606c4c52036ce83c7d58e09",
+  "sourceNote": "Later commits contain acceptance harness/documentation only. Latest-head CI and advisory review are recorded on the PR; the guarded runtime was not rebuilt after acceptance.",
   "buildCommand": "node scripts/build-production.mjs",
   "artifact": {
     "directory": "production-dist",
     "files": 2072,
-    "manifestSha256": "f38602c489aa4aea371c9e9dfad815b698789b1f0b09cd41657ab0c4d9077a11",
-    "manifestMethod": "SHA-256 of path, TAB, size, TAB, file SHA-256, LF for every file sorted by JavaScript path.localeCompare; full manifest in artifacts/marketing-detail/artifact-manifest.json.",
-    "compiledMarketingFingerprint": "2c5da32843c33ec34134ef3fa26fb65786475ec9328bd9f39d750befbea0cc6c"
+    "manifestSha256": "8b37c6317bd7b1c3838af1387395523b3d9d5cf6b2c2f9c3baeb2cb89ca38b05",
+    "manifestMethod": "SHA-256 of path, TAB, size, TAB, file SHA-256, LF for every file sorted by JavaScript path.localeCompare; full manifest in artifacts/marketing-composition/artifact-manifest.json.",
+    "compiledMarketingFingerprint": "3322f5532c824758e488d56ea14a935c3b09d792686c4f177b83b3d4a5031992"
   },
   "hosted": {
     "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
-    "deployId": "6ad411febfdfb38ea6919829",
-    "url": "https://6ad411febfdfb38ea6919829--posetek.netlify.app",
+    "deployId": "6ad4222d16fa2fd9dbccae9f",
+    "url": "https://6ad4222d16fa2fd9dbccae9f--posetek.netlify.app",
     "context": "deploy-preview",
     "state": "ready",
     "publishedAt": null,
@@ -33,7 +33,7 @@
     "servingDeployId": "6ad02adfcc90dffdb496f811",
     "protectedFiles": 1985,
     "protectedHashMismatches": 0,
-    "productionUnchangedAt": "2026-10-18T00:33:55.667Z",
+    "productionUnchangedAt": "2026-10-18T01:49:42.389Z",
     "applicationHtmlSha1": "b23f8e221c6cbd6d5f558836ff89c02d3a85ac2c",
     "baselineNote": "Reconciled to the already-serving October 15 main deploy; all 1,982 earlier records exact, three retained application chunks added. No application promotion.",
     "sourceContentAssets": {
@@ -44,24 +44,31 @@
   },
   "acceptance": {
     "local": {
-      "passed": 53,
+      "passed": 77,
       "failed": 0,
-      "screenshots": 68,
-      "unexpectedOriginFailures": 0,
-      "attemptedWrites": 0,
-      "runtimeSourceCommit": "8df9db68648c14d991938be6f2abb9fa582f76e3",
-      "manifestSha256": "89088e1292bd5799aa3726f8f393e25862f99365eca27f3566fbc120f49d1cd3",
-      "scope": "Full 20 detail and 33 regression checks before the final menu-opacity-only correction; exact-candidate focused and hosted checks follow."
-    },
-    "hosted": {
-      "passed": 53,
-      "failed": 0,
-      "screenshots": 72,
+      "screenshots": 105,
       "unexpectedOriginFailures": 0,
       "attemptedWrites": 0,
       "expectedInjectedFailures": 3,
+      "compositionChecks": 24,
       "detailChecks": 20,
-      "regressionChecks": 33
+      "regressionChecks": 33,
+      "runtimeSourceCommit": "8751f0528247db4d7606c4c52036ce83c7d58e09",
+      "manifestSha256": "8b37c6317bd7b1c3838af1387395523b3d9d5cf6b2c2f9c3baeb2cb89ca38b05",
+      "curatedSettledHeroScreenshots": 4,
+      "scope": "All three complete suites against the exact final guarded artifact."
+    },
+    "hosted": {
+      "passed": 77,
+      "failed": 0,
+      "screenshots": 105,
+      "unexpectedOriginFailures": 0,
+      "attemptedWrites": 0,
+      "expectedInjectedFailures": 3,
+      "compositionChecks": 24,
+      "detailChecks": 20,
+      "regressionChecks": 33,
+      "curatedSettledHeroScreenshots": 4
     },
     "widths": [
       360,
@@ -73,9 +80,9 @@
     ],
     "zoom": "200% desktop CSS-viewport equivalent; not browser-chrome or physical-device zoom",
     "network": "Guest contexts; allowlisted origin GET/HEAD and optional Google font GET only; all other HTTP and WebSockets blocked.",
-    "runtimeCi": "https://github.com/posetek/posetek_website/actions/runs/39082700353",
-    "frontendTests": 1977,
-    "frontendTestFiles": 172,
+    "runtimeCi": "https://github.com/posetek/posetek_website/actions/runs/39086960396",
+    "frontendTests": 1999,
+    "frontendTestFiles": 173,
     "toolingReleaseTests": 76,
     "pythonPolicyTests": 32,
     "guestSmokeCases": 7,
@@ -90,35 +97,29 @@
     "limits": [
       "No authenticated production or physical-device acceptance claimed; document visibility changes use controlled event injection.",
       "Local performance baseline is the existing October 14 compiled artifact; its complete source/dependency revision is not inferred.",
-      "REA source graph reached its 20,000-node ceiling; exact source searches and timed browser probes establish the documented mechanisms, not whole-application semantic coverage.",
+      "REA source graph reached its 20,000-node ceiling; source searches and timed browser probes establish documented mechanisms, not whole-application semantic coverage.",
       "Local Codex advisory review is same-provider and includes disclosed component authorship; no hosted paid reviewer activated.",
-      "One preliminary hosted mobile-footer settling wait timed out without geometry diagnostics. It did not recur in two isolated strict checks or the complete strict rerun; its cause remains unresolved. Final assertions were retained and geometry diagnostics added."
-    ],
-    "localFinalFocused": {
-      "passed": 4,
-      "failed": 0,
-      "screenshots": 12,
-      "unexpectedOriginFailures": 0,
-      "attemptedWrites": 0,
-      "scope": "Both audiences: menu contrast/choreography and touch/settled mobile footer against the exact final candidate."
-    }
+      "44px checks cover visible HTML controls. Optional technique SVG joint targets are approximately 26.56px at 1440px; every action has the same-handler alternative in the 44px measurement selector. SVG stability and activation are checked separately.",
+      "Intermediate menu choreography is measured after the visible hero renderer reaches WebGL or its explicit static fallback. A separate startup trace found a 419ms main-thread task during renderer initialization; this suite does not establish smooth first-load menu animation. Immediate-opening menu usability is covered by the regression suite.",
+      "Immediate hero captures record entrance motion. Use separately named curated-hero-settled captures for the finished hero and detail-suite settled footer captures for the complete closing invitation."
+    ]
   },
   "performance": {
     "iterations": 3,
     "initialJsCssDeltaBytes": {
-      "players": -47918,
-      "coaches": -46880
+      "players": 1037,
+      "coaches": 2042
     },
     "initialRequestCountDelta": 0,
     "initialDecorativeModuleRequests": 0,
     "localMedianFcpMs": {
       "players": {
         "baseline": 44,
-        "candidate": 68
+        "candidate": 64
       },
       "coaches": {
         "baseline": 44,
-        "candidate": 60
+        "candidate": 56
       }
     },
     "note": "Local uncompressed, no-store, unthrottled measurements; external fonts excluded. Not a hosted/mobile speed claim."
@@ -153,14 +154,17 @@
     ]
   },
   "evidence": {
-    "directory": "artifacts/marketing-detail",
-    "detailAcceptance": "hosted-final/detail-acceptance.json",
-    "regressionAcceptance": "hosted-regression-final/acceptance.json",
-    "exactLocalFocused": "local-final-focused/detail-acceptance.json",
+    "directory": "artifacts/marketing-composition",
+    "detailAcceptance": "hosted-final-detail/detail-acceptance.json",
+    "regressionAcceptance": "hosted-final-regression/acceptance.json",
     "manifest": "artifact-manifest.json",
     "providerVerification": "draft-verification.json",
     "performance": "performance.json",
-    "referenceLedger": "docs/PUBLIC_SITE_INTERACTION_DETAILS.md",
-    "rollback": "artifacts/marketing-revamp/rollback/verification.json"
+    "referenceLedger": "docs/PUBLIC_SITE_COMPOSITION.md",
+    "rollback": "artifacts/marketing-revamp/rollback/verification.json",
+    "compositionAcceptance": "hosted-final-composition/composition-acceptance.json",
+    "localDetail": "local-final-detail/detail-acceptance.json",
+    "localRegression": "local-final-regression/acceptance.json",
+    "localComposition": "local-final-composition/composition-acceptance.json"
   }
 }

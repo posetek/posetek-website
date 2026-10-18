@@ -61,6 +61,10 @@ Wide layouts progressively enhance to measured CSS grid row spans. ResizeObserve
 updates spans when demos load or change stage; cards remain mounted. With no
 JavaScript, the ordinary grid and complete static text/links remain usable.
 Below 1100px the gallery is one source-ordered column with no column drift.
+Late content loading also preserves native fragment landings. The gallery tracks
+the target's document position, defers compensation until native scrolling ends,
+and retains restored history offsets. Scrolling or interacting with a demo
+releases that compensation so the visitor controls their position.
 
 Fine-pointer desktop scrolling adds a bounded relative drift at four percent of
 scroll travel. Hover, focus, native fragment navigation and hidden/offscreen states
