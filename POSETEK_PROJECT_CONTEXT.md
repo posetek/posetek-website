@@ -1,6 +1,6 @@
 # PoseTek website project context
 
-## Public-site revamp candidate (October 17, 2026)
+## Public-site revamp candidate (October 18, 2026)
 
 The approved Lain Works adaptation is implemented for the public Players and
 Coaches pages. See [scope, interactions, checks and release boundary](docs/PUBLIC_SITE_REVAMP.md).
@@ -11,8 +11,10 @@ in [the interaction ledger](docs/PUBLIC_SITE_INTERACTION_DETAILS.md).
 
 The [first-interaction and pacing follow-up](docs/PUBLIC_SITE_FIRST_INTERACTION.md)
 adds hydration-independent navigation, worker-owned 3D and sequential chapters
-with compact, inline-expandable demonstrations. Its acceptance remains separate
-from the previous immutable candidate and production.
+with compact, inline-expandable demonstrations. The current guarded candidate and
+acceptance evidence are recorded in
+[the candidate receipt](deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json). Production
+promotion remains a separate step.
 
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release

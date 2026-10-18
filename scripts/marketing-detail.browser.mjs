@@ -163,6 +163,26 @@ async function waitData(page, selector, name, value) {
 }
 
 async function neutralPointer(page) { await page.mouse.move(4, 110); }
+
+async function armFooterEntranceTrace(page) {
+  await page.evaluate(() => {
+    const samples = [];
+    const read = () => {
+      const footer = document.querySelector('.marketing-footer'), bounds = footer.getBoundingClientRect();
+      return { at: Date.now(), scroll: scrollY, documentHeight: document.documentElement.scrollHeight, viewport: innerHeight, footerTop: bounds.top, footerHeight: bounds.height, state: footer.dataset.footerState, motion: footer.dataset.footerMotion, progress: footer.style.getPropertyValue('--footer-grid-progress'), navigation: document.documentElement.dataset.marketingNavigation, hidden: document.hidden,
+        demos: Array.from(document.querySelectorAll('[data-demo]'), node => ({ kind: node.dataset.demo, state: node.dataset.demoState, top: node.getBoundingClientRect().top + scrollY, height: node.getBoundingClientRect().height })) };
+    };
+    let previous = '';
+    const sample = () => {
+      const value = read(), key = JSON.stringify({ ...value, at: 0, progress: undefined });
+      if (key !== previous && samples.length < 240) { samples.push(value); previous = key; }
+    };
+    sample();
+    const interval = setInterval(sample, 50);
+    const deadline = setTimeout(() => clearInterval(interval), 11_000);
+    window.__detailFooterEntranceTrace = () => { sample(); clearInterval(interval); clearTimeout(deadline); return { samples, final: read() }; };
+  });
+}
 async function neutralFocus(page) { await page.locator('.pt-marketing-brand').first().focus(); }
 async function settledReveal(page, selector) { await waitData(page, selector, 'reveal-state', 'visible'); }
 
@@ -623,12 +643,48 @@ for (const config of audiences) {
 
   check(`${config.name}: closing panel re-enters, visual bottom pull never navigates, and links remain explicit`, async t => {
     const { page } = await fixture(t);
+    const entranceRequests = [], requestStarted = Date.now();
+    const requestEvent = event => request => {
+      if (new URL(request.url()).origin === origin && ['script', 'stylesheet'].includes(request.resourceType())) entranceRequests.push({ event, at: Date.now(), elapsed: Date.now() - requestStarted, path: new URL(request.url()).pathname });
+    };
+    const requestStart = requestEvent('request'), requestEnd = requestEvent('finished');
+    page.on('request', requestStart); page.on('requestfinished', requestEnd);
     await visit(page, config.route);
     const footer = page.locator('.marketing-footer'), next = footer.locator('.marketing-footer-next');
     await neutralFocus(page);
+    // This case tests footer choreography after reading the story. A single
+    // cold jump used a 380px movement placeholder; its 332px late growth moved
+    // the intended 160px footer landing to 492px, outside the entry threshold.
+    // Traverse real chapters and await their existing lazy content before the
+    // one measured placement. Cold-input/fragment behavior has separate cases.
+    for (const section of await page.locator('.marketing-gallery > section').all()) {
+      await section.scrollIntoViewIfNeeded();
+      await section.evaluate(node => new Promise((resolve, reject) => {
+        const started = performance.now();
+        const ready = () => {
+          if (Array.from(node.querySelectorAll('[data-demo]')).every(demo => demo.dataset.demoState === 'ready')) resolve();
+          else if (performance.now() - started > 10_000) reject(new Error('Preceding chapter lazy content did not become ready.'));
+          else requestAnimationFrame(ready);
+        }; ready();
+      }));
+      await frames(page);
+    }
+    await armFooterEntranceTrace(page);
     await place(page, '.marketing-footer', 'inside');
-    await waitData(page, '.marketing-footer', 'footer-state', 'in');
-    await page.waitForFunction(() => Number(document.querySelector('.marketing-footer').style.getPropertyValue('--footer-grid-progress')) > .8);
+    try {
+      await waitData(page, '.marketing-footer', 'footer-state', 'in');
+      await page.waitForFunction(() => Number(document.querySelector('.marketing-footer').style.getPropertyValue('--footer-grid-progress')) > .8);
+    }
+    catch (error) {
+      const trace = await page.evaluate(() => window.__detailFooterEntranceTrace());
+      t.diagnostic(JSON.stringify({ footerEntranceTimeout: trace, requests: entranceRequests }));
+      await capture(page, `${config.name}-footer-entry-timeout`);
+      throw error;
+    } finally {
+      const entrance = await page.evaluate(() => window.__detailFooterEntranceTrace());
+      page.off('request', requestStart); page.off('requestfinished', requestEnd);
+      evidence.observations.push({ check: t.name, entrance, requests: entranceRequests });
+    }
     assert.equal(await footer.getByRole('heading', { name: 'Start with evidence. Train what’s next.', exact: true }).count(), 1, 'split letters keep the complete accessible title');
     assert.ok(await footer.locator('.marketing-footer-title-character').count() > 20);
     await capture(page, `${config.name}-footer-entering`);

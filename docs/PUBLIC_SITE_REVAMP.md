@@ -1,4 +1,4 @@
-# Public-site revamp candidate — October 17, 2026
+# Public-site revamp — October 17 historical checkpoint
 
 The Players (`/`) and Coaches (`/coaches`) pages adopt the layout and interaction
 language of [Lain Works](https://lainagency.com/works), retaining PoseTek copy,
@@ -7,8 +7,9 @@ a review candidate, not a production-release receipt.
 
 The [first-interaction and pacing follow-up](PUBLIC_SITE_FIRST_INTERACTION.md)
 supersedes the independent columns and main-thread 3D described in this checkpoint.
-The verified candidate section below remains historical until a new immutable
-acceptance receipt is recorded; it does not verify the working source.
+The verified candidate section below remains historical. Current immutable
+acceptance is recorded in [the candidate receipt](../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json);
+this checkpoint does not verify the current source.
 
 ## Design and preserved behavior
 

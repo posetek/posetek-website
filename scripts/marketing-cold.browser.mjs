@@ -31,7 +31,7 @@ const evidence = {
   output, previewOrigin, budgets, iterations, lane, cpuRate, traceAll, disableTileBlur,
   runtime: { platform: process.platform, architecture: process.arch, node: process.version },
   mode: lane === 'webkit' ? 'WebKit support checks; no timing or physical-mobile acceptance' : headless || cpuRate !== 1 || disableTileBlur ? `diagnostic: ${headless ? 'headless' : 'headful'}, ${cpuRate}x CPU${disableTileBlur ? ', pixel tile blur disabled' : ''}; no hardware acceptance` : 'headful hardware acceptance',
-  limitations: ['390px touch is desktop emulation, not physical iOS or Android.', 'Fresh browser HTTP caches and workers; OS/driver shader caches are not cleared.', 'In-page event/RAF observers add measurement overhead; traces independently include compositor work.', 'The optional 4x CPU lane throttles renderer CPU scheduling; it does not emulate a phone GPU, memory, network or operating system.'],
+  limitations: ['390px touch is desktop emulation, not physical iOS or Android.', 'Fresh browser HTTP caches and workers; OS/driver shader caches are not cleared.', 'In-page event/RAF observers add measurement overhead; traces independently include compositor work.', 'The optional 4x CPU lane throttles renderer CPU scheduling; it does not emulate a phone GPU, memory, network or operating system.', 'Native background-tab/window minimization did not change document.visibilityState in this host even with focus emulation disabled; visibility lifecycle coverage explicitly injects visibility properties and events, not an actual hidden tab.'],
   networkPolicy: `${previewOrigin ? 'immutable draft' : 'loopback'} origin GET/HEAD${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`,
   checks: [], runs: [], screenshots: [], traces: [], requests: { writesBlocked: 0, externalBlocked: 0, injectedFailures: 0, unexpectedOriginFailures: 0 },
 };
@@ -464,7 +464,7 @@ async function quietFrames(page, selector, timeout = 2500) {
 }
 
 for (const device of devices) {
-  check(`${device.name}: early pose, camera, resize, tab visibility and reduced motion retain one worker`, async t => {
+  check(`${device.name}: early pose, camera, resize, controlled visibility and reduced motion retain one worker`, async t => {
     const f = await fixture(t, device, { holdWorker: true });
     await visit(f.page, '/');
     await press(f, device, 'open'); await menuState(f.page, true);
@@ -502,26 +502,36 @@ for (const device of devices) {
     assert.ok(size.rendered > 0 && Math.abs(size.rendered - size.host) < 2, 'transferred canvas follows resized host');
     await explorer.scrollIntoViewIfNeeded();
     await f.page.waitForFunction(() => document.querySelector('.hero-pose-viewer')?.dataset.rendererState === 'ready');
-    // Playwright enables focus emulation on every Chromium page, which forces
-    // visibility even for background tabs. Disable that test-only override so
-    // this check observes a genuine tab visibility event rather than a shim.
-    await f.cdp.send('Emulation.setFocusEmulationEnabled', { enabled: false });
-    const background = await f.context.newPage(); await background.bringToFront();
-    await f.page.waitForFunction(() => document.hidden, undefined, { polling: 50, timeout: 5000 });
-    await f.page.waitForFunction(() => document.querySelector('.hero-pose-viewer')?.dataset.rendererState === 'paused', undefined, { polling: 50, timeout: 5000 });
+    // Native backgrounding/minimization was probed separately and did not
+    // produce hidden documents on this host. This explicitly controlled
+    // visibility signal tests lifecycle behavior, not OS-tab integration.
+    await f.page.evaluate(() => {
+      window.__coldVisibilityDescriptors = ['hidden', 'visibilityState'].map(key => [key, Object.getOwnPropertyDescriptor(document, key)]);
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await f.page.waitForFunction(() => document.hidden && document.querySelector('.hero-pose-viewer')?.dataset.rendererState === 'paused', undefined, { polling: 50, timeout: 5000 });
     const hiddenFrames = await quietFrames(f.page, '.hero-pose-viewer');
     await f.page.waitForTimeout(200);
-    assert.equal(Number(await f.page.locator('.hero-pose-viewer').getAttribute('data-renderer-frames')), hiddenFrames, 'real background tab stops worker draws');
-    await f.page.bringToFront(); await background.close();
+    assert.equal(Number(await f.page.locator('.hero-pose-viewer').getAttribute('data-renderer-frames')), hiddenFrames, 'controlled hidden signal stops real worker draws');
+    await f.page.evaluate(() => {
+      for (const [key, descriptor] of window.__coldVisibilityDescriptors) {
+        if (descriptor) Object.defineProperty(document, key, descriptor);
+        else delete document[key];
+      }
+      delete window.__coldVisibilityDescriptors;
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
     await f.page.waitForFunction(() => !document.hidden && document.querySelector('.hero-pose-viewer')?.dataset.rendererState === 'ready');
     await f.page.getByRole('group', { name: 'Choose a 3D pose' }).getByRole('button', { name: /Vertical jump/ }).click();
     await f.page.waitForFunction(previous => Number(document.querySelector('.hero-pose-viewer')?.dataset.rendererFrames) > previous, hiddenFrames);
     assert.equal(await f.page.locator('.hero-pose-viewer').getAttribute('data-pose'), 'jump', 'reduced motion still renders explicit selection');
     await quietFrames(f.page, '.hero-pose-viewer');
-    assert.ok(Math.abs(Number(await f.page.locator('.hero-pose-viewer').getAttribute('data-orbit-angle')) - angle) < .002, 'resize, tab switch and pose selection retain the camera');
+    assert.ok(Math.abs(Number(await f.page.locator('.hero-pose-viewer').getAttribute('data-orbit-angle')) - angle) < .002, 'resize, controlled visibility and pose selection retain the camera');
     await f.page.emulateMedia({ reducedMotion: 'no-preference' });
     await f.page.waitForFunction(() => document.querySelector('.hero-pose-viewer')?.dataset.rotating === 'true');
-    const data = await finishRun(t, f, { device: device.name, lifecycle: true, earlyPose: 'sprint', retainedAngle: angle });
+    const data = await finishRun(t, f, { device: device.name, lifecycle: true, visibilityMode: 'controlled property/event injection; native tab integration unavailable', earlyPose: 'sprint', retainedAngle: angle });
     assert.equal(data.workers.length, 1, 'all lifecycle operations retain the original worker');
     assert.deepEqual(data.mainWebGL, []); assertLatency(data);
   });

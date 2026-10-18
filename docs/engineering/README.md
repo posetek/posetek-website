@@ -14,8 +14,9 @@ all three repositories; website authenticated-emulator support is also merged. U
 Neither a merged CI workflow nor a green local command proves that secrets,
 remote protections, paid review, staging, or a production release are active.
 
-Public marketing candidate: [composition and interaction verification](../PUBLIC_SITE_COMPOSITION.md).
-Its guarded preview is separate from production promotion.
+Current public marketing candidate: [artifact and acceptance receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json).
+The [composition checkpoint](../PUBLIC_SITE_COMPOSITION.md) is historical; its
+guarded preview has been superseded. Production promotion remains separate.
 
 ## Start with the task
 

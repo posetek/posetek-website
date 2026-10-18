@@ -16,7 +16,7 @@ const repository = fileURLToPath(new URL('../', import.meta.url));
 const argumentsMap = new Map();
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i], value = process.argv[i + 1];
-  assert.ok(['--baseline-dir', '--candidate-dir', '--baseline-report', '--output', '--iterations'].includes(key) && value, `Unknown or missing argument: ${key}`);
+  assert.ok(['--baseline-dir', '--candidate-dir', '--baseline-source-dir', '--candidate-source-dir', '--baseline-report', '--output', '--iterations'].includes(key) && value, `Unknown or missing argument: ${key}`);
   argumentsMap.set(key, value);
 }
 assert.ok(argumentsMap.has('--baseline-dir'), 'Pass --baseline-dir pointing to the unchanged, compiled marketing baseline.');
@@ -246,9 +246,10 @@ async function essentialAndLazyChecks(origin, route) {
 }
 
 async function compareContentAssets() {
-  // These read-only roots are inferred only for the standard app/astro-dist layout.
-  const baselineSource = resolve(baselineDirectory, '../..');
-  const candidateSource = resolve(candidateDirectory, '../..');
+  // A guarded production-dist is not nested like app/astro-dist. Its source root
+  // must be supplied explicitly; artifact requests still use the compiled root.
+  const baselineSource = resolve(argumentsMap.get('--baseline-source-dir') || resolve(baselineDirectory, '../..'));
+  const candidateSource = resolve(argumentsMap.get('--candidate-source-dir') || resolve(candidateDirectory, '../..'));
   const roots = ['app/src/pages/home', 'app/astro/public'];
   const retainedExtensions = new Set(['.json', '.mp4', '.mov', '.png', '.jpg', '.jpeg', '.webp', '.svg', '.ico']);
   async function sourceInventory(source) {

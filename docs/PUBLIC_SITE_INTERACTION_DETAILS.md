@@ -1,4 +1,11 @@
-# Public-site interaction detail pass
+# Public-site interaction detail pass — historical checkpoint
+
+The [first-interaction and editorial follow-up](PUBLIC_SITE_FIRST_INTERACTION.md)
+supersedes this checkpoint's entrance timings, independent-column drift,
+main-thread rendering and navigation ownership. The reference evidence and
+acceptance descriptions below record the earlier implementation; they do not
+verify the current source. Current exact-candidate results belong in the
+[release receipt](../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json).
 
 This supplements [the revamp handoff](PUBLIC_SITE_REVAMP.md). The October 17,
 2026 pass follows the user's request to examine hover, scroll entry/exit and
