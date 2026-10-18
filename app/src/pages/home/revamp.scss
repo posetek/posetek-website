@@ -112,7 +112,7 @@
   .reveal-frame::before { left: -7px; top: -7px; }
   .reveal-frame::after { right: -7px; bottom: -7px; }
   .pixel-reveal { position: absolute; inset: 0; z-index: 3; pointer-events: none; display: grid; grid-template-columns: repeat(8,1fr); grid-template-rows: repeat(6,1fr); }
-  .pixel-reveal i { background: #dfe2dfb0; backdrop-filter: blur(16px); animation: pt-pixel-open 480ms steps(5,end) forwards; transform-origin: bottom; }
+  .pixel-reveal i { background: #dfe2df; animation: pt-pixel-open 320ms steps(5,end) forwards; transform-origin: bottom; }
   .homepage-demo, .profile-demo, .hero-art, .coach-hero-workspace, .coach-development, .cx-club, .cx-evidence {
     --ink: #f0f5ed; --muted: #a9bdb1; --line: #254036; --panel: #0a211a;
     color: #f0f5ed;
@@ -225,7 +225,9 @@
     .closing-actions { justify-content: flex-start; flex-wrap: wrap; gap: 12px; }
     .mobile-showcase { max-width: 420px; }
     .coach-contact-heading { display: grid; gap: 24px; }
-    .chapter-progress { bottom: 8px; left: 12px; gap: 8px; font-size: 8px; padding-block: 4px; }
+    .chapter-progress { top: 61px; bottom: auto; left: 78px; z-index: 101; height: 10px; gap: 0; padding: 0; background: transparent; font-size: 8px; line-height: 10px; }
+    .chapter-progress-cross { display: none; }
+    html[data-marketing-navigation]:not([data-marketing-navigation="closed"]) & .chapter-progress { opacity: 0; }
     .chapter-progress > span:last-child { display: none; }
     .marketing-cursor { display: none; }
   }

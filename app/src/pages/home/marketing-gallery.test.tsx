@@ -66,93 +66,13 @@ function fixture({ hash = "", fine = true, reduce = false, wideLayout = true } =
 afterEach(() => vi.unstubAllGlobals());
 
 describe("marketing gallery native interaction boundaries", () => {
-  it("renders the supplied sections in the same order without a scripted layout", () => {
+  it("renders the supplied chapters in source order without scripted placement", () => {
     const html = renderToStaticMarkup(<MarketingGallery><section id="first">First</section><section id="second">Second</section></MarketingGallery>);
     expect(html).toContain('data-gallery-motion="static"');
     expect(html.indexOf('id="first"')).toBeLessThan(html.indexOf('id="second"'));
     expect(html).not.toContain("transform");
-  });
-
-  it("drifts four pixels per hundred scroll pixels with a bounded offset and no idle RAF", () => {
-    const f = fixture(); f.scroll(100); expect(f.drift()).toBe(-4);
-    f.scroll(1000); expect(f.drift()).toBe(-40); expect(f.frames.size).toBe(0);
-    f.scroll(10_000); expect(f.drift()).toBe(-160);
-    f.scroll(0); expect(f.drift()).toBe(0); f.destroy();
-  });
-
-  it("preserves pending drift when ordinary scrollend arrives before the draw RAF", () => {
-    const f = fixture({ hash: "#profile" });
-    f.scroll(991);
-    f.windowState.dispatchEvent(new Event("wheel"));
-    f.windowState.scrollY = 1291;
-    f.windowState.dispatchEvent(new Event("scroll"));
-    expect(f.frames.size).toBe(1);
-    f.windowState.dispatchEvent(new Event("scrollend"));
-    expect(f.frames.size).toBe(1);
-    f.flush();
-    expect(f.drift()).toBe(-12);
-    expect(f.node.dataset.galleryMotion).toBe("active");
-    expect(f.frames.size).toBe(0);
-    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
-    f.destroy();
-  });
-
-  it("reserves each independent card's natural height, initial stagger and CSS gap without growth", () => {
-    const f = fixture();
-    expect(f.node.dataset.galleryLayout).toBe("masonry");
-    expect(f.card.style.gridRowEnd).toBe("span 180");
-    expect(f.secondCard.style.gridRowEnd).toBe("span 550");
-    f.card.offsetHeight = 210; f.resized(); f.flush(); expect(f.card.style.gridRowEnd).toBe("span 290");
-    f.resized(); f.flush(); expect(f.card.style.gridRowEnd).toBe("span 290"); expect(f.frames.size).toBe(0);
-    f.wide.matches = false; f.wide.dispatchEvent(new Event("change")); f.flush();
-    expect(f.node.dataset.galleryLayout).toBeUndefined(); expect(f.card.style.gridRowEnd).toBe(""); expect(f.secondCard.style.gridRowEnd).toBe(""); f.destroy();
-  });
-
-  it("cancels queued motion before pointer interaction and never catches up on leave", () => {
-    const f = fixture(); f.scroll(500);
-    f.windowState.scrollY = 600; f.windowState.dispatchEvent(new Event("scroll"));
-    expect(f.frames.size).toBe(1);
-    f.card.dispatchEvent(new Event("pointerenter")); f.flush();
-    expect(f.frames.size).toBe(0); expect(f.drift()).toBe(-20);
-    f.scroll(1600); expect(f.drift()).toBe(-20);
-    f.card.dispatchEvent(new Event("pointerleave")); expect(f.drift()).toBe(-20);
-    f.scroll(1700); expect(f.drift()).toBe(-24); f.destroy();
-  });
-
-  it("keeps a focused control stationary through scrolling and releases without a jump", async () => {
-    const f = fixture(); f.scroll(500);
-    f.documentState.activeElement = f.control; f.node.dispatchEvent(new Event("focusin"));
-    f.scroll(1400); expect(f.drift()).toBe(-20);
-    f.documentState.activeElement = null; f.node.dispatchEvent(new Event("focusout")); await Promise.resolve();
-    expect(f.drift()).toBe(-20); f.scroll(1500); expect(f.drift()).toBe(-24); f.destroy();
-  });
-
-  it("holds initial deep-link landing until explicit scroll intent, without replaying its travel", () => {
-    const f = fixture({ hash: "#profile" }); f.scroll(1600); expect(f.drift()).toBe(0);
-    f.windowState.dispatchEvent(new Event("wheel")); expect(f.drift()).toBe(0);
-    f.scroll(1700); expect(f.drift()).toBe(-4);
-    f.windowState.dispatchEvent(new Event("popstate")); f.scroll(500); expect(f.drift()).toBe(-4);
-    f.windowState.dispatchEvent(new TestKeyboardEvent("PageDown")); f.scroll(600); expect(f.drift()).toBe(-8); f.destroy();
-  });
-
-  it("waits for native fragment scrolling to settle before correcting a resized landing", () => {
-    const f = fixture({ hash: "#profile" });
-    f.documentState.getElementById = () => f.card;
-    f.windowState.scrollY = 500;
-    f.card.getBoundingClientRect = () => ({ top: 250, bottom: 450, width: 100, height: 200 });
-    f.card.offsetHeight = 200; f.resized(); f.flush();
-    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
-    f.windowState.dispatchEvent(new Event("scrollend"));
-    expect(f.windowState.scrollBy).toHaveBeenCalledWith({ top: 140, behavior: "instant" }); f.destroy();
-  });
-
-  it("abandons delayed fragment correction as soon as the user takes over scrolling", () => {
-    const f = fixture({ hash: "#profile" });
-    f.documentState.getElementById = () => f.card;
-    f.windowState.scrollY = 500; f.card.offsetHeight = 200; f.resized(); f.flush();
-    f.windowState.dispatchEvent(new Event("wheel"));
-    f.windowState.dispatchEvent(new Event("scrollend"));
-    expect(f.windowState.scrollBy).not.toHaveBeenCalled(); f.destroy();
+    expect(html).not.toContain("data-gallery-gap");
+    expect(html).toContain('data-gallery-layout="editorial"');
   });
 
   function mobileLanding(position = 99.73) {
@@ -176,7 +96,7 @@ describe("marketing gallery native interaction boundaries", () => {
     f.grow(266.25);
     expect(f.windowState.scrollBy).toHaveBeenCalledExactlyOnceWith({ top: 266.25, behavior: "instant" });
     expect(f.secondCard.getBoundingClientRect().top).toBeCloseTo(position);
-    expect(f.node.dataset.galleryLayout).toBeUndefined();
+    expect(f.node.dataset.galleryLayout).toBe("editorial");
     f.resized(); f.flush();
     expect(f.windowState.scrollBy).toHaveBeenCalledTimes(1);
     f.destroy();
@@ -234,35 +154,62 @@ describe("marketing gallery native interaction boundaries", () => {
     f.destroy();
   });
 
-  it("locks before a same-document anchor default action while preserving modified clicks", () => {
-    const f = fixture(); f.scroll(500);
-    const anchor = new TestNode(); anchor.href = "https://posetek.net/#second";
-    const click = (modified: boolean) => {
-      const event = new Event("click"); Object.defineProperty(event, "target", { value: anchor });
-      Object.assign(event, { button: 0, ctrlKey: modified }); f.documentState.dispatchEvent(event);
-    };
-    click(true); f.scroll(600); expect(f.drift()).toBe(-24);
-    click(false); f.scroll(1500); expect(f.drift()).toBe(-24); expect(f.node.dataset.galleryMotion).toBe("locked"); f.destroy();
+  it("keeps chapters in native flow at every viewport without scroll transforms or row spans", () => {
+    const f = fixture();
+    f.scroll(500); f.scroll(10_000);
+    f.card.offsetHeight = 400; f.resized(); f.flush();
+    f.wide.matches = false; f.windowState.dispatchEvent(new Event("resize")); f.flush();
+    expect(f.node.dataset.galleryLayout).toBe("editorial");
+    expect(f.node.dataset.galleryMotion).toBe("static");
+    expect(f.card.style.gridRowEnd).toBe("");
+    expect(f.secondCard.style.gridRowEnd).toBe("");
+    expect(f.node.properties.size).toBe(0);
+    expect(f.frames.size).toBe(0);
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled(); f.destroy();
   });
 
-  it("pauses hidden and offscreen work without accumulating drift, and cleans up queued frames", () => {
-    const f = fixture(); f.scroll(100);
+  it("does not canonicalize an initial native landing when no structural enhancement exists", () => {
+    const f = mobileLanding(20);
+    f.windowState.dispatchEvent(new Event("scrollend"));
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
+    expect(f.secondCard.getBoundingClientRect().top).toBe(20); f.destroy();
+  });
+
+  it("preserves a landing across both growth and collapse", () => {
+    const f = mobileLanding(110); f.windowState.dispatchEvent(new Event("scrollend"));
+    f.grow(220); f.grow(-160);
+    expect(f.windowState.scrollBy).toHaveBeenNthCalledWith(1, { top: 220, behavior: "instant" });
+    expect(f.windowState.scrollBy).toHaveBeenNthCalledWith(2, { top: -160, behavior: "instant" });
+    expect(f.secondCard.getBoundingClientRect().top).toBe(110); f.destroy();
+  });
+
+  it("releases fragment stabilization for page scrolling keys but keeps native control keys alone", () => {
+    const f = mobileLanding(110); f.windowState.dispatchEvent(new Event("scrollend"));
+    const controlKey = new TestKeyboardEvent("ArrowDown");
+    Object.defineProperty(controlKey, "target", { value: f.control });
+    f.windowState.dispatchEvent(controlKey); f.grow(50);
+    expect(f.windowState.scrollBy).toHaveBeenCalledOnce();
+    f.windowState.dispatchEvent(new TestKeyboardEvent("PageDown")); f.grow(100);
+    expect(f.windowState.scrollBy).toHaveBeenCalledOnce(); f.destroy();
+  });
+
+  it("seeds a new fragment independently without applying the old fragment's geometry", () => {
+    const f = mobileLanding(110); f.windowState.dispatchEvent(new Event("scrollend"));
+    f.documentState.getElementById = () => f.card;
+    location.hash = "#tests"; f.windowState.dispatchEvent(new Event("hashchange"));
+    f.resized(); f.flush(); f.windowState.dispatchEvent(new Event("scrollend"));
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled(); f.destroy();
+  });
+
+  it("defers hidden-document reflow and performs no idle animation loop", () => {
+    const f = mobileLanding(110); f.windowState.dispatchEvent(new Event("scrollend"));
     f.documentState.hidden = true; f.documentState.dispatchEvent(new Event("visibilitychange"));
-    f.scroll(800); expect(f.drift()).toBe(-4); expect(f.frames.size).toBe(0);
-    f.documentState.hidden = false; f.documentState.dispatchEvent(new Event("visibilitychange"));
-    f.scroll(900); expect(f.drift()).toBe(-8);
-    f.visible([{ isIntersecting: false }]); f.scroll(1900); expect(f.drift()).toBe(-8);
-    f.visible([{ isIntersecting: true }]); f.scroll(2000); expect(f.drift()).toBe(-12);
-    f.windowState.scrollY = 2100; f.windowState.dispatchEvent(new Event("scroll")); f.destroy();
-    expect(f.frames.size).toBe(0); expect(f.disconnect).toHaveBeenCalledOnce();
-    expect(f.node.properties.has("--gallery-drift")).toBe(false);
-  });
-
-  it.each([{ fine: false }, { reduce: true }])("leaves motion static for %j and responds to live preference changes", options => {
-    const f = fixture(options); f.scroll(1000); expect(f.drift()).toBe(0); expect(f.frames.size).toBe(0);
-    f.desktop.matches = true; f.reduced.matches = false; f.desktop.dispatchEvent(new Event("change"));
-    f.scroll(1100); expect(f.drift()).toBe(-4);
-    f.reduced.matches = true; f.reduced.dispatchEvent(new Event("change"));
-    expect(f.drift()).toBe(0); expect(f.node.dataset.galleryMotion).toBe("static"); f.destroy();
+    f.grow(120); expect(f.frames.size).toBe(0);
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
+    f.documentState.hidden = false; f.documentState.dispatchEvent(new Event("visibilitychange")); f.flush();
+    expect(f.windowState.scrollBy).toHaveBeenCalledExactlyOnceWith({ top: 120, behavior: "instant" });
+    expect(f.frames.size).toBe(0); f.resized(); expect(f.frames.size).toBe(1);
+    f.destroy(); expect(f.frames.size).toBe(0);
+    f.resized(); expect(f.frames.size).toBe(0);
   });
 });

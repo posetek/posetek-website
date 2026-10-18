@@ -12,33 +12,43 @@ export function useRepeatReveal(host: RefObject<HTMLDivElement | null>, kind: "h
     const node = host.current;
     if (!node || !("IntersectionObserver" in window)) return;
     const motion = matchMedia(reduceQuery);
-    let timer = 0, animation: Animation | undefined, armed = true;
+    let timer = 0, animation: Animation | undefined, armed = true, used = false;
+    const available = () => !document.hidden && (document.documentElement.dataset.marketingNavigation || "closed") === "closed";
+    const engaged = () => used || !!node.closest('[data-demo-expanded="true"]') || node.contains(document.activeElement);
     const finish = () => {
       clearTimeout(timer); animation?.cancel(); animation = undefined;
       setRevealing(false); node.dataset.revealState = "visible";
     };
-    finishRef.current = () => { armed = false; finish(); };
+    finishRef.current = () => { used = true; armed = false; node.dataset.revealUsed = "true"; finish(); };
+    // Selectors and the shared disclosure can sit outside the artwork frame.
+    // Their first action still permanently settles this demonstration's reveal.
+    const demo = node.closest<HTMLElement>(".demo-disclosure");
+    const interact = () => finishRef.current();
+    demo?.addEventListener("pointerdown", interact, true);
+    demo?.addEventListener("focusin", interact, true);
+    const expansion = demo ? new MutationObserver(() => { if (demo.dataset.demoExpanded === "true") interact(); }) : null;
+    if (demo) expansion?.observe(demo, { attributes: true, attributeFilter: ["data-demo-expanded"] });
     const viewportObserver = new IntersectionObserver(([entry]) => {
       const bounds = entry.boundingClientRect;
       node.dataset.viewport = bounds.bottom <= 0 ? "above" : bounds.top >= innerHeight ? "below" : "inside";
       if (entry.isIntersecting) return;
       finish();
-      if (bounds.top >= innerHeight && !node.contains(document.activeElement)) {
+      if (bounds.top >= innerHeight && !engaged()) {
         armed = true;
         if (!motion.matches) node.dataset.revealState = "waiting";
       }
     });
     const enter = ([entry]: IntersectionObserverEntry[]) => {
-      if (motion.matches || document.hidden) { finish(); return; }
+      if (motion.matches || !available()) { finish(); return; }
       if (!entry.isIntersecting) return;
-      if (!armed || node.contains(document.activeElement)) return;
+      if (!armed || engaged()) return;
       armed = false; node.dataset.revealState = "entering";
       if (kind === "media") { setCycle(value => value + 1); setRevealing(true); }
       else animation = node.animate([
-        { clipPath: "inset(0 0 100% 0)", transform: "translateY(36px)" },
+        { clipPath: "inset(0 0 100% 0)", transform: "translateY(20px)" },
         { clipPath: "inset(0)", transform: "translateY(0)" },
-      ], { duration: 760, easing: "cubic-bezier(.16,1,.3,1)" });
-      timer = window.setTimeout(finish, kind === "media" ? 780 : 760);
+      ], { duration: 320, easing: "cubic-bezier(.16,1,.3,1)" });
+      timer = window.setTimeout(finish, kind === "media" ? 640 : 320);
     };
     // IntersectionObserver percentage margins use viewport width. Use pixels so
     // the entrance is 88% of viewport height at every screen aspect ratio.
@@ -51,8 +61,9 @@ export function useRepeatReveal(host: RefObject<HTMLDivElement | null>, kind: "h
     viewportObserver.observe(node); observeEntry();
     const stop = () => { finish(); };
     motion.addEventListener("change", stop); document.addEventListener("visibilitychange", stop);
+    window.addEventListener("marketing:navigation", stop);
     window.addEventListener("resize", observeEntry);
-    return () => { viewportObserver.disconnect(); entryObserver.disconnect(); clearTimeout(timer); animation?.cancel(); motion.removeEventListener("change", stop); document.removeEventListener("visibilitychange", stop); window.removeEventListener("resize", observeEntry); finishRef.current = () => {}; };
+    return () => { viewportObserver.disconnect(); entryObserver.disconnect(); expansion?.disconnect(); demo?.removeEventListener("pointerdown", interact, true); demo?.removeEventListener("focusin", interact, true); clearTimeout(timer); animation?.cancel(); motion.removeEventListener("change", stop); document.removeEventListener("visibilitychange", stop); window.removeEventListener("marketing:navigation", stop); window.removeEventListener("resize", observeEntry); finishRef.current = () => {}; };
   }, [host, kind]);
   return { revealing, cycle, finish: () => finishRef.current() };
 }
@@ -79,7 +90,7 @@ export function usePreviewMotion(host: RefObject<HTMLDivElement | null>) {
       for (const item of arts()) { item.style.removeProperty("transform"); item.style.removeProperty("filter"); }
       node.style.removeProperty("--preview-x"); node.style.removeProperty("--preview-y");
     };
-    const allowed = () => pointer.matches && !motion.matches && !document.hidden && visible && !pressed && !node.contains(document.activeElement);
+    const allowed = () => pointer.matches && !motion.matches && !document.hidden && visible && !pressed && !node.contains(document.activeElement) && (document.documentElement.dataset.marketingNavigation || "closed") === "closed";
     const draw = () => {
       frame = 0;
       if (!allowed()) { reset(); return; }
@@ -117,11 +128,13 @@ export function usePreviewMotion(host: RefObject<HTMLDivElement | null>) {
     node.addEventListener("focusout", leave);
     window.addEventListener("scroll", scroll, { passive: true }); window.addEventListener("blur", reset);
     document.addEventListener("visibilitychange", reset); motion.addEventListener("change", reset); pointer.addEventListener("change", reset);
+    window.addEventListener("marketing:navigation", reset);
     return () => {
       observer.disconnect(); reset(); node.removeEventListener("pointermove", move); node.removeEventListener("pointerleave", leave);
       node.removeEventListener("pointerdown", hold, true); node.removeEventListener("focusin", hold); node.removeEventListener("focusout", leave);
       window.removeEventListener("scroll", scroll); window.removeEventListener("blur", reset); document.removeEventListener("visibilitychange", reset);
       motion.removeEventListener("change", reset); pointer.removeEventListener("change", reset);
+      window.removeEventListener("marketing:navigation", reset);
     };
   }, [host]);
 }

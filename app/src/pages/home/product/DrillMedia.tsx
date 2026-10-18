@@ -1,13 +1,17 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useDemoDisclosure } from "../DemoDisclosure";
+import { marketingActivityAllowed, subscribeMarketingActivity, useMarketingActivity } from "../marketing-activity";
 import { DemoPitch } from "./DrillDiagram";
 import { drillMedia, type DemoDrillId, type DrillMediaAsset } from "./drill-media";
 import "./drill-media.css";
 
 export function DrillMedia({ drillId, compact = false, active = true }: { drillId: DemoDrillId; compact?: boolean; active?: boolean }) {
-  return <DrillMediaContent key={drillId} drillId={drillId} compact={compact} active={active} />;
+  const activityAllowed = useMarketingActivity();
+  return <DrillMediaContent key={drillId} drillId={drillId} compact={compact} active={active && activityAllowed} />;
 }
 
 function DrillMediaContent({ drillId, compact, active }: { drillId: DemoDrillId; compact: boolean; active: boolean }) {
+  const { expanded } = useDemoDisclosure();
   const [pane, setPane] = useState<"overview" | "demo">("overview");
   const [narrow, setNarrow] = useState(false);
   const id = useId();
@@ -18,14 +22,14 @@ function DrillMediaContent({ drillId, compact, active }: { drillId: DemoDrillId;
     update(); query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
-  const switched = compact || narrow;
-  return <div className={`drill-media${compact ? " drill-media-compact" : ""}`}>
+  const switched = compact || narrow || !expanded;
+  return <div className={`drill-media${compact ? " drill-media-compact" : ""}`} data-switched={switched}>
     <div className="drill-media-switch" role="group" aria-label={`${asset.name} media`} hidden={!switched}>
       {(["overview", "demo"] as const).map(value => <button type="button" key={value} aria-pressed={pane === value} aria-controls={`${id}-${value}`} onClick={() => setPane(value)}>{value === "overview" ? "Overview" : "Demo"}</button>)}
     </div>
     <div className="drill-media-pair">
       <div id={`${id}-overview`} hidden={switched && pane !== "overview"}>
-        <DemoPitch drillId={drillId} focus={drillId === "PAS-001" ? "passing" : "dribbling"} className={compact ? "phone-preview" : ""} />
+        <DemoPitch drillId={drillId} focus={drillId === "PAS-001" ? "passing" : "dribbling"} className={compact ? "phone-preview" : ""} active={active && (!switched || pane === "overview")} />
       </div>
       <div id={`${id}-demo`} className="drill-video-panel" hidden={switched && pane !== "demo"}>
         {!compact && <div className="drill-video-heading"><strong>See the drill</strong><span>From the PoseTek drill library</span></div>}
@@ -46,22 +50,23 @@ function DrillVideo({ asset, active }: { asset: DrillMediaAsset; active: boolean
     const pause = () => video.current?.pause();
     const observer = new IntersectionObserver(([entry]) => { visible.current = entry.isIntersecting; if (!entry.isIntersecting) { pendingPlay.current = false; pause(); } }, { threshold: 0.1 });
     if (host.current) observer.observe(host.current);
-    const hidden = () => { if (document.hidden) { pendingPlay.current = false; pause(); } };
+    const activity = () => { if (!marketingActivityAllowed()) { pendingPlay.current = false; pause(); } };
     const otherPlayer = (event: Event) => { if ((event as CustomEvent).detail !== id) { pendingPlay.current = false; pause(); } };
-    document.addEventListener("visibilitychange", hidden);
+    const unsubscribeActivity = subscribeMarketingActivity(activity);
+    activity();
     document.addEventListener("posetek:drill-video-play", otherPlayer);
-    return () => { pause(); observer.disconnect(); document.removeEventListener("visibilitychange", hidden); document.removeEventListener("posetek:drill-video-play", otherPlayer); };
+    return () => { pause(); observer.disconnect(); unsubscribeActivity(); document.removeEventListener("posetek:drill-video-play", otherPlayer); };
   }, [id]);
   useEffect(() => { if (!active) { video.current?.pause(); pendingPlay.current = false; } }, [active]);
-  const start = () => { pendingPlay.current = true; setFailed(false); setAttempt(value => value + 1); setRequested(true); };
+  const start = () => { if (!active || !marketingActivityAllowed()) return; pendingPlay.current = true; setFailed(false); setAttempt(value => value + 1); setRequested(true); };
   return <div className="drill-video-surface" ref={host}>
     {!requested && <button type="button" className="drill-video-start" onClick={start} aria-label={`Play ${asset.name} demonstration video`}>
       <img src={asset.poster} loading="lazy" alt={`${asset.name} demonstration`} />
       <span className="drill-video-start-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 11 7-11 7z" fill="currentColor"/></svg>Watch demo</span>
     </button>}
     {requested && !failed && <video key={attempt} ref={video} src={asset.video} poster={asset.poster} controls playsInline muted preload="metadata" aria-label={`${asset.name} demonstration video`}
-      onLoadedData={() => { if (pendingPlay.current && active && visible.current && !document.hidden) { pendingPlay.current = false; void video.current?.play().catch(() => {}); } }}
-      onPlay={() => { if (!active || !visible.current || document.hidden) video.current?.pause(); else document.dispatchEvent(new CustomEvent("posetek:drill-video-play", { detail: id })); }}
+      onLoadedData={() => { if (pendingPlay.current && active && visible.current && marketingActivityAllowed()) { pendingPlay.current = false; void video.current?.play().catch(() => {}); } }}
+      onPlay={() => { if (!active || !visible.current || !marketingActivityAllowed()) video.current?.pause(); else document.dispatchEvent(new CustomEvent("posetek:drill-video-play", { detail: id })); }}
       onError={() => { pendingPlay.current = false; setFailed(true); }} />}
     {failed && <div className="drill-video-error" role="status"><p>The demo couldn’t load. You can still use the overview.</p><button type="button" onClick={start}>Retry video</button></div>}
   </div>;

@@ -19,7 +19,7 @@ export function ScrambleText({ children, className = "" }: { children: string; c
       const started = performance.now();
       node.dataset.scrambling = "true";
       const tick = () => {
-        const progress = (performance.now() - started) / 520;
+        const progress = (performance.now() - started) / 320;
         if (progress >= 1) { stop(); return; }
         setVisual(Array.from(children).map((letter, index) => /\s/.test(letter) || index / children.length < progress
           ? letter : "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/+[]"[Math.floor(Math.random() * 40)]).join(""));

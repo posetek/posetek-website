@@ -1,4 +1,8 @@
-# Public-site scrolling composition
+# Public-site scrolling composition — historical checkpoint
+
+The [first-interaction and editorial follow-up](PUBLIC_SITE_FIRST_INTERACTION.md)
+supersedes this independent-column adaptation. The measurements and acceptance
+below describe the earlier candidate, not the current source.
 
 This refinement follows the user's request to bring the scrolling layout closer
 to [Lain Works](https://lainagency.com/works). It builds on the

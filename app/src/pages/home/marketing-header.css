@@ -13,7 +13,7 @@
 .pt-revamp .marketing-header .pt-marketing-audiences a[aria-current="page"]::before { content: ""; width: 4px; height: 4px; margin-right: 6px; background: currentColor; border-radius: 50%; }
 .pt-revamp .marketing-header .pt-marketing-actions { display: flex; align-items: center; gap: 28px; margin-left: auto; font: 500 11px/1.4 Inter, sans-serif; }
 .pt-revamp .marketing-header .pt-marketing-signin { display: flex; align-items: center; min-height: 44px; }
-.pt-revamp .marketing-header .pt-marketing-cta { display: inline-flex; position: relative; align-items: center; min-height: 38px; gap: 20px; padding: 0 12px; white-space: nowrap; }
+.pt-revamp .marketing-header .pt-marketing-cta { display: inline-flex; position: relative; align-items: center; min-height: 44px; gap: 20px; padding: 0 12px; white-space: nowrap; }
 .pt-revamp .marketing-header .pt-marketing-cta::before, .pt-revamp .marketing-header .pt-marketing-cta::after { content: ""; position: absolute; top: 5px; bottom: 5px; width: 4px; border-block: 1px solid currentColor; transition: transform .2s; }
 .pt-revamp .marketing-header .pt-marketing-cta::before { left: 0; border-left: 1px solid currentColor; }
 .pt-revamp .marketing-header .pt-marketing-cta::after { right: 0; border-right: 1px solid currentColor; }
@@ -130,4 +130,22 @@
   .pt-revamp .marketing-header .pt-marketing-menu:not([hidden])[data-letter-reveal="true"] .pt-menu-letter, .pt-revamp .marketing-header .pt-marketing-menu[data-closing="true"] .pt-menu-letter { animation: none; transform: none; }
   .pt-revamp .marketing-header .pt-menu-peek { display: none; }
   .pt-revamp .marketing-header .pt-menu-pages a, .pt-revamp .marketing-header .pt-marketing-menu[data-closing="true"] { animation: none; transition: none; }
+}
+
+/* Native disclosure remains useful before enhancement, with or without scripts. */
+.pt-home.pt-revamp.pt-marketing-shell { overflow: visible; }
+.pt-home.pt-revamp.pt-marketing-shell::before { display: none; }
+.pt-revamp .marketing-header .pt-marketing-bar { padding-right: calc(3.2vw + 100px); }
+.pt-revamp .marketing-header summary.pt-marketing-menu-button { position: absolute; top: 22px; right: 3.2vw; cursor: pointer; list-style: none; color: inherit; }
+.pt-revamp .marketing-header summary::-webkit-details-marker { display: none; }
+.pt-revamp .marketing-header summary:focus-visible { outline: 2px solid currentColor; outline-offset: 6px; }
+.pt-revamp .marketing-header:not([data-enhanced="true"]) { position: relative; }
+.pt-revamp .marketing-header:not([data-enhanced="true"]) .pt-marketing-menu { position: relative; inset: auto; min-height: 0; background: #04130e; }
+.pt-revamp .marketing-header:not([data-enhanced="true"]) .pt-menu-curtain,
+.pt-revamp .marketing-header:not([data-enhanced="true"]) [data-menu-close],
+.pt-revamp .marketing-header .pt-marketing-sound:disabled { display: none; }
+.pt-revamp .marketing-header:not([data-enhanced="true"]) .pt-menu-content { padding-block: 32px; }
+@media (max-width: 700px) {
+  .pt-revamp .marketing-header .pt-marketing-bar { padding-right: 100px; }
+  .pt-revamp .marketing-header summary.pt-marketing-menu-button { top: 15px; right: 20px; }
 }

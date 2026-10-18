@@ -9,9 +9,10 @@ Authenticated runtime and held content remain protected by the ordinary
 The detailed REA pass and deliberate native-navigation adaptations are recorded
 in [the interaction ledger](docs/PUBLIC_SITE_INTERACTION_DETAILS.md).
 
-The [scrolling-composition refinement](docs/PUBLIC_SITE_COMPOSITION.md) adds media-first cards,
-independent staggered columns and card-width demo layouts, with fresh desktop and
-phone REA measurements.
+The [first-interaction and pacing follow-up](docs/PUBLIC_SITE_FIRST_INTERACTION.md)
+adds hydration-independent navigation, worker-owned 3D and sequential chapters
+with compact, inline-expandable demonstrations. Its acceptance remains separate
+from the previous immutable candidate and production.
 
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release

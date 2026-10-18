@@ -1,5 +1,6 @@
 /** Recovered from deployment 6aa9b6f0d8faf6177db8fd97. See PROVENANCE.md. */
 import * as React from "react";
+import { useDemoDisclosure } from "../DemoDisclosure";
 import { TacticalIcon } from "../TacticalIcon";
 import { POSE_EDGES } from "../pitch/pose-model";
 import { techniqueData, alignReference, projectRecordedFrames, nearestPhase, metricForJoint, formatMeasurement } from "./technique-model";
@@ -45,6 +46,7 @@ function PoseSkeleton({ points, highlighted, projection, onJoint, phase, selecte
   </>;
 }
 function TechniqueDemo({ active = true }) {
+  const { expanded, managed } = useDemoDisclosure();
   let instanceId = React.useId();
   let rootRef = React.useRef(null);
   let [phase, setPhase] = React.useState(initialPhase);
@@ -55,6 +57,7 @@ function TechniqueDemo({ active = true }) {
   let [visible, setVisible] = React.useState(false);
   let [showReference, setShowReference] = React.useState(true);
   let [detailsOpen, setDetailsOpen] = React.useState(false);
+  React.useEffect(() => { if (managed) setDetailsOpen(expanded); }, [managed, expanded]);
   let [walkthrough, setWalkthrough] = React.useState(initialWalkthrough);
   let guidedStep = walkthroughSteps[walkthrough.step];
   let selectedMetric = phase.metrics.find(e => e.id === selectedMetricId) ?? phase.metrics[0];
@@ -270,7 +273,7 @@ function TechniqueDemo({ active = true }) {
       <p className="technique-cue" aria-live="polite">{isSnapshot ? (walkthrough.status === 'paused' ? guidedStep.cue : focusArea?.cue ?? 'Compare the same moment. Look for the highlighted joint.') : 'Play the walkthrough to pause at the moments that matter.'}</p>
       {isSnapshot && selectedMetric && <div className="technique-measurement" aria-live="polite"><div><small>{selectedMetric.label}</small><strong>{formatMeasurement(selectedMetric.value, selectedMetric.unit)}</strong></div>{selectedMetric.reference !== null && <div className="technique-reference-value"><small>Reference</small><strong>{formatMeasurement(selectedMetric.reference, selectedMetric.unit)}</strong></div>}</div>}
       {isSnapshot && <button type="button" className="technique-compare" disabled={!phase.referencePose} aria-pressed={showReference} onClick={() => setShowReference(!showReference)}>{phase.referencePose ? showReference ? 'Hide reference' : 'Show reference' : 'No reference saved for this phase'}</button>}
-      <details className="technique-details" onToggle={event => setDetailsOpen(event.currentTarget.open)}><summary>Explore details</summary>
+      <details className="technique-details" open={managed ? expanded : undefined} onToggle={event => setDetailsOpen(event.currentTarget.open)}><summary>Explore details</summary>
         <label className="technique-measurement-select" htmlFor={instanceId + '-metric'}>Inspect a measurement<select id={instanceId + '-metric'} value={selectedMetric?.id} onChange={e => selectMetric(e.target.value)}>{phase.metrics.map(metric => <option key={metric.id} value={metric.id}>{metric.label}</option>)}</select></label>
         <div className="technique-focus-list">{techniqueData.focusAreas.map((focus,index) => <button key={focus.title} type="button" aria-pressed={focusIndex === index} onClick={() => selectFocusArea(index)}>{focus.title}</button>)}</div>
         <p className="technique-measurement-note">Select a highlighted joint to inspect its saved measurement. Measurements appear only at their recorded frame.</p>

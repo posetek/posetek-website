@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { MarketingAudience } from "./MarketingHeader";
+import type { MarketingAudience } from "./marketing-links";
 import { usePreviewMotion, useRepeatReveal } from "./marketing-effects";
 
 const MARKETING_CHAPTERS = {
@@ -100,7 +100,7 @@ export function RevealFrame({ children, className = "" }: { children: ReactNode;
   usePreviewMotion(host);
   return <div ref={host} className={`reveal-frame ${className}`} data-revealing={revealing} data-reveal-state="visible" onPointerDownCapture={finish} onFocusCapture={finish}>
     {children}
-    {revealing && <div key={cycle} className="pixel-reveal" aria-hidden="true">{Array.from({ length: 48 }, (_, index) => <i key={index} style={{ animationDelay: `${((index * 7) % 13) * 22}ms` }} />)}</div>}
+    {revealing && <div key={cycle} className="pixel-reveal" aria-hidden="true">{Array.from({ length: 48 }, (_, index) => <i key={index} style={{ animationDelay: `${((index * 7) % 5) * 80}ms` }} />)}</div>}
   </div>;
 }
 

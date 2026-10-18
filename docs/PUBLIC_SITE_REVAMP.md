@@ -5,6 +5,11 @@ language of [Lain Works](https://lainagency.com/works), retaining PoseTek copy,
 approved recordings, sample profiles, destinations and product behavior. This is
 a review candidate, not a production-release receipt.
 
+The [first-interaction and pacing follow-up](PUBLIC_SITE_FIRST_INTERACTION.md)
+supersedes the independent columns and main-thread 3D described in this checkpoint.
+The verified candidate section below remains historical until a new immutable
+acceptance receipt is recorded; it does not verify the working source.
+
 ## Design and preserved behavior
 
 The shared public shell uses a light `#f1f1f3` canvas, fine vertical grid, oversized

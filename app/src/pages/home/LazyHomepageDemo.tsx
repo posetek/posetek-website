@@ -1,4 +1,5 @@
 import { Component, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useMarketingActivity } from "./marketing-activity";
 
 type DemoModule<P> = { default: ComponentType<P & { active?: boolean }> };
 
@@ -20,7 +21,7 @@ export function LazyHomepageDemo<P extends object>({ load, demoProps, label, kin
   const host = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [pageVisible, setPageVisible] = useState(true);
+  const activityAllowed = useMarketingActivity();
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState<"load" | "render" | null>(null);
   const [Demo, setDemo] = useState<DemoModule<P>["default"] | null>(null);
@@ -34,13 +35,9 @@ export function LazyHomepageDemo<P extends object>({ load, demoProps, label, kin
     const visibility = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting));
     preload.observe(node);
     visibility.observe(node);
-    const update = () => setPageVisible(!document.hidden);
-    update();
-    document.addEventListener("visibilitychange", update);
     return () => {
       preload.disconnect();
       visibility.disconnect();
-      document.removeEventListener("visibilitychange", update);
     };
   }, []);
 
@@ -74,7 +71,7 @@ export function LazyHomepageDemo<P extends object>({ load, demoProps, label, kin
   </div>;
 
   return <div ref={host} className={`homepage-demo homepage-demo-${kind}`} data-demo={kind} data-demo-state={failed ? "failed" : Demo ? "ready" : "pending"}>
-    {Demo ? <DemoBoundary key={attempt} fallback={failure} onFailure={() => setFailed("render")}><Demo {...demoProps} active={visible && pageVisible} /></DemoBoundary>
+    {Demo ? <DemoBoundary key={attempt} fallback={failure} onFailure={() => setFailed("render")}><Demo {...demoProps} active={visible && activityAllowed} /></DemoBoundary>
       : failed ? failure : <div className="homepage-demo-placeholder" aria-busy={near || forceLoad}>
         <span className="eyebrow">{label}</span><span className="demo-loading-mark" aria-hidden="true">PT</span>
         <p>{near || forceLoad ? "Preparing the interactive demo…" : "Explore the interactive demo below."}</p>

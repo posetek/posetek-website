@@ -27,15 +27,16 @@ describe("marketing audience navigation", () => {
     expect(html).not.toContain('href="/bookPerformanceTest.html"');
   });
 
-  it("connects the collapsed menu button to its disclosure", () => {
+  it("renders a native disclosure before enhancement so the first click needs no hydration", () => {
     const html = renderToStaticMarkup(<MarketingHeader audience="coaches" />);
     const controlled = html.match(/aria-controls="([^"]+)"/)?.[1];
     expect(controlled).toBeTruthy();
     expect(html).toContain(`id="${controlled}"`);
     expect(html).toContain('aria-label="Open navigation"');
-    expect(html).toContain('aria-expanded="false"');
-    expect(html).toContain('aria-haspopup="dialog"');
-    expect(html).toMatch(/role="dialog" aria-modal="true" aria-labelledby="[^"]+" hidden=""/);
+    expect(html).toContain('<details class="pt-navigation-disclosure"><summary');
+    expect(html).not.toContain('role="dialog"');
+    expect(html).not.toContain('aria-modal="true"');
+    expect(html).not.toMatch(/class="pt-marketing-menu"[^>]* hidden=/);
     expect(html).toContain('aria-label="Close navigation"');
   });
 

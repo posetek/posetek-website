@@ -1,0 +1,16 @@
+---
+import { MarketingHeader } from "../../src/pages/home/MarketingHeader";
+import { installMarketingNavigation } from "../../src/pages/home/marketing-navigation";
+import type { MarketingAudience } from "../../src/pages/home/marketing-links";
+interface Props { audience: MarketingAudience }
+const { audience } = Astro.props;
+const controller = `(${installMarketingNavigation.toString()})(document.querySelector('[data-marketing-header]'));`;
+---
+<MarketingHeader audience={audience} />
+<script is:inline set:html={controller} />
+<script>
+  // Optional effects are independent of the inline controller and React island.
+  import { enhanceMarketingHeader } from "../../src/pages/home/marketing-header-enhancements";
+  const header = document.querySelector<HTMLElement>("[data-marketing-header]");
+  if (header) enhanceMarketingHeader(header);
+</script>

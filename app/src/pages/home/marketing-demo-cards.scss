@@ -307,3 +307,154 @@
     .cx-team-panel { grid-template-columns: minmax(190px, .7fr) minmax(0, 1.3fr); gap: 28px; }
   }
 }
+
+/* Editorial disclosure changes presentation only. The same stateful scene stays
+   mounted, and provenance remains beside every visible result. */
+.pt-home.pt-revamp .marketing-gallery {
+  .pd-compact-result, .cx-player-select { display: none; }
+  .demo-disclosure-content { container-type: inline-size; }
+  .demo-disclosure[data-demo-expanded="false"] {
+    .homepage-demo-placeholder { min-height: 380px; }
+    .test-choice { min-height: 52px; align-items: center; padding: 10px 12px; }
+    .test-choice-copy, .movement-demo .session-metrics, .profile-demo .metric-list,
+    .workout-demo .pd-sidebar, .workout-demo .pd-drill-setup,
+    .coach-demo .pd-metrics, .coach-demo .pd-profile > .pd-tiny-label,
+    .coach-demo .pd-context-chip, .coach-demo .pd-user-message, .coach-demo .pd-evidence,
+    .technique-details, .app-device-drill-label, .app-device-drill-select,
+    .drill-step-tabs, .drill-step-copy,
+    .cx-team-option-detail, .cx-access-note, .cx-roster-row > div > span,
+    .cx-player-options, .coach-development-copy { display: none; }
+    .movement-summary { grid-template-columns: 1fr; }
+    .movement-live-metric { border: 0; padding: 14px 18px; }
+    .profile-demo .demo-topbar, .profile-demo .demo-content { padding: 18px; }
+    .profile-demo .radar-wrap { max-width: 270px; margin-top: 22px; }
+    .profile-demo .demo-main { gap: 16px; }
+    .profile-demo .breakdown-card { padding-top: 16px; }
+    .profile-demo .focus-note { margin-bottom: 0; }
+    .pd-workout-main { padding: 20px; }
+    .pd-proposal-list .pd-drill-row { padding: 12px; gap: 8px; grid-template-columns: 22px minmax(0, 1fr); }
+    .pd-proposal-list .pd-drill-select { grid-column: 1 / -1; }
+    .pd-proposal-list { gap: 8px; }
+    .pd-drill-row strong { font-size: 14px; }
+    .pd-workout-tags { margin-block: 14px; }
+    .pd-small-copy { margin-block: 12px; font-size: 12px; }
+    .pd-actions { margin-top: 16px; }
+    .drill-media { margin-block: 16px; }
+    .drill-diagram { max-height: 240px; }
+    .drill-video-surface { max-width: 360px; margin-inline: auto; }
+    .drill-explainer, .drill-video-panel { padding: 14px; }
+    .coach-demo .pd-profile { display: block; padding: 18px; }
+    .coach-demo .pd-compact-result { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-block: 12px; font-size: 12px; }
+    .pd-compact-result strong { font-size: 30px; color: var(--lime); }
+    .coach-demo .pd-metric-chart { margin: 0; padding: 14px; }
+    .coach-demo .pd-metric-chart svg { width: 100%; height: auto; max-height: 190px; }
+    .coach-demo .pd-conversation { padding: 20px; }
+    .coach-demo .pd-coach-answer { padding: 16px; }
+    .coach-demo .pd-coach-answer > p { margin-bottom: 0; }
+    .technique-inspector { padding: 18px; }
+    .technique-guide { padding: 16px; }
+    .technique-measurement { justify-content: flex-start; }
+    .cx-team-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cx-team-options button { padding: 10px; display: block; }
+    .cx-team-options button > span:first-child { font-size: 20px; }
+    .cx-team-panel { padding: 18px 20px; gap: 16px; }
+    .cx-team-context { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; }
+    .cx-team-context h4 { font-size: 22px; margin: 0; }
+    .cx-team-context p { margin: 0; }
+    .cx-roster-row { padding-block: 12px; }
+    .cx-player-select { display: grid; gap: 8px; padding: 16px 20px; color: #b1c6b8; background: #071a13; font-size: 12px; }
+    .cx-player-select select { width: 100%; min-height: 44px; padding: 10px; color: #f1f6ed; background: #173422; border: 1px solid #446344; border-radius: 0; font-size: 14px; }
+    .cx-player-detail { padding: 20px; }
+    .cx-profile-radar svg { max-width: 300px; }
+    .cx-player-insight { gap: 16px; }
+    .cx-priority { gap: 16px; }
+    .cx-training-focus { padding-top: 16px; }
+    .cx-assessment strong { font-size: 40px; }
+    .coach-development-scene { padding: 20px; border-top: 0; }
+    .coach-plan-sheet, .coach-retest-sheet { max-width: 620px; padding: 20px; }
+    .coach-plan-progress { margin-top: 22px; }
+    .coach-plan-progress strong { font-size: 40px; }
+    .mobile-app-preview { max-width: 330px; }
+    .app-device-content { gap: 12px; }
+    .app-device-media .drill-media { margin-block: 8px; }
+  }
+  .demo-disclosure[data-demo-expanded="true"] .technique-details > summary { display: none; }
+  @container (min-width: 760px) {
+    .assessment-workspace { grid-template-columns: minmax(0, 1fr) 230px; align-items: start; gap: 20px; }
+    .test-choices { grid-template-columns: 1fr; }
+    .assessment-replay .movement-demo .session-video { max-width: 740px; margin-inline: auto; }
+    .technique-demo { grid-template-columns: minmax(0, 1.65fr) minmax(260px, 1fr); }
+    .technique-guide { grid-column: 1 / -1; }
+    .technique-inspector { display: flex; border-top: 0; border-left: 1px solid #294334; }
+    .coach-development-body { grid-template-columns: minmax(240px, .8fr) minmax(0, 1.2fr); }
+    .demo-disclosure[data-demo-expanded="false"] {
+      .coach-development-body { grid-template-columns: 1fr; }
+      .pd-review-scene { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 0 24px; align-items: start; }
+      .pd-review-scene > .pd-heading, .pd-review-scene > .pd-intent, .pd-review-scene > .pd-workout-tags { grid-column: 1 / -1; }
+      .pd-review-scene > .drill-media { grid-column: 1; grid-row: 4 / 9; margin: 0; }
+      .pd-review-scene > .pd-proposal-list, .pd-review-scene > .pd-small-copy, .pd-review-scene > .pd-actions, .pd-review-scene > .pd-demo-note { grid-column: 2; }
+      .coach-demo .pd-coach-layout { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); }
+      .coach-demo .pd-profile { border-bottom: 0; border-right: 1px solid var(--pd-edge); }
+    }
+  }
+  @container (max-width: 519px) {
+    .demo-disclosure[data-demo-expanded="false"] {
+      .profile-demo .radar-wrap { max-width: 250px; }
+      .profile-demo .score-line strong { font-size: 42px; }
+      .pd-heading h4 { font-size: 22px; }
+      .pd-workout-main { padding: 16px; }
+      .pd-drill-row .pd-drill-select { min-height: 44px; }
+      .pd-proposal-list .pd-drill-row { grid-template-columns: minmax(0, 1fr) 90px; }
+      .pd-proposal-list .pd-drill-select { grid-column: 2; grid-row: 1; }
+      .pd-proposal-list .pd-drill-order, .pd-proposal-list .pd-drill-row > svg { display: none; }
+      .pd-proposal-list .pd-drill-row > div { grid-column: 1; grid-row: 1; }
+      .cx-player-insight { gap: 12px; }
+      .cx-profile-radar svg { max-width: 260px; }
+      .cx-priority { grid-template-columns: 1fr 1fr; align-items: start; padding-top: 12px; gap: 14px; }
+      .cx-training-focus { padding: 0; border: 0; }
+      .cx-training-focus h4 { font-size: 16px; }
+      .cx-assessment strong { font-size: 34px; }
+    }
+  }
+}
+
+/* The first view shows the result and its next action; optional teaching detail
+   returns with the same mounted controls when the visitor opens the full demo. */
+.pt-home.pt-revamp .marketing-gallery {
+  .drill-media[data-switched="true"] .drill-media-pair { grid-template-columns: minmax(0, 1fr); }
+  .demo-disclosure[data-demo-expanded="false"] {
+    .workout-demo .drill-explainer-title, .workout-demo .drill-legend,
+    .workout-demo .drill-step-cue, .workout-demo .drill-play,
+    .workout-demo .pd-review-scene > .pd-demo-note, .workout-demo .pd-bottom-bar,
+    .coach-demo .pd-demo-note, .coach-demo .pd-bottom-bar { display: none; }
+    .workout-demo .drill-diagram { max-height: 240px; margin-block: 0; }
+    .movement-live-metric { padding-block: 10px; }
+    .movement-live-metric strong { font-size: 30px; }
+    .technique-stage { max-height: 360px; }
+    .mobile-showcase { padding-block: 16px; }
+    .app-device-status { height: 36px; }
+    .app-device-island { top: 6px; }
+    .app-device-header { padding-block: 10px; }
+    .app-device-progress { padding-block: 14px; }
+    .app-device-sets { margin-top: 10px; }
+    .app-device-sets > span { width: 34px; height: 34px; }
+    .app-device-home { margin-block: 12px 8px; }
+    .mobile-app-preview figcaption { margin-top: 14px; }
+    .app-device-media .drill-diagram { max-height: 145px; }
+  }
+  @container (min-width: 760px) {
+    .demo-disclosure[data-demo-expanded="false"] .assessment-replay .movement-demo .session-video { max-width: 620px; }
+  }
+  @container (max-width: 759px) {
+    .demo-disclosure[data-demo-expanded="false"] {
+      .workout-demo .pd-review-scene > .drill-media,
+      .coach-demo .pd-metric-chart,
+      .coach-demo .pd-conversation > .pd-heading { display: none; }
+      .coach-demo .pd-athlete { margin-bottom: 10px; }
+      .coach-demo .pd-conversation { padding-top: 12px; }
+      .movement-demo .pose-carousel-nav { display: none; }
+      .movement-demo .session-head { padding-block: 12px; }
+      .test-choice { min-height: 48px; padding-block: 8px; }
+    }
+  }
+}

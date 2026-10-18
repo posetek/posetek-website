@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, type CSSProperties } from "react";
 import { DimensionalMark } from "./DimensionalMark";
 import { ScrambleText } from "./MarketingEffects";
-import { TEAM_ENQUIRY_HREF } from "./MarketingHeader";
-import type { MarketingAudience } from "./MarketingHeader";
+import { TEAM_ENQUIRY_HREF } from "./marketing-links";
+import type { MarketingAudience } from "./marketing-links";
 import "./marketing-footer.css";
 
 function FooterArrow({ diagonal = false }: { diagonal?: boolean }) {
@@ -33,6 +33,7 @@ export function MarketingFooter({ audience }: { audience: MarketingAudience }) {
     let releaseAt = 0;
     let releaseTimer = 0;
     let touchY: number | null = null;
+    const navigationActive = () => (document.documentElement.dataset.marketingNavigation || "closed") !== "closed";
     const clamp = (value: number) => Math.max(0, Math.min(1, value));
     const easeInOut = (value: number) => value < .5 ? 4 * value ** 3 : 1 - (-2 * value + 2) ** 3 / 2;
     const reset = () => {
@@ -46,7 +47,7 @@ export function MarketingFooter({ audience }: { audience: MarketingAudience }) {
     const draw = (now: number) => {
       frame = 0;
       if (motion.matches) { update(); return; }
-      if (!visible || document.hidden) return;
+      if (!visible || document.hidden || navigationActive()) { previousTime = 0; return; }
       const bounds = element.getBoundingClientRect();
       const viewport = window.innerHeight;
       const maximumScroll = document.documentElement.scrollHeight - viewport;
@@ -83,7 +84,7 @@ export function MarketingFooter({ audience }: { audience: MarketingAudience }) {
         element.style.removeProperty("--footer-line-progress");
       } else {
         element.dataset.footerMotion = "true";
-        if (!visible || document.hidden) {
+        if (!visible || document.hidden || navigationActive()) {
           reset();
           if (!visible && !element.contains(document.activeElement) && element.getBoundingClientRect().top >= window.innerHeight) {
             progress = 0;
@@ -98,7 +99,7 @@ export function MarketingFooter({ audience }: { audience: MarketingAudience }) {
     // Lain's bottom pull fills a preview bar and scales the miniature by 6%.
     // Here it is deliberately visual only: no wheel/touch event can navigate.
     const addPull = (amount: number) => {
-      if (!visible || document.hidden || motion.matches) return;
+      if (!visible || document.hidden || motion.matches || navigationActive()) return;
       const atBottom = window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 4;
       if (!atBottom && pull <= 0) return;
       pull = clamp(pull + amount);
@@ -141,6 +142,7 @@ export function MarketingFooter({ audience }: { audience: MarketingAudience }) {
     window.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update, { passive: true });
     document.addEventListener("visibilitychange", update);
+    window.addEventListener("marketing:navigation", update);
     motion.addEventListener("change", update);
     element.addEventListener("wheel", wheel, { passive: true });
     element.addEventListener("touchstart", touchStart, { passive: true });
@@ -155,6 +157,7 @@ export function MarketingFooter({ audience }: { audience: MarketingAudience }) {
       window.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
       document.removeEventListener("visibilitychange", update);
+      window.removeEventListener("marketing:navigation", update);
       motion.removeEventListener("change", update);
       element.removeEventListener("wheel", wheel);
       element.removeEventListener("touchstart", touchStart);
@@ -175,11 +178,11 @@ export function MarketingFooter({ audience }: { audience: MarketingAudience }) {
       <div className="marketing-footer-invitation">
         <p className="marketing-footer-kicker"><span aria-hidden="true">[</span> YOUR NEXT STEP <span aria-hidden="true">]</span></p>
         <h2 id={headingId} aria-label="Start with evidence. Train what’s next."><FooterTitleLine>Start with evidence.</FooterTitleLine><FooterTitleLine>Train what’s next.</FooterTitleLine></h2>
-        <div className="marketing-footer-contact">
-          <p>{coaches ? "See the team. Understand the individual." : "Your game. A clearer picture."}</p>
-          <a className="marketing-footer-cta" href={coaches ? TEAM_ENQUIRY_HREF : "/bookPerformanceTest.html"}><ScrambleText>{coaches ? "Talk about your team" : "Book a performance test"}</ScrambleText><FooterArrow diagonal/></a>
-          <a className="marketing-footer-secondary" href="/signin"><ScrambleText>{coaches ? "Coach sign in" : "Already with PoseTek? Sign in"}</ScrambleText><FooterArrow/></a>
-        </div>
+        {!coaches && <div className="marketing-footer-contact">
+          <p>Your game. A clearer picture.</p>
+          <a className="marketing-footer-cta" href="/bookPerformanceTest.html"><ScrambleText>Book a performance test</ScrambleText><FooterArrow diagonal/></a>
+          <a className="marketing-footer-secondary" href="/signin"><ScrambleText>Already with PoseTek? Sign in</ScrambleText><FooterArrow/></a>
+        </div>}
       </div>
       <div className="marketing-footer-stage">
         <a className="marketing-footer-next" href={coaches ? "/" : "/coaches"} data-cursor={coaches ? "Explore players" : "Explore coaches"}>

@@ -1,6 +1,7 @@
 # PoseTek engineering handbook
 
-Current public-site work: [revamp candidate and browser acceptance](../PUBLIC_SITE_REVAMP.md).
+Current public-site work: [first interaction and editorial pacing](../PUBLIC_SITE_FIRST_INTERACTION.md),
+building on the [revamp candidate](../PUBLIC_SITE_REVAMP.md).
 Its ordinary guarded artifact preserves the application; do not substitute the
 full application release builder or infer production approval from a green PR.
 
