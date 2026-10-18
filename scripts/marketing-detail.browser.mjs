@@ -527,8 +527,9 @@ for (const config of audiences) {
     await visit(page, config.route);
     // This checks the finite visual choreography after initial rendering. The
     // hero's first WebGL upload can occupy the entire JS sampling interval;
-    // no intermediate frames are established during that task. Immediate usability is
-    // covered separately by marketing-revamp.browser.mjs.
+    // no intermediate frames are established during that task. General usability
+    // is covered without this readiness gate by marketing-revamp.browser.mjs;
+    // that suite does not deliberately time input within the startup task.
     if (await page.locator('.hero-pose-viewer').count()) {
       await page.waitForFunction(() => {
         const hero = document.querySelector('.hero-pose-viewer');

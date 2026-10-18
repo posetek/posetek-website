@@ -100,7 +100,7 @@
       "REA source graph reached its 20,000-node ceiling; source searches and timed browser probes establish documented mechanisms, not whole-application semantic coverage.",
       "Local Codex advisory review is same-provider and includes disclosed component authorship; no hosted paid reviewer activated.",
       "44px checks cover visible HTML controls. Optional technique SVG joint targets are approximately 26.56px at 1440px; every action has the same-handler alternative in the 44px measurement selector. SVG stability and activation are checked separately.",
-      "Intermediate menu choreography is measured after the visible hero renderer reaches WebGL or its explicit static fallback. A separate startup trace found a 419ms main-thread task during renderer initialization; this suite does not establish smooth first-load menu animation. Immediate-opening menu usability is covered by the regression suite.",
+      "Intermediate menu choreography is measured after the visible hero renderer reaches WebGL or its explicit static fallback. A separate startup trace found a 419ms main-thread task during renderer initialization; this suite does not establish smooth first-load menu animation. General menu usability is covered separately by the regression suite without this renderer-readiness precondition; it does not deliberately time input within the observed startup task.",
       "Immediate hero captures record entrance motion. Use separately named curated-hero-settled captures for the finished hero and detail-suite settled footer captures for the complete closing invitation."
     ]
   },

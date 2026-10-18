@@ -185,7 +185,9 @@ waits for the visible hero renderer to reach WebGL or its explicit static
 fallback. A separate cold-start trace found a 419ms main-thread task during
 renderer initialization that skipped intermediate sampled frames. The result
 does not establish smooth menu animation during first-load initialization;
-immediate-opening menu usability is covered separately by the regression suite.
+general menu usability is covered separately by the regression suite without
+this renderer-readiness precondition. That suite does not deliberately time
+input within the observed startup task.
 Immediate hero captures show entrance motion. Use the separately named
 `*-curated-hero-settled.png` files and the detail suite's settled footer captures
 for the completed appearance.
