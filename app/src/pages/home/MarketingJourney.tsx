@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { MarketingAudience } from "./MarketingHeader";
+import { usePreviewMotion, useRepeatReveal } from "./marketing-effects";
 
 const MARKETING_CHAPTERS = {
   players: [
@@ -78,56 +79,24 @@ export function MarketingJourney({ audience }: { audience: MarketingAudience }) 
   </>;
 }
 
-/** A short, nonblocking tiled reveal around real, independently mounted demonstrations. */
+/** Re-entering from below replays the reveal without remounting the live demonstration. */
 export function RevealFrame({ children, className = "" }: { children: ReactNode; className?: string }) {
   const host = useRef<HTMLDivElement>(null);
-  const [revealing, setRevealing] = useState(false);
-  useEffect(() => {
-    const node = host.current;
-    const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    if (!node || motion.matches || !("IntersectionObserver" in window)) return;
-    let timer = 0;
-    const stop = () => { setRevealing(false); window.clearTimeout(timer); };
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      setRevealing(!motion.matches);
-      timer = window.setTimeout(stop, 620);
-      observer.disconnect();
-    }, { threshold: .08 });
-    observer.observe(node);
-    motion.addEventListener("change", stop);
-    return () => { observer.disconnect(); window.clearTimeout(timer); motion.removeEventListener("change", stop); };
-  }, []);
-  return <div ref={host} className={`reveal-frame ${className}`} data-revealing={revealing} onPointerDownCapture={() => setRevealing(false)} onFocusCapture={() => setRevealing(false)}>
+  const { revealing, cycle, finish } = useRepeatReveal(host, "media");
+  usePreviewMotion(host);
+  return <div ref={host} className={`reveal-frame ${className}`} data-revealing={revealing} data-reveal-state="visible" onPointerDownCapture={finish} onFocusCapture={finish}>
     {children}
-    {revealing && <div className="pixel-reveal" aria-hidden="true">{Array.from({ length: 32 }, (_, index) => <i key={index} style={{ animationDelay: `${((index * 7) % 11) * 18}ms` }} />)}</div>}
+    {revealing && <div key={cycle} className="pixel-reveal" aria-hidden="true">{Array.from({ length: 48 }, (_, index) => <i key={index} style={{ animationDelay: `${((index * 7) % 13) * 22}ms` }} />)}</div>}
   </div>;
 }
 
 export function HeadingReveal({ children, className = "" }: { children: ReactNode; className?: string }) {
   const host = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const node = host.current;
-    const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    if (!node || motion.matches || !("IntersectionObserver" in window)) return;
-    let animation: Animation | undefined;
-    const stop = () => animation?.cancel();
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      if (!motion.matches) animation = node.animate([
-        { clipPath: "inset(0 0 100% 0)", transform: "translateY(22px)" },
-        { clipPath: "inset(0)", transform: "translateY(0)" },
-      ], { duration: 620, easing: "cubic-bezier(.16,1,.3,1)" });
-      observer.disconnect();
-    }, { threshold: .1 });
-    observer.observe(node);
-    motion.addEventListener("change", stop);
-    return () => { observer.disconnect(); stop(); motion.removeEventListener("change", stop); };
-  }, []);
-  return <div ref={host} className={className}>{children}</div>;
+  const { finish } = useRepeatReveal(host, "heading");
+  return <div ref={host} className={`heading-reveal ${className}`} data-reveal-state="visible" onPointerDownCapture={finish} onFocusCapture={finish}>{children}</div>;
 }
 
-/** Desktop-only decoration; it never substitutes for a link or covers demo inputs. */
+/** A bracketed, inert pointer hint. The native cursor and all control hit areas remain intact. */
 export function MarketingCursor() {
   const cursor = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -135,19 +104,32 @@ export function MarketingCursor() {
     if (!node) return;
     const pointer = matchMedia("(hover: hover) and (pointer: fine)");
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    const hide = () => { node.dataset.visible = "false"; };
+    let frame = 0, x = 0, y = 0;
+    const hide = () => { node.dataset.visible = "false"; cancelAnimationFrame(frame); frame = 0; };
     const move = (event: PointerEvent) => {
       const target = event.target instanceof Element ? event.target.closest<HTMLElement>("a[data-cursor]") : null;
-      if (!pointer.matches || motion.matches || !target) { hide(); return; }
+      if (!pointer.matches || motion.matches || document.hidden || !target || document.querySelector('.pt-marketing-menu:not([hidden])')) { hide(); return; }
       node.textContent = target.dataset.cursor || "Explore";
-      node.style.transform = `translate3d(${Math.min(event.clientX + 18, window.innerWidth - 150)}px,${Math.min(event.clientY + 18, window.innerHeight - 60)}px,0)`;
-      node.dataset.visible = "true";
+      const bounds = target.getBoundingClientRect();
+      const centered = target.hasAttribute("data-preview-link");
+      x = centered ? bounds.left + bounds.width / 2 : event.clientX; y = centered ? bounds.top + bounds.height / 2 : event.clientY;
+      if (!frame) frame = requestAnimationFrame(() => {
+        frame = 0;
+        const width = node.offsetWidth, height = node.offsetHeight;
+        node.style.transform = `translate3d(${Math.max(8, Math.min(x + (centered ? -width / 2 : 18), innerWidth - width - 8))}px,${Math.max(8, Math.min(y + (centered ? -height / 2 : 18), innerHeight - height - 8))}px,0)`;
+        node.dataset.visible = "true";
+      });
     };
     window.addEventListener("pointermove", move, { passive: true });
-    window.addEventListener("scroll", hide, { passive: true });
-    window.addEventListener("blur", hide);
-    document.addEventListener("mouseleave", hide);
-    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("scroll", hide); window.removeEventListener("blur", hide); document.removeEventListener("mouseleave", hide); };
+    window.addEventListener("scroll", hide, { passive: true }); window.addEventListener("resize", hide);
+    window.addEventListener("blur", hide); document.addEventListener("mouseleave", hide);
+    document.addEventListener("pointerdown", hide); document.addEventListener("focusin", hide); document.addEventListener("visibilitychange", hide);
+    pointer.addEventListener("change", hide); motion.addEventListener("change", hide);
+    return () => {
+      hide(); window.removeEventListener("pointermove", move); window.removeEventListener("scroll", hide); window.removeEventListener("resize", hide);
+      window.removeEventListener("blur", hide); document.removeEventListener("mouseleave", hide); document.removeEventListener("pointerdown", hide);
+      document.removeEventListener("focusin", hide); document.removeEventListener("visibilitychange", hide); pointer.removeEventListener("change", hide); motion.removeEventListener("change", hide);
+    };
   }, []);
   return <div ref={cursor} className="marketing-cursor" aria-hidden="true" data-visible="false" />;
 }

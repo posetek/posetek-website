@@ -18,16 +18,31 @@
   background: repeating-linear-gradient(90deg, transparent 0, transparent calc(25% - 1px), var(--footer-line) calc(25% - 1px), var(--footer-line) 25%);
 }
 .pt-revamp .marketing-footer-inner { width: min(1800px, 100%); margin: 0 auto; padding: 0 clamp(20px, 3.5vw, 72px); }
+.pt-revamp .marketing-footer-rules { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(4, 1fr); pointer-events: none; z-index: -1; }
+.pt-revamp .marketing-footer-rules i { border-right: 1px solid rgb(234 242 232 / 18%); transform-origin: 50% 100%; }
+.pt-revamp .marketing-footer[data-footer-motion="true"] .marketing-footer-rules i { transform: scaleY(var(--footer-line-progress, 0)); }
 .pt-revamp .marketing-footer a { color: inherit; text-decoration: none; }
 .pt-revamp .marketing-footer a:focus-visible { outline: 2px solid #b7f34a; outline-offset: 6px; }
 .pt-revamp .marketing-footer-topline { display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 22px 0; border-bottom: 1px solid var(--footer-line); font: 10px/1.5 "IBM Plex Mono", monospace; letter-spacing: .04em; }
 .pt-revamp .marketing-footer-topline > span { color: #a3b1a8; }
 .pt-revamp .marketing-footer-topline a { display: inline-flex; align-items: center; gap: 28px; min-height: 44px; }
-.pt-revamp .marketing-footer-topline a span { font-size: 20px; }
-.pt-revamp .marketing-footer-invitation { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0 28px; padding: clamp(55px, 7vw, 120px) 0 20px; transform: translateY(var(--footer-invitation-offset, 0)); }
+.pt-revamp .marketing-footer-topline a .marketing-footer-back-arrow { font-size: 20px; }
+.pt-revamp .marketing-footer-invitation { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0 28px; padding: clamp(55px, 7vw, 120px) 0 20px; transform-origin: 50% 0; }
+.pt-revamp .marketing-footer[data-footer-motion="true"] .marketing-footer-invitation { opacity: var(--footer-grid-progress, 1); transform: scale(calc(.75 + var(--footer-grid-progress, 1) * .25)); }
 .pt-revamp .marketing-footer p.marketing-footer-kicker { grid-column: 1 / -1; display: flex; gap: 15px; margin: 0 0 28px; font: 10px/1.5 "IBM Plex Mono", monospace; letter-spacing: .04em; color: #b7f34a; }
 .pt-revamp .marketing-footer-invitation h2 { grid-column: 1 / 4; margin: 0; font-family: Inter, sans-serif; font-size: clamp(44px, 5.7vw, 104px); font-weight: 500; line-height: 1.02; letter-spacing: -.065em; text-transform: none; }
-.pt-revamp .marketing-footer-invitation h2 span { color: #9baaa1; }
+.pt-revamp .marketing-footer-title-line { display: block; white-space: nowrap; perspective: 600px; }
+.pt-revamp .marketing-footer-title-line:last-child { color: #9baaa1; }
+.pt-revamp .marketing-footer-title-character { display: inline-block; transform-origin: 50% 50%; }
+.pt-revamp .marketing-footer[data-footer-motion="true"] .marketing-footer-title-character { transition: transform 1.2s cubic-bezier(.22,1,.36,1), opacity 1.2s cubic-bezier(.22,1,.36,1); transition-delay: calc(.1s + var(--footer-letter) * .05s); }
+.pt-revamp .marketing-footer[data-footer-state="before"] .marketing-footer-title-character { transform: translateY(50%) rotateY(90deg); opacity: 0; transition: none; }
+.pt-revamp .marketing-footer[data-footer-state="out"] .marketing-footer-title-character { transform: translateY(-50%) rotateY(-90deg); opacity: 0; transition-duration: .4s; transition-timing-function: cubic-bezier(.64,0,.78,0); transition-delay: calc(var(--footer-letter) * .025s); }
+.pt-revamp .marketing-footer[data-footer-state="in"] .marketing-footer-title-character { transform: none; opacity: 1; }
+.pt-revamp .marketing-footer[data-footer-motion="true"] :is(.marketing-footer-kicker, .marketing-footer-contact, .marketing-footer-next, .marketing-footer-bottom) { transition: transform 1.2s cubic-bezier(.22,1,.36,1), opacity 1.2s cubic-bezier(.22,1,.36,1); transition-delay: .1s; }
+.pt-revamp .marketing-footer[data-footer-state="before"] :is(.marketing-footer-kicker, .marketing-footer-contact, .marketing-footer-next, .marketing-footer-bottom) { transform: translateY(36px); opacity: 0; transition: none; }
+.pt-revamp .marketing-footer[data-footer-state="out"] :is(.marketing-footer-kicker, .marketing-footer-contact, .marketing-footer-next, .marketing-footer-bottom) { transform: translateY(-20px); opacity: 0; transition-duration: .4s; transition-timing-function: cubic-bezier(.64,0,.78,0); transition-delay: 0s; }
+.pt-revamp .marketing-footer[data-footer-state="in"] :is(.marketing-footer-kicker, .marketing-footer-contact, .marketing-footer-next, .marketing-footer-bottom) { transform: none; opacity: 1; }
+.pt-revamp .marketing-footer:focus-within :is(.marketing-footer-title-character, .marketing-footer-kicker, .marketing-footer-contact, .marketing-footer-next, .marketing-footer-bottom) { opacity: 1; transform: none; transition: none; }
 .pt-revamp .marketing-footer-contact { grid-column: 4; align-self: end; padding-bottom: 5px; }
 .pt-revamp .marketing-footer-contact > p { margin: 0 0 20px; color: #b9c4bc; font-size: 13px; line-height: 1.7; }
 .pt-revamp .marketing-footer-cta { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 58px; border-top: 1px solid #9baa9e; border-bottom: 1px solid #9baa9e; font-size: 13px; font-weight: 500; line-height: 1.5; }
@@ -41,13 +56,15 @@
 .pt-revamp .marketing-footer-next { display: block; margin-block: 70px; max-width: 320px; }
 .pt-revamp .marketing-footer-next-label { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 15px; color: #b7c4bb; font: 9px/1.5 "IBM Plex Mono", monospace; letter-spacing: .035em; }
 .pt-revamp .marketing-footer-next-label > span { font-size: 16px; color: #b7f34a; }
-.pt-revamp .marketing-footer-next-preview { position: relative; display: block; aspect-ratio: 1.4; padding: 20px; background: #f1f1f3; color: #04130e; overflow: hidden; }
+.pt-revamp .marketing-footer-next-preview { position: relative; display: block; aspect-ratio: 1.4; background: #f1f1f3; color: #04130e; overflow: hidden; }
+.pt-revamp .marketing-footer-next-scene { position: absolute; inset: 0; padding: 20px; transform: scale(calc(1 + var(--footer-pull, 0) * .06)); transform-origin: 50% 60%; transition: transform .2s linear; }
+.pt-revamp .marketing-footer-next-progress { position: absolute; inset: auto 0 0; height: 2px; background: #04130e; transform: scaleX(var(--footer-pull, 0)); transform-origin: 0 50%; }
 .pt-revamp .marketing-footer-next-grid { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(25% - 1px), rgb(4 19 14 / 11%) calc(25% - 1px), rgb(4 19 14 / 11%) 25%); }
 .pt-revamp .marketing-footer-next-number { position: relative; display: block; font: 9px "IBM Plex Mono", monospace; }
 .pt-revamp .marketing-footer-next-word { position: relative; display: block; margin-top: 10px; white-space: pre-line; font: 500 clamp(30px, 3.4vw, 58px)/.95 Inter, sans-serif; letter-spacing: -.065em; }
-.pt-revamp .marketing-footer-next-dot { position: absolute; bottom: 20px; right: 20px; width: 15px; height: 15px; background: #b7f34a; transition: transform 220ms ease; }
-.pt-revamp .marketing-footer-next:hover .marketing-footer-next-dot { transform: rotate(90deg) scale(1.3); }
+.pt-revamp .marketing-footer-next-dot { position: absolute; bottom: 20px; right: 20px; width: 15px; height: 15px; background: #b7f34a; }
 .pt-revamp .marketing-footer-next-title { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-top: 16px; min-height: 28px; font-size: 14px; font-weight: 500; }
+.pt-revamp .marketing-footer-next:hover .marketing-footer-next-title { opacity: .85; }
 .pt-revamp .marketing-footer-next-title svg { width: 21px; height: 21px; flex: 0 0 auto; transition: transform 180ms ease; }
 .pt-revamp .marketing-footer-next:hover .marketing-footer-next-title svg { transform: translateX(4px); }
 .pt-revamp .marketing-footer-next-description { display: block; margin-top: 5px; color: #a3b2a7; font-size: 11px; line-height: 1.7; }
@@ -91,7 +108,8 @@
   .pt-revamp .marketing-footer-stage { grid-template-columns: 1fr 1fr; gap: 16px; min-height: 280px; }
   .pt-revamp .marketing-footer-next { margin-block: 24px 38px; }
   .pt-revamp .marketing-footer-next-label { font-size: 7px; gap: 5px; }
-  .pt-revamp .marketing-footer-next-preview { padding: 12px; aspect-ratio: 1.05; }
+  .pt-revamp .marketing-footer-next-preview { aspect-ratio: 1.05; }
+  .pt-revamp .marketing-footer-next-scene { padding: 12px; }
   .pt-revamp .marketing-footer-next-number { font-size: 8px; }
   .pt-revamp .marketing-footer-next-word { font-size: clamp(30px, 8.5vw, 48px); }
   .pt-revamp .marketing-footer-next-dot { width: 10px; height: 10px; right: 10px; bottom: 10px; }
@@ -106,8 +124,11 @@
   .pt-revamp .marketing-footer-copyright { margin-left: auto; padding-top: 17px; font-size: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pt-revamp .marketing-footer-invitation { transform: none; }
-  .pt-revamp .marketing-footer a svg, .pt-revamp .marketing-footer-next-dot, .pt-revamp .marketing-footer-mark-fallback { transition: none; }
+  .pt-revamp .marketing-footer .marketing-footer-invitation, .pt-revamp .marketing-footer .marketing-footer-title-character, .pt-revamp .marketing-footer :is(.marketing-footer-kicker, .marketing-footer-contact, .marketing-footer-next, .marketing-footer-bottom) { transform: none; opacity: 1; transition: none; }
+  .pt-revamp .marketing-footer .marketing-footer-rules i { transform: none; }
+  .pt-revamp .marketing-footer .marketing-footer-next-scene { transform: none; transition: none; }
+  .pt-revamp .marketing-footer .marketing-footer-next-progress { transform: none; }
+  .pt-revamp .marketing-footer a svg, .pt-revamp .marketing-footer-mark-fallback { transition: none; }
   .pt-revamp .marketing-footer-mark canvas { display: none; }
   .pt-revamp .marketing-footer-mark .marketing-footer-mark-fallback { opacity: 1; }
 }

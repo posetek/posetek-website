@@ -23,7 +23,7 @@ describe("marketing audience navigation", () => {
     for (const hash of ["club", "players", "development", "contact"]) expect(html).toContain(`href="#${hash}"`);
     expect(html).toContain(`href="${TEAM_ENQUIRY_HREF}"`);
     expect(html).toContain("Talk about your team");
-    expect(html).toContain('href="/signin">Coach sign in');
+    expect(html).toMatch(/href="\/signin"><span[^>]*><span class="interaction-text-source">Coach sign in<\/span>/);
     expect(html).not.toContain('href="/bookPerformanceTest.html"');
   });
 
@@ -55,12 +55,27 @@ describe("marketing audience navigation", () => {
   it.each(["players", "coaches"] as const)("keeps each animated %s menu label one coherent accessible name", audience => {
     const html = renderToStaticMarkup(<MarketingHeader audience={audience} />);
     const pages = html.match(/<nav class="pt-menu-pages"[^>]*>([\s\S]*?)<\/nav>/)?.[1] || "";
-    const links = Array.from(pages.matchAll(/<a href="[^"]+" aria-label="([^"]+)">([\s\S]*?)<\/a>/g));
+    const links = Array.from(pages.matchAll(/<a href="[^"]+" aria-label="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g));
     expect(links.map(link => link[1])).toEqual(["Players", "Coaches", audience === "players" ? "Book a test" : "Get in touch"]);
     for (const [, label, content] of links) {
       const visual = content.match(/<strong aria-hidden="true">([\s\S]*?)<\/strong>/)?.[1];
       expect(visual?.replace(/<[^>]+>/g, "")).toBe(label);
     }
+  });
+
+  it("keeps destination previews decorative and uses local PoseTek identity", () => {
+    const html = renderToStaticMarkup(<MarketingHeader audience="players" />);
+    expect(html).toContain('class="pt-menu-peek" aria-hidden="true" data-visible="false"');
+    expect(html).toContain("Start with evidence.");
+    expect(html).not.toContain("<iframe");
+    expect(html).not.toContain("lainagency.com");
+  });
+
+  it("keeps all ten curtain slices out of the accessible navigation", () => {
+    const html = renderToStaticMarkup(<MarketingHeader audience="players" />);
+    const curtain = html.match(/<div class="pt-menu-curtain" aria-hidden="true">([\s\S]*?)<\/div>/)?.[1] || "";
+    expect(curtain.match(/class="pt-menu-curtain-slice"/g)).toHaveLength(10);
+    expect(curtain).not.toMatch(/tabindex|<a |<button/);
   });
 });
 

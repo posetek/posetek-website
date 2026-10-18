@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { MotionConfig } from "motion/react";
+import { ScrambleText } from "../home/MarketingEffects";
 import { useThemeColor } from "../../lib/use-theme-color";
 import { useBodyBackground } from "../../lib/use-body-background";
 import { HeadingReveal, MarketingJourney, MarketingCursor, RevealFrame } from "../home/MarketingJourney";
@@ -58,30 +59,30 @@ export default function CoachesPage() {
     <MarketingHeader audience="coaches" />
     <main id="main-content">
       <section className="coach-hero shell" id="top" aria-labelledby="coach-hero-title">
-        <div className="coach-hero-copy"><p className="eyebrow hero-enter"><span className="status-dot"/>For coaches and club leaders</p><p className="hero-question">What should your team train next?</p><h1 id="coach-hero-title" className="editorial-title"><span><span>Start with</span></span><span><span>evidence.</span></span></h1><p className="coach-hero-description hero-enter">Testing, individual insight, and ongoing support.<br/>Tailored to each team in your club.</p><a className="hero-explore hero-enter" href="#club" data-cursor="Explore your club"><span className="hero-explore-label">Explore the team approach<span className="hero-explore-track" aria-hidden="true"/></span><span className="hero-explore-orbit"><CoachArrow down/></span></a><span className="coach-hero-note">See the team. Understand the individual.</span></div>
-        <RevealFrame className="coach-hero-frame"><ClubPreview/></RevealFrame>
+        <div className="coach-hero-copy"><p className="eyebrow hero-enter"><span className="status-dot"/>For coaches and club leaders</p><p className="hero-question">What should your team train next?</p><h1 id="coach-hero-title" className="editorial-title"><span><span>Start with</span></span><span><span>evidence.</span></span></h1><p className="coach-hero-description hero-enter">Testing, individual insight, and ongoing support.<br/>Tailored to each team in your club.</p><a className="hero-explore hero-enter" href="#club"><span className="hero-explore-label"><ScrambleText>Explore the team approach</ScrambleText><span className="hero-explore-track" aria-hidden="true"/></span><span className="hero-explore-orbit"><CoachArrow down/></span></a><span className="coach-hero-note">See the team. Understand the individual.</span></div>
+        <RevealFrame className="coach-hero-frame"><a className="marketing-visual-link" href="#club" data-preview-link="" data-cursor="Explore your club" aria-label="Explore the club workspace"><ClubPreview/></a></RevealFrame>
         <div className="coach-service-strip"><span><strong>Club-wide</strong> perspective</span><span><strong>Team-by-team</strong> support</span><span><strong>Player-by-player</strong> focus</span></div>
       </section>
       <MarketingJourney audience="coaches" />
       <section className="section shell coach-club-section" id="club" aria-labelledby="club-title">
         <HeadingReveal className="section-heading"><div><p className="eyebrow">01 / Your club, connected</p><h2 id="club-title">One club. Every team.<br/><em>Each player.</em></h2></div><p className="section-description">Managers see across the club. Coaches stay connected to their teams. Every player keeps their own profile.</p></HeadingReveal>
         <RevealFrame><ClubExplorer teamId={teamId} onTeamChange={selectTeam}/></RevealFrame>
-        <div className="coach-section-foot"><span>One team or several. The same connected approach.</span><a className="button-text" href="#players">Look at each player <CoachArrow down/></a></div>
+        <div className="coach-section-foot"><span>One team or several. The same connected approach.</span><a className="button-text" href="#players"><ScrambleText>Look at each player</ScrambleText> <CoachArrow down/></a></div>
       </section>
       <section className="section coach-evidence-section" id="players" aria-labelledby="players-title"><div className="shell">
         <HeadingReveal className="section-heading"><div><p className="eyebrow">02 / Evidence for every player</p><h2 id="players-title">A shared starting point.<br/><em>Individual priorities.</em></h2></div><p className="section-description">Six tests reveal how players move and perform. Review each profile to find a clear training focus.</p></HeadingReveal>
         <RevealFrame><PlayerEvidence teamId={teamId} playerId={playerId} onPlayerChange={setPlayerId}/></RevealFrame>
         <div className="coach-test-strip" aria-label="Six performance tests"><span>THE SIX TESTS</span>{["Sprint","Vertical jump","Broad jump","Dribbling","Change of direction","Shooting"].map(test=><span key={test}>{test}</span>)}</div>
-        <a className="button-text coach-test-link" href="/#tests">Explore the testing experience <CoachArrow/></a>
+        <a className="button-text coach-test-link" href="/#tests"><ScrambleText>Explore the testing experience</ScrambleText> <CoachArrow/></a>
       </div></section>
       <section className="section shell coach-development-section" id="development" aria-labelledby="development-title">
         <HeadingReveal className="section-heading"><div><p className="eyebrow">03 / From results to the next session</p><h2 id="development-title">Keep development moving.<br/><em>Between every test.</em></h2></div><p className="section-description">PoseTek supports the plan. Coaches see the progress. Players take the next step in the mobile app.</p></HeadingReveal>
         <RevealFrame><DevelopmentJourney key={player.id} player={player} teamName={team.name}/></RevealFrame>
       </section>
       <section className="section coach-contact" id="contact" aria-labelledby="contact-title"><div className="shell">
-        <div className="coach-contact-heading"><div><p className="eyebrow">Built around your teams</p><h2 id="contact-title">Let’s plan your team’s<br/>next step.</h2></div><p>Tell us about your teams and priorities. We’ll arrange testing and ongoing support around your club.</p></div>
+        <HeadingReveal className="coach-contact-heading"><div><p className="eyebrow">Built around your teams</p><h2 id="contact-title">Let’s plan your team’s<br/>next step.</h2></div><p>Tell us about your teams and priorities. We’ll arrange testing and ongoing support around your club.</p></HeadingReveal>
         <ol className="coach-service-steps"><li><span>01</span><strong>Discuss your teams</strong><p>Your players, your priorities.</p></li><li><span>02</span><strong>Arrange testing</strong><p>A shared starting point.</p></li><li><span>03</span><strong>Agree ongoing support</strong><p>A next step for each team.</p></li></ol>
-        <div className="coach-contact-actions"><a className="button-primary" href={teamEnquiryHref}>Talk about your team <CoachArrow/></a><a className="button-text" href="/signin">Coach sign in <CoachArrow/></a><span>Let’s start with a conversation.</span></div>
+        <div className="coach-contact-actions"><a className="button-primary" href={teamEnquiryHref}><ScrambleText>Talk about your team</ScrambleText> <CoachArrow/></a><a className="button-text" href="/signin"><ScrambleText>Coach sign in</ScrambleText> <CoachArrow/></a><span>Let’s start with a conversation.</span></div>
       </div></section>
     </main>
     <MarketingFooter audience="coaches" />

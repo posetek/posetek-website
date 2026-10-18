@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { MotionConfig } from "motion/react";
+import { ScrambleText } from "./MarketingEffects";
 import { useThemeColor } from "../../lib/use-theme-color";
 import { useBodyBackground } from "../../lib/use-body-background";
 import { TestCards } from "./TestCards";
@@ -69,9 +70,9 @@ export default function HomePage() {
             <h1 id="hero-title" className="editorial-title"><span><span>Start with</span></span><span><span>evidence.</span></span></h1>
             <p className="hero-description hero-enter" style={{ "--enter-delay": "160ms" } as CSSProperties}>Six performance tests. One connected mobile app.<br />Understand how a player moves, find their focus,<br className="desktop-break" /> and turn evidence into their next training session.</p>
             <div className="hero-actions hero-enter" style={{ "--enter-delay": "240ms" } as CSSProperties}>
-              <a className="hero-explore" href="#tests" data-cursor="Explore the tests"><span className="hero-explore-label">See your game differently<span className="hero-explore-track" aria-hidden="true" /></span><span className="hero-explore-orbit" aria-hidden="true"><Arrow down /></span></a>
+              <a className="hero-explore" href="#tests"><span className="hero-explore-label"><ScrambleText>See your game differently</ScrambleText><span className="hero-explore-track" aria-hidden="true" /></span><span className="hero-explore-orbit" aria-hidden="true"><Arrow down /></span></a>
             </div>
-            <a className="hero-mobile-link" href="#mobile-app"><svg viewBox="0 0 16 22" fill="none" aria-hidden="true"><rect x="2" y="1" width="12" height="20" rx="3" stroke="currentColor" strokeWidth="1.3"/><path d="M6 4h4M6 18h4" stroke="currentColor" strokeLinecap="round"/></svg>Explore the PoseTek mobile app <span aria-hidden="true">↗</span></a>
+            <a className="hero-mobile-link" href="#mobile-app"><svg viewBox="0 0 16 22" fill="none" aria-hidden="true"><rect x="2" y="1" width="12" height="20" rx="3" stroke="currentColor" strokeWidth="1.3"/><path d="M6 4h4M6 18h4" stroke="currentColor" strokeLinecap="round"/></svg><ScrambleText>Explore the PoseTek mobile app</ScrambleText> <span aria-hidden="true">↗</span></a>
           </div>
           <RevealFrame className="hero-art">
             <div className="art-coordinate" aria-hidden="true">PT / PERFORMANCE SYSTEM</div>
@@ -90,12 +91,12 @@ export default function HomePage() {
               <LazyHomepageDemo load={loadMovement} demoProps={{ requestedDrill, onDrillChange: setSelectedDrill, hideChoices: true }} forceLoad={!!requestedDrill} kind="movement" label="Recorded movement analysis" />
             </RevealFrame></div>
           </div>
-          <div className="demo-caption"><span>Recorded reps · Six tests · Frame-by-frame playback</span><a className="button-text" href="#profile">Put it in perspective <Arrow down /></a></div>
+          <div className="demo-caption"><span>Recorded reps · Six tests · Frame-by-frame playback</span><a className="button-text" href="#profile"><ScrambleText>Put it in perspective</ScrambleText> <Arrow down /></a></div>
         </section>
 
         <section className="profile-section section" id="profile" aria-labelledby="profile-title">
           <div className="profile-layout shell">
-            <HeadingReveal className="profile-copy"><p className="eyebrow">02 / One profile. The whole picture.</p><h2 id="profile-title">Put performance<br /><em>in perspective.</em></h2><p>Bring results together, compare benchmarks, and identify what to train next.</p><div className="profile-benefits"><span><i />Explore five skill areas</span><span><i />Review drill-specific results</span><span><i />Track progress over time</span></div><a className="button-text" href="#training">Find the next step <Arrow down /></a></HeadingReveal>
+            <HeadingReveal className="profile-copy"><p className="eyebrow">02 / One profile. The whole picture.</p><h2 id="profile-title">Put performance<br /><em>in perspective.</em></h2><p>Bring results together, compare benchmarks, and identify what to train next.</p><div className="profile-benefits"><span><i />Explore five skill areas</span><span><i />Review drill-specific results</span><span><i />Track progress over time</span></div><a className="button-text" href="#training"><ScrambleText>Find the next step</ScrambleText> <Arrow down /></a></HeadingReveal>
             <RevealFrame className="profile-showcase"><AthleteProfile /></RevealFrame>
           </div>
         </section>
@@ -104,7 +105,7 @@ export default function HomePage() {
           <div className="shell">
             <HeadingReveal className="section-heading"><div><p className="eyebrow">03 / Workout planner</p><h2 id="training-title" tabIndex={-1}>Turn results into<br /><em>a focused plan.</em></h2></div><p className="section-description">Turn your focus into guided drills that fit your time and energy.</p></HeadingReveal>
             <RevealFrame><LazyHomepageDemo load={loadWorkout} demoProps={{ initialRequest: workoutRequest.text, requestId: workoutRequest.id }} forceLoad={!!workoutRequest.text} kind="workout" label="Interactive workout planner" /></RevealFrame>
-            <div className="demo-caption"><span>Sample workout · Set your focus · Try a guided session</span><a className="button-text" href="#retest">Close the loop <Arrow down /></a></div>
+            <div className="demo-caption"><span>Sample workout · Set your focus · Try a guided session</span><a className="button-text" href="#retest"><ScrambleText>Close the loop</ScrambleText> <Arrow down /></a></div>
           </div>
         </section>
 
@@ -112,16 +113,16 @@ export default function HomePage() {
           <span id="retest" className="section-anchor" />
           <HeadingReveal className="section-heading"><div><p className="eyebrow">04 / Retest with AI Coach</p><h2 id="retest-title">Train. Retest.<br /><em>See what changes.</em></h2></div><p className="section-description">Repeat the tests. Understand what changed. Choose your next training focus.</p></HeadingReveal>
           <RevealFrame><LazyHomepageDemo load={loadCoach} demoProps={{ onOpenWorkout: openWorkout }} kind="coach" label="AI Coach sample conversation" /></RevealFrame>
-          <div className="demo-caption"><span>Sample athlete · Previous and latest results · Your next training focus</span><a className="button-text" href="#technique">Look closer at technique <Arrow down /></a></div>
+          <div className="demo-caption"><span>Sample athlete · Previous and latest results · Your next training focus</span><a className="button-text" href="#technique"><ScrambleText>Look closer at technique</ScrambleText> <Arrow down /></a></div>
         </section>
 
         <section className="technique-section shell section" id="technique" aria-labelledby="technique-title">
           <HeadingReveal className="section-heading"><div><p className="eyebrow">05 / Technique analysis</p><h2 id="technique-title">The rep. The detail.<br /><em>The difference.</em></h2></div><p className="section-description">Pause at key moments. Compare technique. Find a clear coaching focus.</p></HeadingReveal>
           <RevealFrame><LazyHomepageDemo load={loadTechnique} demoProps={{}} kind="technique" label="Recorded technique analysis" /></RevealFrame>
-          <div className="demo-caption"><span>One kick · One cue at a time · Compare the same moment</span><a className="button-text" href="/bookPerformanceTest.html">Establish your baseline <Arrow /></a></div>
+          <div className="demo-caption"><span>One kick · One cue at a time · Compare the same moment</span><a className="button-text" href="/bookPerformanceTest.html"><ScrambleText>Establish your baseline</ScrambleText> <Arrow /></a></div>
         </section>
 
-        <section className="closing section" id="mobile-app" aria-labelledby="closing-title"><div className="shell closing-content mobile-closing-layout"><div className="mobile-closing-copy"><p className="eyebrow">The PoseTek mobile app</p><h2 id="closing-title">Your next session.<br /><em>In your pocket.</em></h2><p>Review your results. Follow your plan. Take your next training step with you.</p><div className="closing-actions"><a className="button-primary" href="/bookPerformanceTest.html">Book a performance test <Arrow /></a><a className="button-text" href="/signin">Coach sign in <Arrow /></a></div></div><RevealFrame className="mobile-showcase"><MobileAppPreview /></RevealFrame></div></section>
+        <section className="closing section" id="mobile-app" aria-labelledby="closing-title"><div className="shell closing-content mobile-closing-layout"><HeadingReveal className="mobile-closing-copy"><p className="eyebrow">The PoseTek mobile app</p><h2 id="closing-title">Your next session.<br /><em>In your pocket.</em></h2><p>Review your results. Follow your plan. Take your next training step with you.</p><div className="closing-actions"><a className="button-primary" href="/bookPerformanceTest.html"><ScrambleText>Book a performance test</ScrambleText> <Arrow /></a><a className="button-text" href="/signin"><ScrambleText>Coach sign in</ScrambleText> <Arrow /></a></div></HeadingReveal><RevealFrame className="mobile-showcase"><MobileAppPreview /></RevealFrame></div></section>
       </main>
       <MarketingFooter audience="players" />
       <MarketingCursor />
