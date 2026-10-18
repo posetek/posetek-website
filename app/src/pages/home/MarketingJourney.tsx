@@ -122,29 +122,37 @@ export function MarketingCursor() {
     if (!node) return;
     const pointer = matchMedia("(hover: hover) and (pointer: fine)");
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    let frame = 0, x = 0, y = 0;
-    const hide = () => { node.dataset.visible = "false"; cancelAnimationFrame(frame); frame = 0; };
-    const move = (event: PointerEvent) => {
-      const target = event.target instanceof Element ? event.target.closest<HTMLElement>("a[data-cursor]") : null;
-      if (!pointer.matches || motion.matches || document.hidden || !target || document.querySelector('.pt-marketing-menu:not([hidden])')) { hide(); return; }
+    let frame = 0, x = 0, y = 0, target: HTMLElement | null = null;
+    const hide = () => { target = null; node.dataset.visible = "false"; cancelAnimationFrame(frame); frame = 0; };
+    const draw = () => {
+      frame = 0;
+      const hit = document.elementFromPoint(x, y)?.closest("a[data-cursor]");
+      if (!pointer.matches || motion.matches || document.hidden || !target || hit !== target || (document.documentElement.dataset.marketingNavigation || "closed") !== "closed") { hide(); return; }
       node.textContent = target.dataset.cursor || "Explore";
-      const bounds = target.getBoundingClientRect();
-      const centered = target.hasAttribute("data-preview-link");
-      x = centered ? bounds.left + bounds.width / 2 : event.clientX; y = centered ? bounds.top + bounds.height / 2 : event.clientY;
-      if (!frame) frame = requestAnimationFrame(() => {
-        frame = 0;
-        const width = node.offsetWidth, height = node.offsetHeight;
-        node.style.transform = `translate3d(${Math.max(8, Math.min(x + (centered ? -width / 2 : 18), innerWidth - width - 8))}px,${Math.max(8, Math.min(y + (centered ? -height / 2 : 18), innerHeight - height - 8))}px,0)`;
-        node.dataset.visible = "true";
-      });
+      const bounds = target.getBoundingClientRect(), centered = target.hasAttribute("data-preview-link");
+      const width = node.offsetWidth, height = node.offsetHeight;
+      const left = centered ? bounds.left + (bounds.width - width) / 2 : x + 18;
+      const top = centered ? bounds.top + (bounds.height - height) / 2 : y + 18;
+      node.style.transform = `translate3d(${Math.max(8, Math.min(left, innerWidth - width - 8))}px,${Math.max(8, Math.min(top, innerHeight - height - 8))}px,0)`;
+      node.dataset.visible = "true";
+    };
+    const schedule = () => { if (target && !frame) frame = requestAnimationFrame(draw); };
+    const move = (event: PointerEvent) => {
+      target = event.target instanceof Element ? event.target.closest<HTMLElement>("a[data-cursor]") : null;
+      if (!target || event.pointerType === "touch") { hide(); return; }
+      x = event.clientX; y = event.clientY; schedule();
     };
     window.addEventListener("pointermove", move, { passive: true });
-    window.addEventListener("scroll", hide, { passive: true }); window.addEventListener("resize", hide);
+    // Keep the centered media hint attached during scrolling. A hit test removes
+    // it as soon as the linked preview leaves the stationary pointer.
+    window.addEventListener("scroll", schedule, { passive: true }); window.addEventListener("resize", hide);
+    window.addEventListener("marketing:navigation", hide);
     window.addEventListener("blur", hide); document.addEventListener("mouseleave", hide);
     document.addEventListener("pointerdown", hide); document.addEventListener("focusin", hide); document.addEventListener("visibilitychange", hide);
     pointer.addEventListener("change", hide); motion.addEventListener("change", hide);
     return () => {
-      hide(); window.removeEventListener("pointermove", move); window.removeEventListener("scroll", hide); window.removeEventListener("resize", hide);
+      hide(); window.removeEventListener("pointermove", move); window.removeEventListener("scroll", schedule); window.removeEventListener("resize", hide);
+      window.removeEventListener("marketing:navigation", hide);
       window.removeEventListener("blur", hide); document.removeEventListener("mouseleave", hide); document.removeEventListener("pointerdown", hide);
       document.removeEventListener("focusin", hide); document.removeEventListener("visibilitychange", hide); pointer.removeEventListener("change", hide); motion.removeEventListener("change", hide);
     };

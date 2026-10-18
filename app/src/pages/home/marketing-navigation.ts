@@ -24,10 +24,24 @@ export function installMarketingNavigation(header: HTMLElement | null): (() => v
   };
   const cue = (name: string) => header.dispatchEvent(new CustomEvent("marketing:cue", { detail: name }));
   const settleLetters = () => { panel.dataset.letterReveal = "false"; };
+  const exitStyles: [HTMLElement, string][] = [];
+  const captureOpening = () => {
+    if (panel.dataset.letterReveal !== "true") return;
+    // Read the interrupted frame before changing any styles. Closing starts from
+    // what is actually visible, including still-hidden delayed letters/content.
+    const snapshots = [
+      ...Array.from(panel.querySelectorAll<HTMLElement>(".pt-menu-curtain-slice"), node => [node, "--curtain-exit-from", getComputedStyle(node).transform] as const),
+      ...Array.from(panel.querySelectorAll<HTMLElement>(".pt-menu-letter"), node => [node, "--letter-exit-from", getComputedStyle(node).transform] as const),
+      ...Array.from(panel.querySelectorAll<HTMLElement>(":scope > :not(.pt-menu-curtain)"), node => [node, "--content-exit-from", getComputedStyle(node).opacity] as const),
+    ];
+    for (const [node, property, value] of snapshots) { node.style.setProperty(property, value); exitStyles.push([node, property]); }
+  };
+  const clearExitStyles = () => { exitStyles.splice(0).forEach(([node, property]) => node.style.removeProperty(property)); };
   const finish = () => {
     clearTimeout(timer);
     panel.hidden = true; disclosure.open = false;
     panel.dataset.closing = "false";
+    clearExitStyles();
     header.classList.remove("menu-open");
     opener.setAttribute("aria-expanded", "false");
     opener.setAttribute("aria-label", "Open navigation");
@@ -48,7 +62,7 @@ export function installMarketingNavigation(header: HTMLElement | null): (() => v
   };
   const dismiss = () => {
     if (phase === "closed") return;
-    cue("close"); settleLetters(); destination = null;
+    cue("close"); captureOpening(); settleLetters(); destination = null;
     if (phase === "closing" || motion.matches || document.hidden) { finish(); return; }
     clearTimeout(timer); publish("closing");
     panel.dataset.closing = "true";
@@ -57,6 +71,7 @@ export function installMarketingNavigation(header: HTMLElement | null): (() => v
   const open = () => {
     if (phase === "opening" || phase === "open") return;
     clearTimeout(timer);
+    clearExitStyles();
     // Announce intent before any layout or animation starts.
     publish("opening");
     disclosure.open = true; panel.hidden = false; panel.scrollTop = 0;
@@ -112,7 +127,11 @@ export function installMarketingNavigation(header: HTMLElement | null): (() => v
     if (key.shiftKey && (document.activeElement === first || !panel.contains(document.activeElement))) { key.preventDefault(); last.focus(); }
     else if (!key.shiftKey && (document.activeElement === last || !panel.contains(document.activeElement))) { key.preventDefault(); first.focus(); }
   });
-  listen(panel, "pointerdown", settleLetters);
+  listen(panel, "pointerdown", event => {
+    // The Close click reverses the current frame; settling it on pointerdown
+    // would expose every delayed letter before that click arrives.
+    if (!(event.target instanceof Element) || !event.target.closest("[data-menu-close]")) settleLetters();
+  });
   listen(panel, "focusin", event => { if (event.target !== close) settleLetters(); });
   listen(panel, "click", event => {
     const click = event as MouseEvent;
@@ -133,7 +152,7 @@ export function installMarketingNavigation(header: HTMLElement | null): (() => v
   header.dataset.enhanced = "true";
   if (adopted) open(); else publish("closed");
   return () => {
-    removals.forEach(remove => remove()); clearTimeout(timer); restore?.();
+    removals.forEach(remove => remove()); clearTimeout(timer); clearExitStyles(); restore?.();
     delete header.dataset.enhanced; publish("closed");
     panel.hidden = false; panel.removeAttribute("role"); panel.removeAttribute("aria-modal");
   };

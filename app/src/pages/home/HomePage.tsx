@@ -27,7 +27,7 @@ const loadCoach = () => import("./product/CoachDemo");
 const loadWorkout = () => import("./product/WorkoutDemo");
 
 function Arrow({ down = false }: { down?: boolean }) {
-  return <svg className="arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={down ? { transform: "rotate(90deg)" } : undefined}><path d="M4 12h15m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.7" /></svg>;
+  return <svg className="arrow" data-direction={down ? "down" : "right"} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={down ? "M12 4v15m-6-6 6 6 6-6" : "M4 12h15m-6-6 6 6-6 6"} stroke="currentColor" strokeWidth="1.7" /></svg>;
 }
 
 export default function HomePage() {
@@ -73,7 +73,7 @@ export default function HomePage() {
             <h1 id="hero-title" className="editorial-title"><span><span>Start with</span></span><span><span>evidence.</span></span></h1>
             </div>
             <div className="hero-summary">
-            <p className="hero-description hero-enter" style={{ "--enter-delay": "160ms" } as CSSProperties}>Six performance tests. One connected mobile app.<br />Understand how a player moves, find their focus,<br className="desktop-break" /> and turn evidence into their next training session.</p>
+            <p className="hero-description hero-enter" style={{ "--enter-delay": "160ms" } as CSSProperties}>Six performance tests. One connected mobile app.<br />{" "}Understand how a player moves, find their focus,<br className="desktop-break" /> and turn evidence into their next training session.</p>
             <div className="hero-actions hero-enter" style={{ "--enter-delay": "240ms" } as CSSProperties}>
               <a className="hero-explore" href="#tests"><span className="hero-explore-label"><ScrambleText>See your game differently</ScrambleText><span className="hero-explore-track" aria-hidden="true" /></span><span className="hero-explore-orbit" aria-hidden="true"><Arrow down /></span></a>
             </div>

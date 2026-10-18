@@ -32,27 +32,41 @@ export function enhanceMarketingHeader(header: HTMLElement): () => void {
   const panel = header.querySelector<HTMLElement>(".pt-marketing-menu")!;
   const peek = header.querySelector<HTMLElement>(".pt-menu-peek")!;
   const links = Array.from(header.querySelectorAll<HTMLAnchorElement>("[data-menu-page]"));
-  let frame = 0, active: HTMLAnchorElement | null = null, previousX: number | null = null;
+  let frame = 0, tiltTimer = 0, active: HTMLAnchorElement | null = null, previousX: number | null = null;
+  let x = 0, y = 0, positioned = false;
   const allowed = () => pointer.matches && !motion.matches && !document.hidden && ["opening", "open"].includes(header.dataset.navigation || "");
   const hide = () => {
-    cancelAnimationFrame(frame); frame = 0; active = null; previousX = null;
+    cancelAnimationFrame(frame); clearTimeout(tiltTimer); frame = 0; active = null; previousX = null; positioned = false;
     peek.dataset.visible = "false";
     links.forEach(link => { link.dataset.active = "false"; link.dataset.dimmed = "false"; });
   };
-  const position = (x: number, y: number) => {
-    const angle = previousX === null ? 0 : Math.max(-8, Math.min(8, (x - previousX) * .4)); previousX = x;
-    cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(() => {
-      frame = 0; if (!allowed()) return;
+  const draw = () => {
+      frame = 0; if (!allowed() || !active) return;
+      const angle = previousX === null ? 0 : Math.max(-8, Math.min(8, (x - previousX) * .4)); previousX = x;
       const left = Math.max(20, Math.min(x + 26, innerWidth - peek.offsetWidth - 20));
       const top = Math.max(20, Math.min(y - peek.offsetHeight * .65, innerHeight - peek.offsetHeight - 20));
       peek.style.transform = `translate3d(${left}px,${top}px,0)`;
       peek.style.setProperty("--peek-angle", `${angle}deg`);
-    });
+      clearTimeout(tiltTimer);
+      tiltTimer = window.setTimeout(() => { peek.style.setProperty("--peek-angle", "0deg"); }, 120);
+      if (!positioned) {
+        positioned = true;
+        // Commit the hidden position first. A new preview never flies from the
+        // viewport origin (or its previous destination) toward the pointer.
+        frame = requestAnimationFrame(() => {
+          frame = 0; if (!allowed() || !active) return;
+          peek.dataset.positioned = "true"; peek.dataset.visible = "true";
+          draw();
+        });
+      }
+  };
+  const position = (nextX: number, nextY: number) => {
+    x = nextX; y = nextY;
+    if (!frame) frame = requestAnimationFrame(draw);
   };
   links.forEach(link => {
     const show = (event: Event) => {
-      if (header.dataset.navigation === "closing") return;
+      if (!["opening", "open"].includes(header.dataset.navigation || "")) return;
       if (event instanceof PointerEvent && (event.pointerType === "touch" || !pointer.matches)) return;
       active = link;
       links.forEach(item => { item.dataset.active = String(item === link); item.dataset.dimmed = String(item !== link); });
@@ -60,7 +74,8 @@ export function enhanceMarketingHeader(header: HTMLElement): () => void {
       peek.querySelectorAll("[data-peek-label]").forEach(node => { node.textContent = link.getAttribute("aria-label"); });
       peek.querySelector("[data-peek-title]")!.textContent = link.dataset.previewTitle || "";
       peek.querySelector("[data-peek-caption]")!.textContent = link.dataset.previewCaption || "";
-      peek.dataset.visible = String(allowed());
+      if (!allowed()) peek.dataset.visible = "false";
+      if (!positioned) peek.dataset.positioned = "false";
       if (allowed()) {
         const bounds = link.getBoundingClientRect();
         position(event instanceof PointerEvent ? event.clientX : bounds.right - peek.offsetWidth - 30,
@@ -75,7 +90,7 @@ export function enhanceMarketingHeader(header: HTMLElement): () => void {
     if (active && allowed() && point.pointerType !== "touch") position(point.clientX, point.clientY);
   });
   listen(panel, "pointerleave", hide); listen(pointer, "change", hide); listen(motion, "change", hide);
-  listen(document, "visibilitychange", hide); listen(window, "blur", hide);
+  listen(document, "visibilitychange", hide); listen(window, "blur", hide); listen(window, "resize", hide);
   listen(window, "marketing:navigation", () => { if (!allowed()) hide(); });
 
   const stopScrambles: (() => void)[] = [];
@@ -99,5 +114,6 @@ export function enhanceMarketingHeader(header: HTMLElement): () => void {
   });
   const stopAll = () => stopScrambles.forEach(stop => stop());
   listen(motion, "change", stopAll); listen(fine, "change", stopAll); listen(document, "visibilitychange", stopAll); listen(window, "blur", stopAll);
+  listen(window, "marketing:navigation", stopAll);
   return () => { hide(); stopAll(); removals.forEach(remove => remove()); delete header.dataset.polished; };
 }

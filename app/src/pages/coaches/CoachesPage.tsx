@@ -24,7 +24,7 @@ import "../home/marketing-demo-cards.scss";
 
 const teamEnquiryHref = TEAM_ENQUIRY_HREF;
 export function CoachArrow({ down = false }: { down?: boolean }) {
-  return <svg className="arrow" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={down ? { transform: "rotate(90deg)" } : undefined}><path d="M4 12h15m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.7" /></svg>;
+  return <svg className="arrow" data-direction={down ? "down" : "right"} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={down ? "M12 4v15m-6-6 6 6 6-6" : "M4 12h15m-6-6 6 6-6 6"} stroke="currentColor" strokeWidth="1.7" /></svg>;
 }
 
 function ClubPreview() {

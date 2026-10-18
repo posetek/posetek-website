@@ -14,6 +14,7 @@
   :is(.homepage-demo, .profile-demo, .product-demo, .technique-demo, .cx-club, .cx-evidence, .coach-development) :is(p, small, label, legend) { font-size: 12px; line-height: 1.6; }
   :is(.homepage-demo, .profile-demo, .product-demo, .technique-demo, .cx-club, .cx-evidence, .coach-development) :is(h3, h4) { text-transform: none; }
   .homepage-demo-placeholder { min-height: 480px; padding: 24px; }
+  .performance-stage, .pose-demo-placeholder { border-radius: 0; }
   .homepage-demo-technique .homepage-demo-placeholder { min-height: 650px; }
   .homepage-demo-coach .homepage-demo-placeholder { min-height: 720px; }
   .homepage-demo-workout .homepage-demo-placeholder { min-height: 680px; }
