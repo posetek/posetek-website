@@ -1,4 +1,5 @@
 import { Component, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useMarketingActivity } from "./marketing-activity";
 
 type DemoModule<P> = { default: ComponentType<P & { active?: boolean }> };
 
@@ -20,9 +21,9 @@ export function LazyHomepageDemo<P extends object>({ load, demoProps, label, kin
   const host = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [pageVisible, setPageVisible] = useState(true);
+  const activityAllowed = useMarketingActivity();
   const [attempt, setAttempt] = useState(0);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<"load" | "render" | null>(null);
   const [Demo, setDemo] = useState<DemoModule<P>["default"] | null>(null);
 
   useEffect(() => {
@@ -34,33 +35,43 @@ export function LazyHomepageDemo<P extends object>({ load, demoProps, label, kin
     const visibility = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting));
     preload.observe(node);
     visibility.observe(node);
-    const update = () => setPageVisible(!document.hidden);
-    update();
-    document.addEventListener("visibilitychange", update);
     return () => {
       preload.disconnect();
       visibility.disconnect();
-      document.removeEventListener("visibilitychange", update);
     };
   }, []);
 
   useEffect(() => {
-    if (!near && !forceLoad) return;
+    if ((!near && !forceLoad) || Demo) return;
     let cancelled = false;
-    load().then(module => {
-      if (!cancelled) { setDemo(() => module.default); setFailed(false); }
-    }).catch(() => { if (!cancelled) setFailed(true); });
-    return () => { cancelled = true; };
-  }, [near, forceLoad, load, attempt]);
+    // A stalled request must reach a useful recovery state. The import itself
+    // cannot be aborted; a late result is ignored until the visitor retries.
+    const timeout = window.setTimeout(() => {
+      if (!cancelled) { cancelled = true; setFailed("load"); }
+    }, 20_000);
+    Promise.resolve().then(load).then(module => {
+      window.clearTimeout(timeout);
+      if (!cancelled) { setDemo(() => module.default); setFailed(null); }
+    }).catch(() => {
+      window.clearTimeout(timeout);
+      if (!cancelled) setFailed("load");
+    });
+    return () => { cancelled = true; window.clearTimeout(timeout); };
+  }, [near, forceLoad, load, attempt, Demo]);
 
-  const retry = () => { setFailed(false); setAttempt(value => value + 1); };
+  const retry = () => { setFailed(null); setAttempt(value => value + 1); };
+  // Browsers can cache rejected module imports for the current document. One
+  // local retry preserves every other demo; only an explicit reload clears it.
+  const reloadNeeded = failed === "load" && attempt > 0;
   const failure = <div className="homepage-demo-placeholder" role="status">
-    <span className="eyebrow">{label}</span><p>This demo couldn’t load.</p>
-    <button className="button-text demo-retry" type="button" onClick={retry}>Try again</button>
+    <span className="eyebrow">{label}</span><p>{failed === "render" ? "This demo couldn’t start." : "This demo couldn’t load."}</p>
+    {reloadNeeded
+      ? <><p>Reloading restarts all sample demos on this page.</p><button className="button-text demo-retry" type="button" onClick={() => window.location.reload()}>Reload page</button></>
+      : <button className="button-text demo-retry" type="button" onClick={retry}>Try again</button>}
   </div>;
 
   return <div ref={host} className={`homepage-demo homepage-demo-${kind}`} data-demo={kind} data-demo-state={failed ? "failed" : Demo ? "ready" : "pending"}>
-    {Demo ? <DemoBoundary key={attempt} fallback={failure} onFailure={() => setFailed(true)}><Demo {...demoProps} active={visible && pageVisible} /></DemoBoundary>
+    {Demo ? <DemoBoundary key={attempt} fallback={failure} onFailure={() => setFailed("render")}><Demo {...demoProps} active={visible && activityAllowed} /></DemoBoundary>
       : failed ? failure : <div className="homepage-demo-placeholder" aria-busy={near || forceLoad}>
         <span className="eyebrow">{label}</span><span className="demo-loading-mark" aria-hidden="true">PT</span>
         <p>{near || forceLoad ? "Preparing the interactive demo…" : "Explore the interactive demo below."}</p>

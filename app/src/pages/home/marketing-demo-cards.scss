@@ -1,0 +1,461 @@
+/* Public gallery cards query their available width, not the desktop viewport.
+   The section/card body supplies container-type: inline-size. All live panels
+   retain natural height; presentation never scales or clips their controls. */
+.pt-home.pt-revamp .marketing-gallery {
+  :is(.homepage-demo, .profile-demo, .product-demo, .technique-demo, .cx-club, .cx-evidence, .coach-development) {
+    min-width: 0;
+    max-width: 100%;
+    border-radius: 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  :is(button, select, input[type="range"], summary) { min-height: 44px; min-width: 44px; }
+  :is(button, select, summary) { font-size: 13px; line-height: 1.45; }
+  :is(.homepage-demo, .profile-demo, .product-demo, .technique-demo, .cx-club, .cx-evidence, .coach-development) :is(p, small, label, legend) { font-size: 12px; line-height: 1.6; }
+  :is(.homepage-demo, .profile-demo, .product-demo, .technique-demo, .cx-club, .cx-evidence, .coach-development) :is(h3, h4) { text-transform: none; }
+  .homepage-demo-placeholder { min-height: 480px; padding: 24px; }
+  .performance-stage, .pose-demo-placeholder { border-radius: 0; }
+  .homepage-demo-technique .homepage-demo-placeholder { min-height: 650px; }
+  .homepage-demo-coach .homepage-demo-placeholder { min-height: 720px; }
+  .homepage-demo-workout .homepage-demo-placeholder { min-height: 680px; }
+
+  /* Recorded movement is the leading visual; selectors follow it in the DOM. */
+  .assessment-workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .assessment-replay { min-width: 0; }
+  .test-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .test-choice { min-width: 0; min-height: 92px; padding: 13px 11px; align-items: flex-start; gap: 9px; }
+  .test-choice-index { font-size: 12px; padding-top: 2px; }
+  .test-choice strong { font-size: 14px; line-height: 1.35; }
+  .test-choice-copy { display: block; font-size: 12px; line-height: 1.5; }
+  .test-choice .tactical-icon { display: none; }
+  .movement-demo .session-mock { grid-template-columns: minmax(0, 1fr); }
+  .movement-demo .session-head { flex-wrap: wrap; gap: 10px; padding: 16px; }
+  .movement-demo .session-head strong { font-size: 15px; }
+  .movement-demo .session-head small { font-size: 12px; }
+  .movement-demo .pose-carousel-nav { gap: 4px; margin-left: auto; }
+  .movement-demo .pose-carousel-nav button { width: 44px; height: 44px; }
+  .movement-demo .pose-carousel-count, .movement-demo .pose-carousel-count span { font-size: 12px; }
+  .movement-viewer { padding: 10px 10px 0; }
+  .assessment-replay .movement-demo .session-video { width: 100%; height: auto; min-height: 240px; aspect-ratio: 4 / 3; margin: 0; }
+  .movement-demo .video-chip, .movement-calibration, .movement-demo .pose-phase { font-size: 12px; letter-spacing: 0; line-height: 1.4; }
+  .movement-demo .video-chip { top: 12px; left: 12px; max-width: calc(100% - 24px); }
+  .movement-calibration { top: 34px; left: 12px; right: auto; }
+  .movement-demo .pose-phase { max-width: calc(100% - 16px); }
+  .movement-demo .pose-controls { grid-template-columns: 44px minmax(0, 1fr); gap: 8px; padding-block: 8px; }
+  .movement-demo .pose-time { grid-column: 2; font-size: 12px; min-width: 0; text-align: right; padding-bottom: 4px; }
+  .movement-summary { grid-template-columns: minmax(0, 1fr); }
+  .movement-live-metric { border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; }
+  .movement-live-metric > span, .movement-live-metric small, .movement-live-metric > small { font-size: 12px; line-height: 1.5; letter-spacing: 0; }
+  .movement-live-metric strong { font-size: 36px; }
+  .movement-demo .session-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 16px; padding: 16px; }
+  .movement-demo .session-metrics article { border: 0; padding: 0; min-width: 0; }
+  .movement-demo .session-metrics span { font-size: 12px; line-height: 1.5; letter-spacing: 0; }
+  .movement-demo .session-metrics strong { font-size: 24px; }
+
+  /* The skill map gets enough room for its five real selection buttons. */
+  .profile-demo { min-height: 0; }
+  .profile-demo .demo-topbar, .profile-demo .demo-content { padding: 20px; }
+  .profile-demo .demo-topbar { flex-wrap: wrap; font-size: 13px; }
+  .profile-demo .live-chip, .profile-demo .sample-chip, .profile-demo .card-kicker { font-size: 12px; line-height: 1.5; letter-spacing: 0; }
+  .profile-demo .athlete-row { flex-wrap: wrap; align-items: center; gap: 10px; }
+  .profile-demo .athlete-row strong { font-size: 15px; }
+  .profile-demo .avatar { font-size: 12px; }
+  .profile-demo .sample-chip { margin-left: 0; }
+  .profile-demo .demo-main { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .profile-demo .radar-wrap { width: calc(100% - 18px); max-width: 390px; margin: 30px auto 0; }
+  .profile-demo .radar-label { min-height: 44px; padding: 10px 9px; font-size: 12px; }
+  .profile-demo .breakdown-card { border-left: 0; border-top: 1px solid var(--line); padding: 22px 0 0; }
+  .profile-demo .breakdown-head { font-size: 17px; }
+  .profile-demo .score-line strong { font-size: 54px; }
+  .profile-demo .score-line span, .profile-demo .metric-row, .profile-demo .focus-note { font-size: 12px; }
+  .profile-demo .metric-row { gap: 20px; line-height: 1.6; }
+
+  /* Planner and coach keep one readable workflow instead of narrow sidebars. */
+  .pd-topbar { flex-wrap: wrap; padding: 14px 20px; font-size: 13px; }
+  .pd-sample-label, .pd-kicker, .pd-tiny-label, .pd-step-index, .pd-demo-note,
+  .pd-plan-context, .pd-plan-context strong, .pd-plan-context .pd-tiny-label,
+  .pd-sidebar .pd-demo-note, .pd-bottom-bar, .pd-workout-tags span,
+  .pd-answer-author, .pd-answer-author > span:last-child, .pd-user-message > span,
+  .pd-workout-handoff small, .pd-profile-metric span, .pd-profile-metric em,
+  .pd-profile-metric strong small, .pd-context-chip, .pd-intent,
+  .pd-preparing li, .pd-preparing li > span, .pd-timer span,
+  .pd-session-progress > span, .pd-summary-stats span,
+  .pd-summary-drills strong, .pd-summary-drills > div > span:last-child,
+  .pd-handoff, .pd-evidence { font-size: 12px; line-height: 1.5; letter-spacing: 0; white-space: normal; }
+  .pd-workout-layout, .pd-coach-layout { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .pd-sidebar, .pd-profile { padding: 20px; border-right: 0; border-bottom: 1px solid var(--pd-edge); }
+  .pd-sidebar { gap: 12px; }
+  .pd-sidebar > .pd-kicker, .pd-sidebar > h3, .pd-sidebar > .pd-demo-note, .pd-plan-context,
+  .pd-profile > .pd-tiny-label, .pd-context-chip, .pd-user-message { display: block; }
+  .pd-sidebar h3 { max-width: none; font: 500 23px/1.2 Inter, sans-serif; white-space: normal; letter-spacing: -.035em; }
+  .pd-steps { display: flex; flex-wrap: wrap; gap: 12px 18px; margin: 0; }
+  .pd-steps li { flex-direction: row; gap: 8px; font-size: 12px; }
+  .pd-steps li > span { flex: 0 0 26px; width: 26px; height: 26px; font-size: 12px; }
+  .pd-plan-context { display: grid; gap: 4px; padding-top: 0; margin-top: 0; }
+  .pd-workout-main, .pd-conversation { min-height: 0; padding: 22px 20px; }
+  .pd-heading { flex-wrap: wrap; gap: 12px; }
+  .pd-heading h3, .pd-heading h4, .pd-conversation .pd-heading h3 { max-width: none; font-size: 24px; line-height: 1.2; }
+  .pd-options { flex-wrap: wrap; gap: 8px; }
+  .pd-options button { min-height: 48px; flex: 1 1 90px; font-size: 13px; }
+  .pd-options button > span:not(.pd-energy-bars), .pd-energy button small, .pd-energy button > span:last-child > strong { font-size: 12px; }
+  .pd-energy button { flex-basis: auto; }
+  .pd-primary { min-height: 48px; font-size: 13px !important; }
+  .pd-text-button { font-size: 12px !important; }
+  .pd-bottom-bar { flex-wrap: wrap; gap: 8px 14px; padding: 14px 20px; }
+  .pd-bottom-bar > span:last-child { display: inline; font-size: 12px; }
+  .pd-proposal-list .pd-drill-row { grid-template-columns: 22px minmax(0, 1fr); padding: 16px; gap: 12px; }
+  .pd-drill-row .pd-drill-select { grid-column: 1 / -1; min-height: 44px; }
+  .pd-drill-row strong { font-size: 15px; }
+  .pd-drill-row > div > span, .pd-drill-row .pd-drill-setup, .pd-drill-order { font-size: 12px; line-height: 1.5; }
+  .pd-session-scene { display: flex; flex-direction: column; gap: 16px; }
+  .pd-summary-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .pd-summary-stats > div { min-width: 0; }
+  .pd-summary-drills > div { flex-wrap: wrap; }
+  .pd-actions { flex-wrap: wrap; gap: 12px; }
+  .pd-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .coach-demo .pd-profile-metric { min-height: 110px; padding: 10px 7px; align-items: flex-start; }
+  .coach-demo .pd-profile-metric em { white-space: normal; }
+  .coach-demo .pd-metric-arrow { display: none; }
+  .pd-profile-metric strong { font-size: 32px; }
+  .pd-athlete { flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+  .pd-avatar { font-size: 12px; }
+  .pd-athlete strong { font-size: 15px; }
+  .pd-athlete div > span { font-size: 12px; }
+  .pd-question-chips { gap: 8px; }
+  .pd-question-chips button { min-height: 44px; padding: 10px 12px; font-size: 13px; }
+  @container (max-width: 519px) {
+    .coach-demo .pd-profile-metric strong { font-size: 27px; }
+    .coach-demo .pd-heading { position: relative; padding-right: 48px; }
+    .coach-demo .pd-coach-symbol { position: absolute; top: 0; right: 0; }
+    .pd-question-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pd-question-chips button { padding: 9px 6px; font-size: 12px; min-height: 52px; }
+    .pd-question-chips button:last-child { grid-column: 1 / -1; }
+  }
+  .pd-user-message { max-width: 100%; }
+  .pd-coach-answer { padding: 18px; }
+  .pd-coach-answer h4 { font-size: 16px; }
+  .pd-coach-answer > p { min-height: 0; font-size: 14px; line-height: 1.7; }
+  .pd-workout-handoff { padding: 16px; gap: 14px; }
+  .pd-workout-handoff strong { font-size: 14px; }
+  .pd-metric-chart { padding: 16px; }
+  .pd-metric-chart figcaption strong, .pd-metric-chart figcaption span, .pd-metric-chart p { font-size: 12px; }
+  .pd-metric-chart svg { max-height: none; }
+  .pd-metric-chart text, .pd-metric-grid text, .pd-metric-chart .pd-metric-checkpoint, .pd-metric-target text { font-size: 12px; }
+
+  /* CSS stacking retains the two panes; JS remains responsible for [hidden]. */
+  .drill-media-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .drill-media [hidden] { display: none !important; }
+  .drill-media-compact .drill-media-pair { display: block; }
+  .drill-explainer, .drill-video-panel { padding: 16px; }
+  .drill-explainer-title { flex-direction: column; gap: 4px; }
+  .drill-explainer-title span, .drill-video-heading span, .drill-legend { font-size: 12px; line-height: 1.5; }
+  .drill-step-tabs { flex-wrap: wrap; gap: 6px; }
+  .drill-media .drill-step-tabs button { min-height: 44px; flex: 1 1 64px; font-size: 12px; padding: 10px 6px; }
+  .drill-media-switch button { min-height: 44px; font-size: 13px; }
+  .drill-video-surface { aspect-ratio: 1; }
+  .drill-video-surface video, .drill-video-start img { object-fit: contain; }
+  .drill-diagram .diagram-label, .drill-diagram .diagram-target, .drill-diagram .diagram-legend { font-size: 12px; }
+
+  /* Technique stays media-first at every card width; its inspector follows. */
+  .technique-demo { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .technique-guide { align-items: stretch; flex-direction: column; gap: 16px; padding: 20px; }
+  .technique-guide strong { font-size: 17px; line-height: 1.4; }
+  .technique-guide button { min-height: 48px; font-size: 13px; }
+  .technique-stage-header { height: auto; min-height: 52px; padding: 12px 16px; flex-wrap: wrap; gap: 8px; font-size: 12px; letter-spacing: 0; }
+  .technique-stage { width: 100%; height: auto; aspect-ratio: 600 / 340; }
+  .technique-svg-caption, .technique-reference > span, .technique-reference > small { font-size: 12px; letter-spacing: 0; }
+  .technique-overlay-legend { font-size: 12px; }
+  .technique-playback { height: auto; min-height: 60px; padding: 8px 14px; gap: 12px; }
+  .technique-play { flex: 0 0 44px; height: 44px; }
+  .technique-frame, .technique-frame small { font-size: 12px; }
+  .technique-phase-tabs { flex-wrap: wrap; }
+  .technique-phase-tabs button { min-height: 48px; flex: 1 1 100px; font-size: 13px; }
+  .technique-phase-tabs button > span { font-size: 12px; }
+  .technique-inspector { display: flex; flex-direction: column; padding: 20px; gap: 14px; border-left: 0; border-top: 1px solid #294334; }
+  .technique-inspector-top, .technique-mini-label, .technique-measurement-note, .technique-measurement small, .technique-focus-list button > span:first-child { font-size: 12px; line-height: 1.5; letter-spacing: 0; }
+  .technique-measurement-select select { min-height: 44px; font-size: 14px; }
+  .technique-measurement { justify-content: flex-start; flex-wrap: wrap; gap: 24px; }
+  .technique-measurement strong { font-size: 36px; }
+  .technique-focus-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .technique-focus-list .technique-mini-label { flex: 0 0 100%; }
+  .technique-focus-list button { flex: 1 1 150px; width: auto; min-width: 0; min-height: 44px; padding: 10px; font-size: 13px; }
+  .technique-measurement-note { flex-wrap: wrap; }
+  .technique-measurement-note button, .technique-compare { font-size: 13px; min-height: 44px; }
+  .technique-inspector .technique-cue { margin-block: 4px; font-size: 14px; }
+
+  /* Club context and player choice become compact bands above the evidence. */
+  .cx-workspace-top, .cx-evidence-top { padding: 20px; flex-wrap: wrap; gap: 12px; }
+  .cx-overline, .cx-example-label, .cx-team-option-detail, .cx-access-note,
+  .cx-roster-heading, .cx-roster-row > div > span, .cx-focus-tag, .cx-workspace-foot,
+  .cx-workspace-foot > span:last-child, .cx-evidence-top, .cx-player-options small,
+  .cx-player-heading > span, .cx-profile-radar figcaption span, .cx-assessment-note,
+  .cx-training-focus > p { font-size: 12px; line-height: 1.5; letter-spacing: 0; }
+  .cx-workspace-top > .cx-example-label { width: auto; padding: 0; margin-left: auto; }
+  .cx-club-crest span { font-size: 12px; }
+  .cx-team-options { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 0 20px; }
+  .cx-team-options button { display: flex; align-items: center; gap: 16px; padding: 14px; }
+  .cx-team-options button > span:first-child { min-width: 44px; font-size: 28px; }
+  .cx-team-option-detail { flex: 1; margin: 0; }
+  .cx-team-panel { grid-template-columns: minmax(0, 1fr); padding: 24px 20px; gap: 24px; }
+  .cx-team-context { padding: 0; }
+  .cx-access-note { margin-top: 14px; max-width: none; }
+  .cx-roster-row { gap: 10px; flex-wrap: wrap; }
+  .cx-roster-row strong { font-size: 14px; }
+  .cx-focus-tag { margin-left: auto; }
+  .cx-workspace-foot { flex-wrap: wrap; padding: 16px 20px; gap: 10px; }
+  .cx-workspace-foot > span:last-child { display: block; margin-left: 15px; white-space: normal; }
+  .cx-evidence-layout { grid-template-columns: minmax(0, 1fr); }
+  .cx-player-options { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 20px; border-right: 0; border-bottom: 1px solid var(--cx-line); }
+  .cx-player-options > .cx-overline, .cx-player-options > p { grid-column: 1 / -1; padding: 0; margin: 0; display: block; }
+  .cx-player-options button { margin: 0; min-height: 70px; padding: 12px; }
+  .cx-player-options strong { font-size: 14px; }
+  .cx-player-detail { padding: 24px 20px; }
+  .cx-player-heading { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; }
+  .cx-player-heading h3 { font-size: 28px; }
+  .cx-player-insight { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .cx-profile-radar svg { max-width: 450px; }
+  .cx-profile-radar figcaption strong { font-size: 15px; }
+  .cx-radar-label, .cx-radar-value { font-size: 16px; }
+  .cx-priority { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; padding-top: 20px; border-top: 1px solid var(--cx-line); }
+  .cx-training-focus { margin: 0; padding: 20px 0 0; border-top: 1px solid var(--cx-line); }
+  .cx-assessment strong { font-size: 54px; }
+  .cx-training-focus h4 { font-size: 18px; }
+
+  /* Development's three states share a generous scene, with copy as a caption. */
+  .coach-development-top { flex-wrap: wrap; padding: 18px 20px; gap: 12px; }
+  .coach-development-top > div { flex-wrap: wrap; gap: 10px; }
+  .coach-development-top strong { font-size: 15px; }
+  .coach-development-top > div > span:last-child, .coach-micro, .coach-responsibility > span,
+  .coach-plan-player, .coach-plan-number, .coach-plan-note, .coach-plan-session > div > span,
+  .coach-plan-progress > span, .coach-plan-progress small, .coach-phone-next span,
+  .coach-retest-bars > div > span, .coach-retest-bars strong small, .coach-retest-change > span { font-size: 12px; line-height: 1.5; letter-spacing: 0; }
+  .coach-development-top > .coach-micro { margin-left: 0; }
+  .coach-development-tabs button { min-height: 58px; padding: 14px 10px; gap: 8px; font-size: 14px; }
+  .coach-development-tabs button > span:first-child { font-size: 12px; }
+  .coach-development-tabs button > span:last-child { display: none; }
+  .coach-development-body { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .coach-development-copy { padding: 24px 20px; }
+  .coach-development-copy h3 { max-width: none; font-size: 26px; line-height: 1.2; }
+  .coach-development-copy > p:not(.eyebrow) { max-width: none; margin-top: 12px; font-size: 14px; }
+  .coach-development-copy .eyebrow { margin-bottom: 12px; font-size: 12px; }
+  .coach-responsibility { margin-top: 18px; padding-top: 16px; }
+  .coach-responsibility strong { font-size: 14px; }
+  .coach-development-scene { padding: 24px 20px; border-left: 0; border-top: 1px solid #2b4735; }
+  .coach-plan-sheet, .coach-retest-sheet { max-width: 520px; padding: 22px; }
+  .coach-plan-sheet h4, .coach-retest-sheet h4 { font-size: 30px; }
+  .coach-plan-session { gap: 12px; flex-wrap: wrap; }
+  .coach-plan-session strong { font-size: 15px; }
+  .coach-result-axis > span { font-size: 12px !important; }
+  .coach-training-phone { width: min(100%, 340px); }
+
+  /* Phone screens remain a real, readable size inside their gallery canvas. */
+  .mobile-app-preview { width: min(100%, 360px); max-width: 360px; margin-inline: auto; }
+  .app-device-context, .app-device-status, .app-device-drill-label, .app-device-note,
+  .coach-training-phone .app-device-context, .coach-training-phone .app-device-note,
+  .mobile-app-preview figcaption, .mobile-app-preview figcaption span { font-size: 12px; line-height: 1.5; }
+  .app-device-context { flex-wrap: wrap; gap: 4px 10px; }
+  .app-device-status { padding-inline: 16px; }
+  .app-device-drill-select { font-size: 16px; }
+  .app-device-media .drill-explainer { padding: 10px 6px 0; }
+  .app-device-media .drill-step-tabs button { flex-basis: 52px; }
+
+  @container (min-width: 520px) {
+    .test-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .test-choice { padding: 16px 12px; }
+    .movement-demo .pose-controls { grid-template-columns: 44px minmax(0, 1fr) auto; }
+    .movement-demo .pose-time { grid-column: auto; padding: 0; }
+    .movement-summary { grid-template-columns: minmax(180px, .8fr) minmax(0, 1.2fr); }
+    .movement-live-metric { height: 100%; display: flex; flex-direction: column; justify-content: center; border-bottom: 0; border-right: 1px solid var(--line); }
+    .pd-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .coach-demo .pd-profile-metric { align-items: flex-start; min-height: 90px; padding: 12px 10px; }
+    .pd-metric-arrow { display: none; }
+    .pd-proposal-list .pd-drill-row { grid-template-columns: 80px 22px minmax(0, 1fr); }
+    .pd-drill-row .pd-drill-select { grid-column: auto; }
+    .technique-guide { flex-direction: row; align-items: center; }
+    .technique-guide > div { flex: 1; }
+    .technique-inspector { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .technique-inspector-top, .technique-measurement-note, .technique-focus-list, .technique-cue, .technique-compare, .technique-details { grid-column: 1 / -1; }
+    .technique-measurement { justify-content: flex-end; gap: 16px; }
+    .cx-team-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cx-team-options button { display: block; }
+    .cx-team-option-detail { margin-top: 8px; }
+    .cx-player-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cx-player-options button { flex-wrap: wrap; align-content: flex-start; gap: 8px; }
+    .cx-player-options button > svg { display: none; }
+    .cx-player-options button > span:not(.cx-shirt-number) { flex: 0 0 100%; }
+    .cx-priority { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 24px; }
+    .cx-training-focus { padding: 0; border: 0; }
+  }
+  @container (min-width: 620px) {
+    .coach-demo .pd-profile { display: grid; grid-template-columns: minmax(160px, .7fr) minmax(0, 1.3fr); gap: 12px 20px; align-items: start; }
+    .coach-demo .pd-athlete { grid-column: 1 / -1; margin: 0; }
+    .coach-demo .pd-profile > .pd-tiny-label { grid-column: 1; margin: 0; }
+    .coach-demo .pd-metrics { grid-column: 1; grid-row: 3; grid-template-columns: 1fr; margin: 0; }
+    .coach-demo .pd-profile-metric { min-height: 74px; padding: 10px 12px; }
+    .coach-demo .pd-profile-metric strong { font-size: 28px; }
+    .coach-demo .pd-metric-chart { grid-column: 2; grid-row: 2 / 4; margin: 0; }
+    .coach-demo .pd-context-chip { grid-column: 1 / -1; margin: 0; }
+    .profile-demo .demo-main { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; }
+    .profile-demo .radar-wrap { max-width: 300px; margin-top: 24px; }
+    .profile-demo .breakdown-card { border-top: 0; border-left: 1px solid var(--line); padding: 0 0 0 24px; }
+    .cx-player-insight { grid-template-columns: minmax(0, 1.3fr) minmax(220px, .7fr); gap: 24px; align-items: center; }
+    .cx-priority { grid-template-columns: minmax(0, 1fr); padding-top: 0; border-top: 0; }
+    .cx-training-focus { padding-top: 22px; border-top: 1px solid var(--cx-line); }
+    .drill-media:not(.drill-media-compact) .drill-media-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .pd-metric-chart svg { width: 100%; height: 200px; max-height: 200px; }
+  }
+  @container (min-width: 780px) {
+    .cx-team-panel { grid-template-columns: minmax(190px, .7fr) minmax(0, 1.3fr); gap: 28px; }
+  }
+}
+
+/* Editorial disclosure changes presentation only. The same stateful scene stays
+   mounted, and provenance remains beside every visible result. */
+.pt-home.pt-revamp .marketing-gallery {
+  .pd-compact-result, .cx-player-select { display: none; }
+  .demo-disclosure-content { container-type: inline-size; }
+  .demo-disclosure[data-demo-expanded="false"] {
+    .homepage-demo-placeholder { min-height: 380px; }
+    .test-choice { min-height: 52px; align-items: center; padding: 10px 12px; }
+    .test-choice-copy, .movement-demo .session-metrics, .profile-demo .metric-list,
+    .workout-demo .pd-sidebar, .workout-demo .pd-drill-setup,
+    .coach-demo .pd-metrics, .coach-demo .pd-profile > .pd-tiny-label,
+    .coach-demo .pd-context-chip, .coach-demo .pd-user-message, .coach-demo .pd-evidence,
+    .technique-details, .app-device-drill-label, .app-device-drill-select,
+    .drill-step-tabs, .drill-step-copy,
+    .cx-team-option-detail, .cx-access-note, .cx-roster-row > div > span,
+    .cx-player-options, .coach-development-copy { display: none; }
+    .movement-summary { grid-template-columns: 1fr; }
+    .movement-live-metric { border: 0; padding: 14px 18px; }
+    .profile-demo .demo-topbar, .profile-demo .demo-content { padding: 18px; }
+    .profile-demo .radar-wrap { max-width: 270px; margin-top: 22px; }
+    .profile-demo .demo-main { gap: 16px; }
+    .profile-demo .breakdown-card { padding-top: 16px; }
+    .profile-demo .focus-note { margin-bottom: 0; }
+    .pd-workout-main { padding: 20px; }
+    .pd-proposal-list .pd-drill-row { padding: 12px; gap: 8px; grid-template-columns: 22px minmax(0, 1fr); }
+    .pd-proposal-list .pd-drill-select { grid-column: 1 / -1; }
+    .pd-proposal-list { gap: 8px; }
+    .pd-drill-row strong { font-size: 14px; }
+    .pd-workout-tags { margin-block: 14px; }
+    .pd-small-copy { margin-block: 12px; font-size: 12px; }
+    .pd-actions { margin-top: 16px; }
+    .drill-media { margin-block: 16px; }
+    .drill-diagram { max-height: 240px; }
+    .drill-video-surface { max-width: 360px; margin-inline: auto; }
+    .drill-explainer, .drill-video-panel { padding: 14px; }
+    .coach-demo .pd-profile { display: block; padding: 18px; }
+    .coach-demo .pd-compact-result { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-block: 12px; font-size: 12px; }
+    .pd-compact-result strong { font-size: 30px; color: var(--lime); }
+    .coach-demo .pd-metric-chart { margin: 0; padding: 14px; }
+    .coach-demo .pd-metric-chart svg { width: 100%; height: auto; max-height: 190px; }
+    .coach-demo .pd-conversation { padding: 20px; }
+    .coach-demo .pd-coach-answer { padding: 16px; }
+    .coach-demo .pd-coach-answer > p { margin-bottom: 0; }
+    .technique-inspector { padding: 18px; }
+    .technique-guide { padding: 16px; }
+    .technique-measurement { justify-content: flex-start; }
+    .cx-team-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cx-team-options button { padding: 10px; display: block; }
+    .cx-team-options button > span:first-child { font-size: 20px; }
+    .cx-team-panel { padding: 18px 20px; gap: 16px; }
+    .cx-team-context { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; }
+    .cx-team-context h4 { font-size: 22px; margin: 0; }
+    .cx-team-context p { margin: 0; }
+    .cx-roster-row { padding-block: 12px; }
+    .cx-player-select { display: grid; gap: 8px; padding: 16px 20px; color: #b1c6b8; background: #071a13; font-size: 12px; }
+    .cx-player-select select { width: 100%; min-height: 44px; padding: 10px; color: #f1f6ed; background: #173422; border: 1px solid #446344; border-radius: 0; font-size: 14px; }
+    .cx-player-detail { padding: 20px; }
+    .cx-profile-radar svg { max-width: 300px; }
+    .cx-player-insight { gap: 16px; }
+    .cx-priority { gap: 16px; }
+    .cx-training-focus { padding-top: 16px; }
+    .cx-assessment strong { font-size: 40px; }
+    .coach-development-scene { padding: 20px; border-top: 0; }
+    .coach-plan-sheet, .coach-retest-sheet { max-width: 620px; padding: 20px; }
+    .coach-plan-progress { margin-top: 22px; }
+    .coach-plan-progress strong { font-size: 40px; }
+    .mobile-app-preview { max-width: 330px; }
+    .app-device-content { gap: 12px; }
+    .app-device-media .drill-media { margin-block: 8px; }
+  }
+  .demo-disclosure[data-demo-expanded="true"] .technique-details > summary { display: none; }
+  @container (min-width: 760px) {
+    .assessment-workspace { grid-template-columns: minmax(0, 1fr) 230px; align-items: start; gap: 20px; }
+    .test-choices { grid-template-columns: 1fr; }
+    .assessment-replay .movement-demo .session-video { max-width: 740px; margin-inline: auto; }
+    .technique-demo { grid-template-columns: minmax(0, 1.65fr) minmax(260px, 1fr); }
+    .technique-guide { grid-column: 1 / -1; }
+    .technique-inspector { display: flex; border-top: 0; border-left: 1px solid #294334; }
+    .coach-development-body { grid-template-columns: minmax(240px, .8fr) minmax(0, 1.2fr); }
+    .demo-disclosure[data-demo-expanded="false"] {
+      .coach-development-body { grid-template-columns: 1fr; }
+      .pd-review-scene { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 0 24px; align-items: start; }
+      .pd-review-scene > .pd-heading, .pd-review-scene > .pd-intent, .pd-review-scene > .pd-workout-tags { grid-column: 1 / -1; }
+      .pd-review-scene > .drill-media { grid-column: 1; grid-row: 4 / 9; margin: 0; }
+      .pd-review-scene > .pd-proposal-list, .pd-review-scene > .pd-small-copy, .pd-review-scene > .pd-actions, .pd-review-scene > .pd-demo-note { grid-column: 2; }
+      .coach-demo .pd-coach-layout { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); }
+      .coach-demo .pd-profile { border-bottom: 0; border-right: 1px solid var(--pd-edge); }
+    }
+  }
+  @container (max-width: 519px) {
+    .demo-disclosure[data-demo-expanded="false"] {
+      .profile-demo .radar-wrap { max-width: 250px; }
+      .profile-demo .score-line strong { font-size: 42px; }
+      .pd-heading h4 { font-size: 22px; }
+      .pd-workout-main { padding: 16px; }
+      .pd-drill-row .pd-drill-select { min-height: 44px; }
+      .pd-proposal-list .pd-drill-row { grid-template-columns: minmax(0, 1fr) 90px; }
+      .pd-proposal-list .pd-drill-select { grid-column: 2; grid-row: 1; }
+      .pd-proposal-list .pd-drill-order, .pd-proposal-list .pd-drill-row > svg { display: none; }
+      .pd-proposal-list .pd-drill-row > div { grid-column: 1; grid-row: 1; }
+      .cx-player-insight { gap: 12px; }
+      .cx-profile-radar svg { max-width: 260px; }
+      .cx-priority { grid-template-columns: 1fr 1fr; align-items: start; padding-top: 12px; gap: 14px; }
+      .cx-training-focus { padding: 0; border: 0; }
+      .cx-training-focus h4 { font-size: 16px; }
+      .cx-assessment strong { font-size: 34px; }
+    }
+  }
+}
+
+/* The first view shows the result and its next action; optional teaching detail
+   returns with the same mounted controls when the visitor opens the full demo. */
+.pt-home.pt-revamp .marketing-gallery {
+  .drill-media[data-switched="true"] .drill-media-pair { grid-template-columns: minmax(0, 1fr); }
+  .demo-disclosure[data-demo-expanded="false"] {
+    .workout-demo .drill-explainer-title, .workout-demo .drill-legend,
+    .workout-demo .drill-step-cue, .workout-demo .drill-play,
+    .workout-demo .pd-review-scene > .pd-demo-note, .workout-demo .pd-bottom-bar,
+    .coach-demo .pd-demo-note, .coach-demo .pd-bottom-bar { display: none; }
+    .workout-demo .drill-diagram { max-height: 240px; margin-block: 0; }
+    .movement-live-metric { padding-block: 10px; }
+    .movement-live-metric strong { font-size: 30px; }
+    .technique-stage { max-height: 360px; }
+    .mobile-showcase { padding-block: 16px; }
+    .app-device-status { height: 36px; }
+    .app-device-island { top: 6px; }
+    .app-device-header { padding-block: 10px; }
+    .app-device-progress { padding-block: 14px; }
+    .app-device-sets { margin-top: 10px; }
+    .app-device-sets > span { width: 34px; height: 34px; }
+    .app-device-home { margin-block: 12px 8px; }
+    .mobile-app-preview figcaption { margin-top: 14px; }
+    .app-device-media .drill-diagram { max-height: 145px; }
+  }
+  @container (min-width: 760px) {
+    .demo-disclosure[data-demo-expanded="false"] .assessment-replay .movement-demo .session-video { max-width: 620px; }
+  }
+  @container (max-width: 759px) {
+    .demo-disclosure[data-demo-expanded="false"] {
+      .workout-demo .pd-review-scene > .drill-media,
+      .coach-demo .pd-metric-chart,
+      .coach-demo .pd-conversation > .pd-heading { display: none; }
+      .coach-demo .pd-athlete { margin-bottom: 10px; }
+      .coach-demo .pd-conversation { padding-top: 12px; }
+      .movement-demo .pose-carousel-nav { display: none; }
+      .movement-demo .session-head { padding-block: 12px; }
+      .test-choice { min-height: 48px; padding-block: 8px; }
+    }
+  }
+}

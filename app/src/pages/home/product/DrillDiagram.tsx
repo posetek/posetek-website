@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { DemoFocus } from "./product-demo";
+import { marketingActivityAllowed, subscribeMarketingActivity } from "../marketing-activity";
 
 type Point = readonly [number, number];
 type Positions = { player: Point; ball: Point };
@@ -70,12 +71,12 @@ export const diagrams: Record<string, Drill> = {
 };
 
 /** Coaching illustration only. It does not represent measured athlete motion. */
-export function DemoPitch({ focus, drillId, className = "" }: { focus: DemoFocus; drillId?: string; className?: string }) {
+export function DemoPitch({ focus, drillId, className = "", active = true }: { focus: DemoFocus; drillId?: string; className?: string; active?: boolean }) {
   const key = drillId && diagrams[drillId] ? drillId : focus === "passing" ? "PAS-001" : "DRB-006";
-  return <DrillSteps key={key} drill={diagrams[key]} compact={className.includes("preview")} className={className} />;
+  return <DrillSteps key={key} drill={diagrams[key]} compact={className.includes("preview")} className={className} active={active} />;
 }
 
-function DrillSteps({ drill, compact, className }: { drill: Drill; compact: boolean; className: string }) {
+function DrillSteps({ drill, compact, className, active }: { drill: Drill; compact: boolean; className: string; active: boolean }) {
   const id = useId(), root = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0), [playing, setPlaying] = useState(false), [progress, setProgress] = useState(0);
   const [reduced, setReduced] = useState(false);
@@ -90,13 +91,16 @@ function DrillSteps({ drill, compact, className }: { drill: Drill; compact: bool
 
   useEffect(() => {
     if (!playing || reduced) return;
+    if (!active || !marketingActivityAllowed()) { setPlaying(false); return; }
     let frame = 0;
-    const start = performance.now(), stop = () => setPlaying(false);
+    let stopped = false;
+    const start = performance.now(), stop = () => { stopped = true; cancelAnimationFrame(frame); setPlaying(false); };
     const observer = new IntersectionObserver(([entry]) => { if (!entry.isIntersecting) stop(); });
     if (root.current) observer.observe(root.current);
-    const hidden = () => { if (document.hidden) stop(); };
-    document.addEventListener("visibilitychange", hidden);
+    const activity = () => { if (!marketingActivityAllowed()) stop(); };
+    const unsubscribeActivity = subscribeMarketingActivity(activity);
     const tick = (time: number) => {
+      if (stopped || !marketingActivityAllowed()) { stop(); return; }
       const next = Math.min(1, (time - start) / 3600);
       setProgress(next);
       setStep(next >= 1 ? 2 : 1);
@@ -104,8 +108,8 @@ function DrillSteps({ drill, compact, className }: { drill: Drill; compact: bool
       else stop();
     };
     frame = requestAnimationFrame(tick);
-    return () => { cancelAnimationFrame(frame); observer.disconnect(); document.removeEventListener("visibilitychange", hidden); };
-  }, [playing, reduced]);
+    return () => { stopped = true; cancelAnimationFrame(frame); observer.disconnect(); unsubscribeActivity(); };
+  }, [playing, reduced, active]);
 
   const { player, ball } = drill.positions(progress);
   const choose = (next: number) => {
@@ -133,7 +137,7 @@ function DrillSteps({ drill, compact, className }: { drill: Drill; compact: bool
       <div className="drill-legend"><span>● Player</span><span>● Ball</span><span>{drill.wall ? "→ Ball path" : "┄ Dribble path"}</span></div>
       <div className="drill-step-tabs" role="group" aria-label={drill.name + " demonstration steps"}>{["Setup", "Movement", "Finish"].map((label, index) => <button type="button" key={label} aria-pressed={step === index} onClick={() => choose(index)}>{index + 1}. {label}</button>)}</div>
       <p className="drill-step-cue" aria-live="polite">{drill.cues[step]}</p>
-      {!reduced && <button type="button" className="drill-play" onClick={() => { if (!playing) setProgress(0); setPlaying(!playing); }}>{playing ? "Pause demonstration" : "Play demonstration"}</button>}
+      {!reduced && <button type="button" className="drill-play" onClick={() => { if (!active || !marketingActivityAllowed()) return; if (!playing) setProgress(0); setPlaying(!playing); }}>{playing ? "Pause demonstration" : "Play demonstration"}</button>}
     </>}
   </div>;
 }

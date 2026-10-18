@@ -70,6 +70,12 @@ function CoachDemo({ active = true, onOpenWorkout }) {
                                         ]
                                     })
                                 ]
+                            }), (0, jsxRuntime.jsxs)(`div`, {
+                                className: `pd-compact-result`, children: [
+                                    (0, jsxRuntime.jsx)(`span`, { children: selectedMetric.label }),
+                                    (0, jsxRuntime.jsxs)(`strong`, { children: [selectedMetric.value, ` `, selectedMetric.unit] }),
+                                    (0, jsxRuntime.jsx)(`span`, { children: selectedMetric.trend })
+                                ]
                             }), (0, jsxRuntime.jsx)(`p`, {
                                 className: `pd-tiny-label`, children: `Choose a result to explore`
                             }), (0, jsxRuntime.jsx)(`div`, {
