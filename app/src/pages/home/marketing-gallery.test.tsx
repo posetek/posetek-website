@@ -192,6 +192,20 @@ describe("marketing gallery native interaction boundaries", () => {
     f.destroy();
   });
 
+  it.each([[266.25], [100, 166.25]])("preserves an in-flight history landing through observed reflow %j", (...growth) => {
+    const f = mobileLanding(20);
+    f.windowState.dispatchEvent(new Event("scrollend"));
+    f.windowState.dispatchEvent(new Event("popstate"));
+    growth.forEach(pixels => f.grow(pixels));
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
+    f.windowState.dispatchEvent(new Event("scrollend"));
+    expect(f.windowState.scrollBy).toHaveBeenCalledExactlyOnceWith({ top: 266.25, behavior: "instant" });
+    expect(f.secondCard.getBoundingClientRect().top).toBe(20);
+    f.resized(); f.flush();
+    expect(f.windowState.scrollBy).toHaveBeenCalledTimes(1);
+    f.destroy();
+  });
+
   it.each(["wheel", "pointerdown", "focusin"])("releases mobile fragment correction after explicit %s takeover", eventName => {
     const f = mobileLanding(110);
     f.grow(100); // A correction is pending while the native scroll is active.

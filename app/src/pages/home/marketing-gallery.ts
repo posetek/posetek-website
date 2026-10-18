@@ -9,7 +9,7 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
   const cards = Array.from(node.querySelectorAll<HTMLElement>(":scope > section"));
   let frame = 0, layoutFrame = 0, drift = 0, lastScroll = window.scrollY, disposed = false;
   let visible = false, blurred = false, navigationLocked = Boolean(location.hash);
-  let navigationScrolling = navigationLocked, navigationTimer = 0, pendingHashLayout = false;
+  let navigationScrolling = navigationLocked, navigationTimer = 0, pendingHashLayout = false, pendingFragmentShift = 0;
   let hovered: HTMLElement | null = null;
   let fragmentAnchor: HTMLElement | null = null, fragmentDocumentTop: number | null = null;
 
@@ -24,15 +24,17 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
     // Ordinary scrollend can precede draw's RAF; do not consume its pending delta.
     if (!navigationScrolling) return;
     clearTimeout(navigationTimer); navigationScrolling = false;
-    if (pendingHashLayout && navigationLocked && !document.hidden) {
+    if (navigationLocked && !document.hidden) {
       const target = hashTarget();
       if (target) {
+        // Initial grid enhancement has no prior geometry and needs canonical
+        // alignment. Later measured reflow preserves the native/history offset.
         const margin = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
-        const shift = target.getBoundingClientRect().top - margin;
+        const shift = pendingHashLayout ? target.getBoundingClientRect().top - margin : pendingFragmentShift;
         if (Math.abs(shift) > .5) window.scrollBy({ top: shift, behavior: "instant" });
       }
     }
-    pendingHashLayout = false;
+    pendingHashLayout = false; pendingFragmentShift = 0;
     lastScroll = window.scrollY;
   };
   const waitForNavigation = () => {
@@ -73,7 +75,7 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
     if (!frame) frame = requestAnimationFrame(draw);
   };
   const lockNavigation = () => {
-    navigationLocked = true; navigationScrolling = true; pendingHashLayout = false;
+    navigationLocked = true; navigationScrolling = true; pendingHashLayout = false; pendingFragmentShift = 0;
     fragmentAnchor = hashTarget();
     fragmentDocumentTop = fragmentAnchor ? fragmentAnchor.getBoundingClientRect().top + window.scrollY : null;
     waitForNavigation(); pause();
@@ -88,7 +90,7 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
   const scrollIntent = (event: Event) => {
     if (event instanceof KeyboardEvent && (!SCROLL_KEYS.has(event.key) || (event.target instanceof Element && event.target.closest(SCROLL_CONTROL)))) return;
     if (!navigationLocked) return;
-    navigationLocked = false; navigationScrolling = false; pendingHashLayout = false; clearTimeout(navigationTimer);
+    navigationLocked = false; navigationScrolling = false; pendingHashLayout = false; pendingFragmentShift = 0; clearTimeout(navigationTimer);
     fragmentAnchor = null; fragmentDocumentTop = null;
     pause();
   };
@@ -154,11 +156,13 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
     const fragmentMoved = Math.abs(fragmentShift) > .5;
     if (changed || fragmentMoved) {
       if (fragmentMoved) {
-        if (navigationScrolling) pendingHashLayout = true;
+        if (navigationScrolling) pendingFragmentShift += fragmentShift;
         else window.scrollBy({ top: fragmentShift, behavior: "instant" });
       }
       else if (before !== null && anchor) {
-        if (navigationScrolling) pendingHashLayout = Boolean(fragment);
+        if (navigationScrolling) {
+          if (fragment && previousFragmentTop === null) pendingHashLayout = true;
+        }
         else {
           const shift = anchor.getBoundingClientRect().top - before;
           if (Math.abs(shift) > .5) window.scrollBy({ top: shift, behavior: "instant" });
