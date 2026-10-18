@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { MarketingAudience } from "./marketing-links";
 import { usePreviewMotion, useRepeatReveal } from "./marketing-effects";
 
@@ -43,6 +44,8 @@ export function MarketingJourney({ audience }: { audience: MarketingAudience }) 
   const chapters = MARKETING_CHAPTERS[audience];
   const [active, setActive] = useState(0);
   const [showProgress, setShowProgress] = useState(false);
+  const [progressHost, setProgressHost] = useState<Element | null>(null);
+  useEffect(() => { setProgressHost(document.querySelector("[data-marketing-progress-slot]")); }, []);
   useEffect(() => {
     let frame = 0;
     const measure = () => {
@@ -77,6 +80,7 @@ export function MarketingJourney({ audience }: { audience: MarketingAudience }) 
     return () => { cancelAnimationFrame(frame); observer?.disconnect(); window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule); document.removeEventListener("marketing-gallery-position", schedule); };
   }, [chapters]);
 
+  const progress = <div className="chapter-progress" data-visible={showProgress} aria-hidden="true"><span className="chapter-progress-cross">+</span><span>CHAPTER {String(active + 1).padStart(2, "0")} / {String(chapters.length).padStart(2, "0")}</span><ChapterLabel key={active} text={chapters[active].label.toUpperCase()} /></div>;
   return <>
     <nav className="chapter-nav shell" aria-label={audience === "players" ? "The PoseTek method" : "Explore the team approach"}>
       <span className="chapter-nav-label">[ Explore the system ]</span>
@@ -89,7 +93,7 @@ export function MarketingJourney({ audience }: { audience: MarketingAudience }) 
         });
       }}><span>{String(index + 1).padStart(2, "0")}</span>{chapter.label}</a>)}</div>
     </nav>
-    <div className="chapter-progress" data-visible={showProgress} aria-hidden="true"><span className="chapter-progress-cross">+</span><span>CHAPTER {String(active + 1).padStart(2, "0")} / {String(chapters.length).padStart(2, "0")}</span><ChapterLabel key={active} text={chapters[active].label.toUpperCase()} /></div>
+    {progressHost ? createPortal(progress, progressHost) : progress}
   </>;
 }
 

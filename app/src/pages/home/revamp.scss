@@ -102,9 +102,10 @@
   .chapter-links a > span { opacity: .65; }
   .chapter-links a[aria-current="location"] { background: #14291b; color: #fff; }
   .chapter-links a:hover { background: var(--lime); color: #14291b; }
-  .chapter-progress { position: fixed; z-index: 30; bottom: 20px; left: var(--gutter); display: flex; align-items: center; gap: 15px; pointer-events: none; background: #f1f1f3eb; padding: 8px 13px 8px 0; font: 9px/1.4 "IBM Plex Mono",monospace; color: #4b544c; opacity: 0; transition: opacity 160ms; }
+  .chapter-progress { position: fixed; z-index: 30; top: 73px; left: calc(3.2vw + 154px); height: 10px; display: flex; align-items: center; gap: 15px; pointer-events: none; padding: 0; font: 9px/10px "IBM Plex Mono",monospace; color: #4b544c; opacity: 0; transition: opacity 160ms; }
   .chapter-progress[data-visible="true"] { opacity: 1; }
-  .chapter-progress-cross { font-size: 23px; font-weight: 300; }
+  html[data-marketing-navigation]:not([data-marketing-navigation="closed"]) & .chapter-progress { opacity: 0; }
+  .chapter-progress-cross { display: none; }
 
   /* Media sits on the grid with sharp frames and registration marks. */
   .reveal-frame { position: relative; min-width: 0; }
@@ -225,11 +226,11 @@
     .closing-actions { justify-content: flex-start; flex-wrap: wrap; gap: 12px; }
     .mobile-showcase { max-width: 420px; }
     .coach-contact-heading { display: grid; gap: 24px; }
-    .chapter-progress { top: 61px; bottom: auto; left: 78px; z-index: 101; height: 10px; gap: 0; padding: 0; background: transparent; font-size: 8px; line-height: 10px; }
-    .chapter-progress-cross { display: none; }
-    html[data-marketing-navigation]:not([data-marketing-navigation="closed"]) & .chapter-progress { opacity: 0; }
-    .chapter-progress > span:last-child { display: none; }
     .marketing-cursor { display: none; }
+  }
+  @media (max-width: 700px) {
+    .chapter-progress { top: 61px; left: 78px; gap: 0; font-size: 8px; }
+    .chapter-progress > span:last-child { display: none; }
   }
   @media (max-width: 570px) {
     .test-choices { grid-template-columns: repeat(2,minmax(0,1fr)); }

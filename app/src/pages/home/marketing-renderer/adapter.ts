@@ -27,7 +27,13 @@ export function createWorkerRenderer(host: HTMLElement, initial: RendererView, c
   const present = () => {
     if (!ready || presented || !active || document.hidden || !navigationIsClosed()) return;
     presented = true;
-    if (canvas) { canvas.style.opacity = "1"; canvas.style.visibility = "visible"; }
+    if (canvas) {
+      canvas.style.opacity = "1";
+      // Initial GPU preparation stays hidden. After presentation, component CSS
+      // owns static/reduced-motion visibility rather than an inline override.
+      canvas.style.removeProperty("visibility");
+      canvas.style.removeProperty("display");
+    }
     callbacks.ready();
   };
   const receive = (event: MessageEvent<RendererOutput>) => {

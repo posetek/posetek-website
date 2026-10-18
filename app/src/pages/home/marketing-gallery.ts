@@ -8,6 +8,11 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
   let navigationLocked = Boolean(location.hash), navigationScrolling = navigationLocked;
   let navigationTimer = 0, pendingFragmentShift = 0;
   let fragmentAnchor: HTMLElement | null = null, fragmentDocumentTop: number | null = null;
+  // A reload can restore the previous document's absolute scroll position after
+  // hydration has already targeted the fragment. Lazy chapters may now be shorter.
+  // Only that initial reload gets a fresh canonical landing; history owns its offset.
+  let reloadHash = (performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined)?.type === "reload" ? location.hash : "";
+  let reloadFrame = 0;
 
   const hashTarget = () => {
     if (!location.hash) return null;
@@ -28,6 +33,24 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
   const waitForNavigation = () => {
     clearTimeout(navigationTimer);
     navigationTimer = window.setTimeout(finishNavigation, 180);
+  };
+  const cancelReloadLanding = () => {
+    reloadHash = ""; cancelAnimationFrame(reloadFrame); reloadFrame = 0;
+  };
+  const restoreReloadLanding = () => {
+    reloadFrame = 0;
+    if (disposed || document.hidden || !navigationLocked || reloadHash !== location.hash) return;
+    const target = hashTarget();
+    cancelReloadLanding();
+    if (!target) return;
+    const top = target.getBoundingClientRect().top - (Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0);
+    pendingFragmentShift = 0; navigationScrolling = false; clearTimeout(navigationTimer);
+    if (Math.abs(top) > .5) window.scrollBy({ top, behavior: "instant" });
+    fragmentAnchor = target;
+    fragmentDocumentTop = target.getBoundingClientRect().top + window.scrollY;
+  };
+  const scheduleReloadLanding = () => {
+    if (reloadHash && document.readyState === "complete" && !document.hidden && !reloadFrame) reloadFrame = requestAnimationFrame(restoreReloadLanding);
   };
   const layout = () => {
     frame = 0;
@@ -51,15 +74,24 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
     fragmentDocumentTop = fragmentAnchor ? fragmentAnchor.getBoundingClientRect().top + window.scrollY : null;
     if (navigationScrolling) waitForNavigation();
   };
+  const historyNavigation = () => { cancelReloadLanding(); lockNavigation(); };
+  const pageShow = (event: PageTransitionEvent) => {
+    if (event.persisted) { historyNavigation(); return; }
+    // Do not reacquire ownership if the visitor took over before the load ended.
+    if (!navigationLocked) return;
+    lockNavigation();
+    scheduleReloadLanding();
+  };
   const navigation = (event: MouseEvent) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
     const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
     if (!anchor || anchor.hasAttribute("download") || (anchor.target && anchor.target !== "_self")) return;
     const destination = new URL(anchor.href, location.href);
-    if (destination.origin === location.origin && destination.pathname === location.pathname && destination.search === location.search && destination.hash) lockNavigation();
+    if (destination.origin === location.origin && destination.pathname === location.pathname && destination.search === location.search && destination.hash) historyNavigation();
   };
   const scrollIntent = (event: Event) => {
     if (event instanceof KeyboardEvent && (!SCROLL_KEYS.has(event.key) || (event.target instanceof Element && event.target.closest(SCROLL_CONTROL)))) return;
+    cancelReloadLanding();
     navigationLocked = false; navigationScrolling = false; pendingFragmentShift = 0; clearTimeout(navigationTimer);
     fragmentAnchor = null; fragmentDocumentTop = null;
   };
@@ -69,8 +101,8 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
   };
   const scroll = () => { if (navigationScrolling) waitForNavigation(); };
   const visibility = () => {
-    if (document.hidden) { cancelAnimationFrame(frame); frame = 0; clearTimeout(navigationTimer); }
-    else { scheduleLayout(); if (navigationScrolling) waitForNavigation(); }
+    if (document.hidden) { cancelAnimationFrame(frame); frame = 0; cancelAnimationFrame(reloadFrame); reloadFrame = 0; clearTimeout(navigationTimer); }
+    else { scheduleLayout(); scheduleReloadLanding(); if (navigationScrolling) waitForNavigation(); }
   };
   const resizeObserver = "ResizeObserver" in window ? new ResizeObserver(scheduleLayout) : null;
   node.dataset.galleryMotion = "static";
@@ -81,9 +113,9 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
   node.addEventListener("focusin", focusIn);
   document.addEventListener("click", navigation, true);
   document.addEventListener("visibilitychange", visibility);
-  window.addEventListener("hashchange", lockNavigation);
-  window.addEventListener("popstate", lockNavigation);
-  window.addEventListener("pageshow", lockNavigation);
+  window.addEventListener("hashchange", historyNavigation);
+  window.addEventListener("popstate", historyNavigation);
+  window.addEventListener("pageshow", pageShow);
   window.addEventListener("wheel", scrollIntent, { passive: true });
   window.addEventListener("touchmove", scrollIntent, { passive: true });
   window.addEventListener("keydown", scrollIntent);
@@ -91,12 +123,13 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
   window.addEventListener("scrollend", finishNavigation);
   window.addEventListener("resize", scheduleLayout);
   if (navigationScrolling) waitForNavigation();
+  scheduleReloadLanding();
   return () => {
     disposed = true;
-    resizeObserver?.disconnect(); cancelAnimationFrame(frame); clearTimeout(navigationTimer);
+    resizeObserver?.disconnect(); cancelAnimationFrame(frame); cancelReloadLanding(); clearTimeout(navigationTimer);
     node.removeEventListener("pointerdown", scrollIntent, true); node.removeEventListener("focusin", focusIn);
     document.removeEventListener("click", navigation, true); document.removeEventListener("visibilitychange", visibility);
-    window.removeEventListener("hashchange", lockNavigation); window.removeEventListener("popstate", lockNavigation); window.removeEventListener("pageshow", lockNavigation);
+    window.removeEventListener("hashchange", historyNavigation); window.removeEventListener("popstate", historyNavigation); window.removeEventListener("pageshow", pageShow);
     window.removeEventListener("wheel", scrollIntent); window.removeEventListener("touchmove", scrollIntent); window.removeEventListener("keydown", scrollIntent);
     window.removeEventListener("scroll", scroll); window.removeEventListener("scrollend", finishNavigation); window.removeEventListener("resize", scheduleLayout);
   };

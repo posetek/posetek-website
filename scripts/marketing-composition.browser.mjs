@@ -1,4 +1,4 @@
-// Public composition acceptance, separate from the original 33 + 20 checks.
+// Public editorial composition acceptance, separate from the original 33 + 20 checks.
 // Run only after the composition build is available. No authenticated actions.
 import assert from 'node:assert/strict';
 import { before, after, test } from 'node:test';
@@ -109,10 +109,13 @@ async function frames(page, count = 4) {
 }
 
 async function settle(page) {
+  // Let native scroll deliver IntersectionObserver before testing settled state.
+  await frames(page, 2);
   await page.waitForFunction(() => !document.querySelector('.reveal-frame[data-reveal-state="entering"]'));
   await page.waitForFunction(() => !Array.from(document.querySelectorAll('.heading-reveal')).some(node => node.getAnimations().some(animation => animation.playState === 'running')));
   await frames(page);
   await page.waitForFunction(() => !document.querySelector('[data-scrambling="true"]') && Array.from(document.querySelectorAll('.chapter-progress [aria-label]')).every(node => node.textContent === node.getAttribute('aria-label')));
+  await page.waitForFunction(() => !document.querySelector('.reveal-frame[data-reveal-state="entering"]'));
 }
 
 async function stableScroll(page) {
@@ -155,21 +158,43 @@ async function geometry(page) {
 
 function assertColumns(data) {
   assert.ok(data.documentWidth <= data.width + 1, `document overflow: ${JSON.stringify(data)}`);
+  assert.equal(data.layout, 'editorial');
+  assert.equal(data.motion, 'static');
   for (const card of data.cards) {
     assert.ok(card.left >= -1 && card.right <= data.width + 1 && card.height > 0, `${card.id} stays within the viewport`);
-    assert.ok(card.bottom <= data.gallery.bottom + 2, `${card.id} remains within the gallery's reserved document height`);
-    if (card.media) assert.ok(card.heading.top >= card.media.bottom - 2, `${card.id}: its caption follows the complete media, not a clipped viewport`);
+    assert.ok(card.bottom <= data.gallery.bottom + 2, `${card.id} remains within the gallery's document height`);
+    if (card.media) assert.ok(card.heading.bottom <= card.media.top + 2, `${card.id}: chapter orientation precedes its demonstration`);
   }
+  for (let index = 1; index < data.cards.length; index++) assert.ok(data.cards[index].top >= data.cards[index - 1].bottom + 20, 'chapters follow source order without overlap at every width');
   if (data.width >= 1100) {
-    const left = data.cards.filter((_, index) => index % 2 === 0), right = data.cards.filter((_, index) => index % 2 === 1);
-    assert.ok(left.every(card => card.right < data.width * .55) && right.every(card => card.left > data.width * .45), 'desktop has distinct left and right columns');
-    assert.ok(right[0].top > left[0].top + 20, 'first right card starts lower than the first left card');
-    for (const column of [left, right]) for (let index = 1; index < column.length; index++) assert.ok(column[index].top >= column[index - 1].bottom + 20, 'cards in a masonry column never overlap');
-  } else {
-    assert.ok(data.cards.every(card => card.width >= data.width * .8), 'narrow viewports have a readable single column');
-    for (let index = 1; index < data.cards.length; index++) assert.ok(data.cards[index].top >= data.cards[index - 1].bottom + 20, 'mobile keeps the source sequence without overlap');
-    assert.equal(data.motion, 'static');
-  }
+    assert.ok(data.cards[0].width > data.cards[1].width + 40, 'prominent and supporting chapters have distinct widths');
+    assert.ok(data.cards[1].left > data.cards[0].left + 40, 'supporting chapters have an intentional inset');
+  } else assert.ok(data.cards.every(card => card.width >= data.width * .8), 'narrow viewports have a readable single column');
+}
+
+async function assertHeaderHUD(page, name) {
+  const hud = await page.evaluate(() => {
+    const rect = node => { const r = node.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; };
+    const badgeNode = document.querySelector('.chapter-progress'), badge = rect(badgeNode), header = document.querySelector('.pt-marketing-bar');
+    const overlaps = [...header.querySelectorAll('a[href],button,summary,[role="button"]')].filter(node => {
+      const r = node.getBoundingClientRect();
+      return r.width && r.height && Math.min(r.right, badge.right) > Math.max(r.left, badge.left) && Math.min(r.bottom, badge.bottom) > Math.max(r.top, badge.top);
+    }).map(node => node.getAttribute('aria-label') || node.textContent.trim());
+    const priorEvents = badgeNode.style.pointerEvents;
+    let hit;
+    try {
+      badgeNode.style.pointerEvents = 'auto';
+      hit = document.elementFromPoint((badge.left + badge.right) / 2, (badge.top + badge.bottom) / 2);
+    } finally { badgeNode.style.pointerEvents = priorEvents; }
+    const painted = hit === badgeNode || badgeNode.contains(hit);
+    return { badge, header: rect(header), overlaps, painted, visible: badgeNode.dataset.visible, opacity: Number(getComputedStyle(badgeNode).opacity), hit: hit?.className };
+  });
+  assert.ok(hud.badge.top >= hud.header.top && hud.badge.bottom <= hud.header.bottom, `chapter badge stays within fixed header rather than covering the demo: ${JSON.stringify(hud)}`);
+  assert.deepEqual(hud.overlaps, [], 'chapter badge does not overlap header action targets');
+  assert.equal(hud.visible, 'true', 'chapter indicator is enabled inside the story');
+  assert.equal(hud.opacity, 1, 'chapter indicator is visually visible');
+  assert.equal(hud.painted, true, `chapter indicator is above the header surface: ${JSON.stringify(hud)}`);
+  evidence.observations.push({ check: name, hud });
 }
 
 async function assertReadableCard(card) {
@@ -228,7 +253,7 @@ async function driftState(page) {
 }
 
 for (const config of audiences) {
-  for (const width of [360, 390, 430, 768, 1440, 1920]) check(`${config.name}: ${width}px readable media-first gallery, source order and column layout`, async t => {
+  for (const width of [360, 390, 430, 768, 1440, 1920]) check(`${config.name}: ${width}px readable editorial chapters, orientation and sequential layout`, async t => {
     const { page } = await fixture(t, { viewport: { width, height: width < 768 ? 844 : 1000 }, isMobile: width <= 430, hasTouch: width <= 430 });
     await visit(page, config.route); await sourceOrder(page, config);
     await page.mouse.move(4, 20);
@@ -237,11 +262,12 @@ for (const config of audiences) {
       const card = await readyCard(page, id);
       await card.locator('h2').scrollIntoViewIfNeeded(); await settle(page);
       await assertReadableCard(card);
+      if (id === config.chapters[0]) await assertHeaderHUD(page, t.name);
     }
     const data = await geometry(page); assertColumns(data);
     evidence.observations.push({ check: t.name, geometry: data });
     if ([390, 1440].includes(width)) {
-      for (let index = 0; index < config.chapters.length; index += width >= 1100 ? 2 : 1) {
+      for (let index = 0; index < config.chapters.length; index += 1) {
         const id = config.chapters[index];
         await page.locator(`#${id}`).evaluate(node => scrollTo({ top: node.getBoundingClientRect().top + scrollY - 110, behavior: 'instant' }));
         await settle(page); await capture(page, `${config.name}-${width}-story-${id}`);
@@ -253,37 +279,39 @@ for (const config of audiences) {
     }
   });
 
-  check(`${config.name}: desktop drift is subtle, freezes during interaction and does not catch up`, async t => {
+  check(`${config.name}: inline expansion keeps demos mounted and controls stationary`, async t => {
     const { page } = await fixture(t); await visit(page, config.route);
-    for (const id of config.chapters.slice(0, 2)) await readyCard(page, id);
-    await page.locator('.marketing-gallery').evaluate(node => scrollTo({ top: node.getBoundingClientRect().top + scrollY - 100, behavior: 'instant' }));
-    await page.mouse.move(4, 20); await page.locator('.pt-marketing-brand').first().focus();
-    await page.emulateMedia({ reducedMotion: 'reduce' }); await frames(page);
-    await page.emulateMedia({ reducedMotion: 'no-preference' }); await page.mouse.wheel(0, 80); await stableScroll(page);
-    await page.waitForFunction(() => document.querySelector('.marketing-gallery').dataset.galleryMotion === 'active');
-    const before = await driftState(page); await page.mouse.wheel(0, 300);
-    await page.waitForFunction(y => scrollY > y + 100, before.scroll); await stableScroll(page);
-    const after = await driftState(page), ratio = (before.drift - after.drift) / (after.scroll - before.scroll);
-    assert.ok(ratio >= .03 && ratio <= .05, `relative drift remains about4% of actual scroll: ${JSON.stringify({ before, after, ratio })}`);
-    const card = page.locator('.marketing-gallery > section').nth(1);
-    await card.hover(); await page.waitForFunction(() => document.querySelector('.marketing-gallery').dataset.galleryMotion === 'locked');
-    const hovered = await driftState(page); await page.evaluate(() => scrollBy({ top: 100, behavior: 'instant' })); await frames(page);
-    assert.equal((await driftState(page)).drift, hovered.drift, 'hover freezes the actual translation');
-    await page.mouse.move(4, 20); await frames(page); const resumed = await driftState(page);
-    assert.equal(resumed.drift, hovered.drift, 'pointer leave never adds scroll accumulated while locked');
-    const control = card.locator('button,select,a[href],input').first(); await control.focus();
-    await page.waitForFunction(() => document.querySelector('.marketing-gallery').dataset.galleryMotion === 'locked');
-    const focused = await driftState(page); await page.evaluate(() => scrollBy({ top: 100, behavior: 'instant' })); await frames(page);
-    assert.equal((await driftState(page)).drift, focused.drift, 'focused controls stay at their relative card offset');
-    assert.equal(await control.evaluate(node => node === document.activeElement), true);
-    evidence.observations.push({ check: t.name, before, after, ratio, hovered, focused });
+    for (const id of config.chapters) {
+      const card = await readyCard(page, id), disclosure = card.locator('.demo-disclosure');
+      if (!await disclosure.count()) continue;
+      assert.equal(await disclosure.getAttribute('data-demo-expanded'), 'false');
+      const content = await disclosure.locator('.demo-disclosure-content').elementHandle();
+      const toggle = disclosure.getByRole('button', { name: /^Explore full demo/ });
+      const compactHeight = await disclosure.evaluate(node => node.getBoundingClientRect().height);
+      await toggle.click();
+      await page.waitForFunction(id => document.querySelector(`#${id} .demo-disclosure`).dataset.demoExpanded === 'true', id);
+      assert.equal(await disclosure.getByRole('button', { name: /^Show less/ }).getAttribute('aria-expanded'), 'true');
+      assert.equal(await content.evaluate(node => node === document.getElementById(node.id)), true, 'expansion preserves the mounted content node');
+      await settle(page); await assertReadableCard(card);
+      const expandedHeight = await disclosure.evaluate(node => node.getBoundingClientRect().height);
+      assert.ok(expandedHeight >= compactHeight - 2, `${id}: full detail expands inline instead of clipping the preview`);
+      await disclosure.getByRole('button', { name: /^Show less/ }).click();
+      assert.equal(await disclosure.getAttribute('data-demo-expanded'), 'false');
+      const collapsePosition = await disclosure.locator('.demo-disclosure-toggle').boundingBox();
+      const headerBottom = await page.locator('.pt-marketing-bar').evaluate(node => node.getBoundingClientRect().bottom);
+      assert.ok(collapsePosition.y >= headerBottom && collapsePosition.y + collapsePosition.height <= page.viewportSize().height, `${id}: collapse retains its focused control in view`);
+      assert.equal(await content.evaluate(node => node === document.getElementById(node.id)), true, 'collapse preserves the mounted content node');
+      assert.equal((await driftState(page)).drift, 0, 'reading and control interaction never translates chapter positions');
+      evidence.observations.push({ check: t.name, id, compactHeight, expandedHeight });
+    }
+    await sourceOrder(page, config);
   });
 
   for (const width of [390, 1440]) check(`${config.name}: ${width}px direct hash and back/forward preserve native chapter positions`, async t => {
     const { page } = await fixture(t, { viewport: { width, height: 1000 }, isMobile: width === 390, hasTouch: width === 390 });
     const [first, second] = config.history;
     await visit(page, config.route + '#' + first); await awaitReadyCard(page, first); await anchorSettled(page, first);
-    assert.equal((await driftState(page)).state, width >= 1100 ? 'locked' : 'static');
+    assert.equal((await driftState(page)).state, 'static');
     await page.locator(`.chapter-nav a[href="#${second}"]`).click(); await page.waitForURL(url => url.hash === '#' + second);
     await awaitReadyCard(page, second); await anchorSettled(page, second);
     const locked = await driftState(page); await page.evaluate(() => scrollBy({ top: 90, behavior: 'instant' })); await frames(page);
@@ -295,7 +323,7 @@ for (const config of audiences) {
     await sourceOrder(page, config);
   });
 
-  check(`${config.name}: reduced motion and column breakpoint remove drift without losing content`, async t => {
+  check(`${config.name}: reduced motion and responsive changes retain sequential content`, async t => {
     const { page } = await fixture(t); await visit(page, config.route);
     for (const id of config.chapters) await readyCard(page, id);
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -306,6 +334,14 @@ for (const config of audiences) {
     assertColumns(await geometry(page)); await sourceOrder(page, config);
     await page.emulateMedia({ reducedMotion: 'no-preference' }); await frames(page);
     assert.equal((await driftState(page)).state, 'static', 'tablet stays static when motion preference returns');
+    // The header switches at700px, independently of the content's760px breakpoint.
+    // A short landscape viewport between those thresholds guards the HUD baseline.
+    await page.setViewportSize({ width: 730, height: 430 }); await frames(page, 8);
+    const firstCard = await readyCard(page, config.chapters[0]);
+    await firstCard.locator('h2').scrollIntoViewIfNeeded(); await settle(page);
+    assertColumns(await geometry(page)); await sourceOrder(page, config);
+    await assertHeaderHUD(page, t.name + ' /730px landscape header');
+    await capture(page, `${config.name}-730-landscape-header-chapter`);
     await page.setViewportSize({ width: 1440, height: 1000 }); await frames(page, 8);
     assertColumns(await geometry(page)); await sourceOrder(page, config);
   });
@@ -325,7 +361,7 @@ for (const config of audiences) {
   });
 }
 
-check('Players: AI Coach handoff reaches the reordered workout card and preserves selections', async t => {
+check('Players: AI Coach handoff expands the workout chapter and preserves selections', async t => {
   const { page } = await fixture(t, { viewport: { width: 1440, height: 1000 } }); await visit(page, '/');
   const profile = await readyCard(page, 'profile');
   const skill = profile.locator('button[data-skill]').last(); await skill.click();
@@ -339,7 +375,8 @@ check('Players: AI Coach handoff reaches the reordered workout card and preserve
   await anchorSettled(page, 'training');
   assert.equal(page.url(), handoffURL);
   assert.match(await workout.innerText(), /20 min available/);
-  assert.equal(await page.locator('#skillName').innerText(), selected, 'masonry and handoff do not remount sibling demo state');
+  assert.equal(await page.locator('#training .demo-disclosure').getAttribute('data-demo-expanded'), 'true', 'handoff exposes the complete workout inline');
+  assert.equal(await page.locator('#skillName').innerText(), selected, 'editorial reflow and handoff do not remount sibling demo state');
   assert.equal(await skill.getAttribute('aria-pressed'), 'true');
   await workout.getByRole('button', { name: 'Start sample workout', exact: true }).click();
   await workout.getByRole('button', { name: 'Pause workout timer', exact: true }).click();
@@ -392,4 +429,43 @@ check('Players: a delayed preceding movement import preserves the cold mobile pr
     evidence.observations.push({ check: t.name, delayedModule: heldURL, before, after });
     await capture(page, 'players-390-delayed-movement-profile-anchor');
   } finally { releaseMovement(); }
+});
+
+check('Players: selected profile and workout progress survive inline collapse and reopening', async t => {
+  const { page } = await fixture(t); await visit(page, '/');
+  const profile = await readyCard(page, 'profile');
+  const skill = profile.locator('button[data-skill]').last(); await skill.click();
+  const selected = await page.locator('#skillName').innerText();
+  await profile.getByRole('button', { name: /^Explore full demo/ }).click();
+  await profile.getByRole('button', { name: /^Show less/ }).click();
+  assert.equal(await skill.getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.locator('#skillName').innerText(), selected);
+  const training = await readyCard(page, 'training');
+  await training.getByRole('button', { name: 'Start sample workout', exact: true }).click();
+  assert.equal(await training.locator('.demo-disclosure').getAttribute('data-demo-expanded'), 'true');
+  await training.getByRole('button', { name: 'Pause workout timer', exact: true }).waitFor({ state: 'visible' });
+  const step = await training.locator('[data-workout-step]').getAttribute('data-workout-step');
+  await training.getByRole('button', { name: /^Show less/ }).click();
+  await training.getByRole('button', { name: 'Resume workout timer', exact: true }).click();
+  assert.equal(await training.locator('.demo-disclosure').getAttribute('data-demo-expanded'), 'true', 'resume remains usable after inline collapse');
+  assert.equal(await training.locator('[data-workout-step]').getAttribute('data-workout-step'), step);
+  await training.getByRole('button', { name: 'Pause workout timer', exact: true }).click();
+  await training.getByRole('button', { name: 'Skip ahead to summary', exact: true }).click();
+  const qualifier = training.getByText('You skipped ahead in this sample session.', { exact: true });
+  await qualifier.waitFor({ state: 'visible' });
+  await training.getByRole('button', { name: /^Show less/ }).click();
+  assert.equal(await qualifier.isVisible(), true, 'compact summary retains the skipped-time qualification');
+});
+
+check('Coaches: compact player choices and expanded details share the same selection', async t => {
+  const { page } = await fixture(t); await visit(page, '/coaches');
+  const card = await readyCard(page, 'players'), select = card.locator('.cx-player-select select');
+  const option = await select.locator('option').nth(1).getAttribute('value');
+  await select.selectOption(option);
+  const name = await card.locator('.cx-player-heading h3').innerText();
+  await card.getByRole('button', { name: /^Explore full demo/ }).click();
+  assert.equal(await card.locator('.cx-player-options button[aria-pressed="true"] strong').innerText(), name);
+  await card.getByRole('button', { name: /^Show less/ }).click();
+  assert.equal(await select.inputValue(), option);
+  assert.equal(await card.locator('.cx-player-heading h3').innerText(), name);
 });

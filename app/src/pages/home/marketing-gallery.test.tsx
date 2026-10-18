@@ -29,12 +29,12 @@ class TestKeyboardEvent extends Event {
   constructor(key: string) { super("keydown"); this.key = key; }
 }
 
-function fixture({ hash = "", fine = true, reduce = false, wideLayout = true } = {}) {
+function fixture({ hash = "", fine = true, reduce = false, wideLayout = true, navigationType = "navigate", readyState = "complete" } = {}) {
   const node = new TestNode(), card = new TestNode(), control = new TestNode(), gap = new TestNode(), secondCard = new TestNode();
   card.parent = node; control.parent = card; control.control = true; node.children = [card];
   gap.offsetHeight = 80; node.gap = gap; secondCard.parent = node; secondCard.offsetHeight = 240; secondCard.marginTop = "230px"; node.children.push(secondCard);
   const windowState = Object.assign(new EventTarget(), { scrollY: 0, innerHeight: 1000, scrollBy: vi.fn(), setTimeout, IntersectionObserver: null as unknown, ResizeObserver: null as unknown });
-  const documentState = Object.assign(new EventTarget(), { hidden: false, activeElement: null as TestNode | null, getElementById: (_id: string): TestNode | null => null });
+  const documentState = Object.assign(new EventTarget(), { hidden: false, readyState, activeElement: null as TestNode | null, getElementById: (_id: string): TestNode | null => null });
   const desktop = Object.assign(new EventTarget(), { matches: fine });
   const wide = Object.assign(new EventTarget(), { matches: wideLayout });
   const reduced = Object.assign(new EventTarget(), { matches: reduce });
@@ -48,6 +48,7 @@ function fixture({ hash = "", fine = true, reduce = false, wideLayout = true } =
   const frames = new Map<number, FrameRequestCallback>(); let frameId = 0;
   vi.stubGlobal("window", windowState); vi.stubGlobal("document", documentState);
   vi.stubGlobal("location", new URL(`https://posetek.net/${hash}`));
+  vi.stubGlobal("performance", { getEntriesByType: () => [{ type: navigationType }] });
   vi.stubGlobal("Element", TestNode); vi.stubGlobal("Node", TestNode); vi.stubGlobal("HTMLElement", TestNode); vi.stubGlobal("KeyboardEvent", TestKeyboardEvent);
   vi.stubGlobal("IntersectionObserver", Observer);
   vi.stubGlobal("ResizeObserver", SizeObserver);
@@ -75,8 +76,8 @@ describe("marketing gallery native interaction boundaries", () => {
     expect(html).toContain('data-gallery-layout="editorial"');
   });
 
-  function mobileLanding(position = 99.73) {
-    const f = fixture({ hash: "#profile", fine: false, wideLayout: false });
+  function mobileLanding(position = 99.73, options = {}) {
+    const f = fixture({ hash: "#profile", fine: false, wideLayout: false, ...options });
     f.windowState.scrollY = 2333;
     let documentTop = f.windowState.scrollY + position;
     f.documentState.getElementById = () => f.secondCard;
@@ -173,6 +174,47 @@ describe("marketing gallery native interaction boundaries", () => {
     f.windowState.dispatchEvent(new Event("scrollend"));
     expect(f.windowState.scrollBy).not.toHaveBeenCalled();
     expect(f.secondCard.getBoundingClientRect().top).toBe(20); f.destroy();
+  });
+
+  it("repairs only a reload's stale absolute restoration after pageshow and the next frame", () => {
+    const f = mobileLanding(110, { navigationType: "reload", readyState: "loading" });
+    f.windowState.dispatchEvent(new Event("scrollend")); // The hydration landing already finished.
+    f.windowState.scrollY += 332; // Browser restores the older, taller document's position.
+    f.windowState.dispatchEvent(new Event("scrollend"));
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
+    f.documentState.readyState = "complete";
+    f.windowState.dispatchEvent(new Event("pageshow"));
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
+    f.flush();
+    expect(f.windowState.scrollBy).toHaveBeenCalledExactlyOnceWith({ top: -332, behavior: "instant" });
+    expect(f.secondCard.getBoundingClientRect().top).toBe(110);
+    f.grow(80);
+    expect(f.secondCard.getBoundingClientRect().top).toBe(110);
+    f.destroy();
+  });
+
+  it.each(["popstate", "persisted-pageshow"])("preserves a history-relative landing after %s instead of running the pending reload repair", eventName => {
+    const f = mobileLanding(20, { navigationType: "reload", readyState: "loading" });
+    f.documentState.readyState = "complete";
+    const event = new Event(eventName === "popstate" ? "popstate" : "pageshow");
+    if (eventName === "persisted-pageshow") Object.defineProperty(event, "persisted", { value: true });
+    f.windowState.dispatchEvent(event); f.flush();
+    f.windowState.dispatchEvent(new Event("scrollend"));
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
+    f.grow(266.25);
+    expect(f.secondCard.getBoundingClientRect().top).toBe(20);
+    f.destroy();
+  });
+
+  it.each(["wheel", "pointerdown"])("cancels reload repair after %s takeover even if pageshow arrives later", eventName => {
+    const f = mobileLanding(110, { navigationType: "reload", readyState: "loading" });
+    (eventName === "wheel" ? f.windowState : f.node).dispatchEvent(new Event(eventName));
+    f.windowState.scrollY += 332;
+    f.documentState.readyState = "complete";
+    f.windowState.dispatchEvent(new Event("pageshow")); f.flush();
+    f.windowState.dispatchEvent(new Event("scrollend")); f.grow(80);
+    expect(f.windowState.scrollBy).not.toHaveBeenCalled();
+    f.destroy();
   });
 
   it("preserves a landing across both growth and collapse", () => {

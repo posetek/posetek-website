@@ -85,6 +85,12 @@ async function fixture(t, options = {}) {
   return { page, context };
 }
 
+async function expandDemo(page, section) {
+  const toggle = page.locator(`${section} .demo-disclosure-toggle`);
+  if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
+  assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+}
+
 async function visit(page, route) {
   const response = await page.goto(origin + route, { waitUntil: 'domcontentloaded' });
   assert.equal(response.status(), 200);
@@ -286,18 +292,22 @@ for (const config of audiences) {
   check(`${config.name}: hover moves artwork while the first control action remains usable`, async t => {
     const { page } = await fixture(t);
     await visit(page, config.route);
+    if (config.name === 'coaches') await expandDemo(page, config.section);
     await place(page, config.frame, 'inside'); await settledReveal(page, config.frame);
     const frame = page.locator(config.frame), art = frame.locator(config.art).first(), controls = page.locator(config.section).locator(config.controls);
     const target = controls.last();
-    const before = await target.boundingBox();
+    // Expanded evidence may need native scrolling to bring its artwork into view.
+    // Compare document coordinates so that scroll itself is not mistaken for tilt.
+    const controlBox = node => { const box = node.getBoundingClientRect(); return { x: box.x + scrollX, y: box.y + scrollY, width: box.width, height: box.height }; };
+    const before = await target.evaluate(controlBox);
     await art.hover();
     await waitData(page, config.frame, 'preview-active', 'true');
     await page.waitForFunction(selector => document.querySelector(selector)?.hasAttribute('data-motion-art'), `${config.frame} ${config.art}`);
     const visual = await art.evaluate(node => ({ transform: node.style.transform, pulses: node.getAnimations().filter(animation => animation.effect.getKeyframes().some(frame => frame.filter)).length }));
     assert.match(visual.transform, /scale\(1\.035\)/);
     assert.ok(visual.pulses > 0, 'hover includes the bounded blur pulse');
-    const after = await target.boundingBox();
-    assert.ok(['x', 'y', 'width', 'height'].every(key => Math.abs(before[key] - after[key]) < 1), 'actual controls do not tilt or zoom');
+    const after = await target.evaluate(controlBox);
+    assert.ok(['x', 'y', 'width', 'height'].every(key => Math.abs(before[key] - after[key]) < 1), `actual controls do not tilt, zoom or move in the document: ${JSON.stringify({ before, after })}`);
     await capture(page, `${config.name}-desktop-art-hover`);
     await target.click();
     assert.equal(await target.getAttribute('aria-pressed'), 'true', 'one click selects the real control');
@@ -305,8 +315,9 @@ for (const config of audiences) {
     await assertResetArtwork(page, `${config.frame} ${config.art}`);
     const selected = await selectedValue(page, config);
     await neutralFocus(page); await neutralPointer(page);
-    await place(page, config.frame, 'below'); await waitData(page, config.frame, 'reveal-state', 'waiting');
-    await place(page, config.frame, 'inside'); await waitData(page, config.frame, 'reveal-state', 'entering');
+    await place(page, config.frame, 'below'); await waitData(page, config.frame, 'reveal-state', 'visible');
+    await place(page, config.frame, 'inside');
+    assert.equal(await frame.locator('.pixel-reveal').count(), 0, 'used demos stay clear when revisited');
     await controls.first().focus();
     assert.equal(await frame.getAttribute('data-reveal-state'), 'visible', 'focus finishes the tiled entrance');
     assert.equal(await frame.locator('.pixel-reveal').count(), 0);
@@ -355,6 +366,7 @@ for (const config of audiences) {
     await page.waitForURL(url => url.hash === (config.name === 'players' ? '#tests' : '#club'));
     assert.equal(await page.locator('.marketing-cursor').getAttribute('data-visible'), 'false');
     assert.equal(await page.locator('.interaction-text[data-scrambling="true"]').count(), 0);
+    if (config.name === 'coaches') await expandDemo(page, config.section);
     const controls = page.locator(config.section).locator(config.controls);
     await controls.last().tap();
     assert.equal(await controls.last().getAttribute('aria-pressed'), 'true');
@@ -440,7 +452,7 @@ check('technique joint hit areas stay stationary throughout hover, pointer down 
   await waitData(page, '[data-demo="technique"]', 'demo-state', 'ready');
   const demo = page.locator('[data-demo="technique"]');
   await demo.getByRole('group', { name: 'Kick analysis phases', exact: true }).getByRole('button', { name: /Contact/ }).click();
-  await demo.getByText('Explore details', { exact: true }).click();
+  await expandDemo(page, '#technique');
   const current = await demo.locator('.technique-measurement > div > small').first().innerText();
   const joints = demo.locator('.technique-stage [role="button"]');
   await joints.first().waitFor({ state: 'visible' }); // Native details toggle commits its React state asynchronously.
@@ -594,12 +606,12 @@ for (const config of audiences) {
     await page.keyboard.press('Escape');
     await waitData(page, '.pt-marketing-menu', 'closing', 'true');
     assert.ok(await curtain.evaluate(node => node.getAnimations({ subtree: true }).some(animation => animation.playState === 'running')), 'curtain animates during dismiss');
-    assert.equal(await page.locator('main').evaluate(node => node.inert), true, 'background remains inert during close animation');
+    assert.equal(await page.locator('main').evaluate(node => Boolean(node.closest('[inert]'))), true, 'background remains inert during close animation');
     assert.equal(await dialog.evaluate(node => node.contains(document.activeElement)), true, 'focus remains in the closing dialog');
     await capture(page, `${config.name}-menu-closing`);
     await dialog.waitFor({ state: 'hidden' });
     assert.equal(await opener.evaluate(node => node === document.activeElement), true);
-    assert.equal(await page.locator('main').evaluate(node => node.inert), false);
+    assert.equal(await page.locator('main').evaluate(node => Boolean(node.closest('[inert]'))), false);
     await opener.click(); await target.hover();
     await waitData(page, '.pt-menu-peek', 'visible', 'true');
     await page.emulateMedia({ reducedMotion: 'reduce' });

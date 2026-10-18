@@ -140,6 +140,12 @@ async function waitAtAnchor(page, id) {
   }));
 }
 
+async function expandDemo(page, section) {
+  const toggle = page.locator(`${section} .demo-disclosure-toggle`);
+  if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
+  assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+}
+
 async function demoReady(page, kind) {
   const demo = page.locator(`[data-demo="${kind}"]`);
   await demo.scrollIntoViewIfNeeded();
@@ -232,8 +238,8 @@ for (const config of pages) {
     assert.equal(await dialog.getByRole('link', { name: 'Players', exact: true }).count(), 1, 'stagger preserves complete accessible link names');
     assert.equal(await dialog.getByRole('link', { name: 'Coaches', exact: true }).count(), 1);
     assert.equal(await dialog.getByRole('button', { name: 'Close navigation', exact: true }).evaluate(node => node === document.activeElement), true);
-    assert.equal(await page.locator('main').evaluate(node => node.inert), true);
-    assert.equal(await page.locator('footer').evaluate(node => node.inert), true);
+    assert.equal(await page.locator('main').evaluate(node => Boolean(node.closest('[inert]'))), true);
+    assert.equal(await page.locator('footer').evaluate(node => Boolean(node.closest('[inert]'))), true);
     const links = dialog.locator('a[href],button:not([disabled]),[tabindex="0"]');
     await links.last().focus(); await page.keyboard.press('Tab');
     assert.equal(await links.first().evaluate(node => node === document.activeElement), true, 'Tab wraps to first dialog control');
@@ -244,7 +250,7 @@ for (const config of pages) {
     await page.keyboard.press('Escape');
     await dialog.waitFor({ state: 'hidden' });
     assert.equal(await open.evaluate(node => node === document.activeElement), true);
-    assert.equal(await page.locator('main').evaluate(node => node.inert), false);
+    assert.equal(await page.locator('main').evaluate(node => Boolean(node.closest('[inert]'))), false);
     assert.ok(Math.abs(await page.evaluate(() => scrollY) - scrollBefore) <= 2, 'opening and closing menu preserves page scroll');
     await open.click();
     const target = config.chapters[1];
@@ -358,6 +364,12 @@ for (const config of pages) {
 
 check('WebGL unavailable: dimensional mark falls back without interrupting links', async t => {
   const { page, context } = await fixture(t);
+  let unavailableWorkers = 0;
+  await context.route(/renderer\.worker[-.].*\.js$/, async route => {
+    unavailableWorkers++;
+    const response = await route.fetch();
+    await route.fulfill({ response, body: 'OffscreenCanvas.prototype.getContext = function () { return null; };\n' + await response.text() });
+  });
   await context.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = function (type, ...args) {
@@ -367,7 +379,9 @@ check('WebGL unavailable: dimensional mark falls back without interrupting links
   });
   await visit(page, '/coaches');
   await page.locator('.marketing-footer-mark').scrollIntoViewIfNeeded();
-  await page.waitForFunction(() => window.__marketingWebGLAttempts > 0);
+  await page.locator('.marketing-footer-mark[data-renderer-state="failed"]').waitFor();
+  assert.ok(unavailableWorkers > 0, 'the actual worker attempted unavailable WebGL');
+  assert.equal(await page.evaluate(() => window.__marketingWebGLAttempts || 0), 0, 'no main-thread WebGL fallback');
   assert.equal(await page.locator('.marketing-footer-mark').getAttribute('data-mark-state'), 'static');
   assert.equal(await page.locator('.marketing-footer-mark-fallback').isVisible(), true);
   assert.equal(await page.locator('.marketing-footer-next').getAttribute('href'), '/');
@@ -441,6 +455,7 @@ check('Players: six recordings, real playback, skill selection, workout progress
   await workout.getByRole('heading', { name: 'See the work add up.', exact: true }).waitFor({ state: 'visible' });
   await workout.getByRole('button', { name: 'Build another sample', exact: true }).click();
   const coach = await demoReady(page, 'coach');
+  await expandDemo(page, '#ai-coach');
   const metrics = coach.getByRole('group', { name: 'Explore sample results', exact: true }).getByRole('button');
   await metrics.last().click();
   assert.equal(await metrics.last().getAttribute('aria-pressed'), 'true');
@@ -463,6 +478,7 @@ check('Coaches: team and player stay connected through Plan, Train and Retest', 
   await visit(page, '/coaches');
   await page.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U15/ }).click();
   assert.match(await page.locator('.cx-team-context').innerText(), /Taylor Brooks/);
+  await expandDemo(page, '#players');
   const players = page.getByRole('group', { name: 'Choose a sample player from U15', exact: true });
   await players.getByRole('button', { name: /Riley Chen/ }).click();
   assert.equal(await page.locator('.cx-player-heading h3').innerText(), 'Riley Chen');
@@ -492,6 +508,9 @@ check('media failure offers recovery while the drill overview remains usable', a
   await context.route(/\.mp4(?:\?.*)?$/, blockVideo);
   await visit(page, '/');
   const workout = await demoReady(page, 'workout');
+  await expandDemo(page, '#training');
+  const videoTab = workout.getByRole('button', { name: 'Demo', exact: true });
+  if (await videoTab.isVisible()) await videoTab.click();
   await workout.getByRole('button', { name: /Play .* demonstration video/ }).click();
   await workout.getByRole('button', { name: 'Retry video', exact: true }).waitFor({ state: 'visible' });
   assert.ok(blocked > 0);
@@ -554,6 +573,7 @@ for (const width of [390, 1440]) check(`${width}px close-up demonstrations show 
     ['technique', '[data-demo="technique"]', 'technique'],
   ]) {
     if (kind) await demoReady(page, kind);
+    await expandDemo(page, '#' + name);
     const panel = page.locator(selector);
     await panel.evaluate(node => node.scrollIntoView({ behavior: 'instant', block: 'start' }));
     await unclippedText(panel, `players/${name}/${width}`);
@@ -564,6 +584,7 @@ for (const width of [390, 1440]) check(`${width}px close-up demonstrations show 
     }
   }
   await visit(page, '/coaches');
+  await expandDemo(page, '#players');
   const evidence = page.locator('.cx-evidence');
   await evidence.evaluate(node => node.scrollIntoView({ behavior: 'instant', block: 'start' }));
   await unclippedText(evidence, `coaches/player-evidence/${width}`);

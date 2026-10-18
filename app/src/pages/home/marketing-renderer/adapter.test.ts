@@ -4,7 +4,7 @@ import type { RendererInput, RendererOutput, HeroView } from "./protocol";
 
 class FakeCanvas {
   dataset: Record<string, string> = {};
-  style = {};
+  style = { opacity: "", visibility: "", display: "", removeProperty(property: "visibility" | "display") { this[property] = ""; } };
   remove = vi.fn();
   setAttribute = vi.fn();
   transferControlToOffscreen() { return { transferred: true }; }
@@ -59,6 +59,18 @@ describe("worker renderer admission and truthful readiness", () => {
     expect(ready).toHaveBeenCalledOnce();
     expect(FakeWorker.instances).toHaveLength(1); expect(worker.terminate).not.toHaveBeenCalled();
     expect(worker.messages).toContainEqual({ type: "view", view: { ...view, pose: "jump" } }); renderer.destroy();
+  });
+  it("keeps GPU preparation hidden, then lets component reduced-motion CSS own canvas visibility", () => {
+    const canvas = new FakeCanvas(); page.createElement = () => canvas;
+    const renderer = createWorkerRenderer(host(), view, { state: vi.fn(), ready: vi.fn() });
+    renderer.setActive(true);
+    expect(canvas.style).toMatchObject({ opacity: "0", visibility: "hidden", display: "block" });
+    FakeWorker.instances[0].emit({ type: "ready", frames: 2, gpu: "test-device" });
+    expect(canvas.style).toMatchObject({ opacity: "1", visibility: "", display: "" });
+    renderer.setActive(false);
+    expect(canvas.style.visibility).toBe(""); expect(canvas.style.display).toBe("");
+    expect(FakeWorker.instances).toHaveLength(1);
+    renderer.destroy();
   });
   it("fails after ten cumulative active seconds, excluding a long menu pause", () => {
     const state = vi.fn(), renderer = createWorkerRenderer(host(), view, { state, ready: vi.fn() });

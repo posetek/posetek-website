@@ -48,6 +48,7 @@ export function MarketingHeader({ audience, legacy = false }: { audience: Market
       <div className="pt-marketing-audiences" role="group" aria-label="Explore PoseTek for"><a href="/" aria-current={audience === "players" ? "page" : undefined}>Players</a><a href="/coaches" aria-current={audience === "coaches" ? "page" : undefined}>Coaches</a></div>
       <div className="pt-marketing-actions"><a className="pt-marketing-signin" href="/signin"><Label>Sign in</Label></a><a className="pt-marketing-cta" href={cta.href}><Label>{cta.label}</Label><span aria-hidden="true">↗</span></a><SoundControl /></div>
     </nav>
+    <div data-marketing-progress-slot aria-hidden="true" />
     <details className="pt-navigation-disclosure">
       <summary className="pt-marketing-menu-button" role="button" aria-label="Open navigation" aria-controls="marketing-menu"><span>Menu</span><span className="pt-menu-glyph" aria-hidden="true"><i /><i /></span></summary>
       <div className="pt-marketing-menu" id="marketing-menu" aria-labelledby="marketing-menu-title" data-letter-reveal="false" data-closing="false">
