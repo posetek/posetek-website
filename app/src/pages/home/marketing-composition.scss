@@ -1,0 +1,170 @@
+/* A continuous, media-led story. Card contents reflow in marketing-demo-cards. */
+.pt-home.pt-revamp {
+  --gutter: clamp(16px, 2.5vw, 64px);
+
+  .hero, .coach-hero {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    align-items: end;
+    gap: 28px 5vw;
+    padding-top: clamp(145px, 13vw, 210px);
+  }
+  .hero-copy, .coach-hero-copy { display: contents; }
+  .hero-title-block { grid-column: 1; grid-row: 1; }
+  .hero-summary { grid-column: 1; grid-row: 2; max-width: 480px; }
+  .hero .editorial-title, .coach-hero .editorial-title { font-size: clamp(86px, 10.4vw, 200px); }
+  .hero .eyebrow, .coach-hero .eyebrow { margin-bottom: 26px; }
+  .hero-question { margin-bottom: 16px; }
+  .hero-description, .coach-hero-description { margin-top: 0; }
+  .hero-actions { margin-top: 18px; }
+  .hero-mobile-link { margin-top: 10px; }
+  .hero-art, .coach-hero-frame {
+    grid-column: 2; grid-row: 1 / 3; width: 100%; margin: 0;
+    align-self: end;
+  }
+  .hero .hero-art { height: auto; aspect-ratio: 1 / 1; min-height: 500px; margin-top: 0; }
+  .hero-art .hero-pose-viewer { inset: 0; border-radius: 0; box-shadow: none; }
+  .hero-pose-viewer .pose-explorer { inset: 94px 0 128px; }
+  .hero-pose-caption > strong { font: 400 25px/1.2 Inter, sans-serif; letter-spacing: -.035em; text-transform: none; }
+  .hero-pose-caption > span, .hero-orbit-hint { font-size: 12px; }
+  .hero-pose-viewer .pose-explorer-help { font-size: 10px; }
+  .hero-index, .coach-service-strip { grid-row: 3; grid-column: 1 / -1; margin-top: 16px; padding-block: 20px; }
+  .chapter-nav { padding-top: 20px; }
+  .chapter-nav-label { margin-bottom: 12px; }
+
+  .marketing-gallery {
+    --gallery-gap: clamp(80px, 8vw, 160px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    column-gap: var(--gutter);
+    row-gap: var(--gallery-gap);
+    padding-top: clamp(70px, 7vw, 135px);
+    padding-bottom: clamp(120px, 15vw, 270px);
+  }
+  .marketing-gallery > section {
+    container-type: inline-size;
+    position: relative;
+    width: 100%; max-width: none; min-width: 0;
+    padding: 0; margin: 0;
+    background: transparent; border: 0;
+    scroll-margin-top: 110px;
+  }
+  .marketing-gallery > section:nth-child(even) {
+    margin-top: clamp(150px, 16vw, 280px);
+    transform: translate3d(0, var(--gallery-drift, 0px), 0);
+  }
+  @media (min-width: 1100px) {
+    .marketing-gallery[data-gallery-layout="masonry"] {
+      grid-auto-rows: 1px; grid-auto-flow: row dense; row-gap: 0;
+    }
+    .marketing-gallery[data-gallery-layout="masonry"] > section:nth-child(odd) { grid-column: 1; }
+    .marketing-gallery[data-gallery-layout="masonry"] > section:nth-child(even) { grid-column: 2; margin-top: 0; }
+    .marketing-gallery[data-gallery-layout="masonry"] > section:nth-child(2) { margin-top: clamp(150px, 16vw, 280px); }
+  }
+  .marketing-gallery .shell { width: 100%; max-width: none; padding: 0; margin: 0; }
+  .marketing-gallery .profile-layout,
+  .marketing-gallery .mobile-closing-layout { display: flex; flex-direction: column; gap: 0; align-items: stretch; }
+  .marketing-gallery .reveal-frame { width: 100%; margin: 0; }
+  .marketing-gallery .section-heading,
+  .marketing-gallery .profile-copy,
+  .marketing-gallery .mobile-closing-copy {
+    display: flex; flex-direction: column; align-items: stretch;
+    max-width: none; gap: 0; margin: 26px 0 0; padding: 0;
+    text-align: left;
+  }
+  .marketing-gallery .section-heading .eyebrow,
+  .marketing-gallery .profile-copy > .eyebrow,
+  .marketing-gallery .mobile-closing-copy > .eyebrow {
+    margin: 0 0 12px; font-size: 11px; line-height: 1.5;
+  }
+  .marketing-gallery .section-heading h2,
+  .marketing-gallery .profile-copy h2,
+  .marketing-gallery .mobile-closing-copy h2 {
+    font-size: clamp(27px, 2.6vw, 46px); line-height: 1.12;
+    letter-spacing: -.045em; max-width: none; margin: 0;
+    text-wrap: pretty;
+  }
+  .marketing-gallery h2 br { display: none; }
+  .marketing-gallery h2 em::before { content: " "; }
+  .marketing-gallery .section-description,
+  .marketing-gallery .profile-copy > p:not(.eyebrow),
+  .marketing-gallery .mobile-closing-copy > p:not(.eyebrow) {
+    max-width: 44ch; font-size: 13px; line-height: 1.75;
+    margin: 16px 0 0; color: #58605b;
+  }
+  .marketing-gallery .demo-caption,
+  .marketing-gallery .coach-section-foot {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 10px 22px; padding: 18px 0 0; margin: 0; border: 0;
+  }
+  .marketing-gallery .demo-caption > span,
+  .marketing-gallery .coach-section-foot > span { font-size: 11px; line-height: 1.65; }
+  .marketing-gallery .button-text { min-height: 44px; font-size: 11px; }
+  .marketing-gallery .profile-benefits { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-block: 18px 10px; }
+  .marketing-gallery .profile-benefits span { font-size: 12px; }
+  .marketing-gallery .profile-copy > .button-text { align-self: start; }
+  .marketing-gallery .mobile-showcase {
+    display: grid; place-items: center; max-width: none;
+    padding: clamp(30px, 5vw, 72px) 20px;
+    background: #dfe5da;
+  }
+  .marketing-gallery .closing-actions { margin-top: 20px; gap: 12px 20px; flex-wrap: wrap; }
+  .marketing-gallery .coach-test-strip { margin-top: 20px; padding-block: 16px; gap: 10px 16px; }
+  .marketing-gallery .coach-test-link { margin-top: 10px; }
+  .marketing-gallery .coach-contact {
+    padding: clamp(24px, 3vw, 52px); background: #dce3d7;
+  }
+  .marketing-gallery .coach-contact-heading { display: grid; gap: 24px; }
+  .marketing-gallery .coach-contact-heading h2 { font-size: clamp(42px, 4.2vw, 76px); line-height: 1.02; }
+  .marketing-gallery .coach-contact-heading h2 br { display: initial; }
+  .marketing-gallery .coach-contact-heading > p { max-width: 36ch; font-size: 14px; }
+  .marketing-gallery .coach-service-steps { display: grid; grid-template-columns: 1fr; gap: 0; margin-block: 30px; }
+  .marketing-gallery .coach-service-steps li { padding: 22px 0; border-top: 1px solid #142b1926; }
+  .marketing-gallery .coach-service-steps li > span { margin-bottom: 10px; }
+  .marketing-gallery .coach-service-steps strong { font-size: 22px; }
+  .marketing-gallery .coach-contact-actions { display: flex; flex-wrap: wrap; gap: 18px; }
+  .marketing-gallery .coach-contact-actions > span { flex-basis: 100%; }
+
+  @media (max-width: 1099px) {
+    .hero, .coach-hero { gap: 24px 4vw; padding-top: 140px; }
+    .hero .editorial-title, .coach-hero .editorial-title { font-size: 10.4vw; }
+    .hero .hero-art { min-height: 430px; }
+    .marketing-gallery { grid-template-columns: 1fr; row-gap: 80px; padding-bottom: 90px; }
+    .marketing-gallery > section:nth-child(even) { margin-top: 0; transform: none; }
+    .marketing-gallery .section-heading h2,
+    .marketing-gallery .profile-copy h2,
+    .marketing-gallery .mobile-closing-copy h2 { font-size: clamp(28px, 4vw, 40px); }
+    .marketing-gallery .section-description { max-width: 52ch; }
+  }
+  @media (max-width: 760px) {
+    --gutter: 16px;
+    .hero, .coach-hero { grid-template-columns: 1fr; padding-top: 126px; gap: 26px; }
+    .hero-title-block { grid-column: 1; grid-row: 1; }
+    .hero-summary { grid-column: 1; grid-row: 3; max-width: none; }
+    .hero .editorial-title, .coach-hero .editorial-title { font-size: clamp(68px, 18vw, 126px); }
+    .hero .eyebrow, .coach-hero .eyebrow { margin-bottom: 20px; font-size: 10px; }
+    .hero-question { margin-bottom: 14px; }
+    .hero-art, .coach-hero-frame { grid-column: 1; grid-row: 2; width: 100%; }
+    .hero .hero-art { min-height: 440px; aspect-ratio: 1 / 1; }
+    .hero-art .hero-pose-viewer { inset: 0; border-radius: 0; }
+    .hero-pose-viewer .pose-explorer { inset: 94px 0 140px; }
+    .hero-description, .coach-hero-description { font-size: 13px; }
+    .hero-description br { display: none; }
+    .hero-index, .coach-service-strip { grid-row: 4; margin-top: 0; padding-block: 18px; }
+    .hero-index strong { font-size: 30px; }
+    .chapter-nav { padding-top: 24px; }
+    .marketing-gallery { padding-top: 62px; row-gap: 78px; }
+    .marketing-gallery .section-heading,
+    .marketing-gallery .profile-copy,
+    .marketing-gallery .mobile-closing-copy { margin-top: 22px; }
+    .marketing-gallery .section-heading h2,
+    .marketing-gallery .profile-copy h2,
+    .marketing-gallery .mobile-closing-copy h2 { font-size: 29px; }
+    .marketing-gallery .mobile-showcase { padding: 32px 16px; }
+    .marketing-gallery .coach-contact-heading h2 { font-size: 44px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marketing-gallery > section:nth-child(even) { transform: none; }
+  }
+}

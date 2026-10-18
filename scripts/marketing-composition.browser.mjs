@@ -1,0 +1,348 @@
+// Public composition acceptance, separate from the original 33 + 20 checks.
+// Run only after the composition build is available. No authenticated actions.
+import assert from 'node:assert/strict';
+import { before, after, test } from 'node:test';
+import { mkdir, stat, writeFile } from 'node:fs/promises';
+import { once } from 'node:events';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium } from '../app/node_modules/playwright/index.mjs';
+import { createHomepagePreviewServer } from './serve-homepage-preview.mjs';
+
+const output = process.env.MARKETING_OUTPUT ? resolve(process.env.MARKETING_OUTPUT) : fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
+const artifacts = process.env.MARKETING_ARTIFACTS ? resolve(process.env.MARKETING_ARTIFACTS) : fileURLToPath(new URL('../artifacts/marketing-composition/acceptance/', import.meta.url));
+const previewOrigin = process.env.MARKETING_ORIGIN;
+if (previewOrigin && !/^https:\/\/[a-f0-9]{24}--posetek\.netlify\.app$/.test(previewOrigin)) throw new Error('MARKETING_ORIGIN must be an immutable PoseTek Netlify draft URL.');
+const allowFonts = process.env.MARKETING_ALLOW_FONTS === '1';
+const evidence = {
+  output, previewOrigin,
+  networkPolicy: `${previewOrigin ? 'immutable PoseTek draft' : 'loopback'} origin GET/HEAD${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`,
+  checks: [], screenshots: [], observations: [],
+  requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, unexpectedOriginFailures: 0 },
+};
+const audiences = [
+  { name: 'players', route: '/', chapters: ['tests', 'profile', 'training', 'ai-coach', 'technique', 'mobile-app'], aliases: ['how-it-works', 'retest'], history: ['profile', 'training'] },
+  { name: 'coaches', route: '/coaches', chapters: ['club', 'players', 'development', 'contact'], aliases: [], history: ['players', 'development'] },
+];
+let browser, server, origin;
+
+before(async () => {
+  try {
+    for (const file of ['index.html', 'coaches/index.html']) await stat(resolve(output, file));
+    await mkdir(artifacts, { recursive: true });
+    if (previewOrigin) origin = previewOrigin;
+    else {
+      server = createHomepagePreviewServer({ marketingRoot: output, referenceRoot: output });
+      server.listen(0, '127.0.0.1'); await once(server, 'listening');
+      origin = `http://127.0.0.1:${server.address().port}`;
+    }
+    browser = await chromium.launch(); evidence.setup = 'ready';
+  } catch (error) { evidence.setup = 'failed'; evidence.setupError = error.message; throw error; }
+});
+
+after(async () => {
+  await browser?.close();
+  if (server) await new Promise(done => server.close(done));
+  const summary = { ...evidence, passed: evidence.checks.filter(item => item.status === 'passed').length, failed: evidence.checks.filter(item => item.status === 'failed').length + Number(evidence.setup === 'failed') };
+  await mkdir(artifacts, { recursive: true });
+  await writeFile(resolve(artifacts, 'composition-acceptance.json'), JSON.stringify(summary, null, 2) + '\n');
+  console.log(JSON.stringify({ passed: summary.passed, failed: summary.failed, screenshots: summary.screenshots.length, evidence: resolve(artifacts, 'composition-acceptance.json'), networkPolicy: evidence.networkPolicy }));
+});
+
+function check(name, run) {
+  test(name, { timeout: 120_000 }, async t => {
+    const started = Date.now();
+    try { await run(t); evidence.checks.push({ name, status: 'passed', milliseconds: Date.now() - started }); }
+    catch (error) { evidence.checks.push({ name, status: 'failed', error: error.message }); throw error; }
+  });
+}
+
+async function fixture(t, options = {}) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block', ...options });
+  const errors = [], failures = [];
+  let closing = false;
+  await context.route('**/*', route => {
+    const request = route.request(), url = new URL(request.url());
+    if (!['GET', 'HEAD'].includes(request.method())) { evidence.requests.writesBlocked++; return route.abort('blockedbyclient'); }
+    if (url.origin === origin) return route.continue();
+    if (allowFonts && request.method() === 'GET' && url.protocol === 'https:' && ['fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname)) { evidence.requests.fontsAllowed++; return route.continue(); }
+    evidence.requests.externalBlocked++;
+    if (request.resourceType() === 'stylesheet') return route.fulfill({ contentType: 'text/css', body: '' });
+    return route.abort('blockedbyclient');
+  });
+  await context.routeWebSocket(/.*/, socket => socket.close());
+  const page = await context.newPage(); page.setDefaultTimeout(12_000);
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('requestfailed', request => { if (!closing && new URL(request.url()).origin === origin) failures.push(request.url()); });
+  t.after(async () => {
+    const result = evidence.checks.find(item => item.name === t.name);
+    if (result?.status === 'failed' && !page.isClosed()) {
+      const key = t.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, '');
+      await capture(page, 'failure-' + key).catch(() => {});
+      result.geometry = await geometry(page).catch(() => null);
+      result.url = page.url();
+    }
+    closing = true; await context.close(); evidence.requests.unexpectedOriginFailures += failures.length;
+    try { assert.deepEqual(errors, [], 'uncaught browser exceptions'); assert.deepEqual(failures, [], 'unexpected tested-origin request failures'); }
+    catch (error) { const result = evidence.checks.find(item => item.name === t.name); if (result) { result.status = 'failed'; result.error = error.message; } throw error; }
+  });
+  return { page, context };
+}
+
+async function visit(page, route, hydrated = true) {
+  const response = await page.goto(origin + route, { waitUntil: hydrated ? 'domcontentloaded' : 'load' });
+  assert.equal(response.status(), 200);
+  if (hydrated) await page.waitForFunction(() => !document.querySelector('astro-island[ssr]'));
+  await page.evaluate(() => document.fonts.ready);
+  await page.getByRole('heading', { level: 1 }).waitFor({ state: 'visible' });
+}
+
+async function capture(page, name, fullPage = false) {
+  const path = resolve(artifacts, name + '.png');
+  await page.screenshot({ path, fullPage, animations: 'allow' }); evidence.screenshots.push(path);
+}
+
+async function frames(page, count = 4) {
+  await page.evaluate(count => new Promise(done => {
+    const next = () => --count <= 0 ? done() : requestAnimationFrame(next); requestAnimationFrame(next);
+  }), count);
+}
+
+async function settle(page) {
+  await page.waitForFunction(() => !document.querySelector('.reveal-frame[data-reveal-state="entering"]'));
+  await page.waitForFunction(() => !Array.from(document.querySelectorAll('.heading-reveal')).some(node => node.getAnimations().some(animation => animation.playState === 'running')));
+  await frames(page);
+  await page.waitForFunction(() => !document.querySelector('[data-scrambling="true"]') && Array.from(document.querySelectorAll('.chapter-progress [aria-label]')).every(node => node.textContent === node.getAttribute('aria-label')));
+}
+
+async function stableScroll(page) {
+  await page.evaluate(() => new Promise((done, reject) => {
+    let previous = scrollY, steady = 0, started = performance.now();
+    const sample = () => {
+      steady = Math.abs(scrollY - previous) < .5 ? steady + 1 : 0; previous = scrollY;
+      if (steady >= 5) done();
+      else if (performance.now() - started > 5000) reject(new Error('Native scroll did not settle within five seconds.'));
+      else requestAnimationFrame(sample);
+    }; requestAnimationFrame(sample);
+  }));
+}
+
+async function readyCard(page, id) {
+  const card = page.locator(`.marketing-gallery > #${id}`);
+  await card.scrollIntoViewIfNeeded();
+  return awaitReadyCard(page, id);
+}
+
+async function awaitReadyCard(page, id) {
+  const card = page.locator(`.marketing-gallery > #${id}`);
+  await page.waitForFunction(id => Array.from(document.getElementById(id).querySelectorAll('[data-demo]')).every(node => node.dataset.demoState === 'ready'), id);
+  await settle(page); return card;
+}
+
+async function sourceOrder(page, config) {
+  assert.deepEqual(await page.locator('.marketing-gallery > section').evaluateAll(nodes => nodes.map(node => node.id)), config.chapters, 'gallery keeps the original reading order');
+  assert.deepEqual(await page.locator('.chapter-nav a').evaluateAll(nodes => nodes.map(node => node.getAttribute('href'))), config.chapters.map(id => '#' + id));
+  for (const id of [...config.chapters, ...config.aliases, 'top', 'main-content']) assert.equal(await page.locator(`#${id}`).count(), 1, `unique preserved anchor ${id}`);
+}
+
+async function geometry(page) {
+  return page.locator('.marketing-gallery').evaluate(gallery => {
+    const rect = node => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top + scrollY, bottom: box.bottom + scrollY, width: box.width, height: box.height }; };
+    return { width: innerWidth, documentWidth: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight, gallery: rect(gallery), motion: gallery.dataset.galleryMotion, layout: gallery.dataset.galleryLayout, drift: parseFloat(gallery.style.getPropertyValue('--gallery-drift')) || 0,
+      cards: Array.from(gallery.children).filter(node => node.matches('section')).map(node => ({ id: node.id, ...rect(node), heading: rect(node.querySelector('h2')), media: node.querySelector('.reveal-frame') ? rect(node.querySelector('.reveal-frame')) : null })) };
+  });
+}
+
+function assertColumns(data) {
+  assert.ok(data.documentWidth <= data.width + 1, `document overflow: ${JSON.stringify(data)}`);
+  for (const card of data.cards) {
+    assert.ok(card.left >= -1 && card.right <= data.width + 1 && card.height > 0, `${card.id} stays within the viewport`);
+    assert.ok(card.bottom <= data.gallery.bottom + 2, `${card.id} remains within the gallery's reserved document height`);
+    if (card.media) assert.ok(card.heading.top >= card.media.bottom - 2, `${card.id}: its caption follows the complete media, not a clipped viewport`);
+  }
+  if (data.width >= 1100) {
+    const left = data.cards.filter((_, index) => index % 2 === 0), right = data.cards.filter((_, index) => index % 2 === 1);
+    assert.ok(left.every(card => card.right < data.width * .55) && right.every(card => card.left > data.width * .45), 'desktop has distinct left and right columns');
+    assert.ok(right[0].top > left[0].top + 20, 'first right card starts lower than the first left card');
+    for (const column of [left, right]) for (let index = 1; index < column.length; index++) assert.ok(column[index].top >= column[index - 1].bottom + 20, 'cards in a masonry column never overlap');
+  } else {
+    assert.ok(data.cards.every(card => card.width >= data.width * .8), 'narrow viewports have a readable single column');
+    for (let index = 1; index < data.cards.length; index++) assert.ok(data.cards[index].top >= data.cards[index - 1].bottom + 20, 'mobile keeps the source sequence without overlap');
+    assert.equal(data.motion, 'static');
+  }
+}
+
+async function assertReadableCard(card) {
+  const issues = await card.evaluate(root => {
+    const found = { controls: [], text: [], fonts: [], scale: [] }, bounds = root.getBoundingClientRect();
+    const shown = node => {
+      if (node.closest('[hidden],[aria-hidden="true"],svg,.pd-sr-only,.sr-only')) return false;
+      const box = node.getBoundingClientRect(), style = getComputedStyle(node);
+      return box.width > 0 && box.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+    };
+    for (const node of root.querySelectorAll('button,a[href],select,input[type="range"],summary,[role="button"],[role="tab"]')) {
+      if (!shown(node) || node.disabled) continue;
+      const box = node.getBoundingClientRect(), label = node.getAttribute('aria-label') || node.textContent.trim().slice(0, 80);
+      if (box.width < 43.9 || box.height < 43.9) found.controls.push({ label, width: box.width, height: box.height });
+      if (parseFloat(getComputedStyle(node).fontSize) < 10) found.fonts.push({ label, font: getComputedStyle(node).fontSize, type: 'operative control' });
+    }
+    // Explanatory prose must remain readable. Decorative mono annotations,
+    // chart labels and phone statusbars are not a blanket body-text benchmark.
+    for (const node of root.querySelectorAll('p:not(.eyebrow):not(.coach-micro):not(.pd-kicker),label,legend')) if (shown(node) && node.textContent.trim() && parseFloat(getComputedStyle(node).fontSize) < 11) found.fonts.push({ text: node.textContent.trim().slice(0, 80), font: getComputedStyle(node).fontSize, type: 'explanatory text' });
+    for (const node of root.querySelectorAll('.reveal-frame,.homepage-demo,.product-demo,.profile-demo,.technique-demo,.cx-club,.cx-evidence,.coach-development')) {
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(node).transform);
+      if (Math.abs(matrix.a - 1) > .01 || Math.abs(matrix.d - 1) > .01) found.scale.push({ class: node.className, transform: getComputedStyle(node).transform });
+    }
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let text;
+    while ((text = walker.nextNode())) {
+      const parent = text.parentElement;
+      if (!text.textContent.trim() || !parent || !shown(parent) || parent.closest('script,style,.interaction-text-visual')) continue;
+      const range = document.createRange(); range.selectNodeContents(text);
+      for (const box of range.getClientRects()) {
+        if (!box.width || !box.height) continue;
+        let left = Math.max(0, bounds.left), right = Math.min(innerWidth, bounds.right);
+        for (let ancestor = parent; ancestor && ancestor !== root.parentElement; ancestor = ancestor.parentElement) if (['hidden', 'clip'].includes(getComputedStyle(ancestor).overflowX)) {
+          const clip = ancestor.getBoundingClientRect(); left = Math.max(left, clip.left); right = Math.min(right, clip.right);
+        }
+        if (box.left < left - 1 || box.right > right + 1) found.text.push({ text: text.textContent.trim().slice(0, 80), left: box.left, right: box.right, available: [left, right] });
+      }
+    }
+    return found;
+  });
+  assert.deepEqual(issues.controls, [], `44px targets: ${JSON.stringify(issues.controls)}`);
+  assert.deepEqual(issues.fonts, [], `readable font floors: ${JSON.stringify(issues.fonts)}`);
+  assert.deepEqual(issues.scale, [], 'live demo controls are reflowed, not scaled down');
+  assert.deepEqual(issues.text, [], `card text clipping: ${JSON.stringify(issues.text.slice(0, 12))}`);
+}
+
+async function anchorSettled(page, id) {
+  await page.waitForFunction(id => {
+    const target = document.getElementById(id), header = document.querySelector('.pt-marketing-bar');
+    return target && target.getBoundingClientRect().top >= header.getBoundingClientRect().bottom - 2 && target.getBoundingClientRect().top < innerHeight * .35;
+  }, id);
+  await stableScroll(page);
+}
+
+async function driftState(page) {
+  return page.locator('.marketing-gallery').evaluate(node => ({ scroll: scrollY, drift: parseFloat(node.style.getPropertyValue('--gallery-drift')) || 0, state: node.dataset.galleryMotion }));
+}
+
+for (const config of audiences) {
+  for (const width of [360, 390, 430, 768, 1440, 1920]) check(`${config.name}: ${width}px readable media-first gallery, source order and column layout`, async t => {
+    const { page } = await fixture(t, { viewport: { width, height: width < 768 ? 844 : 1000 }, isMobile: width <= 430, hasTouch: width <= 430 });
+    await visit(page, config.route); await sourceOrder(page, config);
+    await page.mouse.move(4, 20);
+    await capture(page, `${config.name}-${width}-hero`);
+    for (const id of config.chapters) {
+      const card = await readyCard(page, id);
+      await card.locator('h2').scrollIntoViewIfNeeded(); await settle(page);
+      await assertReadableCard(card);
+    }
+    const data = await geometry(page); assertColumns(data);
+    evidence.observations.push({ check: t.name, geometry: data });
+    if ([390, 1440].includes(width)) {
+      for (let index = 0; index < config.chapters.length; index += width >= 1100 ? 2 : 1) {
+        const id = config.chapters[index];
+        await page.locator(`#${id}`).evaluate(node => scrollTo({ top: node.getBoundingClientRect().top + scrollY - 110, behavior: 'instant' }));
+        await settle(page); await capture(page, `${config.name}-${width}-story-${id}`);
+      }
+      await page.locator('footer').evaluate(node => node.scrollIntoView({ block: 'start', behavior: 'instant' }));
+      await page.waitForFunction(() => document.querySelector('footer').dataset.footerState === 'in');
+      await page.waitForFunction(() => !document.querySelector('footer').getAnimations({ subtree: true }).some(animation => animation.playState === 'running'));
+      await capture(page, `${config.name}-${width}-full-story`, true);
+    }
+  });
+
+  check(`${config.name}: desktop drift is subtle, freezes during interaction and does not catch up`, async t => {
+    const { page } = await fixture(t); await visit(page, config.route);
+    for (const id of config.chapters.slice(0, 2)) await readyCard(page, id);
+    await page.locator('.marketing-gallery').evaluate(node => scrollTo({ top: node.getBoundingClientRect().top + scrollY - 100, behavior: 'instant' }));
+    await page.mouse.move(4, 20); await page.locator('.pt-marketing-brand').first().focus();
+    await page.emulateMedia({ reducedMotion: 'reduce' }); await frames(page);
+    await page.emulateMedia({ reducedMotion: 'no-preference' }); await page.mouse.wheel(0, 80); await stableScroll(page);
+    await page.waitForFunction(() => document.querySelector('.marketing-gallery').dataset.galleryMotion === 'active');
+    const before = await driftState(page); await page.mouse.wheel(0, 300);
+    await page.waitForFunction(y => scrollY > y + 100, before.scroll); await stableScroll(page);
+    const after = await driftState(page), ratio = (before.drift - after.drift) / (after.scroll - before.scroll);
+    assert.ok(ratio >= .03 && ratio <= .05, `relative drift remains about4% of actual scroll: ${JSON.stringify({ before, after, ratio })}`);
+    const card = page.locator('.marketing-gallery > section').nth(1);
+    await card.hover(); await page.waitForFunction(() => document.querySelector('.marketing-gallery').dataset.galleryMotion === 'locked');
+    const hovered = await driftState(page); await page.evaluate(() => scrollBy({ top: 100, behavior: 'instant' })); await frames(page);
+    assert.equal((await driftState(page)).drift, hovered.drift, 'hover freezes the actual translation');
+    await page.mouse.move(4, 20); await frames(page); const resumed = await driftState(page);
+    assert.equal(resumed.drift, hovered.drift, 'pointer leave never adds scroll accumulated while locked');
+    const control = card.locator('button,select,a[href],input').first(); await control.focus();
+    await page.waitForFunction(() => document.querySelector('.marketing-gallery').dataset.galleryMotion === 'locked');
+    const focused = await driftState(page); await page.evaluate(() => scrollBy({ top: 100, behavior: 'instant' })); await frames(page);
+    assert.equal((await driftState(page)).drift, focused.drift, 'focused controls stay at their relative card offset');
+    assert.equal(await control.evaluate(node => node === document.activeElement), true);
+    evidence.observations.push({ check: t.name, before, after, ratio, hovered, focused });
+  });
+
+  for (const width of [390, 1440]) check(`${config.name}: ${width}px direct hash and back/forward preserve native chapter positions`, async t => {
+    const { page } = await fixture(t, { viewport: { width, height: 1000 }, isMobile: width === 390, hasTouch: width === 390 });
+    const [first, second] = config.history;
+    await visit(page, config.route + '#' + first); await awaitReadyCard(page, first); await anchorSettled(page, first);
+    assert.equal((await driftState(page)).state, width >= 1100 ? 'locked' : 'static');
+    await page.locator(`.chapter-nav a[href="#${second}"]`).click(); await page.waitForURL(url => url.hash === '#' + second);
+    await awaitReadyCard(page, second); await anchorSettled(page, second);
+    const locked = await driftState(page); await page.evaluate(() => scrollBy({ top: 90, behavior: 'instant' })); await frames(page);
+    assert.equal((await driftState(page)).drift, locked.drift, 'hash navigation stays locked during native layout/scroll settling');
+    await page.goBack(); await page.waitForURL(url => url.hash === '#' + first); await anchorSettled(page, first);
+    await page.goForward(); await page.waitForURL(url => url.hash === '#' + second); await stableScroll(page);
+    const restored = await page.locator(`#${second}`).evaluate(node => node.getBoundingClientRect().top);
+    assert.ok(restored >= -10 && restored < 200, `forward restores the chapter and its previous90px user scroll: ${restored}`);
+    await sourceOrder(page, config);
+  });
+
+  check(`${config.name}: reduced motion and column breakpoint remove drift without losing content`, async t => {
+    const { page } = await fixture(t); await visit(page, config.route);
+    for (const id of config.chapters) await readyCard(page, id);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.waitForFunction(() => document.querySelector('.marketing-gallery').dataset.galleryMotion === 'static');
+    assert.equal((await driftState(page)).drift, 0);
+    assert.equal(await page.locator('.marketing-gallery > section').evaluateAll(nodes => nodes.every(node => getComputedStyle(node).transform === 'none')), true);
+    await page.setViewportSize({ width: 768, height: 1000 }); await frames(page, 8);
+    assertColumns(await geometry(page)); await sourceOrder(page, config);
+    await page.emulateMedia({ reducedMotion: 'no-preference' }); await frames(page);
+    assert.equal((await driftState(page)).state, 'static', 'tablet stays static when motion preference returns');
+    await page.setViewportSize({ width: 1440, height: 1000 }); await frames(page, 8);
+    assertColumns(await geometry(page)); await sourceOrder(page, config);
+  });
+
+  check(`${config.name}: no-JavaScript fallback keeps the gallery content and destinations`, async t => {
+    const { page } = await fixture(t, { javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    await visit(page, config.route, false); await sourceOrder(page, config);
+    for (const id of config.chapters) {
+      const card = page.locator('#' + id); await card.scrollIntoViewIfNeeded();
+      assert.equal(await card.locator('h2').isVisible(), true);
+      assert.ok((await card.innerText()).trim().length > 30, `${id} preserves explanatory text`);
+    }
+    const dimensions = await page.evaluate(() => ({ width: innerWidth, content: document.documentElement.scrollWidth }));
+    assert.ok(dimensions.content <= dimensions.width + 1);
+    assert.ok(await page.locator('a[href="/signin"]').count() > 0);
+    assert.equal(await page.locator('.marketing-footer-next').getAttribute('href'), config.name === 'players' ? '/coaches' : '/');
+  });
+}
+
+check('Players: AI Coach handoff reaches the reordered workout card and preserves selections', async t => {
+  const { page } = await fixture(t, { viewport: { width: 1440, height: 1000 } }); await visit(page, '/');
+  const profile = await readyCard(page, 'profile');
+  const skill = profile.locator('button[data-skill]').last(); await skill.click();
+  const selected = await page.locator('#skillName').innerText();
+  const coach = await readyCard(page, 'ai-coach');
+  const handoffURL = page.url();
+  await coach.getByRole('button', { name: /Help me plan 20 minutes/ }).click();
+  // The existing handoff scrolls to training without creating a history entry.
+  const workout = page.locator('[data-demo="workout"]');
+  await workout.getByRole('button', { name: 'Start sample workout', exact: true }).waitFor({ state: 'visible' });
+  await anchorSettled(page, 'training');
+  assert.equal(page.url(), handoffURL);
+  assert.match(await workout.innerText(), /20 min available/);
+  assert.equal(await page.locator('#skillName').innerText(), selected, 'masonry and handoff do not remount sibling demo state');
+  assert.equal(await skill.getAttribute('aria-pressed'), 'true');
+  await workout.getByRole('button', { name: 'Start sample workout', exact: true }).click();
+  await workout.getByRole('button', { name: 'Pause workout timer', exact: true }).click();
+  await assertReadableCard(page.locator('#training'));
+  await capture(page, 'players-workout-handoff-active-card');
+});

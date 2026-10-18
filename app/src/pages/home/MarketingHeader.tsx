@@ -173,7 +173,9 @@ export function MarketingHeader({ audience }: { audience: MarketingAudience }) {
       sectionAfterClose.current = null;
       if (destination) {
         const section = document.getElementById(destination);
-        const target = section?.querySelector<HTMLElement>("h1,h2,h3") || section;
+        // Gallery media precedes its caption, and may contain its own h3.
+        // Focus the chapter heading, rather than a nested demonstration title.
+        const target = section?.querySelector<HTMLElement>("h1,h2") || section?.querySelector<HTMLElement>("h3") || section;
         if (target) {
           // Native anchor navigation runs after the click and can clear focus.
           // Let it update the hash/history/scroll first, then focus the heading.

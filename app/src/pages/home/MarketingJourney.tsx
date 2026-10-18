@@ -47,10 +47,21 @@ export function MarketingJourney({ audience }: { audience: MarketingAudience }) 
     let frame = 0;
     const measure = () => {
       frame = 0;
-      let current = 0;
+      let current = 0, nearest = Infinity, nearestVisible = Infinity;
       chapters.forEach((chapter, index) => {
         const node = document.getElementById(chapter.id);
-        if (node && node.getBoundingClientRect().top <= window.innerHeight * .38) current = index;
+        if (!node) return;
+        // A demo's outer frame exists before its lazy content. Contact has no
+        // media, so its section itself provides the same visible-centre fallback.
+        const media = node.querySelector<HTMLElement>("[data-gallery-media],.reveal-frame") || node;
+        const bounds = media.getBoundingClientRect();
+        if (bounds.height <= 0 || bounds.width <= 0) return;
+        const distance = Math.abs(bounds.top + bounds.height / 2 - window.innerHeight / 2);
+        const visible = bounds.bottom > 74 && bounds.top < window.innerHeight;
+        if (visible && distance < nearestVisible) {
+          nearestVisible = distance; current = index;
+        } else if (nearestVisible === Infinity && distance < nearest) current = index;
+        nearest = Math.min(nearest, distance);
       });
       setActive(current);
       const footer = document.querySelector(".marketing-footer");
@@ -60,7 +71,10 @@ export function MarketingJourney({ audience }: { audience: MarketingAudience }) 
     measure();
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
-    return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule); };
+    document.addEventListener("marketing-gallery-position", schedule);
+    const observer = "ResizeObserver" in window ? new ResizeObserver(schedule) : null;
+    chapters.forEach(chapter => { const section = document.getElementById(chapter.id); if (section) observer?.observe(section); });
+    return () => { cancelAnimationFrame(frame); observer?.disconnect(); window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule); document.removeEventListener("marketing-gallery-position", schedule); };
   }, [chapters]);
 
   return <>

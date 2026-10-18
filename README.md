@@ -11,6 +11,10 @@ The [REA interaction ledger](docs/PUBLIC_SITE_INTERACTION_DETAILS.md) maps the
 reference's hover, scroll replay, menu curtain/previews and closing details to
 PoseTek's controls and accessibility behavior.
 
+The [scrolling-composition refinement](docs/PUBLIC_SITE_COMPOSITION.md) adds media-first cards,
+independent staggered columns and card-width demo layouts, with fresh desktop and
+phone REA measurements.
+
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release
 

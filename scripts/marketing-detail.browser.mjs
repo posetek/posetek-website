@@ -414,6 +414,21 @@ check('technique joint hit areas stay stationary throughout hover, pointer down 
   await neutralFocus(page); await neutralPointer(page);
   const stage = demo.locator('.technique-stage');
   await stage.hover({ position: { x: 20, y: 20 } }); await frames(page);
+  // Hover preparation can trigger native smooth scrolling to uncover the stage
+  // beneath the fixed header. Its scroll may outlive Playwright's hover action;
+  // measure artwork stability only after that setup scroll has actually stopped.
+  await page.evaluate(() => new Promise((done, reject) => {
+    let previous = scrollY, steady = 0;
+    const started = performance.now();
+    const sample = () => {
+      steady = Math.abs(scrollY - previous) < .1 ? steady + 1 : 0;
+      previous = scrollY;
+      if (steady >= 8) done();
+      else if (performance.now() - started > 3000) reject(new Error('Native hover preparation scroll did not settle within three seconds.'));
+      else requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  }));
   assert.equal(await stage.evaluate(node => getComputedStyle(node).transform), 'none', 'an SVG containing actual controls is excluded from preview tilt');
   // SVG <g> ink bounds include the extra hover-outline stroke. Measure the
   // actual circle's geometry in screen coordinates rather than that decoration.
