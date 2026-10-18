@@ -418,7 +418,21 @@ for (const fault of ['worker-404', 'worker-constructor', 'no-offscreen', 'canvas
     await f.page.getByRole('group', { name: 'Choose a 3D pose' }).getByRole('button', { name: /Sprint/ }).click();
     assert.equal(await f.page.locator('.hero-pose-viewer').getAttribute('data-pose'), 'sprint');
     await f.page.locator('.marketing-footer-mark').scrollIntoViewIfNeeded();
-    await f.page.waitForFunction(() => document.querySelector('.marketing-footer-mark')?.dataset.rendererState === 'failed', undefined, { timeout: 18_000 });
+    await f.page.waitForFunction(fault => {
+      const mark = document.querySelector('.marketing-footer-mark');
+      if (mark?.dataset.rendererState === 'failed') return true;
+      if (!mark || fault !== 'worker-never-ready') return false;
+      // Startup timeout accrues only while visible. A cold jump can trigger
+      // preceding lazy layout changes, so retain the test's intended viewport
+      // without changing the timer, its eligibility, or the failure deadline.
+      const bounds = mark.getBoundingClientRect();
+      if (bounds.bottom <= 0 || bounds.top >= innerHeight) {
+        (window.__cold.footerTimeoutPlacements ??= []).push({ at: performance.now(), top: bounds.top, bottom: bounds.bottom, viewport: innerHeight, state: mark.dataset.rendererState });
+        mark.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
+      return false;
+    }, fault, { timeout: 18_000 });
+    if (fault === 'worker-never-ready') assert.equal(await f.page.locator('.marketing-footer-mark').getAttribute('data-renderer-failure'), 'startup-timeout');
     assert.equal(await f.page.locator('.marketing-footer-mark').getAttribute('data-mark-state'), 'static');
     assert.equal(await f.page.locator('.marketing-footer-next').getAttribute('href'), '/coaches');
     await press(f, device, 'open'); await menuState(f.page, true);

@@ -14,7 +14,8 @@ adds hydration-independent navigation, worker-owned 3D and sequential chapters
 with compact, inline-expandable demonstrations. The current guarded candidate and
 acceptance evidence are recorded in
 [the candidate receipt](deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json). Production
-promotion remains a separate step.
+promotion remains a separate step. The [interaction polish follow-up](docs/PUBLIC_SITE_INTERACTION_POLISH.md)
+records the fresh desktop/phone comparison and interrupted-menu correction.
 
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release

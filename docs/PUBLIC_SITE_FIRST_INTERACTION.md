@@ -6,6 +6,11 @@ use sequential chapters, compact demonstrations and inline detail expansion.
 This is public marketing work; no production promotion, application release,
 API, authentication or persisted-data change is included.
 
+The [interaction polish follow-up](PUBLIC_SITE_INTERACTION_POLISH.md) records
+the newer comparison, partial-menu dismissal correction and closing timing.
+The numerical acceptance below describes the preceding checkpoint. Use the
+current machine-readable candidate receipt for the latest artifact and results.
+
 ## Evidence and chosen behavior
 
 The October 18 REA pass revisited Lain Works at 1440×1000 and 390×844. Timed
@@ -178,9 +183,9 @@ explicit-navigation assertions remain strict. The original report and diagnostic
 are retained. Cold footer startup and first-input checks remain separate.
 
 
-## Current candidate and interaction checklist
+## Preceding candidate and interaction checklist
 
-The exact review draft is
+The preceding review draft is
 [6ad528ef95dcde1f17049c13](https://6ad528ef95dcde1f17049c13--posetek.netlify.app),
 assembled from runtime source `9f7787af19ad383de0f64effdb9e5e2c45e7962f`.
 The 2,003-file artifact has manifest SHA-256

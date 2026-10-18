@@ -3,20 +3,19 @@
   "date": "2026-10-18",
   "pullRequest": "https://github.com/posetek/posetek_website/pull/85",
   "baseCommit": "23e2ebed988e1677f6028ea6d7b5589273291ea1",
-  "runtimeSourceCommit": "9f7787af19ad383de0f64effdb9e5e2c45e7962f",
   "sourceNote": "Subsequent commits contain acceptance-harness and documentation changes only. Latest-head CI and advisory review are pinned on PR85. The guarded runtime was not rebuilt after acceptance.",
   "buildCommand": "node scripts/build-production.mjs",
+  "runtimeSourceCommit": "9fa587ac341c993023ee0174b7bfe1e96a44d247",
   "artifact": {
     "directory": "production-dist",
     "files": 2003,
-    "manifestSha256": "994864c12e139439bd8ead527c29e43a671c9448a546c4a91d0fc52244a87e20",
-    "manifestMethod": "SHA-256 of path, TAB, size, TAB, file SHA-256, LF for every file sorted by JavaScript path.localeCompare; full manifest in artifacts/marketing-first-interaction/artifact-manifest.json.",
-    "performanceInventoryFingerprint": "fd643b7528fa617071ab9cc83aa9b1132539ed0d5317ffbedf0a5b4eefeec544"
+    "manifestSha256": "205deec1f4de5920ba09a1c8a40ea67d0787808ec7b4ba4535280cec56c90662",
+    "manifestMethod": "SHA-256 of path, TAB, size, TAB, file SHA-256, LF for every file sorted by JavaScript path.localeCompare; full manifest in artifacts/marketing-polish/artifact-manifest.json."
   },
   "hosted": {
     "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
-    "deployId": "6ad528ef95dcde1f17049c13",
-    "url": "https://6ad528ef95dcde1f17049c13--posetek.netlify.app",
+    "deployId": "6ad536a9103351c79863f77f",
+    "url": "https://6ad536a9103351c79863f77f--posetek.netlify.app",
     "context": "deploy-preview",
     "state": "ready",
     "publishedAt": null,
@@ -33,7 +32,7 @@
     "servingDeployId": "6ad02adfcc90dffdb496f811",
     "protectedFiles": 1985,
     "protectedHashMismatches": 0,
-    "productionUnchangedAt": "2026-10-18T20:27:45.919Z",
+    "productionUnchangedAt": "2026-10-18T21:30:08.380Z",
     "applicationHtmlSha1": "b23f8e221c6cbd6d5f558836ff89c02d3a85ac2c",
     "baselineNote": "Reconciled to the already-serving October 15 main deploy; all 1,982 earlier records exact, three retained application chunks added. No application promotion.",
     "sourceContentAssets": {
@@ -44,9 +43,9 @@
   },
   "acceptance": {
     "local": {
-      "passed": 79,
+      "passed": 82,
       "failed": 0,
-      "screenshots": 112,
+      "screenshots": 113,
       "unexpectedOriginFailures": 0,
       "attemptedWrites": 0,
       "suites": {
@@ -59,9 +58,9 @@
           "report": "local-regression-release/acceptance.json"
         },
         "detail": {
-          "passed": 20,
+          "passed": 23,
           "failed": 0,
-          "screenshots": 29,
+          "screenshots": 30,
           "unexpectedOriginFailures": 0,
           "attemptedWrites": 0,
           "report": "local-detail-release/detail-acceptance.json"
@@ -77,9 +76,9 @@
       }
     },
     "hosted": {
-      "passed": 79,
+      "passed": 82,
       "failed": 0,
-      "screenshots": 112,
+      "screenshots": 113,
       "unexpectedOriginFailures": 0,
       "attemptedWrites": 0,
       "suites": {
@@ -92,12 +91,12 @@
           "report": "hosted-regression-release/acceptance.json"
         },
         "detail": {
-          "passed": 20,
+          "passed": 23,
           "failed": 0,
-          "screenshots": 29,
+          "screenshots": 30,
           "unexpectedOriginFailures": 0,
           "attemptedWrites": 0,
-          "report": "hosted-detail-complete/detail-acceptance.json"
+          "report": "hosted-detail-release/detail-acceptance.json"
         },
         "composition": {
           "passed": 26,
@@ -116,7 +115,30 @@
         "screenshots": 9,
         "unexpectedOriginFailures": 0,
         "attemptedWrites": 0,
-        "report": "local-cold-verified/cold-acceptance.json"
+        "report": "local-cold-release/cold-acceptance.json",
+        "mode": "headful hardware acceptance",
+        "browser": "153.0.8010.12",
+        "desktop": {
+          "samples": 40,
+          "median": 0.29999998211860657,
+          "maximum": 33.70000001788139
+        },
+        "touch": {
+          "samples": 40,
+          "median": 7.799999982118607,
+          "maximum": 20.900000005960464
+        },
+        "inputMaximumMs": 33.70000001788139,
+        "feedbackMaximumMs": 131,
+        "mainCommitMaximumMs": 16.392,
+        "traces": 28,
+        "limits": [
+          "390px touch is desktop emulation, not physical iOS or Android.",
+          "Fresh browser HTTP caches and workers; OS/driver shader caches are not cleared.",
+          "In-page event/RAF observers add measurement overhead; traces independently include compositor work.",
+          "The optional 4x CPU lane throttles renderer CPU scheduling; it does not emulate a phone GPU, memory, network or operating system.",
+          "Native background-tab/window minimization did not change document.visibilityState in this host even with focus emulation disabled; visibility lifecycle coverage explicitly injects visibility properties and events, not an actual hidden tab."
+        ]
       },
       "hosted": {
         "passed": 29,
@@ -124,7 +146,30 @@
         "screenshots": 9,
         "unexpectedOriginFailures": 0,
         "attemptedWrites": 0,
-        "report": "hosted-cold-release/cold-acceptance.json"
+        "report": "hosted-cold-verified/cold-acceptance.json",
+        "mode": "headful hardware acceptance",
+        "browser": "153.0.8010.12",
+        "desktop": {
+          "samples": 40,
+          "median": 0.19999998807907104,
+          "maximum": 2.699999988079071
+        },
+        "touch": {
+          "samples": 40,
+          "median": 7.4000000059604645,
+          "maximum": 16.5
+        },
+        "inputMaximumMs": 22.80000001192093,
+        "feedbackMaximumMs": 147.80000001192093,
+        "mainCommitMaximumMs": 0.941,
+        "traces": 28,
+        "limits": [
+          "390px touch is desktop emulation, not physical iOS or Android.",
+          "Fresh browser HTTP caches and workers; OS/driver shader caches are not cleared.",
+          "In-page event/RAF observers add measurement overhead; traces independently include compositor work.",
+          "The optional 4x CPU lane throttles renderer CPU scheduling; it does not emulate a phone GPU, memory, network or operating system.",
+          "Native background-tab/window minimization did not change document.visibilityState in this host even with focus emulation disabled; visibility lifecycle coverage explicitly injects visibility properties and events, not an actual hidden tab."
+        ]
       },
       "localWebKit": {
         "passed": 4,
@@ -132,7 +177,7 @@
         "screenshots": 4,
         "unexpectedOriginFailures": 0,
         "attemptedWrites": 0,
-        "report": "local-webkit-verified/cold-acceptance.json"
+        "report": "local-webkit-release/cold-acceptance.json"
       },
       "hostedWebKit": {
         "passed": 4,
@@ -142,133 +187,12 @@
         "attemptedWrites": 0,
         "report": "hosted-webkit-release/cold-acceptance.json"
       },
-      "cpu4xDiagnostic": {
-        "passed": 2,
-        "failed": 0,
-        "screenshots": 2,
-        "unexpectedOriginFailures": 0,
-        "attemptedWrites": 0,
-        "report": "local-cpu4x-verified/cold-acceptance.json"
-      },
       "budgetsMs": {
         "inputMaximum": 100,
         "inputMedian": 50,
         "visibleFeedback": 200,
         "overlappingMainTask": 100
-      },
-      "localHardware": {
-        "passed": 29,
-        "failed": 0,
-        "mode": "headful hardware acceptance",
-        "browser": "153.0.8010.12",
-        "desktop": {
-          "samples": 40,
-          "median": 0.19999998807907104,
-          "maximum": 14.900000005960464
-        },
-        "touch": {
-          "samples": 40,
-          "median": 8.199999988079071,
-          "maximum": 20.80000001192093
-        },
-        "inputMaximumMs": 20.80000001192093,
-        "feedbackMaximumMs": 95.49999998807908,
-        "mainCommitMaximumMs": 7.6,
-        "gpuTaskMaximumMs": 8.814,
-        "rasterFlushMaximumMs": 8.275,
-        "gpu": [
-          "ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)"
-        ],
-        "traces": 28,
-        "requests": {
-          "writesBlocked": 0,
-          "externalBlocked": 28,
-          "injectedFailures": 9,
-          "unexpectedOriginFailures": 0
-        },
-        "entries": [
-          {
-            "file": "index.html",
-            "chunk": "/_astro/HomePage.gDboV2NY.js",
-            "sha256": "18064faf33404293592879c0b317c1ac87053c045bb506f5426e653c983c2b9b"
-          },
-          {
-            "file": "coaches/index.html",
-            "chunk": "/_astro/CoachesPage.BEdX4dRx.js",
-            "sha256": "acdcf75092d07b83be94800b5a57038c6592f3ab0f72bfa5eadf475499255f63"
-          }
-        ],
-        "report": "artifacts/marketing-first-interaction/local-cold-verified/cold-acceptance.json"
-      },
-      "hostedHardware": {
-        "passed": 29,
-        "failed": 0,
-        "mode": "headful hardware acceptance",
-        "browser": "153.0.8010.12",
-        "desktop": {
-          "samples": 40,
-          "median": 0.19999998807907104,
-          "maximum": 1.300000011920929
-        },
-        "touch": {
-          "samples": 40,
-          "median": 8.199999988079071,
-          "maximum": 18.200000017881393
-        },
-        "inputMaximumMs": 25.5,
-        "feedbackMaximumMs": 106.70000002384177,
-        "mainCommitMaximumMs": 8.156,
-        "gpuTaskMaximumMs": 8.174,
-        "rasterFlushMaximumMs": 7.116,
-        "gpu": [
-          "ANGLE (Apple, ANGLE Metal Renderer: Apple M5, Unspecified Version)"
-        ],
-        "traces": 28,
-        "screenshots": [
-          "/Users/dylankeller/Developer/PoseTek-Worktrees/public-site-revamp/artifacts/marketing-first-interaction/hosted-cold-release/desktop-cold-worker-presented.png",
-          "/Users/dylankeller/Developer/PoseTek-Worktrees/public-site-revamp/artifacts/marketing-first-interaction/hosted-cold-release/touch-cold-worker-presented.png",
-          "/Users/dylankeller/Developer/PoseTek-Worktrees/public-site-revamp/artifacts/marketing-first-interaction/hosted-cold-release/worker-404-static-fallback.png",
-          "/Users/dylankeller/Developer/PoseTek-Worktrees/public-site-revamp/artifacts/marketing-first-interaction/hosted-cold-release/worker-constructor-static-fallback.png",
-          "/Users/dylankeller/Developer/PoseTek-Worktrees/public-site-revamp/artifacts/marketing-first-interaction/hosted-cold-release/no-offscreen-static-fallback.png",
-          "/Users/dylankeller/Developer/PoseTek-Worktrees/public-site-revamp/artifacts/marketing-first-interaction/hosted-cold-release/canvas-transfer-static-fallback.png",
-          "/Users/dylankeller/Developer/PoseTek-Worktrees/public-site-revamp/artifacts/marketing-first-interaction/hosted-cold-release/worker-never-ready-static-fallback.png",
-          "/Users/dylankeller/Developer/PoseTek-Worktrees/public-site-revamp/artifacts/marketing-first-interaction/hosted-cold-release/worker-context-static-fallback.png",
-          "/Users/dylankeller/Developer/PoseTek-Worktrees/public-site-revamp/artifacts/marketing-first-interaction/hosted-cold-release/worker-shader-static-fallback.png"
-        ],
-        "requests": {
-          "writesBlocked": 0,
-          "externalBlocked": 28,
-          "injectedFailures": 9,
-          "unexpectedOriginFailures": 0
-        },
-        "entries": [
-          {
-            "file": "index.html",
-            "chunk": "/_astro/HomePage.gDboV2NY.js",
-            "sha256": "18064faf33404293592879c0b317c1ac87053c045bb506f5426e653c983c2b9b"
-          },
-          {
-            "file": "coaches/index.html",
-            "chunk": "/_astro/CoachesPage.BEdX4dRx.js",
-            "sha256": "acdcf75092d07b83be94800b5a57038c6592f3ab0f72bfa5eadf475499255f63"
-          }
-        ],
-        "report": "artifacts/marketing-first-interaction/hosted-cold-release/cold-acceptance.json"
-      },
-      "earlierFailures": [
-        "local-cold/",
-        "local-cold-final/",
-        "raster-ab-summary.json",
-        "lifecycle-setup-verified/",
-        "native-visibility-probe.json"
-      ],
-      "note": "Full final suites pass without budget relaxation. Earlier unexplained main-task and GPU-raster outliers remain evidence; mask A/B did not establish causality. Visibility pause uses explicitly controlled property/event injection because native backgrounding did not hide documents on this host."
-    },
-    "earlierHostedDetail": {
-      "report": "hosted-detail-release/detail-acceptance.json",
-      "passed": 19,
-      "failed": 1,
-      "diagnosis": "Single footer jump overlapped pending movement demo expansion by 332px. Final harness traverses preceding chapters before strict footer choreography assertions; original evidence retained, runtime unchanged."
+      }
     },
     "widths": [
       360,
@@ -281,130 +205,73 @@
     "additionalLandscapeWidth": 730,
     "zoom": "200% desktop CSS-viewport equivalent; not browser-chrome or physical-device zoom",
     "network": "Guest contexts; allowlisted origin GET/HEAD and optional Google font GET only; all other HTTP and WebSockets blocked.",
-    "runtimeCi": "https://github.com/posetek/posetek_website/actions/runs/39161989835",
-    "frontendTests": 2014,
+    "runtimeCi": "https://github.com/posetek/posetek_website/actions/runs/39166901251",
+    "frontendTests": 2023,
     "frontendTestFiles": 178,
     "toolingReleaseTests": 78,
     "pythonPolicyTests": 32,
     "guestSmokeCases": 7,
     "otherChecks": [
       "TypeScript/Astro",
-      "Svelte zero diagnostics",
+      "Svelte zero errors and warnings",
       "marketing build",
-      "lint with 228 existing application warnings and zero errors",
+      "lint with 229 warnings and zero errors",
       "static Firestore transport across 116 compiled HTML/JS files",
       "production dependency audit with existing time-limited exception"
     ],
     "limits": [
-      "No physical iOS/Android or authenticated production acceptance is claimed. Touch viewports and WebKit run on desktop.",
-      "Hidden-page lifecycle checks inject visibility properties/events; native tab backgrounding and minimization remained visible on this automation host.",
-      "Fresh browser HTTP caches and workers do not clear OS/driver shader caches. Bounded 4x CPU diagnostics do not simulate a phone GPU/network.",
-      "Loading baseline is the pre-existing compiled artifact; its complete source/dependency revision is not inferred. Local uncompressed headless measurements exclude external fonts and do not establish hosted/field speed.",
-      "REA source graph reached its 20,000-node ceiling in the earlier pass. Timed source/browser observations establish documented mechanisms, not complete semantic coverage; cookie banner limits are recorded.",
-      "Local Codex advisory review is same-provider and includes disclosed component authorship; no hosted paid reviewer activated.",
-      "44px checks cover visible HTML controls. Optional technique SVG joints may be smaller; each action has the same-handler 44px measurement alternative. SVG target stability and activation are checked separately.",
-      "Earlier timing outliers and inconclusive raster A/B remain retained; final passing repetitions do not prove an isolated driver stall can never recur."
+      "Desktop Chromium hardware traces and desktop WebKit/touch viewports do not establish physical iOS/Android acceptance.",
+      "Hidden-page lifecycle checks use controlled visibility property/event injection; native backgrounding was unavailable on this automation host.",
+      "Fresh browser HTTP caches and workers do not clear OS/driver shader caches; no field-performance or phone GPU/network claim.",
+      "REA supports declared keyboard/click scenarios, not hover actions. Earlier reference shipped-source hover analysis is retained separately; a fresh direct script fetch returned 403 and no new digest is claimed.",
+      "Screenshots are visual samples, not timing measurements. Reference cookie overlay obscures some lower-right content.",
+      "Latest-head local Codex advisory review is same-provider with a separate reviewing agent; no paid hosted reviewer is activated.",
+      "44px checks cover visible HTML controls; optional technique SVG joints retain same-handler 44px measurement alternatives."
+    ],
+    "retainedFailures": [
+      {
+        "report": "local-detail/detail-acceptance.json",
+        "passed": 22,
+        "failed": 1,
+        "diagnosis": "Warm sample missed intermediate curtain frames during a concurrent run; initial SVG also incorrectly satisfied settled fallback readiness. Warm gate now requires actual worker presentation or explicit failure; cold lane has no readiness gate."
+      },
+      {
+        "report": "hosted-detail/detail-acceptance.json",
+        "passed": 22,
+        "failed": 1,
+        "diagnosis": "Warm phone footer capture used a stale position after preceding lazy content resolved. Progress .8894 matched actual 318.5px position. Final warm setup traverses preceding chapters; strict opacity and bounds remain."
+      },
+      {
+        "report": "local-cold/cold-acceptance.json",
+        "passed": 26,
+        "failed": 3,
+        "diagnosis": "Runtime 55987c6 captured matrix transforms interpolated discretely to singular scaleY(0), producing 201.9\u2013213.7ms curtain feedback. Runtime 9fa587a captures scaleY(d), preserving continuous interpolation. Timing budgets unchanged."
+      },
+      {
+        "report": "discrete-exit-reproducer/detail-acceptance.json",
+        "passed": 3,
+        "failed": 2,
+        "diagnosis": "New intermediate-shrink assertions reproduced the old frozen artifact defect on desktop and touch. Final artifact passes both."
+      },
+      {
+        "report": "hosted-cold-release/cold-acceptance.json",
+        "passed": 28,
+        "failed": 1,
+        "diagnosis": "Inert footer worker was correctly paused offscreen after about 9.44 eligible seconds, before its 10-second timeout. Final fault-specific harness records geometry, recenters only a wholly offscreen mark, keeps one 18-second deadline and requires startup-timeout. No forced renderer state; separate offscreen checks retained."
+      }
     ]
   },
   "performance": {
-    "iterations": 3,
-    "baselineFingerprint": "cb1250f8c3b482d510e6af52eb98630889c5d601fe5953c65a1fe3e8d0161b6c",
-    "routes": {
-      "/": {
-        "baseline": {
-          "pageJavascriptTransferBytes": 1676941,
-          "pageJavascriptEncodedBodyBytes": 1672741,
-          "pageJavascriptRequests": 14,
-          "workerScriptBodyBytes": 0,
-          "workerScriptRequests": 0,
-          "combinedObservedJavascriptBodyBytes": 1672741,
-          "cssTransferBytes": 106193,
-          "cssEncodedBodyBytes": 103793,
-          "cssRequests": 8,
-          "domContentLoadedMs": 13.9,
-          "loadMs": 34.4,
-          "firstContentfulPaintMs": 44,
-          "largestContentfulPaintMs": 44
-        },
-        "candidate": {
-          "pageJavascriptTransferBytes": 733306,
-          "pageJavascriptEncodedBodyBytes": 729406,
-          "pageJavascriptRequests": 13,
-          "workerScriptBodyBytes": 596796,
-          "workerScriptRequests": 1,
-          "combinedObservedJavascriptBodyBytes": 1326202,
-          "cssTransferBytes": 210115,
-          "cssEncodedBodyBytes": 208015,
-          "cssRequests": 7,
-          "domContentLoadedMs": 40,
-          "loadMs": 40.2,
-          "firstContentfulPaintMs": 24,
-          "largestContentfulPaintMs": 64
-        },
-        "delta": {
-          "pageJavascriptTransferBytes": -943635,
-          "pageJavascriptEncodedBodyBytes": -943335,
-          "pageJavascriptRequests": -1,
-          "workerScriptBodyBytes": 596796,
-          "workerScriptRequests": 1,
-          "combinedObservedJavascriptBodyBytes": -346539,
-          "cssTransferBytes": 103922,
-          "cssEncodedBodyBytes": 104222,
-          "cssRequests": -1,
-          "domContentLoadedMs": 26.1,
-          "loadMs": 5.8,
-          "firstContentfulPaintMs": -20,
-          "largestContentfulPaintMs": 20
-        },
-        "initialFooterWorkerInstances": 0
-      },
-      "/coaches": {
-        "baseline": {
-          "pageJavascriptTransferBytes": 361723,
-          "pageJavascriptEncodedBodyBytes": 359623,
-          "pageJavascriptRequests": 7,
-          "workerScriptBodyBytes": 0,
-          "workerScriptRequests": 0,
-          "combinedObservedJavascriptBodyBytes": 359623,
-          "cssTransferBytes": 81508,
-          "cssEncodedBodyBytes": 80908,
-          "cssRequests": 2,
-          "domContentLoadedMs": 10.4,
-          "loadMs": 12,
-          "firstContentfulPaintMs": 48,
-          "largestContentfulPaintMs": 48
-        },
-        "candidate": {
-          "pageJavascriptTransferBytes": 270311,
-          "pageJavascriptEncodedBodyBytes": 267611,
-          "pageJavascriptRequests": 9,
-          "workerScriptBodyBytes": 0,
-          "workerScriptRequests": 0,
-          "combinedObservedJavascriptBodyBytes": 267611,
-          "cssTransferBytes": 185882,
-          "cssEncodedBodyBytes": 185282,
-          "cssRequests": 2,
-          "domContentLoadedMs": 33.2,
-          "loadMs": 34,
-          "firstContentfulPaintMs": 24,
-          "largestContentfulPaintMs": 60
-        },
-        "delta": {
-          "pageJavascriptTransferBytes": -91412,
-          "pageJavascriptEncodedBodyBytes": -92012,
-          "pageJavascriptRequests": 2,
-          "workerScriptBodyBytes": 0,
-          "workerScriptRequests": 0,
-          "combinedObservedJavascriptBodyBytes": -92012,
-          "cssTransferBytes": 104374,
-          "cssEncodedBodyBytes": 104374,
-          "cssRequests": 0,
-          "domContentLoadedMs": 22.8,
-          "loadMs": 22,
-          "firstContentfulPaintMs": -24,
-          "largestContentfulPaintMs": 12
-        },
-        "initialFooterWorkerInstances": 0
+    "assetDelta": {
+      "priorManifest": "994864c12e139439bd8ead527c29e43a671c9448a546c4a91d0fc52244a87e20",
+      "candidateManifest": "205deec1f4de5920ba09a1c8a40ea67d0787808ec7b4ba4535280cec56c90662",
+      "priorBytes": 159384764,
+      "candidateBytes": 159389329,
+      "deltaBytes": 4565,
+      "deltaByExtension": {
+        ".css": 1181,
+        ".html": 2737,
+        ".js": 647
       }
     },
     "sourceContentAssets": {
@@ -421,7 +288,20 @@
       "commandCount": 22,
       "approvedContourExact": true
     },
-    "note": "Two local, uncompressed, no-store HTTP servers; no throttling. Timings are local smoke measurements, not hosted or field performance."
+    "note": "Current comparison is uncompressed artifact size only. Earlier three-iteration loading measurements remain tied to runtime 9f7787a and are not relabeled as measurements of this revision.",
+    "historicalLoadingReceipt": "https://github.com/posetek/posetek_website/blob/60bb08bd0466aea93dd5e014637b2b9a24fadfe9/deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json"
+  },
+  "previousCandidate": {
+    "runtimeSourceCommit": "9f7787af19ad383de0f64effdb9e5e2c45e7962f",
+    "deployId": "6ad528ef95dcde1f17049c13",
+    "manifestSha256": "994864c12e139439bd8ead527c29e43a671c9448a546c4a91d0fc52244a87e20",
+    "receiptCommit": "60bb08bd0466aea93dd5e014637b2b9a24fadfe9"
+  },
+  "supersededPolishCandidate": {
+    "runtimeSourceCommit": "55987c6404c8d18ebb99a47aa38c9955cc4932cd",
+    "deployId": "6ad533272cd1fe8c060ba6ce",
+    "manifestSha256": "57655ca8777cdb838a7bf5b63d7adf679b1239126e649e7faef5907ac7925659",
+    "reason": "Discrete interrupted curtain exit exposed by strict cold acceptance; replaced before promotion."
   },
   "rollback": {
     "previousDeployId": "6ad02adfcc90dffdb496f811",
@@ -453,17 +333,17 @@
     ]
   },
   "evidence": {
-    "directory": "artifacts/marketing-first-interaction",
+    "directory": "artifacts/marketing-polish",
     "manifest": "artifact-manifest.json",
     "providerVerification": "draft-verification.json",
-    "performance": "performance.json",
-    "referenceLedger": "docs/PUBLIC_SITE_FIRST_INTERACTION.md",
+    "acceptance": "acceptance-summary.json",
+    "assetDelta": "asset-delta.json",
+    "referenceBundle": "rea-comparison-final.json",
+    "referenceLedger": "docs/PUBLIC_SITE_INTERACTION_POLISH.md",
     "visualReview": "visual-review.md",
-    "localColdSummary": "verified-summary.json",
-    "hostedColdSummary": "hosted-verified-summary.json",
-    "runtimeReview": "ci/runtime-advisory-9f7787a.json",
-    "runtimeCi": "ci/runtime-github-checks.json",
-    "localChecks": "ci/release-results.json",
+    "latestHeadReview": "final-review.json",
+    "runtimeCi": "runtime-corrected-checks.json",
+    "runtimeCiLog": "runtime-corrected-ci.log",
     "rollback": "artifacts/marketing-revamp/rollback/verification.json"
   }
 }
