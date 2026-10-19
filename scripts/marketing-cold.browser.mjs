@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { chromium, webkit } from '../app/node_modules/playwright/index.mjs';
 import { createHomepagePreviewServer } from './serve-homepage-preview.mjs';
+import { requestFailureDetails, classifyPreviewCancellations } from './marketing-showcase.helpers.mjs';
 
 const output = process.env.MARKETING_OUTPUT ? resolve(process.env.MARKETING_OUTPUT) : fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
 const artifacts = process.env.MARKETING_ARTIFACTS ? resolve(process.env.MARKETING_ARTIFACTS) : fileURLToPath(new URL('../artifacts/marketing-cold/', import.meta.url));
@@ -103,7 +104,7 @@ function installObservation() {
     constructor(url, options) {
       super(url, options);
       const index = data.workers.length;
-      data.workers.push({ index, url: String(url), created: performance.now() });
+      data.workers.push({ index, url: String(url), name: options?.name || '', created: performance.now() });
       const post = this.postMessage.bind(this);
       this.postMessage = (message, ...rest) => {
         if (data.workerInputs.length < 400 && message && typeof message === 'object') {
@@ -158,7 +159,7 @@ async function fixture(t, device, { holdPage, holdWorker = false, fault, trace =
   evidence.browserVersion ??= browser.version();
   const context = await browser.newContext({ viewport: { width: device.width, height: device.height }, isMobile: device.touch, hasTouch: device.touch, deviceScaleFactor: 1, serviceWorkers: 'block' });
   const pageGate = deferred(), workerGate = deferred();
-  const state = { heldPages: 0, heldWorkers: 0, workerUrls: [], errors: [], failures: [], injected: [], closing: false };
+  const state = { heldPages: 0, heldWorkers: 0, workerUrls: [], errors: [], failures: [], failureDetails: [], injected: [], closing: false };
   await context.route('**/*', async route => {
     const request = route.request(), url = new URL(request.url());
     if (!['GET', 'HEAD'].includes(request.method())) { evidence.requests.writesBlocked++; return route.abort('blockedbyclient'); }
@@ -172,11 +173,13 @@ async function fixture(t, device, { holdPage, holdWorker = false, fault, trace =
       state.workerUrls.push(url.pathname);
       if (fault === 'worker-404') { state.injected.push(url.pathname); evidence.requests.injectedFailures++; return route.fulfill({ status: 404, contentType: 'text/javascript', body: '/* Deliberately missing worker. */' }); }
       if (fault === 'worker-never-ready') { state.injected.push(url.pathname); evidence.requests.injectedFailures++; return route.fulfill({ contentType: 'text/javascript', body: '/* Deliberately inert worker: no startup acknowledgement. */' }); }
-      if (['worker-context', 'worker-shader', 'context-loss'].includes(fault)) {
+      if (['worker-context', 'worker-shader', 'context-loss', 'gallery-texture'].includes(fault)) {
         // Faults run inside the real worker module; no synthetic success reply
         // or main-thread graphics context can satisfy the acceptance checks.
         const response = await route.fetch();
-        const setup = fault === 'worker-context'
+        const setup = fault === 'gallery-texture'
+          ? "if (globalThis.name === 'posetek-gallery') globalThis.createImageBitmap = async () => { throw new Error('Injected gallery texture decode failure'); };"
+          : fault === 'worker-context'
           ? 'OffscreenCanvas.prototype.getContext = function () { return null; };'
           : `const coldNativeContext = OffscreenCanvas.prototype.getContext;
 OffscreenCanvas.prototype.getContext = function (...args) {
@@ -214,7 +217,7 @@ OffscreenCanvas.prototype.getContext = function (...args) {
   if (cpuRate !== 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: cpuRate });
   if (trace) await cdp.send('Tracing.start', { categories: 'devtools.timeline,disabled-by-default-devtools.timeline,blink.user_timing,disabled-by-default-devtools.timeline.frame,cc,gpu', transferMode: 'ReturnAsStream' });
   page.on('pageerror', error => state.errors.push(error.message));
-  page.on('requestfailed', request => { if (!state.closing && new URL(request.url()).origin === origin) state.failures.push(new URL(request.url()).pathname); });
+  page.on('requestfailed', request => { if (!state.closing && new URL(request.url()).origin === origin) { state.failures.push(new URL(request.url()).pathname); state.failureDetails.push(requestFailureDetails(request)); } });
   t.after(async () => {
     state.closing = true; pageGate.resolve(); workerGate.resolve();
     const postErrors = [];
@@ -253,7 +256,9 @@ OffscreenCanvas.prototype.getContext = function (...args) {
     } } catch (error) { postErrors.push(`Trace collection failed: ${error.message}`); }
     const run = evidence.runs.find(row => row.name === t.name);
     if (run) run.network = state;
-    const unexpected = state.failures.filter(path => !state.injected.includes(path));
+    const classified = await classifyPreviewCancellations(page, state.failureDetails);
+    (evidence.requests.decorativeCancellations ??= []).push(...classified.expected.map(row => ({ check: t.name, ...row })));
+    const unexpected = classified.unexpected.map(row => new URL(row.url).pathname).filter(path => !state.injected.includes(path));
     evidence.requests.unexpectedOriginFailures += unexpected.length;
     try { await context.close(); } finally { await browser.close(); }
     if (unexpected.length) postErrors.push(`Unexpected tested-origin request failures: ${unexpected.join(', ')}`);
@@ -547,7 +552,7 @@ for (const device of devices) {
     await f.page.emulateMedia({ reducedMotion: 'no-preference' });
     await f.page.waitForFunction(() => document.querySelector('.hero-pose-viewer')?.dataset.rotating === 'true');
     const data = await finishRun(t, f, { device: device.name, lifecycle: true, visibilityMode: 'controlled property/event injection; native tab integration unavailable', earlyPose: 'sprint', retainedAngle: angle });
-    assert.equal(data.workers.length, 1, 'all lifecycle operations retain the original worker');
+    assert.equal(data.workers.filter(row => row.name === 'posetek-hero').length, 1, 'all hero lifecycle operations retain the original worker');
     assert.deepEqual(data.mainWebGL, []); assertLatency(data);
   });
 
@@ -591,7 +596,7 @@ for (const device of devices) {
     });
     assert.equal(restoredCanvas, true, 'returning to ordinary motion presents the same worker canvas again');
     const data = await finishRun(t, f, { device: device.name, footerWorker: mark });
-    assert.equal(data.workers.length, 1); assert.deepEqual(data.mainWebGL, []); assertLatency(data);
+    assert.equal(data.workers.filter(row => row.name === 'posetek-brand').length, 1, 'footer lifecycle retains its one brand worker'); assert.deepEqual(data.mainWebGL, []); assertLatency(data);
   });
 }
 
@@ -615,7 +620,7 @@ check('real worker WebGL context loss restores the static pose and keeps navigat
   await press(f, device, 'open'); await menuState(f.page, true);
   await press(f, device, 'close'); await menuState(f.page, false);
   const data = await finishRun(t, f, { fault: 'actual-webgl-context-loss' });
-  assert.equal(data.workers.length, 1, 'context loss never retries automatically');
+  assert.equal(data.workers.filter(row => row.name === 'posetek-hero').length, 1, 'hero context loss never retries automatically');
   assert.deepEqual(data.mainWebGL, []); assertLatency(data);
 });
 
@@ -678,3 +683,165 @@ for (const audience of audiences) for (const javaScriptEnabled of [false, true])
     assert.deepEqual(failures, [], 'no tested-origin WebKit request failure');
   });
 }
+
+// Gallery startup is measured separately from the retained hero lane. It uses
+// the same real-worker observer, trusted input path and original timing budgets.
+const galleryOverlay = '[data-showcase-overlay]';
+async function galleryReady(page) {
+  await page.waitForFunction(() => {
+    const root = document.querySelector('[data-showcase-gallery]'), overlay = document.querySelector('[data-showcase-overlay]');
+    return root?.dataset.showcaseMotion === 'ready' && Number(overlay?.dataset.rendererFrames) > 0 &&
+      overlay.dataset.galleryRevision === root.dataset.showcaseRevision &&
+      !!document.querySelector('[data-showcase-frame][data-showcase-renderer="ready"]');
+  });
+}
+async function assertGalleryFallback(page) {
+  await page.waitForFunction(() => {
+    const visible = [...document.querySelectorAll('[data-showcase-frame]')].filter(node => { const rect = node.getBoundingClientRect(); return rect.bottom > 0 && rect.top < innerHeight; });
+    return visible.length > 0 && visible.every(node => { const image = node.querySelector('img[data-showcase-image]'); return image?.complete && image.naturalWidth > 0; });
+  });
+  const state = await page.locator('[data-showcase-frame]').evaluateAll(nodes => nodes.filter(node => {
+    const rect = node.getBoundingClientRect(); return rect.bottom > 0 && rect.top < innerHeight;
+  }).map(node => {
+    const image = node.querySelector('img[data-showcase-image]');
+    return { id: node.dataset.showcaseFrame, state: node.dataset.showcaseRenderer, opacity: Number(getComputedStyle(image).opacity), loaded: image.complete && image.naturalWidth > 0 };
+  }));
+  assert.ok(state.length > 0, 'fallback assertion includes a genuinely visible preview');
+  assert.ok(state.every(row => row.state !== 'ready' && row.opacity === 1 && row.loaded), `visible original DOM images survive renderer suspension/failure: ${JSON.stringify(state)}`);
+  return state;
+}
+function assertGalleryDraw(data, gpu) {
+  const workers = data.workers.filter(row => row.name === 'posetek-gallery');
+  assert.equal(workers.length, 1, 'one dedicated gallery worker serves every preview');
+  const worker = workers[0].index;
+  assert.ok(data.workerMessages.some(row => row.worker === worker && row.type === 'ready' && row.frames > 0 && row.gpu === gpu), 'real gallery worker completed its first graphics frame');
+  assert.ok(data.workerMessages.some(row => row.worker === worker && row.type === 'frame' && row.telemetry?.frames > 0 && row.telemetry.galleryCards?.length > 0), 'real draw telemetry names at least one textured preview');
+  assert.deepEqual(data.mainWebGL, [], 'gallery never creates main-thread WebGL');
+}
+
+for (let galleryIteration = 1; galleryIteration <= iterations; galleryIteration++) {
+  check(`gallery cold ${galleryIteration}: first navigation remains responsive during real textured preview startup`, async t => {
+    const device = devices[0], f = await fixture(t, device, { holdWorker: true, trace: galleryIteration === 1 });
+    await visit(f.page, '/#tests');
+    await f.page.waitForFunction(() => window.__cold.workers.some(row => row.name === 'posetek-gallery'));
+    await nodeCondition(() => f.state.heldWorkers > 0, 'gallery worker request is genuinely held');
+    await press(f, device, 'open'); await menuState(f.page, true);
+    f.releaseWorker();
+    await nextFrames(f.page, 6);
+    await assertGalleryFallback(f.page);
+    await press(f, device, 'close'); await menuState(f.page, false);
+    // The second immediate cycle overlaps startup/first texture work, without
+    // waiting for a ready renderer or warmed lazy import before trusted input.
+    await press(f, device, 'open'); await menuState(f.page, true);
+    await press(f, device, 'close'); await menuState(f.page, false);
+    await f.page.locator('.pt-marketing-brand').first().focus();
+    await galleryReady(f.page);
+    const host = await f.page.locator(galleryOverlay).evaluate(node => ({ owner: node.dataset.rendererOwner, frames: Number(node.dataset.rendererFrames), gpu: node.dataset.rendererGpu, revision: node.dataset.galleryRevision, canvas: !!node.querySelector('[data-marketing-worker-canvas="gallery"]') }));
+    assert.ok(host.canvas && host.frames > 0 && host.owner === 'worker');
+    if (!headless) assert.ok(host.gpu && !/swiftshader|llvmpipe|software/i.test(host.gpu), `gallery hardware renderer is available: ${host.gpu}`);
+    const data = await finishRun(t, f, { galleryIteration, device: device.name, host });
+    assertGalleryDraw(data, host.gpu); assertLatency(data);
+    const galleryWorker = data.workers.find(row => row.name === 'posetek-gallery');
+    const firstDraw = data.workerMessages.find(row => row.worker === galleryWorker.index && row.type === 'frame' && row.telemetry?.galleryCards?.length > 0);
+    assert.ok(firstDraw.time > data.inputs.find(row => row.intent === 'open').timestamp, 'trusted opening precedes the first textured gallery frame');
+    if (galleryIteration === 1) await capture(f.page, 'gallery-first-textured-frame');
+  });
+}
+
+check('gallery five-run hardware input median retains the original responsiveness budget', async () => {
+  const runs = evidence.runs.filter(row => row.galleryIteration);
+  assert.equal(runs.length, iterations);
+  const delays = runs.flatMap(row => row.data.inputs.filter(input => input.intent).map(input => input.delay)).sort((a, b) => a - b);
+  const median = delays[Math.floor(delays.length / 2)];
+  assert.ok(median <= budgets.inputMedian, `gallery input median ${median} <=${budgets.inputMedian}ms`);
+  evidence.galleryInputs = { samples: delays.length, median, maximum: Math.max(...delays) };
+});
+
+check('gallery: actual scroll bend is bounded and settles; menu, focus, offscreen and visibility stop rendering', async t => {
+  const device = devices[0], f = await fixture(t, device);
+  // Controlled visibility events verify handler behavior, not OS throttling.
+  await f.context.addInitScript(() => {
+    window.__galleryHidden = false;
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => window.__galleryHidden });
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.__galleryHidden ? 'hidden' : 'visible' });
+    window.__setGalleryHidden = hidden => { window.__galleryHidden = hidden; document.dispatchEvent(new Event('visibilitychange')); };
+  });
+  await visit(f.page, '/#tests'); await galleryReady(f.page);
+  await f.page.mouse.move(10, 140);
+  await f.page.mouse.wheel(0, 160);
+  await f.page.waitForFunction(() => Number(document.querySelector('[data-showcase-overlay]')?.dataset.galleryBend) > .001);
+  const peak = await f.page.locator(galleryOverlay).getAttribute('data-gallery-bend');
+  assert.ok(Number(peak) <= .3401, `actual bend stays bounded: ${peak}`);
+  await f.page.waitForFunction(() => Number(document.querySelector('[data-showcase-overlay]')?.dataset.galleryBend) === 0);
+  const settled = await quietFrames(f.page, galleryOverlay);
+  assert.ok(settled > 0, 'settling check starts after genuine rendering');
+  await f.page.waitForTimeout(250);
+  assert.equal(Number(await f.page.locator(galleryOverlay).getAttribute('data-renderer-frames')), settled, 'native scroll comes to rest without continuous decorative frames');
+  const first = f.page.locator('[data-showcase-open]').first(); await first.focus();
+  await f.page.keyboard.press('Tab'); await f.page.keyboard.press('Shift+Tab');
+  await f.page.waitForFunction(() => document.querySelector('[data-showcase-gallery]').dataset.showcaseMotion === 'paused');
+  await assertGalleryFallback(f.page); const focusedFrames = await quietFrames(f.page, galleryOverlay);
+  await f.page.waitForTimeout(200);
+  assert.equal(Number(await f.page.locator(galleryOverlay).getAttribute('data-renderer-frames')), focusedFrames);
+  await f.page.locator('.pt-marketing-brand').first().focus(); await galleryReady(f.page);
+  await press(f, device, 'open'); await menuState(f.page, true);
+  await assertGalleryFallback(f.page); await quietFrames(f.page, galleryOverlay);
+  await press(f, device, 'close'); await menuState(f.page, false); await galleryReady(f.page);
+  await f.page.evaluate(() => window.__setGalleryHidden(true)); await assertGalleryFallback(f.page);
+  const hiddenFrames = await quietFrames(f.page, galleryOverlay); await f.page.waitForTimeout(200);
+  assert.equal(Number(await f.page.locator(galleryOverlay).getAttribute('data-renderer-frames')), hiddenFrames);
+  await f.page.evaluate(() => window.__setGalleryHidden(false)); await galleryReady(f.page);
+  await f.page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+  await f.page.waitForFunction(() => [...document.querySelectorAll('[data-showcase-frame]')].every(node => node.getBoundingClientRect().top >= innerHeight));
+  const offscreenFrames = await quietFrames(f.page, galleryOverlay); await f.page.waitForTimeout(200);
+  assert.equal(Number(await f.page.locator(galleryOverlay).getAttribute('data-renderer-frames')), offscreenFrames, 'offscreen scene stops drawing');
+  await f.page.locator('[data-showcase-frame="training"]').scrollIntoViewIfNeeded();
+  await galleryReady(f.page);
+  await f.page.emulateMedia({ reducedMotion: 'reduce' }); await assertGalleryFallback(f.page);
+  const data = await finishRun(t, f, { peakBend: Number(peak), visibility: 'controlled document visibility-event injection' });
+  assert.equal(data.workers.filter(row => row.name === 'posetek-gallery').length, 1, 'lifecycle resumes the retained scene');
+  assert.ok(data.workerMessages.filter(row => row.telemetry?.galleryTextures !== undefined).every(row => row.telemetry.galleryTextures <= 4), 'texture residency remains bounded');
+  assertLatency(data);
+});
+
+for (const fault of ['worker-404', 'worker-never-ready', 'worker-context', 'worker-shader', 'gallery-texture']) {
+  check(`gallery ${fault}: original previews and their first explicit demo action survive`, async t => {
+    const device = devices[0], f = await fixture(t, device, { fault });
+    await visit(f.page, '/#tests');
+    if (fault === 'gallery-texture') await f.page.waitForFunction(() => document.querySelector('[data-showcase-frame="tests"]')?.dataset.showcaseRenderer === 'failed');
+    else await f.page.waitForFunction(() => document.querySelector('[data-showcase-gallery]')?.dataset.showcaseMotion === 'failed', undefined, { timeout: 18000 });
+    const fallback = await assertGalleryFallback(f.page);
+    if (fault === 'worker-context') {
+      await f.page.locator('[data-showcase-frame="tests"]').hover();
+      await f.page.waitForFunction(() => {
+        const image = document.querySelector('[data-showcase-frame="tests"] img[data-showcase-image]');
+        return new DOMMatrixReadOnly(getComputedStyle(image).transform).a > 1.02;
+      });
+    }
+    if (fault === 'worker-never-ready') assert.equal(await f.page.locator(galleryOverlay).getAttribute('data-renderer-failure'), 'startup-timeout');
+    await press(f, device, 'open'); await menuState(f.page, true); await press(f, device, 'close'); await menuState(f.page, false);
+    await f.page.locator('[data-showcase-open="tests"]').first().click();
+    const panel = f.page.locator('[data-showcase-panel="tests"]'); await panel.waitFor({ state: 'visible' });
+    await panel.getByRole('button', { name: 'Play pose playback', exact: true }).waitFor({ state: 'visible' });
+    await panel.getByRole('slider', { name: 'Pose playback position' }).fill('10');
+    assert.equal(await panel.getByRole('slider', { name: 'Pose playback position' }).inputValue(), '10');
+    const data = await finishRun(t, f, { fault, galleryFallback: fallback });
+    assert.deepEqual(data.mainWebGL, []); assertLatency(data);
+    await capture(f.page, `gallery-${fault}-working-demo`);
+  });
+}
+
+for (const mode of ['touch', 'reduced-motion']) check(`gallery ${mode}: static previews avoid worker startup and keep the explicit demo usable`, async t => {
+  const device = mode === 'touch' ? devices[1] : devices[0], f = await fixture(t, device);
+  if (mode === 'reduced-motion') await f.page.emulateMedia({ reducedMotion: 'reduce' });
+  await visit(f.page, '/#tests');
+  await f.page.waitForFunction(() => !document.querySelector('astro-island[ssr]'));
+  await nextFrames(f.page, 12); await assertGalleryFallback(f.page);
+  const data = await snapshot(f.page);
+  assert.equal(data.workers.filter(row => row.name === 'posetek-gallery').length, 0, 'static mode does not start a gallery worker');
+  assert.equal(await f.page.locator('[data-marketing-worker-canvas="gallery"]').count(), 0);
+  await f.page.locator('[data-showcase-open="tests"]').first().click();
+  await f.page.locator('[data-showcase-panel="tests"]').getByRole('slider', { name: 'Pose playback position' }).waitFor({ state: 'visible' });
+  await press(f, device, 'open'); await menuState(f.page, true); await press(f, device, 'close'); await menuState(f.page, false);
+  assertLatency(await finishRun(t, f, { galleryMode: mode }));
+});

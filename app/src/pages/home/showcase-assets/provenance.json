@@ -1,0 +1,415 @@
+{
+  "version": 1,
+  "generator": "scripts/generate-showcase-artwork.mjs",
+  "rendering": {
+    "width": 1200,
+    "height": 900,
+    "responsiveWidth": 600,
+    "format": "WebP",
+    "sharp": "0.35.5",
+    "svgRenderer": "2.63.2",
+    "text": "Editable SVG text uses Arial/Helvetica system sans-serif; committed WebP textures carry the reviewed typography without a runtime font dependency."
+  },
+  "sources": "Only checked-in approved public samples and brand assets. No live DOM capture, private data, new measurements, generated motion, or external asset requests.",
+  "artworks": [
+    {
+      "id": "players-testing",
+      "title": "Recorded movement review",
+      "alt": "Three enlarged static frames from PoseTek’s approved recorded sprint, arranged as a movement study.",
+      "qualifier": "Recorded movement · Existing public sample",
+      "width": 1200,
+      "height": 900,
+      "provenance": [
+        {
+          "source": "app/src/pages/home/movement/recorded-movement.json",
+          "detail": "Sprint frames 18, 36, 48; exact recorded landmark coordinates. Each study uses uniform source-aspect scaling; no generated or interpolated motion.",
+          "sha256": "a0df987d4b3b206fc180334f1cc3c83f2ff9201e3bccc52b96cd410f1b029761"
+        },
+        {
+          "source": "app/src/pages/home/pitch/pose-model.ts",
+          "detail": "Existing MediaPipe33 skeleton edge topology; face clutter omitted for presentation.",
+          "sha256": "09013c99f0a7d832c022934253ad1a24af1b66e760d0467962fe73e9afc589ea"
+        }
+      ],
+      "files": {
+        "svg": {
+          "path": "app/src/pages/home/showcase-assets/players-testing.svg",
+          "sha256": "faa39304c7cdc0e477ed6c62b5b75c749899a334eeab531e8e7e099418fa5431",
+          "bytes": 18681
+        },
+        "webp": {
+          "path": "app/src/pages/home/showcase-assets/players-testing.webp",
+          "sha256": "31b686e8560ca39873ab2e6d86845afd60db5bef26dab112304330200bcddb10",
+          "bytes": 38232
+        },
+        "small": {
+          "path": "app/src/pages/home/showcase-assets/players-testing-600.webp",
+          "sha256": "ea0ef7624613e18938b674d6736827e1c71345923c25037501e203a8cf400e98",
+          "bytes": 14768
+        }
+      }
+    },
+    {
+      "id": "players-profile",
+      "title": "Athlete profile",
+      "alt": "Alex Johnson’s existing sample skill map, with the five illustrative sample scores and an emphasis on agility.",
+      "qualifier": "Sample athlete profile",
+      "width": 1200,
+      "height": 900,
+      "provenance": [
+        {
+          "source": "app/src/pages/home/home-logic.ts",
+          "detail": "SKILL_ORDER and SKILL_DATA values81,74,72,70,68; no new performance claim.",
+          "sha256": "8a9a43e89a27badf4e772d783adc96d7f32f6b6a7629e93219fa1e399b7f467a"
+        },
+        {
+          "source": "app/src/pages/home/AthleteProfile.tsx",
+          "detail": "Approved fictional profile Alex Johnson; radar is redrawn proportionally from the sample score values.",
+          "sha256": "92d9ce5f4a61276b2c53d22556164621758d29f0b08a293e60c7feb7bdc10f6b"
+        }
+      ],
+      "files": {
+        "svg": {
+          "path": "app/src/pages/home/showcase-assets/players-profile.svg",
+          "sha256": "0c16ddea0699b026f48d2d37a0925491360f7d9eb0480ce8366327b7b80b2f98",
+          "bytes": 5169
+        },
+        "webp": {
+          "path": "app/src/pages/home/showcase-assets/players-profile.webp",
+          "sha256": "a1ff8eb504f9ffd898aa1286fb9183c4ecef57fd4d524ab838fed77d3cb28e6a",
+          "bytes": 44808
+        },
+        "small": {
+          "path": "app/src/pages/home/showcase-assets/players-profile-600.webp",
+          "sha256": "795c4226fdce5e9d7ca6bf6290a340e5961fe6a4ed1f134d4cdc7c27518925e0",
+          "bytes": 18418
+        }
+      }
+    },
+    {
+      "id": "players-training",
+      "title": "Training that follows the evidence",
+      "alt": "An original training composition pairing the approved Figure-8 dribble poster with its existing two-cone route.",
+      "qualifier": "Sample workout · Coaching illustration",
+      "width": 1200,
+      "height": 900,
+      "provenance": [
+        {
+          "source": "app/src/pages/home/product/product-demo.ts",
+          "detail": "createDemoWorkout({minutes:15,energy:\"normal\",focus:\"dribbling\"}); Figure-8 dribble,3sets×60seconds,45seconds rest.",
+          "sha256": "64168ac85c3d2eece46909092bcd6d9c958a9d5b86d966e0ae27d4c5091b6872"
+        },
+        {
+          "source": "app/src/pages/home/product/DrillDiagram.tsx",
+          "detail": "Original editorial rendering of the existing Gerono figure-eight route and two-cone centroids.",
+          "sha256": "3a2139e5aea64a40f416209793d9ada87549c828da53727d8175eb9b43449f07"
+        },
+        {
+          "source": "app/src/pages/home/product/media/figure-8.jpg",
+          "detail": "Approved public DRB-006 poster, proportionally placed, not a private recording.",
+          "sha256": "734a4803f58812692ac989a812edb61bb3fc076b5660b0578f3fa0ff129ba7c1"
+        }
+      ],
+      "files": {
+        "svg": {
+          "path": "app/src/pages/home/showcase-assets/players-training.svg",
+          "sha256": "c0286639ed288fabdf467706dd38324306c65cd636360449b58a74df6890e7d6",
+          "bytes": 157497
+        },
+        "webp": {
+          "path": "app/src/pages/home/showcase-assets/players-training.webp",
+          "sha256": "2bc1406e493ce4c539a0c8cda1485d483de17f1f2814dc56730f9628fe4f46ee",
+          "bytes": 139364
+        },
+        "small": {
+          "path": "app/src/pages/home/showcase-assets/players-training-600.webp",
+          "sha256": "83c63560dbd737e0c592af39fa44af555176479ff9c40e261208216aae6cadc3",
+          "bytes": 38908
+        }
+      }
+    },
+    {
+      "id": "players-coach",
+      "title": "AI Coach and retesting",
+      "alt": "The existing four-assessment sample dribbling trend, from 6.62 to 6.18 seconds, paired with the sample coaching question.",
+      "qualifier": "Sample AI Coach conversation",
+      "width": 1200,
+      "height": 900,
+      "provenance": [
+        {
+          "source": "app/src/pages/home/product/product-demo.ts",
+          "detail": "sampleAthlete dribbling values[6.62,6.43,6.31,6.18] and coachQuestions progress question; no live AI result.",
+          "sha256": "64168ac85c3d2eece46909092bcd6d9c958a9d5b86d966e0ae27d4c5091b6872"
+        },
+        {
+          "source": "app/src/pages/home/product/CoachMetricChart.tsx",
+          "detail": "Four observations shown in order with their source values; decreasing times are drawn downward.",
+          "sha256": "748febbe65f5e77d8d83bb0e8290227de31067d3623aae79b3bab29ae45896d0"
+        }
+      ],
+      "files": {
+        "svg": {
+          "path": "app/src/pages/home/showcase-assets/players-coach.svg",
+          "sha256": "4ae57af9ffd3fd5a000725dec690861fe0697927a555d7c08725197d2209ce78",
+          "bytes": 3293
+        },
+        "webp": {
+          "path": "app/src/pages/home/showcase-assets/players-coach.webp",
+          "sha256": "5ee66a242a443adbc7c2b0130bc601b8abb8e8991b6e8e599ba162bd9433db19",
+          "bytes": 34532
+        },
+        "small": {
+          "path": "app/src/pages/home/showcase-assets/players-coach-600.webp",
+          "sha256": "1bb9200122a34f5dd0a6f0d09e8c1bfbfdb09230fb12de27970d51e1e0de1b61",
+          "bytes": 14922
+        }
+      }
+    },
+    {
+      "id": "players-technique",
+      "title": "Technique at the same moment",
+      "alt": "Two saved phases from the approved recorded kick: backswing and contact, with the original contact knee measurement.",
+      "qualifier": "Recorded technique · Saved phase measurement",
+      "width": 1200,
+      "height": 900,
+      "provenance": [
+        {
+          "source": "app/src/pages/home/technique/technique-data.json",
+          "detail": "Saved recorded backswing index 19/source frame 458 and contact index 26/source frame 472; contact kicking-knee value 136.25991°. No professional follow-through is invented.",
+          "sha256": "3f7136b017bb966151eab1191a86a5cd20dda1faf0d104a8d7ad06827db11dcc"
+        },
+        {
+          "source": "app/src/pages/home/pitch/pose-model.ts",
+          "detail": "Existing skeleton topology; uniformly fitted to individual editorial panels with 16:9 source-aspect correction.",
+          "sha256": "09013c99f0a7d832c022934253ad1a24af1b66e760d0467962fe73e9afc589ea"
+        }
+      ],
+      "files": {
+        "svg": {
+          "path": "app/src/pages/home/showcase-assets/players-technique.svg",
+          "sha256": "314faa87fa5d30df5cb095109f13f186616024a90f6bc69b8133597bcb13626c",
+          "bytes": 11169
+        },
+        "webp": {
+          "path": "app/src/pages/home/showcase-assets/players-technique.webp",
+          "sha256": "139595d2c580a360f819160265c86c8ea8deeb23c8557b02308137aee0e54852",
+          "bytes": 27526
+        },
+        "small": {
+          "path": "app/src/pages/home/showcase-assets/players-technique-600.webp",
+          "sha256": "e8d46f5e7d2861bc20086affafb39c05e5564b50c4ee8f7fa2b1174319f713b2",
+          "bytes": 11396
+        }
+      }
+    },
+    {
+      "id": "players-mobile",
+      "title": "Your next session in your pocket",
+      "alt": "A bespoke PoseTek phone illustration featuring the existing Figure-8 drill route and its three sample sets.",
+      "qualifier": "Illustrative mobile workout preview",
+      "width": 1200,
+      "height": 900,
+      "provenance": [
+        {
+          "source": "app/src/pages/home/MobileAppPreview.tsx",
+          "detail": "PoseTek mobile workout shell and Figure-8 dribble first-set state; original static illustration, not an app screenshot.",
+          "sha256": "81eb77562b20cb1544f232949901b86054fcacd1700bc4bea5d439b25d7b79ba"
+        },
+        {
+          "source": "app/src/pages/home/product/product-demo.ts",
+          "detail": "Same 15-minute sample workout; Figure-8 drill, 3 sets of60seconds.",
+          "sha256": "64168ac85c3d2eece46909092bcd6d9c958a9d5b86d966e0ae27d4c5091b6872"
+        },
+        {
+          "source": "app/src/pages/home/product/DrillDiagram.tsx",
+          "detail": "Existing two-cone Gerono figure-eight route.",
+          "sha256": "3a2139e5aea64a40f416209793d9ada87549c828da53727d8175eb9b43449f07"
+        },
+        {
+          "source": "app/public/brand/posetek-p.svg",
+          "detail": "Unmodified approved P badge inside the editorial phone.",
+          "sha256": "22e673f3d95187fd9c19f919ce767e95002a8815fd5df5d062d8054a027911d6"
+        }
+      ],
+      "files": {
+        "svg": {
+          "path": "app/src/pages/home/showcase-assets/players-mobile.svg",
+          "sha256": "85af1c1eb4c6a49993023af62c16c91f412f3b7008cdeb6311360e340eb7b711",
+          "bytes": 5780
+        },
+        "webp": {
+          "path": "app/src/pages/home/showcase-assets/players-mobile.webp",
+          "sha256": "77d7e4ece815464fb43dfa124ee201d0a3cfcbdde407b21a9976f800b029eb04",
+          "bytes": 46214
+        },
+        "small": {
+          "path": "app/src/pages/home/showcase-assets/players-mobile-600.webp",
+          "sha256": "d08c7f44dd33a41f0cd32c85b8a90875712d58163e45994552f5e436bc86a239",
+          "bytes": 19604
+        }
+      }
+    },
+    {
+      "id": "coaches-club",
+      "title": "One club, every team",
+      "alt": "Northfield FC’s existing three illustrative age groups, connected to individual player focus on an editorial pitch diagram.",
+      "qualifier": "Illustrative club workspace",
+      "width": 1200,
+      "height": 900,
+      "provenance": [
+        {
+          "source": "app/src/pages/coaches/CoachesPage.tsx",
+          "detail": "Unchanged ClubPreview source excerpt; the pitch is illustrative, not tracked positions. The page layout may change independently.",
+          "excerpts": [
+            "function ClubPreview() {\n  const team = sampleTeams[1], player = team.players[0];\n  return <figure className=\"coach-hero-workspace\" aria-label=\"Illustrative club workspace: Northfield FC, three teams and an individual player focus\">\n    <div className=\"coach-preview-bar\"><span className=\"coach-mini-logo\">P</span><span>Club workspace</span><span>Illustrative example</span></div>\n    <div className=\"coach-preview-club\"><span className=\"coach-club-crest\" aria-hidden=\"true\">N<span>FC</span></span><div><span className=\"coach-micro\">THE WHOLE CLUB, CONNECTED</span><strong>Northfield FC</strong><span>One view. Individual next steps.</span></div><span className=\"coach-preview-live\" aria-hidden=\"true\" /></div>\n    <div className=\"coach-preview-teams\">{sampleTeams.map(item => <div key={item.id} data-selected={item.id === team.id}><span>{item.name}</span><small>{item.players.length} sample players</small><span aria-hidden=\"true\">↗</span></div>)}</div>\n    <div className=\"coach-preview-main\">\n      <div className=\"coach-preview-pitch\" aria-hidden=\"true\"><svg viewBox=\"0 0 280 270\"><rect x=\"20\" y=\"18\" width=\"240\" height=\"232\" rx=\"4\"/><path d=\"M20 134H260M95 18V62H185V18M95 250V206H185V250\"/><circle cx=\"140\" cy=\"134\" r=\"36\"/><path className=\"coach-pitch-pass\" d=\"M67 185L140 132L214 185M140 132V62\"/>{[[140,62],[67,185],[214,185]].map(([x,y],i)=><g key={i}><circle className=\"coach-pitch-player\" cx={x} cy={y} r=\"17\"/><text x={x} y={y+4}>{[8,6,10][i]}</text></g>)}<circle className=\"coach-pitch-selected\" cx=\"140\" cy=\"132\" r=\"23\"/><text className=\"coach-pitch-number\" x=\"140\" y=\"137\">{player.number}</text></svg><span>Team context → Player focus</span></div>\n      <div className=\"coach-preview-focus\"><span className=\"coach-micro\">INDIVIDUAL NEXT STEP</span><span className=\"coach-preview-avatar\" aria-hidden=\"true\">{player.name.split(\" \").map(part=>part[0]).join(\"\")}</span><strong>{player.name}</strong><span>{player.position} · {team.name}</span><div><small>Training focus</small><b>{player.focus}</b></div><p>Evidence from testing.<br/>A plan for the player.</p></div>\n    </div>\n    <figcaption><span className=\"status-dot\"/>Testing <span>→</span> Insight <span>→</span> Training <span>→</span> Retest</figcaption>\n  </figure>;\n}\n\n"
+          ],
+          "sha256": "ca8b801eb84b880356199669a8ddd45ac7913c02a780ac2b0d84506013ce4e54"
+        },
+        {
+          "source": "app/src/pages/coaches/coach-samples.ts",
+          "detail": "Existing fictional U13/U15/U17 teams; selected U15 player Jordan Lee,number 6.",
+          "sha256": "d201317d9fdf2782488863344ae75c29be0c2e44b2b987447a9563d793843e34"
+        }
+      ],
+      "files": {
+        "svg": {
+          "path": "app/src/pages/home/showcase-assets/coaches-club.svg",
+          "sha256": "fc5415ee222eb3f9d9695c8a3affebe00973efb05895c9ffe7d07d427f255d46",
+          "bytes": 3033
+        },
+        "webp": {
+          "path": "app/src/pages/home/showcase-assets/coaches-club.webp",
+          "sha256": "9009814c81d1d62cd551cb414a96efd590fd824c789a4f741c3bc9a9e4b3da74",
+          "bytes": 33606
+        },
+        "small": {
+          "path": "app/src/pages/home/showcase-assets/coaches-club-600.webp",
+          "sha256": "51cb0392d8797259f37ee103401abe501fbcc8cffba918b3769c396e6cacfa44",
+          "bytes": 14324
+        }
+      }
+    },
+    {
+      "id": "coaches-evidence",
+      "title": "Individual player evidence",
+      "alt": "The existing Alex Rivera sample profile and its five illustrative sample scores, presented as a large radar and player-number study.",
+      "qualifier": "Illustrative player profile · Scores / 100",
+      "width": 1200,
+      "height": 900,
+      "provenance": [
+        {
+          "source": "app/src/pages/coaches/coach-samples.ts",
+          "detail": "U13 Alex Rivera, Midfielder, number 8, illustrative scores[72,63,68,58,70].",
+          "sha256": "d201317d9fdf2782488863344ae75c29be0c2e44b2b987447a9563d793843e34"
+        },
+        {
+          "source": "app/src/pages/coaches/PlayerEvidence.tsx",
+          "detail": "Same five-area proportional radar; individual priorities remain fictional sample data.",
+          "sha256": "c7db891905d4a358dcbcff22ce01b6f0ec26ef80abbef42d86d30feca98185f7"
+        }
+      ],
+      "files": {
+        "svg": {
+          "path": "app/src/pages/home/showcase-assets/coaches-evidence.svg",
+          "sha256": "794f6706f5ff0d4950c15552247de6c37fef282e1c8987ec5ed15b833ad6abc7",
+          "bytes": 5023
+        },
+        "webp": {
+          "path": "app/src/pages/home/showcase-assets/coaches-evidence.webp",
+          "sha256": "8476b52f28ac5f4e3f0409a4f3fa5b55204204dbea0c219916064622df17d41c",
+          "bytes": 43256
+        },
+        "small": {
+          "path": "app/src/pages/home/showcase-assets/coaches-evidence-600.webp",
+          "sha256": "91203c66bc87f9986f4a5b8d3a4ea98cff76a1cb11c5abe74a0385b60320061e",
+          "bytes": 17448
+        }
+      }
+    },
+    {
+      "id": "coaches-development",
+      "title": "Plan, train, retest",
+      "alt": "An editorial sequence connects the existing Figure-8 coaching route with Alex Rivera’s illustrative 7.12 and 6.94 second retest values.",
+      "qualifier": "Illustrative development example",
+      "width": 1200,
+      "height": 900,
+      "provenance": [
+        {
+          "source": "app/src/pages/coaches/coach-samples.ts",
+          "detail": "Alex Rivera sample priorDribbleSeconds 7.12, latestDribbleSeconds 6.94, completedSessions 2, plannedSessions 3.",
+          "sha256": "d201317d9fdf2782488863344ae75c29be0c2e44b2b987447a9563d793843e34"
+        },
+        {
+          "source": "app/src/pages/coaches/DevelopmentJourney.tsx",
+          "detail": "Existing Plan/Train/Retest sequence. No claim of actual player improvement.",
+          "sha256": "e1b7d11c989cf6a4909276ddaa0b053aacb489da31018f02aa312b3fa85b4f9c"
+        },
+        {
+          "source": "app/src/pages/home/product/DrillDiagram.tsx",
+          "detail": "Original arrangement of the existing Figure-8 coaching illustration.",
+          "sha256": "3a2139e5aea64a40f416209793d9ada87549c828da53727d8175eb9b43449f07"
+        }
+      ],
+      "files": {
+        "svg": {
+          "path": "app/src/pages/home/showcase-assets/coaches-development.svg",
+          "sha256": "da230ace0a395990c9b36c2d2dad4ee58415ce36b648201cd1a5788456b4cddf",
+          "bytes": 4087
+        },
+        "webp": {
+          "path": "app/src/pages/home/showcase-assets/coaches-development.webp",
+          "sha256": "d083c3ddb184011a11d14e8908cc8e4c38f0bcec7582355cb7a4d3d6951a9e6d",
+          "bytes": 34402
+        },
+        "small": {
+          "path": "app/src/pages/home/showcase-assets/coaches-development-600.webp",
+          "sha256": "bca71f2a90516c37f85f14811eb381a484ff6b4259b3e44eb9c12d0596b2517c",
+          "bytes": 14972
+        }
+      }
+    },
+    {
+      "id": "coaches-contact",
+      "title": "A next step for your club",
+      "alt": "PoseTek’s approved P mark and existing team-enquiry message in a clean original invitation composition.",
+      "qualifier": "PoseTek team enquiry",
+      "width": 1200,
+      "height": 900,
+      "provenance": [
+        {
+          "source": "app/public/brand/posetek-p.svg",
+          "detail": "Approved P badge, unchanged geometry and colors; enlarged, layered only through translation/rotation.",
+          "sha256": "22e673f3d95187fd9c19f919ce767e95002a8815fd5df5d062d8054a027911d6"
+        },
+        {
+          "source": "app/src/pages/coaches/CoachesPage.tsx",
+          "detail": "Existing enquiry copy, verified as exact excerpts in baseline and current page. No contact details embedded in artwork.",
+          "excerpts": [
+            "Your players, your priorities.",
+            "Discuss your teams",
+            "Arrange testing",
+            "Agree ongoing support"
+          ],
+          "sha256": "ca8b801eb84b880356199669a8ddd45ac7913c02a780ac2b0d84506013ce4e54"
+        }
+      ],
+      "files": {
+        "svg": {
+          "path": "app/src/pages/home/showcase-assets/coaches-contact.svg",
+          "sha256": "1e235ec72ebcc474678fda17abb7f77b324b9c8bacc01d538761fb4c509dc675",
+          "bytes": 3835
+        },
+        "webp": {
+          "path": "app/src/pages/home/showcase-assets/coaches-contact.webp",
+          "sha256": "dee311f417ae8f3b03e701a4e1f02e4571f113bdaacf6bf283e2ebcd4439b248",
+          "bytes": 40966
+        },
+        "small": {
+          "path": "app/src/pages/home/showcase-assets/coaches-contact-600.webp",
+          "sha256": "7fab63c8459f86bef4f9a93b2f80af8ddd7e8409ba3fa3346d5c670e9a1ab17d",
+          "bytes": 17440
+        }
+      }
+    }
+  ]
+}

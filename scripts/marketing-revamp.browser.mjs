@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import { once } from 'node:events';
 import { chromium } from '../app/node_modules/playwright/index.mjs';
 import { createHomepagePreviewServer } from './serve-homepage-preview.mjs';
+import { openShowcase, demoChapters, panelSelector, requestFailureDetails, classifyPreviewCancellations } from './marketing-showcase.helpers.mjs';
 
 const output = process.env.MARKETING_OUTPUT ? resolve(process.env.MARKETING_OUTPUT) : fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
 const artifacts = process.env.MARKETING_ARTIFACTS ? resolve(process.env.MARKETING_ARTIFACTS) : fileURLToPath(new URL('../artifacts/marketing-revamp/', import.meta.url));
@@ -82,18 +83,20 @@ async function fixture(t, options = {}) {
   const page = await context.newPage();
   page.setDefaultTimeout(12_000);
   page.on('pageerror', error => errors.push(error.message));
-  page.on('requestfailed', request => { if (!closing && new URL(request.url()).origin === origin) localFailures.push(request.url()); });
+  page.on('requestfailed', request => { if (!closing && new URL(request.url()).origin === origin) localFailures.push(requestFailureDetails(request)); });
   const state = { page, context, errors, localFailures, expectedLocalFailures: false };
   t.after(async () => {
     // Explicit fixture teardown can cancel a harmless in-flight lazy asset.
     // Failures while the tested page is alive remain recorded and asserted.
+    const classified = await classifyPreviewCancellations(page, localFailures);
+    (evidence.requests.decorativeCancellations ??= []).push(...classified.expected.map(row => ({ check: t.name, ...row })));
     closing = true;
     await context.close();
-    evidence.requests[state.expectedLocalFailures ? 'expectedOriginFailures' : 'unexpectedOriginFailures'] += localFailures.length;
-    if (state.expectedLocalFailures && localFailures.length) evidence.injectedFailures.push({ check: t.name, paths: localFailures.map(url => new URL(url).pathname) });
+    evidence.requests[state.expectedLocalFailures ? 'expectedOriginFailures' : 'unexpectedOriginFailures'] += classified.unexpected.length;
+    if (state.expectedLocalFailures && localFailures.length) evidence.injectedFailures.push({ check: t.name, paths: localFailures.map(row => new URL(row.url).pathname) });
     try {
       assert.deepEqual(errors, [], 'uncaught browser exceptions');
-      if (!state.expectedLocalFailures) assert.deepEqual(localFailures, [], 'unexpected request failure from the tested origin');
+      if (!state.expectedLocalFailures) assert.deepEqual(classified.unexpected, [], 'unexpected request failure from the tested origin');
     } catch (error) {
       const result = evidence.checks.find(item => item.name === t.name);
       if (result) { result.status = 'failed'; result.error = error.message; }
@@ -142,14 +145,12 @@ async function waitAtAnchor(page, id) {
 }
 
 async function expandDemo(page, section) {
-  const toggle = page.locator(`${section} .demo-disclosure-toggle`);
-  if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
-  assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+  return openShowcase(page, section);
 }
 
 async function demoReady(page, kind) {
+  await openShowcase(page, demoChapters[kind]);
   const demo = page.locator(`[data-demo="${kind}"]`);
-  await demo.scrollIntoViewIfNeeded();
   await page.waitForFunction(kind => document.querySelector(`[data-demo="${kind}"]`)?.dataset.demoState === 'ready', kind);
   return demo;
 }
@@ -317,11 +318,13 @@ for (const config of pages) {
     small.push(...await undersizedVisibleControls(page));
     for (const id of config.chapters) {
       await scrollSection(page, id);
-      const pending = page.locator(`#${id} [data-demo]`);
+      const panel = page.locator(panelSelector(id));
+      if (await panel.count()) await openShowcase(page, id);
+      const pending = panel.locator('[data-demo]');
       if (await pending.count()) await demoReady(page, await pending.getAttribute('data-demo'));
       small.push(...await undersizedVisibleControls(page));
       // Bottom-of-panel controls can be below the initial section viewport.
-      const controls = page.locator(`#${id} button`);
+      const controls = panel.locator('button');
       if (await controls.count()) {
         await controls.last().scrollIntoViewIfNeeded();
         small.push(...await undersizedVisibleControls(page));
@@ -430,7 +433,8 @@ check('Players: six recordings, real playback, skill selection, workout progress
   assert.equal(await movement.locator('#posePlayButton').getAttribute('aria-pressed'), 'false');
   await scrubber.fill('10');
   assert.equal(await scrubber.inputValue(), '10');
-  const skills = page.locator('#profile button[data-skill]');
+  await openShowcase(page, 'profile');
+  const skills = page.locator('[data-showcase-panel="profile"] button[data-skill]');
   for (let index = 0; index < await skills.count(); index++) {
     const skill = skills.nth(index), name = await skill.innerText();
     await skill.click();
@@ -477,12 +481,14 @@ check('Players: six recordings, real playback, skill selection, workout progress
 check('Coaches: team and player stay connected through Plan, Train and Retest', async t => {
   const { page } = await fixture(t, { reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
   await visit(page, '/coaches');
+  await openShowcase(page, 'club');
   await page.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U15/ }).click();
   assert.match(await page.locator('.cx-team-context').innerText(), /Taylor Brooks/);
   await expandDemo(page, '#players');
   const players = page.getByRole('group', { name: 'Choose a sample player from U15', exact: true });
   await players.getByRole('button', { name: /Riley Chen/ }).click();
   assert.equal(await page.locator('.cx-player-heading h3').innerText(), 'Riley Chen');
+  await openShowcase(page, 'development');
   const development = page.locator('.coach-development');
   assert.match(await development.innerText(), /Riley Chen/);
   const steps = page.getByRole('group', { name: 'Explore player development', exact: true });
@@ -494,7 +500,9 @@ check('Coaches: team and player stay connected through Plan, Train and Retest', 
   assert.match(await development.innerText(), /0\.14\s*sec faster/);
   assert.match(await development.innerText(), /Illustrative change · Not a promised outcome/);
   await screenshot(page, 'coaches-390-retest');
+  await openShowcase(page, 'club');
   await page.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U17/ }).click();
+  await openShowcase(page, 'development');
   assert.equal(await page.locator('.cx-player-heading h3').innerText(), 'Morgan Adams');
   assert.match(await development.innerText(), /Morgan Adams/);
   assert.equal(await steps.getByRole('button', { name: /Plan/ }).getAttribute('aria-pressed'), 'true');
@@ -544,14 +552,16 @@ check('a failed lazy demo stays isolated; bounded retry offers explicit reload r
   const failImport = route => { attempts++; return route.abort('failed'); };
   await context.route(blockedUrl, failImport);
   await visit(page, '/');
-  await scrollSection(page, 'tests');
+  await openShowcase(page, 'tests', { ready: false });
   const movement = page.locator('[data-demo="movement"]');
   await movement.getByRole('button', { name: 'Try again', exact: true }).waitFor({ state: 'visible' });
   assert.ok(attempts > 0, 'real compiled module was withheld');
-  await page.locator('#profile button[data-skill]').last().click();
-  assert.equal(await page.locator('#profile button[data-skill]').last().getAttribute('aria-pressed'), 'true');
+  await openShowcase(page, 'profile');
+  await page.locator('[data-showcase-panel="profile"] button[data-skill]').last().click();
+  assert.equal(await page.locator('[data-showcase-panel="profile"] button[data-skill]').last().getAttribute('aria-pressed'), 'true');
   await demoReady(page, 'workout');
   await context.unroute(blockedUrl, failImport);
+  await openShowcase(page, 'tests', { ready: false });
   await movement.getByRole('button', { name: 'Try again', exact: true }).click();
   // Chromium retains a rejected module in its document module map. Do not claim
   // that an identical import URL can recover without an explicit page reload.
@@ -560,7 +570,7 @@ check('a failed lazy demo stays isolated; bounded retry offers explicit reload r
   assert.match(await movement.innerText(), /Reloading restarts all sample demos on this page\./);
   assert.equal(await page.locator('[data-demo="workout"]').getAttribute('data-demo-state'), 'ready', 'retry keeps other mounted demos intact');
   await Promise.all([page.waitForEvent('load'), reload.click()]);
-  await scrollSection(page, 'tests');
+  await openShowcase(page, 'tests');
   await page.waitForFunction(() => document.querySelector('[data-demo="movement"]')?.dataset.demoState === 'ready');
   await movement.getByRole('button', { name: 'Play pose playback', exact: true }).waitFor({ state: 'visible' });
 });
@@ -599,7 +609,7 @@ for (const width of [390, 1440]) check(`${width}px close-up demonstrations show 
 check('360px long test labels and expanded booking navigation remain readable', async t => {
   const { page } = await fixture(t, { reducedMotion: 'reduce', viewport: { width: 360, height: 844 } });
   await visit(page, '/');
-  await scrollSection(page, 'tests');
+  await openShowcase(page, 'tests');
   await unclippedText(page.locator('.test-choices'), 'six test labels at360px');
   await page.getByRole('group', { name: 'Choose a performance test' }).getByRole('button', { name: /Change of Direction/ }).click();
   await page.getByRole('button', { name: 'Open navigation', exact: true }).click();

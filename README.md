@@ -1,5 +1,10 @@
 # PoseTek website
 
+Unpublished candidate: [public-site showcase depth](docs/PUBLIC_SITE_SHOWCASE_DEPTH.md)
+adds original 4:3 previews, retained full-size inline demos and worker-rendered
+gallery depth. Exact-candidate verification and the hosted receipt are pending;
+the production record below remains authoritative.
+
 ## Current public-site release (October 18, 2026)
 
 The accepted Players/Coaches revamp is live at [posetek.net](https://posetek.net).

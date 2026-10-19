@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '../app/node_modules/playwright/index.mjs';
 import { createHomepagePreviewServer } from './serve-homepage-preview.mjs';
+import { openShowcase, closeShowcase, panelSelector, requestFailureDetails, classifyPreviewCancellations } from './marketing-showcase.helpers.mjs';
 
 const output = process.env.MARKETING_OUTPUT ? resolve(process.env.MARKETING_OUTPUT) : fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
 const artifacts = process.env.MARKETING_ARTIFACTS ? resolve(process.env.MARKETING_ARTIFACTS) : fileURLToPath(new URL('../artifacts/marketing-detail/', import.meta.url));
@@ -22,8 +23,8 @@ const evidence = {
   requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, unexpectedOriginFailures: 0 },
 };
 const audiences = [
-  { name: 'players', route: '/', section: '#profile', art: '.radar-wrap > svg', controls: 'button[data-skill]', selected: '#skillName', heading: '#profile .heading-reveal', frame: '#profile .reveal-frame' },
-  { name: 'coaches', route: '/coaches', section: '#players', art: '.cx-profile-radar > svg', controls: '.cx-player-options button', selected: '.cx-player-heading h3', heading: '#players .heading-reveal', frame: '#players .reveal-frame' },
+  { name: 'players', route: '/', section: '#profile', art: '.radar-wrap > svg', controls: 'button[data-skill]', selected: '#skillName', heading: '#profile .showcase-heading', frame: '[data-showcase-frame="profile"]' },
+  { name: 'coaches', route: '/coaches', section: '#players', art: '.cx-profile-radar > svg', controls: '.cx-player-options button', selected: '.cx-player-heading h3', heading: '#players .showcase-heading', frame: '[data-showcase-frame="players"]' },
 ];
 let browser, server, origin;
 
@@ -76,20 +77,20 @@ async function fixture(t, options = {}) {
   const page = await context.newPage();
   page.setDefaultTimeout(10_000);
   page.on('pageerror', error => errors.push(error.message));
-  page.on('requestfailed', request => { if (!closing && new URL(request.url()).origin === origin) failures.push(request.url()); });
+  page.on('requestfailed', request => { if (!closing && new URL(request.url()).origin === origin) failures.push(requestFailureDetails(request)); });
   t.after(async () => {
+    const classified = await classifyPreviewCancellations(page, failures);
+    (evidence.requests.decorativeCancellations ??= []).push(...classified.expected.map(row => ({ check: t.name, ...row })));
     closing = true; await context.close();
-    evidence.requests.unexpectedOriginFailures += failures.length;
-    try { assert.deepEqual(errors, [], 'uncaught browser exceptions'); assert.deepEqual(failures, [], 'unexpected tested-origin request failures'); }
+    evidence.requests.unexpectedOriginFailures += classified.unexpected.length;
+    try { assert.deepEqual(errors, [], 'uncaught browser exceptions'); assert.deepEqual(classified.unexpected, [], 'unexpected tested-origin request failures'); }
     catch (error) { const result = evidence.checks.find(check => check.name === t.name); if (result) { result.status = 'failed'; result.error = error.message; } throw error; }
   });
   return { page, context };
 }
 
 async function expandDemo(page, section) {
-  const toggle = page.locator(`${section} .demo-disclosure-toggle`);
-  if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
-  assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+  return openShowcase(page, section);
 }
 
 async function visit(page, route) {
@@ -160,20 +161,10 @@ async function place(page, selector, position) {
 }
 
 async function readPrecedingChapters(page) {
-  // Warm footer choreography starts after the story's lazy demonstrations have
-  // resolved; a single geometry sample taken before their expansion is stale.
-  for (const section of await page.locator('.marketing-gallery > section').all()) {
-    await section.scrollIntoViewIfNeeded();
-    await section.evaluate(node => new Promise((resolve, reject) => {
-      const started = performance.now();
-      const ready = () => {
-        if (Array.from(node.querySelectorAll('[data-demo]')).every(demo => demo.dataset.demoState === 'ready')) resolve();
-        else if (performance.now() - started > 10_000) reject(new Error('Preceding chapter lazy content did not become ready.'));
-        else requestAnimationFrame(ready);
-      }; ready();
-    }));
-    await frames(page);
-  }
+  // Explicitly open then close every retained demo before measuring a warm
+  // footer; initial preview dimensions no longer depend on live demo imports.
+  const ids = await page.locator('[data-showcase-panel]').evaluateAll(nodes => nodes.map(node => node.dataset.showcasePanel));
+  for (const id of ids) { await openShowcase(page, id); await closeShowcase(page, id); }
 }
 
 async function waitData(page, selector, name, value) {
@@ -282,91 +273,26 @@ for (const config of audiences) {
     await page.waitForURL(url => url.hash === (config.name === 'players' ? '#tests' : '#club'));
   });
 
-  check(`${config.name}: headings and media replay only after a complete below-viewport exit`, async t => {
+  check(`${config.name}: live demonstration controls remain stationary and preserve selection after reopening`, async t => {
     const { page } = await fixture(t);
     await visit(page, config.route);
-    for (const [kind, selector] of [['heading', config.heading], ['media', config.frame]]) {
-      const host = page.locator(selector);
-      await neutralFocus(page); await neutralPointer(page);
-      await host.evaluate(node => { node.__detailIdentity = Math.random(); });
-      const identity = await host.evaluate(node => node.__detailIdentity);
-      await place(page, selector, 'below');
-      await waitData(page, selector, 'viewport', 'below');
-      await waitData(page, selector, 'reveal-state', 'waiting');
-      await place(page, selector, 'inside');
-      await waitData(page, selector, 'reveal-state', 'entering');
-      if (kind === 'media') {
-        assert.equal(await host.locator('.pixel-reveal i').count(), 48);
-        assert.equal(await host.locator('.pixel-reveal').evaluate(node => getComputedStyle(node).pointerEvents), 'none');
-      } else {
-        assert.ok(await host.evaluate(node => node.getAnimations().some(animation => animation.playState === 'running' && animation.effect.getTiming().duration > 0)), 'heading has a real running entrance');
-      }
-      await capture(page, `${config.name}-${kind}-entering`);
-      await settledReveal(page, selector);
-      assert.equal(await host.locator('.pixel-reveal').count(), 0);
-      await place(page, selector, 'above');
-      await waitData(page, selector, 'viewport', 'above');
-      assert.equal(await host.getAttribute('data-reveal-state'), 'visible', 'passing above leaves readable content');
-      await place(page, selector, 'inside');
-      assert.equal(await host.getAttribute('data-reveal-state'), 'visible', 'returning from above does not replay');
-      assert.equal(await host.locator('.pixel-reveal').count(), 0);
-      await place(page, selector, 'bottom-edge');
-      assert.equal(await host.getAttribute('data-viewport'), 'inside', 'a partly visible bottom edge remains inside the real viewport');
-      assert.equal(await host.getAttribute('data-reveal-state'), 'visible', 'crossing the entrance threshold alone does not rearm the reveal');
-      await place(page, selector, 'inside');
-      assert.equal(await host.getAttribute('data-reveal-state'), 'visible', 'returning from partial bottom-edge visibility does not replay');
-      await place(page, selector, 'below');
-      await waitData(page, selector, 'reveal-state', 'waiting');
-      await place(page, selector, 'inside');
-      await waitData(page, selector, 'reveal-state', 'entering');
-      await settledReveal(page, selector);
-      assert.equal(await host.evaluate(node => node.__detailIdentity), identity, 'repeat reveal retains the original mounted node');
-      const final = await host.evaluate(node => ({ clip: getComputedStyle(node).clipPath, transform: getComputedStyle(node).transform }));
-      assert.ok(['none', 'inset(0px)'].includes(final.clip), `readable final clipping: ${final.clip}`);
-      assert.equal(final.transform, 'none', 'heading/frame wrapper does not accumulate transforms');
-    }
-  });
-
-  check(`${config.name}: hover moves artwork while the first control action remains usable`, async t => {
-    const { page } = await fixture(t);
-    await visit(page, config.route);
-    if (config.name === 'coaches') await expandDemo(page, config.section);
-    await place(page, config.frame, 'inside'); await settledReveal(page, config.frame);
-    const frame = page.locator(config.frame), art = frame.locator(config.art).first(), controls = page.locator(config.section).locator(config.controls);
+    const panel = await openShowcase(page, config.section), controls = panel.locator(config.controls);
     const target = controls.last();
-    // Expanded evidence may need native scrolling to bring its artwork into view.
-    // Compare document coordinates so that scroll itself is not mistaken for tilt.
-    const controlBox = node => { const box = node.getBoundingClientRect(); return { x: box.x + scrollX, y: box.y + scrollY, width: box.width, height: box.height }; };
-    const before = await target.evaluate(controlBox);
-    await art.hover();
-    await waitData(page, config.frame, 'preview-active', 'true');
-    await page.waitForFunction(selector => document.querySelector(selector)?.hasAttribute('data-motion-art'), `${config.frame} ${config.art}`);
-    const visual = await art.evaluate(node => ({ transform: node.style.transform, pulses: node.getAnimations().filter(animation => animation.effect.getKeyframes().some(frame => frame.filter)).length }));
-    assert.match(visual.transform, /scale\(1\.035\)/);
-    assert.ok(visual.pulses > 0, 'hover includes the bounded blur pulse');
-    const after = await target.evaluate(controlBox);
-    assert.ok(['x', 'y', 'width', 'height'].every(key => Math.abs(before[key] - after[key]) < 1), `actual controls do not tilt, zoom or move in the document: ${JSON.stringify({ before, after })}`);
-    await capture(page, `${config.name}-desktop-art-hover`);
+    const box = node => { const bounds = node.getBoundingClientRect(); return { x: bounds.x + scrollX, y: bounds.y + scrollY, width: bounds.width, height: bounds.height }; };
+    await target.scrollIntoViewIfNeeded(); await frames(page, 6);
+    const before = await target.evaluate(box);
+    await target.hover(); await frames(page, 6);
+    const after = await target.evaluate(box);
+    assert.ok(Object.keys(before).every(key => Math.abs(before[key] - after[key]) < 1), 'interactive controls retain their document hit geometry');
     await target.click();
     assert.equal(await target.getAttribute('aria-pressed'), 'true', 'one click selects the real control');
-    await waitData(page, config.frame, 'preview-active', 'false');
-    await assertResetArtwork(page, `${config.frame} ${config.art}`);
     const selected = await selectedValue(page, config);
-    await neutralFocus(page); await neutralPointer(page);
-    await place(page, config.frame, 'below'); await waitData(page, config.frame, 'reveal-state', 'visible');
-    await place(page, config.frame, 'inside');
-    assert.equal(await frame.locator('.pixel-reveal').count(), 0, 'used demos stay clear when revisited');
-    await controls.first().focus();
-    assert.equal(await frame.getAttribute('data-reveal-state'), 'visible', 'focus finishes the tiled entrance');
-    assert.equal(await frame.locator('.pixel-reveal').count(), 0);
-    assert.equal(await selectedValue(page, config), selected, 'scroll replay preserves current demo selection');
-    await page.keyboard.press('Enter');
-    assert.equal(await controls.first().getAttribute('aria-pressed'), 'true', 'first keyboard action selects the real control');
-    await art.hover();
-    assert.notEqual(await frame.getAttribute('data-preview-active'), 'true', 'focused controls keep artwork still');
-    await neutralPointer(page); await art.hover();
-    assert.notEqual(await frame.getAttribute('data-preview-active'), 'true', 'leaving and re-entering cannot resume tilt while a control still has focus');
-    await assertResetArtwork(page, `${config.frame} ${config.art}`);
+    await closeShowcase(page, config.section); await openShowcase(page, config.section);
+    assert.equal(await selectedValue(page, config), selected, 'returning to a demo keeps its existing selection');
+    await controls.first().focus(); await page.keyboard.press('Enter');
+    assert.equal(await controls.first().getAttribute('aria-pressed'), 'true');
+    assert.equal(await panel.locator('.pixel-reveal').count(), 0, 'full live demos have no decorative entrance over their controls');
+    await capture(page, `${config.name}-desktop-demo-controls`);
   });
 
   check(`${config.name}: live reduced motion settles active effects and keeps re-entry static`, async t => {
@@ -379,19 +305,16 @@ for (const config of audiences) {
     assert.equal(await page.locator('.marketing-cursor').getAttribute('data-visible'), 'false');
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await neutralPointer(page); await neutralFocus(page);
-    // Restoring motion settles an already-outside host. Rearm through a real
-    // enter/exit cycle, rather than assuming a viewport observer fires twice.
-    await place(page, config.frame, 'inside'); await settledReveal(page, config.frame);
-    await place(page, config.frame, 'below'); await waitData(page, config.frame, 'reveal-state', 'waiting');
-    await place(page, config.frame, 'inside'); await waitData(page, config.frame, 'reveal-state', 'entering');
+    await place(page, config.frame, 'inside');
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await settledReveal(page, config.frame);
-    assert.equal(await page.locator('.pixel-reveal').count(), 0);
-    await page.locator(config.frame).locator(config.art).first().hover();
-    assert.notEqual(await page.locator(config.frame).getAttribute('data-preview-active'), 'true');
+    await page.waitForFunction(() => document.querySelector('[data-showcase-gallery]').dataset.showcaseMotion === 'static');
+    assert.equal(await page.locator(config.frame).getAttribute('data-showcase-renderer'), 'static');
+    const image = page.locator(config.frame).locator('img[data-showcase-image]');
+    assert.equal(await image.evaluate(node => Number(getComputedStyle(node).opacity)), 1);
+    await image.hover();
     for (const position of ['below', 'inside', 'above', 'inside']) await place(page, config.frame, position);
+    assert.equal(await page.locator('[data-showcase-overlay]').evaluate(node => getComputedStyle(node).visibility), 'hidden');
     assert.equal(await page.locator('.pixel-reveal').count(), 0);
-    assert.equal(await page.locator(config.frame).getAttribute('data-reveal-state'), 'visible');
     assert.equal(await page.locator(config.heading).evaluate(node => node.getAnimations().length), 0);
     await capture(page, `${config.name}-reduced-motion-detail`);
   });
@@ -404,8 +327,8 @@ for (const config of audiences) {
     await page.waitForURL(url => url.hash === (config.name === 'players' ? '#tests' : '#club'));
     assert.equal(await page.locator('.marketing-cursor').getAttribute('data-visible'), 'false');
     assert.equal(await page.locator('.interaction-text[data-scrambling="true"]').count(), 0);
-    if (config.name === 'coaches') await expandDemo(page, config.section);
-    const controls = page.locator(config.section).locator(config.controls);
+    const panel = await openShowcase(page, config.section);
+    const controls = panel.locator(config.controls);
     await controls.last().tap();
     assert.equal(await controls.last().getAttribute('aria-pressed'), 'true');
     assert.notEqual(await page.locator(config.frame).getAttribute('data-preview-active'), 'true');
@@ -418,8 +341,9 @@ for (const config of audiences) {
     await readPrecedingChapters(page);
     await place(page, '.marketing-footer', 'inside');
     const footerEntry = await page.locator('.marketing-footer').evaluate(footer => ({ top: footer.getBoundingClientRect().top, absoluteTop: footer.getBoundingClientRect().top + scrollY, scroll: scrollY, documentHeight: document.documentElement.scrollHeight }));
-    await waitData(page, '.marketing-footer', 'footer-state', 'in');
-    try { await page.waitForFunction(() => {
+    try {
+      await waitData(page, '.marketing-footer', 'footer-state', 'in');
+      await page.waitForFunction(() => {
       const footer = document.querySelector('.marketing-footer');
       return Number(getComputedStyle(footer.querySelector('.marketing-footer-invitation')).opacity) >= .99
         && !footer.getAnimations({ subtree: true }).some(animation => animation.playState === 'running');
@@ -498,6 +422,7 @@ check('Coaches: centered preview cursor stays inert and the first click follows 
 check('technique joint hit areas stay stationary throughout hover, pointer down and activation', async t => {
   const { page } = await fixture(t);
   await visit(page, '/');
+  await openShowcase(page, 'technique');
   await page.locator('[data-demo="technique"]').scrollIntoViewIfNeeded();
   await waitData(page, '[data-demo="technique"]', 'demo-state', 'ready');
   const demo = page.locator('[data-demo="technique"]');
@@ -566,6 +491,7 @@ check('visibility lifecycle cancels transient decoration and preserves a paused 
   assert.equal(await page.locator('.interaction-text[data-scrambling="true"]').count(), 0);
   assert.equal(await page.locator('.marketing-cursor').getAttribute('data-visible'), 'false');
   await page.evaluate(() => window.__setDetailHidden(false));
+  await openShowcase(page, 'tests');
   await page.locator('[data-demo="movement"]').scrollIntoViewIfNeeded();
   await waitData(page, '[data-demo="movement"]', 'demo-state', 'ready');
   const pause = page.getByRole('button', { name: 'Pause pose playback', exact: true });
@@ -576,6 +502,7 @@ check('visibility lifecycle cancels transient decoration and preserves a paused 
   await page.evaluate(() => window.__setDetailHidden(true)); await frames(page, 6);
   assert.equal(await page.locator('#poseScrubber').inputValue(), original);
   await page.evaluate(() => window.__setDetailHidden(false));
+  await openShowcase(page, 'tests');
   await page.locator('[data-demo="movement"]').scrollIntoViewIfNeeded();
   await frames(page, 6);
   assert.equal(await page.locator('#poseScrubber').inputValue(), original, 'return never resumes explicitly paused playback');

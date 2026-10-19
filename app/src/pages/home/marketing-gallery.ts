@@ -3,7 +3,7 @@ const SCROLL_CONTROL = "input,textarea,select,button,[role=slider],[role=tab],[c
 
 /** Keep native fragment/history landings stable as mounted chapters finish loading. */
 export function attachMarketingGalleryMotion(node: HTMLElement) {
-  const cards = Array.from(node.querySelectorAll<HTMLElement>(":scope > section"));
+  const cards = Array.from(node.querySelectorAll<HTMLElement>(node.hasAttribute("data-showcase-gallery") ? "[data-showcase-chapter], [data-showcase-panel]" : ":scope > section"));
   let frame = 0, disposed = false;
   let navigationLocked = Boolean(location.hash), navigationScrolling = navigationLocked;
   let navigationTimer = 0, pendingFragmentShift = 0;
@@ -17,7 +17,10 @@ export function attachMarketingGalleryMotion(node: HTMLElement) {
   const hashTarget = () => {
     if (!location.hash) return null;
     try {
-      const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      let target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      if (target?.dataset.showcaseDemoAlias && node.dataset.showcaseEnhanced) {
+        target = document.getElementById(`demo-panel-${target.dataset.showcaseDemoAlias}`) || target;
+      }
       return target && node.contains(target) ? target : null;
     } catch { return null; }
   };

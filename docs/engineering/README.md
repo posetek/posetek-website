@@ -1,5 +1,10 @@
 # PoseTek engineering handbook
 
+Unpublished candidate: [public-site showcase depth](../PUBLIC_SITE_SHOWCASE_DEPTH.md)
+documents the paired preview gallery, retained full-size demos, artwork provenance
+and worker lifecycle. Exact-candidate verification and hosted acceptance are
+pending; this does not change the production record below.
+
 Current production: [public-site release](../PUBLIC_SITE_REVAMP_RELEASE.md) and
 [verified receipt](../../deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json).
 

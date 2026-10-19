@@ -5,6 +5,15 @@ const DemoContext = createContext({ expanded: true, managed: false, expand: () =
 /** Outside marketing, existing demonstrations retain their complete presentation. */
 export function useDemoDisclosure() { return useContext(DemoContext); }
 
+/** Full, retained showcase panel; its owner controls visibility and activity. */
+export function DemoPanelContent({ children, kind, expanded }: { children: ReactNode; kind: string; expanded: boolean }) {
+  return <DemoContext.Provider value={{ expanded, managed: true, expand: () => {} }}>
+    <div className={`demo-disclosure demo-disclosure-${kind}`} data-demo-expanded={expanded}>
+      <div className="demo-disclosure-content">{children}</div>
+    </div>
+  </DemoContext.Provider>;
+}
+
 /** One mounted demo, with optional detail revealed in the normal document flow. */
 export function DemoDisclosure({ children, kind, label, expandSignal = 0 }: { children: ReactNode; kind: string; label: string; expandSignal?: number }) {
   const [expanded, setExpanded] = useState(false);
