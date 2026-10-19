@@ -1,12 +1,16 @@
-# Public-site showcase depth — unpublished candidate
+# Public-site showcase depth — implementation and candidate evidence
 
-This follow-up replaces the public pages' compact live-demo cards with original
-4:3 preview artwork and explicitly opened, full-size inline demonstrations. It
-is a source candidate, **not a production release**. The [October 18 public-site
-release](PUBLIC_SITE_REVAMP_RELEASE.md) remains the production record. The exact candidate is available at the
-[immutable hosted preview](https://6ad58598033b1b6ba8b4d6c2--posetek.netlify.app).
-Its [receipt](../deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json) distinguishes completed checks from production acceptance;
-earlier release results do not verify this change.
+This implementation replaces compact live-demo cards with original 4:3 preview
+artwork and explicitly opened, full-size inline demonstrations. The accepted
+candidate was promoted unchanged on October 18, 2026 at 20:37:19 PDT. Read the
+[current production release](PUBLIC_SITE_SHOWCASE_RELEASE.md) and
+[production receipt](../deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
+
+The details and candidate checklist below retain the pre-publication evidence,
+including its timing qualifications. Their pending production items describe that
+historical checkpoint; the production receipt establishes subsequent publication,
+live checks and baseline reconciliation. The [immutable accepted artifact](https://6ad58598033b1b6ba8b4d6c2--posetek.netlify.app)
+remains available. Earlier release results do not verify this change.
 
 The scope is Players and Coaches marketing only. Existing public copy, sample
 data, recordings, booking/enquiry/sign-in destinations and chapter sequence are
@@ -232,7 +236,7 @@ tested origin, optional Google font GET requests, and no WebSockets or writes.
 Production origin support does not authorize promoting or testing a different
 candidate. No build should run while evidence is being captured.
 
-## Candidate receipt — unpublished
+## Historical candidate receipt — before promotion
 
 | Required record | Status |
 | --- | --- |

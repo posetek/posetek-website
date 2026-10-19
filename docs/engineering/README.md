@@ -1,14 +1,15 @@
 # PoseTek engineering handbook
 
-Unpublished candidate: [public-site showcase depth](../PUBLIC_SITE_SHOWCASE_DEPTH.md)
-documents the paired preview gallery, retained full-size demos, artwork provenance
-and worker lifecycle. [The frozen candidate receipt](../../deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json)
-records 91 local and 91 hosted functional checks, timing qualifications and exact
-preservation of all 2,001 protected files. Production promotion remains pending
-owner acceptance; this does not change the production record below.
+Current production: [showcase refinement release](../PUBLIC_SITE_SHOWCASE_RELEASE.md)
+and [verified receipt](../../deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
+The exact accepted deploy `6ad58598033b1b6ba8b4d6c2` is live; all 2,001 prior
+protected files remain exact and the reconciled baseline protects 2,106 files.
+Live checks and their orientation-rerun qualification are recorded in the receipt.
 
-Current production: [public-site release](../PUBLIC_SITE_REVAMP_RELEASE.md) and
-[verified receipt](../../deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json).
+Implementation and REA evidence: [showcase depth](../PUBLIC_SITE_SHOWCASE_DEPTH.md).
+The [candidate receipt](../../deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json) remains
+a pre-publication checkpoint. The [preceding public-site release](../PUBLIC_SITE_REVAMP_RELEASE.md)
+and [its receipt](../../deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json) are historical.
 
 Public-site implementation history: [interaction polish](../PUBLIC_SITE_INTERACTION_POLISH.md),
 continuing [first interaction and editorial pacing](../PUBLIC_SITE_FIRST_INTERACTION.md),

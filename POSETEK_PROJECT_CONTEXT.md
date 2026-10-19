@@ -1,17 +1,28 @@
 # PoseTek website project context
 
-Unpublished candidate: [public-site showcase depth](docs/PUBLIC_SITE_SHOWCASE_DEPTH.md)
-adds original 4:3 previews, retained full-size inline demos and worker-rendered
-gallery depth. The [immutable preview](https://6ad58598033b1b6ba8b4d6c2--posetek.netlify.app)
-passed 91 functional checks locally and 91 hosted, with all 2,001 protected files
-unchanged. [The candidate receipt](deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json)
-records timing results, retained diagnostics and device limits. Production
-promotion and baseline reconciliation await acceptance of that exact candidate;
-the production record below remains authoritative.
+## Current showcase refinement release (October 18, 2026)
 
-## Current public-site release (October 18, 2026)
+The accepted Players/Coaches showcase refinement is live at [posetek.net](https://posetek.net).
+Deploy `6ad58598033b1b6ba8b4d6c2` was promoted unchanged at 20:37:19 PDT from runtime
+`785da39a9e65927016066254a611906b0bf0b4fb`. All 2,108 artifact files match production;
+all 2,001 prior protected files remain exact, including application, feedback and
+coach enrollment. The reconciled baseline protects 2,106 files.
 
-The accepted Players/Coaches revamp is live at [posetek.net](https://posetek.net).
+Live acceptance covers 91 unique public checks across the initial runs and an
+unchanged orientation and closing reruns, plus four headless WebKit support checks.
+Initial responsive-image and decorative-fetch cancellations are retained and disclosed.
+Candidate hardware timing and its qualifications remain separate; physical-phone
+acceptance is not claimed. No backend, authentication or persisted-data changes
+were published. Approved application policy/support bytes and native/content holds
+remain preserved. Read the [showcase release handoff](docs/PUBLIC_SITE_SHOWCASE_RELEASE.md)
+and [production receipt](deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
+Source integration retains `[skip netlify]`; future unmarked main pushes still
+use the existing automatic publishing configuration.
+
+
+## Preceding public-site release (October 18, 2026)
+
+The initial Players/Coaches revamp was published before the showcase refinement above.
 Deploy `6ad536a9103351c79863f77f` was promoted unchanged at 14:42:52 PDT from
 runtime `9fa587ac341c993023ee0174b7bfe1e96a44d247`. All 2,003 artifact files match
 production; all 1,985 previous protected files remain byte-identical, including
