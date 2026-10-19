@@ -41,6 +41,7 @@
   .showcase-preview:focus-visible, .showcase-action:focus-visible, .showcase-panel button:focus-visible { outline: 2px solid #315e31; outline-offset: 6px; }
   .showcase-panel { grid-column: 1 / -1; grid-row: 2; min-width: 0; margin-top: 40px; padding: clamp(16px, 3vw, 40px); border: 1px solid #c8d1c7; background: #e4e9df; scroll-margin-top: 110px; position: relative; z-index: 2; }
   .showcase-panel[hidden] { display: none !important; }
+  .showcase-panel-anchor { position: absolute; top: 0; left: 0; scroll-margin-top: 110px; }
   .showcase-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
   .showcase-panel-header .eyebrow { font-size: 10px; margin: 0 0 8px; }
   .showcase-panel-header h3 { font-size: clamp(24px, 3vw, 38px); font-weight: 400; letter-spacing: -.035em; margin: 0; }

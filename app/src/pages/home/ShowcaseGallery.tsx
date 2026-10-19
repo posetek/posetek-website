@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { attachMarketingGalleryMotion } from "./marketing-gallery";
 import { MarketingActivityContext } from "./marketing-activity";
 import { DemoPanelContent } from "./DemoDisclosure";
@@ -46,14 +47,13 @@ export function ShowcaseGallery({ children }: { children: ReactNode }) {
     const node = host.current;
     if (!node) return;
     setEnhanced(true);
-    const detachPosition = attachMarketingGalleryMotion(node);
     let disposed = false, detachMotion: (() => void) | undefined;
     // A failed decorative import never takes down the document or its demos.
     void import("./marketing-showcase-motion").then(module => {
       if (!disposed) detachMotion = module.attachMarketingShowcaseMotion(node);
     }).catch(() => { if (!disposed) node.dataset.showcaseMotion = "failed"; });
     let hashFrame = 0;
-    const revealHash = () => {
+    const revealHash = (initial = false) => {
       cancelAnimationFrame(hashFrame);
       let id = "";
       try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
@@ -62,15 +62,24 @@ export function ShowcaseGallery({ children }: { children: ReactNode }) {
       const owner = target?.closest<HTMLElement>("[data-showcase-panel]") || Array.from(node.querySelectorAll<HTMLElement>("[data-showcase-panel]")).find(panel => panel.dataset.demoAnchors?.split(" ").includes(id));
       if (!owner) return;
       open(owner.dataset.showcasePanel!, { focus: false, scroll: false });
+      if (!initial) return;
       hashFrame = requestAnimationFrame(() => {
         const destination = owner.dataset.demoAnchors?.split(" ").includes(id) ? owner : document.getElementById(id);
         destination?.scrollIntoView({ block: "start", behavior: "instant" });
       });
     };
-    revealHash();
-    window.addEventListener("hashchange", revealHash);
-    window.addEventListener("popstate", revealHash);
-    return () => { disposed = true; cancelAnimationFrame(hashFrame); detachPosition(); detachMotion?.(); window.removeEventListener("hashchange", revealHash); window.removeEventListener("popstate", revealHash); };
+    // A fragment navigation fires popstate before native scroll restoration.
+    // Expose the real alias synchronously so the browser can land or restore
+    // its reading offset against the correct panel height. Do not scroll here.
+    const restoreHistory = () => { flushSync(() => revealHash()); };
+    const hashChanged = () => { revealHash(); };
+    revealHash(true);
+    window.addEventListener("hashchange", hashChanged);
+    window.addEventListener("popstate", restoreHistory);
+    // Register the height stabilizer after owner restoration, so its history
+    // snapshot measures the newly visible slot rather than a hidden zero box.
+    const detachPosition = attachMarketingGalleryMotion(node);
+    return () => { disposed = true; cancelAnimationFrame(hashFrame); detachPosition(); detachMotion?.(); window.removeEventListener("hashchange", hashChanged); window.removeEventListener("popstate", restoreHistory); };
   }, [open]);
 
   return <ShowcaseContext.Provider value={{ active, enhanced, open, close }}>
@@ -111,7 +120,6 @@ export function ShowcaseChapter({ id, titleId, number, label, title, description
   return <>
     <section id={id} className="showcase-chapter" data-showcase-chapter={id} aria-labelledby={titleId}>
       {aliases.map(alias => <span key={alias} id={alias} className="section-anchor" />)}
-      {demoAnchors.map(alias => <span key={alias} id={alias} className="section-anchor" data-showcase-demo-alias={id} />)}
       {action ? <a className="showcase-preview" href={action.href} aria-label={action.label}>{visual}</a>
         : <button className="showcase-preview" type="button" disabled={!enhanced} data-showcase-open={id} aria-label={`Explore ${label.toLowerCase()} demo`} aria-controls={`demo-panel-${id}`} aria-expanded={expanded} onClick={event => expanded ? close(id) : open(id, { opener: event.currentTarget })}>{visual}</button>}
       <div className="showcase-caption">
@@ -126,6 +134,7 @@ export function ShowcaseChapter({ id, titleId, number, label, title, description
       </div>
     </section>
     {!action && <div ref={panel} id={`demo-panel-${id}`} className="showcase-panel" data-showcase-panel={id} data-demo-anchors={demoAnchors.join(" ")} hidden={!expanded} inert={!expanded} role="region" aria-labelledby={`demo-heading-${id}`}>
+      {demoAnchors.map(alias => <span key={alias} id={alias} className="section-anchor showcase-panel-anchor" data-showcase-demo-alias={id} />)}
       <div className="showcase-panel-header"><div><span className="eyebrow">{number} / Interactive demo</span><h3 id={`demo-heading-${id}`} data-showcase-panel-title="" tabIndex={-1}>{label}</h3></div><button type="button" data-showcase-close={id} onClick={() => close(id)}>Close demo <span aria-hidden="true">×</span></button></div>
       <MarketingActivityContext.Provider value={expanded}>
         <DemoPanelContent kind={kind} expanded={expanded}>{(mounted || expanded) && children}</DemoPanelContent>

@@ -440,7 +440,7 @@ for (const config of audiences) check(`${config.name}: preview hover feedback le
   assert.equal(await panel.isVisible(), true, 'restored preview action supports immediate keyboard reopening');
 });
 
-check('Players: legacy movement alias opens its real demo and remains usable after reload and history', async t => {
+check('Players: legacy movement alias opens its real demo on initial deep link and reload', async t => {
   const { page } = await fixture(t, { reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
   await visit(page, '/#how-it-works');
   const panel = page.locator(panelSelector('tests'));
@@ -452,11 +452,104 @@ check('Players: legacy movement alias opens its real demo and remains usable aft
     assert.equal(await page.locator('#how-it-works').count(), 1);
   };
   await assertLanding();
-  await page.locator('.chapter-nav a[href="#profile"]').click(); await page.waitForURL(url => url.hash === '#profile');
-  await page.goBack(); await page.waitForURL(url => url.hash === '#how-it-works'); await stableScroll(page); await assertLanding();
   await page.reload({ waitUntil: 'domcontentloaded' });
   await panel.getByRole('slider', { name: 'Pose playback position' }).waitFor({ state: 'visible' });
   await stableScroll(page); await assertLanding();
+});
+
+check('Players: legacy alias history follows native browser restoration without an application scroll override', async t => {
+  const control = await fixture(t, { reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
+  await control.context.route(origin + '/__acceptance-native-history.html', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head><style>body{margin:0;height:4000px}nav{position:fixed;top:140px;left:16px;z-index:2;background:white;padding:16px}a{display:block;padding:12px}section{position:absolute;left:0;height:200px;width:100%;scroll-margin-top:110px}#first{top:1000px}#second{top:2200px}</style></head><body><nav><a href="#first">First</a><a href="#second">Second</a></nav><section id="first">First section</section><section id="second">Second section</section></body></html>' }));
+  await control.page.goto(origin + '/__acceptance-native-history.html');
+  await control.page.locator('a[href="#first"]').click(); await stableScroll(control.page);
+  const firstCanonical = await control.page.locator('#first').evaluate(node => node.getBoundingClientRect().top);
+  await control.page.mouse.move(360, 800); await control.page.mouse.wheel(0, 200); await stableScroll(control.page);
+  const firstReading = await control.page.locator('#first').evaluate(node => node.getBoundingClientRect().top);
+  await control.page.locator('a[href="#second"]').click(); await stableScroll(control.page);
+  await control.page.mouse.wheel(0, 120); await stableScroll(control.page);
+  const secondReading = await control.page.locator('#second').evaluate(node => node.getBoundingClientRect().top);
+  await control.page.goBack(); await control.page.waitForURL(url => url.hash === '#first'); await stableScroll(control.page);
+  const firstRestored = await control.page.locator('#first').evaluate(node => node.getBoundingClientRect().top);
+  await control.page.goForward(); await control.page.waitForURL(url => url.hash === '#second'); await stableScroll(control.page);
+  const secondRestored = await control.page.locator('#second').evaluate(node => node.getBoundingClientRect().top);
+  assert.ok(Math.abs(firstRestored - firstCanonical) <= 2, 'plain HTML confirms Chromium canonically re-lands the first fragment on Back');
+  assert.ok(Math.abs(secondRestored - secondReading) <= 2, 'plain HTML confirms Forward retains the later reading offset');
+  const { page } = await fixture(t, { reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
+  await visit(page, '/');
+  // Match the plain browser behavior above. Keep browser restoration native;
+  // the application must not schedule its own canonical scroll on traversal.
+  await page.evaluate(() => {
+    const links = document.createElement('nav'); links.dataset.acceptanceHistoryLinks = '';
+    Object.assign(links.style, { position: 'fixed', top: '140px', left: '16px', zIndex: '9999', padding: '16px', background: '#fff', color: '#111' });
+    for (const [hash, label] of [['how-it-works', 'Acceptance movement alias'], ['profile', 'Acceptance profile']]) {
+      const link = document.createElement('a'); link.href = '#' + hash; link.textContent = label; link.style.display = 'block'; link.style.padding = '12px'; links.append(link);
+    }
+    document.body.append(links);
+  });
+  await page.locator('[data-acceptance-history-links] a[href="#how-it-works"]').click();
+  await page.waitForURL(url => url.hash === '#how-it-works');
+  const panel = page.locator(panelSelector('tests'));
+  await panel.getByRole('slider', { name: 'Pose playback position' }).waitFor({ state: 'visible' });
+  await stableScroll(page);
+  await page.mouse.move(360, 800); await page.mouse.wheel(0, 200); await stableScroll(page);
+  const aliasReadingTop = await panel.evaluate(node => node.getBoundingClientRect().top);
+  assert.ok(aliasReadingTop < 0, 'the legacy entry has a real reading offset beyond its canonical landing');
+  // Fixed fixture anchors avoid moving an offscreen navigation link into view
+  // and exercise the browser's native user-activated fragment history.
+  await page.locator('[data-acceptance-history-links] a[href="#profile"]').click();
+  await page.waitForURL(url => url.hash === '#profile'); await anchorSettled(page, 'profile');
+  await page.mouse.wheel(0, 120); await stableScroll(page);
+  const profileReadingTop = await page.locator('#profile').evaluate(node => node.getBoundingClientRect().top);
+  await page.evaluate(() => {
+    window.__acceptanceHistoryScrolls = [];
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (...args) { window.__acceptanceHistoryScrolls.push({ id: this.id, args }); return original.apply(this, args); };
+  });
+  await page.goBack(); await page.waitForURL(url => url.hash === '#how-it-works'); await stableScroll(page);
+  assert.equal(await panel.isVisible(), true, 'Back reopens the alias owner before native position restoration');
+  const restoredAliasTop = await panel.evaluate(node => node.getBoundingClientRect().top);
+  assert.ok(restoredAliasTop >= 74 && restoredAliasTop < 200, `Back has the same valid canonical alias landing as the plain browser control: ${JSON.stringify({ aliasReadingTop, restoredAliasTop })}`);
+  assert.deepEqual(await page.evaluate(() => window.__acceptanceHistoryScrolls), [], 'Back causes no application scrollIntoView override');
+  await page.goForward(); await page.waitForURL(url => url.hash === '#profile'); await stableScroll(page);
+  const restoredProfileTop = await page.locator('#profile').evaluate(node => node.getBoundingClientRect().top);
+  assert.ok(Math.abs(restoredProfileTop - profileReadingTop) <= 2, `Forward preserves the profile reading offset: ${JSON.stringify({ profileReadingTop, restoredProfileTop })}`);
+  assert.deepEqual(await page.evaluate(() => window.__acceptanceHistoryScrolls), [], 'Forward causes no application scrollIntoView override');
+  evidence.observations.push({ check: t.name, plainHtmlControl: { firstCanonical, firstReading, firstRestored, secondReading, secondRestored }, aliasReadingTop, restoredAliasTop, profileReadingTop, restoredProfileTop, applicationScrollIntoViewCalls: 0, limitation: 'This Chromium build canonically re-lands the first fragment on Back even with static HTML; only the later Forward reading offset is claimed preserved.' });
+});
+
+check('Players: new legacy alias fragments land on their opening panel before a delayed demo resolves', async t => {
+  for (const activation of ['location.hash', 'ordinary native link']) {
+    const { page, context } = await fixture(t, { reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
+    let release, held = 0;
+    const gate = new Promise(done => { release = done; });
+    await context.route(/\/MovementDemo[.-][^/]+\.js$/, async route => { held++; await gate; await route.fallback(); });
+    try {
+      await visit(page, '/#profile'); await anchorSettled(page, 'profile');
+      if (activation === 'ordinary native link') {
+        // A fixture-only ordinary anchor exercises the browser's actual fragment
+        // activation path without invoking the showcase controller directly.
+        await page.evaluate(() => {
+          const link = document.createElement('a'); link.href = '#how-it-works'; link.textContent = 'Acceptance native movement alias';
+          link.dataset.acceptanceNativeAlias = ''; Object.assign(link.style, { position: 'fixed', top: '140px', left: '16px', zIndex: '9999', padding: '16px', background: '#fff', color: '#111' });
+          document.body.append(link);
+        });
+      }
+      const movementRequest = page.waitForRequest(request => /\/MovementDemo[.-][^/]+\.js$/.test(new URL(request.url()).pathname));
+      if (activation === 'location.hash') await page.evaluate(() => { location.hash = 'how-it-works'; });
+      else await page.locator('[data-acceptance-native-alias]').click();
+      await movementRequest; await page.waitForURL(url => url.hash === '#how-it-works');
+      const panel = page.locator(panelSelector('tests')); await panel.waitFor({ state: 'visible' }); await stableScroll(page);
+      const snapshot = () => panel.evaluate(node => ({ top: node.getBoundingClientRect().top, height: node.getBoundingClientRect().height, state: node.querySelector('[data-demo="movement"]')?.dataset.demoState }));
+      const before = await snapshot();
+      assert.ok(held > 0 && before.state === 'pending', 'the actual movement import remains held during native alias landing');
+      assert.ok(before.top >= 74 && before.top < 200, `${activation} lands on the panel while its demo is still pending: ${JSON.stringify(before)}`);
+      release(); await page.waitForFunction(() => document.querySelector('[data-demo="movement"]')?.dataset.demoState === 'ready'); await stableScroll(page);
+      const after = await snapshot();
+      assert.ok(Math.abs(after.top - before.top) <= 2, `${activation} keeps its native landing through late demo growth: ${JSON.stringify({ before, after })}`);
+      assert.equal(await page.locator('#how-it-works').count(), 1);
+      evidence.observations.push({ check: t.name, activation, before, after, heldImports: held });
+    } finally { release(); }
+  }
 });
 
 check('Players: failed decorative lazy import preserves previews, navigation and independent demo loading', async t => {

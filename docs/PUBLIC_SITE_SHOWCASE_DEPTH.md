@@ -44,9 +44,13 @@ independent of decorative rendering.
 Chapter links continue to use native fragments. Ordinary chapter hashes land
 on previews; the existing `#how-it-works` movement alias opens its real demo,
 while `#retest` remains the AI Coach chapter alias. Panel-owned destinations
-open their owner before positioning. The retained gallery controller compensates
-late content growth, preserves relative history offsets and handles initial
-reload restoration. Explicit user scrolling or control interaction relinquishes
+open their owner synchronously before native positioning. Their alias nodes
+remain inside the stable panel slots. The retained gallery controller compensates
+late content growth and handles initial reload restoration. Browser traversal
+owns its scroll position; no extra panel-top scroll runs on Back/Forward.
+In the tested Chromium environment, Back canonicalizes the earlier fragment
+while Forward restores a nonzero reading offset. A plain HTML control with no
+PoseTek code reproduces this behavior; nonzero Back restoration is not claimed. Explicit user scrolling or control interaction relinquishes
 that positioning ownership. Opening/closing a demo does not manufacture a new
 route or replace browser history.
 
