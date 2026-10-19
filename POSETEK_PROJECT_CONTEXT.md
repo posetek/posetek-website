@@ -2,7 +2,11 @@
 
 Unpublished candidate: [public-site showcase depth](docs/PUBLIC_SITE_SHOWCASE_DEPTH.md)
 adds original 4:3 previews, retained full-size inline demos and worker-rendered
-gallery depth. Exact-candidate verification and the hosted receipt are pending;
+gallery depth. The [immutable preview](https://6ad58598033b1b6ba8b4d6c2--posetek.netlify.app)
+passed 91 functional checks locally and 91 hosted, with all 2,001 protected files
+unchanged. [The candidate receipt](deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json)
+records timing results, retained diagnostics and device limits. Production
+promotion and baseline reconciliation await acceptance of that exact candidate;
 the production record below remains authoritative.
 
 ## Current public-site release (October 18, 2026)

@@ -2,8 +2,10 @@
 
 Unpublished candidate: [public-site showcase depth](../PUBLIC_SITE_SHOWCASE_DEPTH.md)
 documents the paired preview gallery, retained full-size demos, artwork provenance
-and worker lifecycle. Exact-candidate verification and hosted acceptance are
-pending; this does not change the production record below.
+and worker lifecycle. [The frozen candidate receipt](../../deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json)
+records 91 local and 91 hosted functional checks, timing qualifications and exact
+preservation of all 2,001 protected files. Production promotion remains pending
+owner acceptance; this does not change the production record below.
 
 Current production: [public-site release](../PUBLIC_SITE_REVAMP_RELEASE.md) and
 [verified receipt](../../deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json).

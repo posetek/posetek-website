@@ -106,6 +106,27 @@ async function capture(page, name, fullPage = false) {
   await page.screenshot({ path, fullPage, animations: 'allow' }); evidence.screenshots.push(path);
 }
 
+async function captureRegion(region, name) {
+  const path = resolve(artifacts, name + '.png');
+  // Content-only panel captures exclude fixed chrome; the paired settled
+  // viewport screenshot retains the unmodified page and its navigation.
+  await region.screenshot({ path, animations: 'allow', style: '[data-marketing-header], .skip-link { visibility: hidden !important; }' });
+  evidence.screenshots.push(path);
+  evidence.observations.push({ capture: path, methodology: 'Element-only content capture temporarily hides the fixed marketing header and skip link. The separate settled viewport capture is unmodified.' });
+}
+
+async function settleHero(page) {
+  await settle(page);
+  await page.waitForFunction(() => {
+    const hero = document.querySelector('.hero, .coach-hero');
+    return hero && !hero.getAnimations({ subtree: true }).some(animation => {
+      const timing = animation.effect?.getComputedTiming();
+      return timing && Number.isFinite(timing.iterations) && (animation.playState === 'running' || animation.pending);
+    });
+  });
+  await frames(page, 2);
+}
+
 async function frames(page, count = 4) {
   await page.evaluate(count => new Promise(done => {
     const next = () => --count <= 0 ? done() : requestAnimationFrame(next); requestAnimationFrame(next);
@@ -239,6 +260,8 @@ for (const config of audiences) {
     const initial = await geometry(page); assertFrames(initial);
     evidence.observations.push({ check: t.name, geometry: initial });
     await capture(page, `${config.name}-${width}-hero`);
+    await settleHero(page);
+    await capture(page, `${config.name}-${width}-hero-settled`);
     for (const id of config.chapters) {
       const frame = page.locator(`[data-showcase-frame="${id}"]`);
       await frame.scrollIntoViewIfNeeded(); await settle(page);
@@ -259,7 +282,14 @@ for (const config of audiences) {
         assert.ok(placement.width >= placement.galleryWidth - 4, `full demo spans the story width: ${JSON.stringify(placement)}`);
         assert.ok(placement.top >= (width >= 1024 ? placement.pairChapterBottom : placement.ownBottom) + 12, 'inline demo clears the complete paired desktop captions or its own phone preview');
         if (placement.nextTop !== null) assert.ok(placement.nextTop >= placement.bottom + 12, 'following pair clears the expanded demo');
-        if ([390, 1440].includes(width)) await capture(page, `${config.name}-${width}-${id}-demo`);
+        if ([390, 1440].includes(width)) {
+          await capture(page, `${config.name}-${width}-${id}-demo`);
+          await stableScroll(page);
+          await panel.evaluate(node => scrollTo({ top: node.getBoundingClientRect().top + scrollY - 110, behavior: 'instant' }));
+          await stableScroll(page); await settle(page);
+          await capture(page, `${config.name}-${width}-${id}-demo-settled`);
+          await captureRegion(panel, `${config.name}-${width}-${id}-demo-full-panel`);
+        }
         await closeShowcase(page, id);
         assertFrames(await geometry(page));
       }
@@ -654,15 +684,24 @@ check('Players: native chapter heading focus keeps depth active and stationary p
 
 check('Players: completed reveals survive real texture eviction and replay only after a complete below-viewport exit', async t => {
   const { page, context } = await fixture(t);
+  const textureRequests = [];
+  page.on('request', request => { if (request.resourceType() === 'fetch' && new URL(request.url()).origin === origin) textureRequests.push(request.url()); });
   await context.addInitScript(() => {
     const NativeWorker = Worker;
     window.__showcaseRevealFrames = [];
     window.Worker = class extends NativeWorker {
       constructor(url, options) {
         super(url, options);
-        if (options?.name === 'posetek-gallery') this.addEventListener('message', event => {
-          if (event.data?.type === 'frame' && event.data.telemetry?.galleryReveals) window.__showcaseRevealFrames.push(structuredClone(event.data.telemetry));
-        });
+        if (options?.name === 'posetek-gallery') {
+          const post = this.postMessage.bind(this);
+          this.postMessage = (message, ...rest) => {
+            if (message?.view?.kind === 'gallery') window.__showcaseActualView = structuredClone(message.view);
+            return post(message, ...rest);
+          };
+          this.addEventListener('message', event => {
+            if (event.data?.type === 'frame' && event.data.telemetry?.galleryReveals) window.__showcaseRevealFrames.push(structuredClone(event.data.telemetry));
+          });
+        }
       }
     };
   });
@@ -671,14 +710,25 @@ check('Players: completed reveals survive real texture eviction and replay only 
   await page.waitForFunction(() => document.querySelector('[data-showcase-frame="tests"]')?.dataset.showcaseReveal === 'complete');
   const epoch = Number(await first.getAttribute('data-showcase-reveal-epoch'));
   assert.ok(await page.evaluate(epoch => window.__showcaseRevealFrames.some(row => row.galleryCards.includes('tests') && row.galleryReveals.some(reveal => reveal.id === 'tests' && reveal.epoch === epoch && reveal.complete)), epoch), 'completion is backed by actual textured worker draw telemetry');
+  const textureSource = await page.evaluate(() => window.__showcaseActualView.cards.find(card => card.id === 'tests').src);
+  const requestsBeforeEviction = textureRequests.filter(url => url === textureSource).length;
+  assert.ok(requestsBeforeEviction > 0, 'the initial texture was fetched by the real worker');
   await page.locator('[data-showcase-frame="technique"]').evaluate(node => scrollTo({ top: node.getBoundingClientRect().top + scrollY - 110, behavior: 'instant' }));
-  await page.waitForFunction(() => window.__showcaseRevealFrames.at(-1)?.galleryCards.includes('technique'));
+  await page.waitForFunction(() => {
+    const view = window.__showcaseActualView, frame = window.__showcaseRevealFrames.at(-1);
+    return frame?.galleryCards.includes('technique') && frame.galleryRevision === view?.revision && !view.cards.some(card => card.id === 'tests');
+  });
   const evicted = await page.evaluate(() => window.__showcaseRevealFrames.at(-1));
-  assert.equal(evicted.galleryReveals.some(reveal => reveal.id === 'tests'), false, 'the earlier texture was genuinely evicted from the worker scene');
+  assert.equal(evicted.galleryReveals.find(reveal => reveal.id === 'tests')?.complete, true, 'reveal lifecycle metadata intentionally survives texture residency');
   assert.equal(await first.getAttribute('data-showcase-reveal-epoch'), String(epoch));
   assert.equal(await first.getAttribute('data-showcase-reveal'), 'complete');
-  await first.evaluate(node => scrollTo({ top: node.getBoundingClientRect().top + scrollY - 110, behavior: 'instant' }));
+  await Promise.all([
+    page.waitForRequest(request => request.resourceType() === 'fetch' && request.url() === textureSource),
+    first.evaluate(node => scrollTo({ top: node.getBoundingClientRect().top + scrollY - 110, behavior: 'instant' })),
+  ]);
   await page.waitForFunction(() => document.querySelector('[data-showcase-frame="tests"]')?.dataset.showcaseRenderer === 'ready');
+  const requestsAfterReturn = textureRequests.filter(url => url === textureSource).length;
+  assert.ok(requestsAfterReturn > requestsBeforeEviction, 'returning required another real texture fetch, proving the completed preview was evicted rather than kept resident');
   assert.equal(await first.getAttribute('data-showcase-reveal'), 'complete', 'return from above does not restart a completed reveal');
   assert.equal(await first.getAttribute('data-showcase-reveal-epoch'), String(epoch));
   await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
@@ -692,7 +742,7 @@ check('Players: completed reveals survive real texture eviction and replay only 
   await capture(page, 'players-rearmed-texture-reveal');
   await page.waitForFunction(() => document.querySelector('[data-showcase-frame="tests"]')?.dataset.showcaseReveal === 'complete');
   assert.ok(await page.evaluate(epoch => window.__showcaseRevealFrames.some(row => row.galleryCards.includes('tests') && row.galleryReveals.some(reveal => reveal.id === 'tests' && reveal.epoch === epoch && reveal.progress > 0 && reveal.progress < 1)), epoch + 1), 'rearmed texture progressed through a genuine intermediate reveal');
-  evidence.observations.push({ check: t.name, firstEpoch: epoch, rearmedEpoch: epoch + 1, evictionCards: evicted.galleryCards });
+  evidence.observations.push({ check: t.name, firstEpoch: epoch, rearmedEpoch: epoch + 1, evictionCards: evicted.galleryCards, requestsBeforeEviction, requestsAfterReturn });
 });
 
 check('Players: opening one demo does not mark unseen preview chapters as already revealed', async t => {

@@ -23,6 +23,7 @@ const cpuRate = Number(process.env.MARKETING_COLD_CPU_RATE || 1);
 assert.ok([1, 4].includes(cpuRate), 'CPU rate is either unthrottled acceptance or explicit 4x diagnostic');
 const lane = process.env.MARKETING_COLD_LANE || 'chromium';
 const disableTileBlur = process.env.MARKETING_COLD_DISABLE_TILE_BLUR === '1';
+const galleryScrollDiagnostic = process.env.MARKETING_COLD_GALLERY_SCROLL_DIAGNOSTIC === '1';
 assert.ok(['chromium', 'webkit'].includes(lane), 'Choose the Chromium timing lane or separate WebKit support lane');
 const allowFonts = process.env.MARKETING_ALLOW_FONTS === '1';
 const iterations = 5;
@@ -30,12 +31,12 @@ const budgets = { inputMaximum: 100, inputMedian: 50, feedback: 200, mainTask: 1
 const audiences = [{ name: 'players', route: '/', entry: 'HomePage', file: 'index.html' }, { name: 'coaches', route: '/coaches', entry: 'CoachesPage', file: 'coaches/index.html' }];
 const devices = [{ name: 'desktop', width: 1440, height: 1000, touch: false }, { name: 'touch', width: 390, height: 844, touch: true }];
 const evidence = {
-  output, previewOrigin, budgets, iterations, lane, cpuRate, traceAll, disableTileBlur,
+  output, previewOrigin, budgets, iterations, lane, headless, cpuRate, traceAll, disableTileBlur, galleryScrollDiagnostic,
   runtime: { platform: process.platform, architecture: process.arch, node: process.version },
-  mode: lane === 'webkit' ? 'WebKit support checks; no timing or physical-mobile acceptance' : headless || cpuRate !== 1 || disableTileBlur ? `diagnostic: ${headless ? 'headless' : 'headful'}, ${cpuRate}x CPU${disableTileBlur ? ', pixel tile blur disabled' : ''}; no hardware acceptance` : 'headful hardware acceptance',
+  mode: lane === 'webkit' ? 'WebKit support checks; no timing or physical-mobile acceptance' : headless || cpuRate !== 1 || disableTileBlur || galleryScrollDiagnostic ? `diagnostic: ${headless ? 'headless' : 'headful'}, ${cpuRate}x CPU${disableTileBlur ? ', pixel tile blur disabled' : ''}${galleryScrollDiagnostic ? ', scroll calls instrumented' : ''}; no hardware acceptance` : 'headful hardware acceptance',
   limitations: ['390px touch is desktop emulation, not physical iOS or Android.', 'Fresh browser HTTP caches and workers; OS/driver shader caches are not cleared.', 'In-page event/RAF observers add measurement overhead; traces independently include compositor work.', 'The optional 4x CPU lane throttles renderer CPU scheduling; it does not emulate a phone GPU, memory, network or operating system.', 'Native background-tab/window minimization did not change document.visibilityState in this host even with focus emulation disabled; visibility lifecycle coverage explicitly injects visibility properties and events, not an actual hidden tab.'],
   networkPolicy: `${productionOrigin ? 'PoseTek production' : previewOrigin ? 'immutable draft' : 'loopback'} origin GET/HEAD${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`,
-  checks: [], runs: [], screenshots: [], traces: [], requests: { writesBlocked: 0, externalBlocked: 0, injectedFailures: 0, unexpectedOriginFailures: 0 },
+  checks: [], runs: [], recoveries: [], screenshots: [], traces: [], requests: { writesBlocked: 0, externalBlocked: 0, injectedFailures: 0, unexpectedOriginFailures: 0 },
 };
 let server, origin;
 
@@ -81,7 +82,10 @@ function deferred() { let resolve; const promise = new Promise(done => { resolve
 
 // Installed before navigation. No hydration/renderer wait and no renderer changes.
 function installObservation() {
-  const data = window.__cold = { inputs: [], feedback: [], frames: [], longTasks: [], longAnimationFrames: [], events: [], workers: [], workerInputs: [], workerMessages: [], mainWebGL: [], states: [], finished: false };
+  const data = window.__cold = { inputs: [], wheelEvents: [], feedback: [], frames: [], longTasks: [], longAnimationFrames: [], events: [], workers: [], workerInputs: [], workerMessages: [], mainWebGL: [], states: [], finished: false };
+  window.addEventListener('wheel', event => {
+    if (!data.finished) data.wheelEvents.push({ time: performance.now(), timestamp: event.timeStamp, deltaX: event.deltaX, deltaY: event.deltaY, deltaMode: event.deltaMode, x: event.clientX, y: event.clientY, trusted: event.isTrusted });
+  }, { passive: true, capture: true });
   performance.mark('posetek-cold-window-start');
   new PerformanceObserver(list => { for (const entry of list.getEntries()) data.longTasks.push({ start: entry.startTime, duration: entry.duration }); }).observe({ entryTypes: ['longtask'] });
   new PerformanceObserver(list => {
@@ -225,7 +229,7 @@ OffscreenCanvas.prototype.getContext = function (...args) {
       const data = await page.evaluate(() => {
         performance.mark('posetek-cold-window-end');
         if (window.__cold) window.__cold.finished = true;
-        return { observation: window.__cold, url: location.href, header: document.querySelector('[data-marketing-header]')?.dataset, hero: document.querySelector('.hero-pose-viewer')?.dataset, footer: document.querySelector('.marketing-footer-mark')?.dataset };
+        return { observation: window.__cold, url: location.href, header: document.querySelector('[data-marketing-header]')?.dataset, hero: document.querySelector('.hero-pose-viewer')?.dataset, footer: document.querySelector('.marketing-footer-mark')?.dataset, galleryScrollDiagnostic: window.__galleryScrollDiagnostic };
       }).catch(error => ({ unavailable: error.message }));
       const row = { name: t.name, partial: true, data }; evidence.runs.push(row);
       await writeFile(resolve(artifacts, slug(t.name) + '.json'), JSON.stringify(row, null, 2));
@@ -760,12 +764,23 @@ check('gallery five-run hardware input median retains the original responsivenes
 check('gallery: actual scroll bend is bounded and settles; menu, focus, offscreen and visibility stop rendering', async t => {
   const device = devices[0], f = await fixture(t, device);
   // Controlled visibility events verify handler behavior, not OS throttling.
-  await f.context.addInitScript(() => {
+  await f.context.addInitScript(diagnostic => {
     window.__galleryHidden = false;
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => window.__galleryHidden });
     Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.__galleryHidden ? 'hidden' : 'visible' });
     window.__setGalleryHidden = hidden => { window.__galleryHidden = hidden; document.dispatchEvent(new Event('visibilitychange')); };
-  });
+    if (diagnostic) {
+      const record = window.__galleryScrollDiagnostic = { calls: [], wheels: [], scrolls: [] };
+      for (const method of ['scrollTo', 'scrollBy']) {
+        const original = window[method].bind(window);
+        window[method] = (...args) => { record.calls.push({ method, args, time: performance.now(), y: scrollY, stack: new Error().stack }); return original(...args); };
+      }
+      const original = Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView = function (...args) { record.calls.push({ method: 'scrollIntoView', id: this.id, args, time: performance.now(), y: scrollY, stack: new Error().stack }); return original.apply(this, args); };
+      window.addEventListener('wheel', event => record.wheels.push({ time: performance.now(), timestamp: event.timeStamp, deltaX: event.deltaX, deltaY: event.deltaY, x: event.clientX, y: event.clientY, trusted: event.isTrusted }), { passive: true });
+      window.addEventListener('scroll', () => record.scrolls.push({ time: performance.now(), y: scrollY }), { passive: true });
+    }
+  }, galleryScrollDiagnostic);
   await visit(f.page, '/#tests'); await galleryReady(f.page);
   await f.page.mouse.move(10, 140);
   await f.page.mouse.wheel(0, 160);
@@ -798,7 +813,7 @@ check('gallery: actual scroll bend is bounded and settles; menu, focus, offscree
   await f.page.locator('[data-showcase-frame="training"]').scrollIntoViewIfNeeded();
   await galleryReady(f.page);
   await f.page.emulateMedia({ reducedMotion: 'reduce' }); await assertGalleryFallback(f.page);
-  const data = await finishRun(t, f, { peakBend: Number(peak), visibility: 'controlled document visibility-event injection' });
+  const data = await finishRun(t, f, { peakBend: Number(peak), visibility: 'controlled document visibility-event injection', galleryScrollDiagnostic: await f.page.evaluate(() => window.__galleryScrollDiagnostic) });
   assert.equal(data.workers.filter(row => row.name === 'posetek-gallery').length, 1, 'lifecycle resumes the retained scene');
   assert.ok(data.workerMessages.filter(row => row.telemetry?.galleryTextures !== undefined).every(row => row.telemetry.galleryTextures <= 4), 'texture residency remains bounded');
   assertLatency(data);
@@ -822,9 +837,16 @@ for (const fault of ['worker-404', 'worker-never-ready', 'worker-context', 'work
     await press(f, device, 'open'); await menuState(f.page, true); await press(f, device, 'close'); await menuState(f.page, false);
     await f.page.locator('[data-showcase-open="tests"]').first().click();
     const panel = f.page.locator('[data-showcase-panel="tests"]'); await panel.waitFor({ state: 'visible' });
-    await panel.getByRole('button', { name: 'Play pose playback', exact: true }).waitFor({ state: 'visible' });
+    await panel.getByRole('button', { name: /^(Play|Pause) pose playback$/ }).waitFor({ state: 'visible' });
+    const recovery = await panel.evaluate(node => ({ demoState: node.querySelector('[data-demo="movement"]')?.dataset.demoState, playbackLabel: node.querySelector('#posePlayButton')?.getAttribute('aria-label'), playing: node.querySelector('#posePlayButton')?.getAttribute('aria-pressed'), slider: node.querySelector('[aria-label="Pose playback position"]')?.value }));
+    evidence.recoveries.push({ check: t.name, fault, ...recovery });
+    // A visible recovered recording can already be autoplaying. Its first scrub
+    // must work from either playback state and explicitly pause at that frame.
     await panel.getByRole('slider', { name: 'Pose playback position' }).fill('10');
     assert.equal(await panel.getByRole('slider', { name: 'Pose playback position' }).inputValue(), '10');
+    const pausedPlayback = panel.getByRole('button', { name: 'Play pose playback', exact: true });
+    await pausedPlayback.waitFor({ state: 'visible' });
+    assert.equal(await pausedPlayback.getAttribute('aria-pressed'), 'false', 'scrubbing pauses the recovered recording');
     const data = await finishRun(t, f, { fault, galleryFallback: fallback });
     assert.deepEqual(data.mainWebGL, []); assertLatency(data);
     await capture(f.page, `gallery-${fault}-working-demo`);
