@@ -51,15 +51,21 @@ export function MarketingJourney({ audience }: { audience: MarketingAudience }) 
     const measure = () => {
       frame = 0;
       let current = 0, nearest = Infinity, nearestVisible = Infinity;
+      // Staggered pairs enter in reading order. A lower, right-hand preview
+      // must not claim the counter while the left-hand introduction is read.
+      const readingLine = Math.min(window.innerHeight * .36, 360);
       chapters.forEach((chapter, index) => {
         const node = document.getElementById(chapter.id);
         if (!node) return;
         // A demo's outer frame exists before its lazy content. Contact has no
         // media, so its section itself provides the same visible-centre fallback.
-        const media = node.querySelector<HTMLElement>("[data-gallery-media],.reveal-frame") || node;
+        const panel = document.querySelector<HTMLElement>(`[data-showcase-panel="${chapter.id}"]:not([hidden])`);
+        const panelBounds = panel?.getBoundingClientRect();
+        const panelInView = panelBounds && panelBounds.top < window.innerHeight / 2 && panelBounds.bottom > window.innerHeight / 2;
+        const media = panelInView ? panel! : node.querySelector<HTMLElement>("[data-gallery-media],.reveal-frame") || node;
         const bounds = media.getBoundingClientRect();
         if (bounds.height <= 0 || bounds.width <= 0) return;
-        const distance = Math.abs(bounds.top + bounds.height / 2 - window.innerHeight / 2);
+        const distance = panelInView ? 0 : Math.abs(bounds.top + bounds.height / 2 - readingLine);
         const visible = bounds.bottom > 74 && bounds.top < window.innerHeight;
         if (visible && distance < nearestVisible) {
           nearestVisible = distance; current = index;

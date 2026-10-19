@@ -4,7 +4,17 @@ export type NavigationPhase = "closed" | "opening" | "open" | "closing";
 export type RendererState = "queued" | "preparing" | "ready" | "paused" | "failed";
 export interface BrandView { kind: "brand"; x: number; y: number; rise: number; }
 export interface HeroView extends PitchView { kind: "hero"; }
-export type RendererView = HeroView | BrandView;
+/** Positions are untransformed document CSS pixels, never interactive hit areas. */
+export interface GalleryCard {
+  id: string; src: string; x: number; y: number; width: number; height: number;
+  hovered: boolean; pointerX: number; pointerY: number; settled: boolean; revealEpoch: number;
+}
+export interface GalleryView {
+  kind: "gallery"; revision: number; scrollRevision: number;
+  width: number; height: number; scrollX: number; scrollY: number;
+  velocity: number; cards: GalleryCard[];
+}
+export type RendererView = HeroView | BrandView | GalleryView;
 export interface RendererSize { width: number; height: number; dpr: number; }
 export type RendererInput =
   | { type: "init"; generation: number; canvas: OffscreenCanvas; size: RendererSize; view: RendererView; active: boolean }
@@ -22,6 +32,17 @@ export interface RendererTelemetry {
   tiltY?: number;
   rise?: number;
   settling?: boolean;
+  galleryRevision?: number;
+  galleryScrollY?: number;
+  galleryScrollX?: number;
+  galleryCards?: string[];
+  galleryFailed?: string[];
+  galleryTextures?: number;
+  galleryReveals?: Array<{ id: string; epoch: number; progress: number; complete: boolean }>;
+  galleryPending?: string[];
+  /** Deliberately aborted texture requests on residency eviction, never asset failures. */
+  galleryCancelled?: string[];
+  bend?: number;
 }
 export type RendererOutput =
   | { type: "ready"; generation: number; frames: number; gpu: string }

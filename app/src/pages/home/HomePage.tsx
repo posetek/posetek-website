@@ -1,17 +1,16 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { MotionConfig } from "motion/react";
-import { MarketingGallery } from "./MarketingGallery";
+import { ShowcaseGallery, ShowcasePair, ShowcaseChapter } from "./ShowcaseGallery";
 import { ScrambleText } from "./MarketingEffects";
 import { useThemeColor } from "../../lib/use-theme-color";
 import { useBodyBackground } from "../../lib/use-body-background";
 import { TestCards } from "./TestCards";
-import { HeadingReveal, MarketingJourney, MarketingCursor, RevealFrame } from "./MarketingJourney";
+import { MarketingJourney, MarketingCursor, RevealFrame } from "./MarketingJourney";
 import { MarketingFooter } from "./MarketingFooter";
 import { LazyHomepageDemo } from "./LazyHomepageDemo";
 import { AthleteProfile } from "./AthleteProfile";
 import { PitchVisual } from "./PitchVisual";
 import { MobileAppPreview } from "./MobileAppPreview";
-import { DemoDisclosure } from "./DemoDisclosure";
 import { injectClarity } from "./clarity";
 import "./magic.css";
 import "./home.scss";
@@ -39,8 +38,6 @@ export default function HomePage() {
 
   const openWorkout = (text: string) => {
     setWorkoutRequest(previous => ({ text, id: previous.id + 1 }));
-    document.getElementById("training")?.scrollIntoView();
-    document.getElementById("training-title")?.focus({ preventScroll: true });
   };
 
   useEffect(() => {
@@ -88,49 +85,35 @@ export default function HomePage() {
         </section>
 
         <MarketingJourney audience="players" />
-        <MarketingGallery>
-        <section className="assessment shell section chapter-feature" id="tests" aria-labelledby="tests-title">
-          <HeadingReveal className="section-heading"><div><p className="eyebrow">01 / Test &amp; review</p><h2 id="tests-title">Six tests. <em>Every rep tells a story.</em></h2></div><p className="section-description">See how you move, control the ball, and strike. Choose a recorded rep to explore.</p></HeadingReveal>
-          <DemoDisclosure kind="movement" label="Recorded movement analysis">
-            <div className="assessment-workspace">
-              <div id="how-it-works" className="assessment-replay"><RevealFrame><LazyHomepageDemo load={loadMovement} demoProps={{ requestedDrill, onDrillChange: setSelectedDrill, hideChoices: true }} forceLoad={!!requestedDrill} kind="movement" label="Recorded movement analysis" /></RevealFrame></div>
-              <TestCards selectedDrill={selectedDrill} onWatch={key => { setSelectedDrill(key); setRequestedDrill({ key }); }} />
-            </div>
-          </DemoDisclosure>
-          <div className="demo-caption"><span>Recorded reps · Six tests · Frame-by-frame playback</span><a className="button-text" href="#profile"><ScrambleText>Put it in perspective</ScrambleText> <Arrow down /></a></div>
-        </section>
-
-        <section className="profile-section section chapter-support" id="profile" aria-labelledby="profile-title">
-          <HeadingReveal className="section-heading profile-copy"><div><p className="eyebrow">02 / Athlete profile</p><h2 id="profile-title">Put performance <em>in perspective.</em></h2></div><p className="section-description">Bring results together, compare benchmarks, and identify what to train next.</p></HeadingReveal>
-          <DemoDisclosure kind="profile" label="Athlete profile"><RevealFrame className="profile-showcase"><AthleteProfile /></RevealFrame></DemoDisclosure>
-          <div className="demo-caption"><span>Five skill areas · Drill-specific results · Progress over time</span><a className="button-text" href="#training"><ScrambleText>Find the next step</ScrambleText> <Arrow down /></a></div>
-        </section>
-
-        <section className="workout-section section chapter-feature" id="training" aria-labelledby="training-title">
-          <HeadingReveal className="section-heading"><div><p className="eyebrow">03 / Workout planner</p><h2 id="training-title" tabIndex={-1}>Turn results into <em>a focused plan.</em></h2></div><p className="section-description">Turn your focus into guided drills that fit your time and energy.</p></HeadingReveal>
-          <DemoDisclosure kind="workout" label="Workout planner" expandSignal={workoutRequest.id}><RevealFrame><LazyHomepageDemo load={loadWorkout} demoProps={{ initialRequest: workoutRequest.text, requestId: workoutRequest.id }} forceLoad={!!workoutRequest.text} kind="workout" label="Interactive workout planner" /></RevealFrame></DemoDisclosure>
-          <div className="demo-caption"><span>Sample workout · Set your focus · Try a guided session</span><a className="button-text" href="#retest"><ScrambleText>Close the loop</ScrambleText> <Arrow down /></a></div>
-        </section>
-
-        <section className="coach-section retest-section shell section chapter-support" id="ai-coach" aria-labelledby="retest-title">
-          <span id="retest" className="section-anchor" />
-          <HeadingReveal className="section-heading"><div><p className="eyebrow">04 / Retest with AI Coach</p><h2 id="retest-title">Train. Retest. <em>See what changes.</em></h2></div><p className="section-description">Repeat the tests. Understand what changed. Choose your next training focus.</p></HeadingReveal>
-          <DemoDisclosure kind="coach" label="AI Coach sample"><RevealFrame><LazyHomepageDemo load={loadCoach} demoProps={{ onOpenWorkout: openWorkout }} kind="coach" label="AI Coach sample conversation" /></RevealFrame></DemoDisclosure>
-          <div className="demo-caption"><span>Sample athlete · Previous and latest results · Your next training focus</span><a className="button-text" href="#technique"><ScrambleText>Look closer at technique</ScrambleText> <Arrow down /></a></div>
-        </section>
-
-        <section className="technique-section shell section chapter-feature" id="technique" aria-labelledby="technique-title">
-          <HeadingReveal className="section-heading"><div><p className="eyebrow">05 / Technique analysis</p><h2 id="technique-title">The rep. The detail. <em>The difference.</em></h2></div><p className="section-description">Pause at key moments. Compare technique. Find a clear coaching focus.</p></HeadingReveal>
-          <DemoDisclosure kind="technique" label="Technique analysis"><RevealFrame><LazyHomepageDemo load={loadTechnique} demoProps={{}} kind="technique" label="Recorded technique analysis" /></RevealFrame></DemoDisclosure>
-          <div className="demo-caption"><span>One kick · One cue at a time · Compare the same moment</span><a className="button-text" href="#mobile-app"><ScrambleText>Take the next step with you</ScrambleText> <Arrow down /></a></div>
-        </section>
-
-        <section className="closing section chapter-support chapter-mobile" id="mobile-app" aria-labelledby="closing-title">
-          <HeadingReveal className="section-heading mobile-closing-copy"><div><p className="eyebrow">06 / The PoseTek mobile app</p><h2 id="closing-title">Your next session. <em>In your pocket.</em></h2></div><p className="section-description">Review your results. Follow your plan. Take your next training step with you.</p></HeadingReveal>
-          <DemoDisclosure kind="mobile" label="Mobile workout preview"><RevealFrame className="mobile-showcase"><MobileAppPreview /></RevealFrame></DemoDisclosure>
-          <div className="demo-caption"><span>Interactive preview · No workout is recorded</span><a className="button-text" href="/bookPerformanceTest.html"><ScrambleText>Establish your baseline</ScrambleText> <Arrow /></a></div>
-        </section>
-        </MarketingGallery>
+        <ShowcaseGallery>
+          <ShowcasePair>
+            <ShowcaseChapter id="tests" titleId="tests-title" number="01" label="Test & review" title={<>Six tests. <em>Every rep tells a story.</em></>} description="See how you move, control the ball, and strike. Choose a recorded rep to explore." artwork="players-testing" kind="movement" caption="Recorded reps · Six tests · Frame-by-frame playback" demoAnchors={["how-it-works"]} footer={<a href="#profile">Put it in perspective ↓</a>}>
+              <div className="assessment-workspace">
+                <div className="assessment-replay"><LazyHomepageDemo load={loadMovement} demoProps={{ requestedDrill, onDrillChange: setSelectedDrill, hideChoices: true }} forceLoad kind="movement" label="Recorded movement analysis" /></div>
+                <TestCards selectedDrill={selectedDrill} onWatch={key => { setSelectedDrill(key); setRequestedDrill({ key }); }} />
+              </div>
+            </ShowcaseChapter>
+            <ShowcaseChapter id="profile" titleId="profile-title" number="02" label="Athlete profile" title={<>Put performance <em>in perspective.</em></>} description="Bring results together, compare benchmarks, and identify what to train next." artwork="players-profile" kind="profile" caption="Five skill areas · Drill-specific results · Progress over time" footer={<a href="#training">Find the next step ↓</a>}>
+              <div className="profile-showcase"><AthleteProfile /></div>
+            </ShowcaseChapter>
+          </ShowcasePair>
+          <ShowcasePair>
+            <ShowcaseChapter id="training" titleId="training-title" number="03" label="Workout planner" title={<>Turn results into <em>a focused plan.</em></>} description="Turn your focus into guided drills that fit your time and energy." artwork="players-training" kind="workout" caption="Sample workout · Set your focus · Try a guided session" requestToken={workoutRequest.id} footer={<a href="#retest">Close the loop ↓</a>}>
+              <LazyHomepageDemo load={loadWorkout} demoProps={{ initialRequest: workoutRequest.text, requestId: workoutRequest.id }} forceLoad kind="workout" label="Interactive workout planner" />
+            </ShowcaseChapter>
+            <ShowcaseChapter id="ai-coach" aliases={["retest"]} titleId="retest-title" number="04" label="Retest with AI Coach" title={<>Train. Retest. <em>See what changes.</em></>} description="Repeat the tests. Understand what changed. Choose your next training focus." artwork="players-coach" kind="coach" caption="Sample athlete · Previous and latest results · Your next training focus" footer={<a href="#technique">Look closer at technique ↓</a>}>
+              <LazyHomepageDemo load={loadCoach} demoProps={{ onOpenWorkout: openWorkout }} forceLoad kind="coach" label="AI Coach sample conversation" />
+            </ShowcaseChapter>
+          </ShowcasePair>
+          <ShowcasePair>
+            <ShowcaseChapter id="technique" titleId="technique-title" number="05" label="Technique analysis" title={<>The rep. The detail. <em>The difference.</em></>} description="Pause at key moments. Compare technique. Find a clear coaching focus." artwork="players-technique" kind="technique" caption="One kick · One cue at a time · Compare the same moment" footer={<a href="#mobile-app">Take the next step with you ↓</a>}>
+              <LazyHomepageDemo load={loadTechnique} demoProps={{}} forceLoad kind="technique" label="Recorded technique analysis" />
+            </ShowcaseChapter>
+            <ShowcaseChapter id="mobile-app" titleId="closing-title" number="06" label="The PoseTek mobile app" title={<>Your next session. <em>In your pocket.</em></>} description="Review your results. Follow your plan. Take your next training step with you." artwork="players-mobile" kind="mobile" caption="Interactive preview · No workout is recorded" footer={<a href="/bookPerformanceTest.html">Establish your baseline ↗</a>}>
+              <div className="mobile-showcase"><MobileAppPreview /></div>
+            </ShowcaseChapter>
+          </ShowcasePair>
+        </ShowcaseGallery>
       </main>
       <MarketingFooter audience="players" />
       <MarketingCursor />

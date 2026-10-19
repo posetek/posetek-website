@@ -178,6 +178,7 @@ async function sample(origin, route, files) {
       title: runtime.title, heading: runtime.heading, hydrated: runtime.hydrated,
       timing: Object.fromEntries(Object.entries(runtime.timing).map(([key, value]) => [key, value === null ? null : round(value)])),
       javascript: aggregateResources(runtime.resources.filter(entry => !workerScriptPattern.test(new URL(entry.name).pathname)), '.js'), css: aggregateResources(runtime.resources, '.css'),
+      images: { count: runtime.resources.filter(entry => /\.(webp|png|jpe?g|svg|avif)$/.test(new URL(entry.name).pathname)).length, encodedBodyBytes: runtime.resources.filter(entry => /\.(webp|png|jpe?g|svg|avif)$/.test(new URL(entry.name).pathname)).reduce((sum, entry) => sum + entry.encodedBodySize, 0) },
       workerScripts: workerScriptAccounting(network.successfulWorkerRequests, runtime.resources, files), workers: runtime.workers,
       localRequestCount: network.requests.length, localRequests: network.requests, completedLocalResponses: network.servedResponses,
       errors, failedLocalRequests: network.failedLocalRequests, blockedExternalRequests: [...blocked.external], attemptedWrites: blocked.writes,
@@ -265,14 +266,44 @@ async function compareContentAssets() {
   const before = await sourceInventory(baselineSource), after = await sourceInventory(candidateSource);
   const derivedPath = 'app/src/pages/home/marketing-renderer/brand-shape.json';
   const derivedAsset = after.find(item => item.path === derivedPath);
-  assert.ok(derivedAsset && !before.some(item => item.path === derivedPath), 'The only added source content file is the derived brand geometry.');
-  const retained = after.filter(item => item.path !== derivedPath);
-  assert.deepEqual(retained, before, 'Existing recorded/sample content, media, fallback visuals and public brand assets must be unchanged; no other new asset is exempt.');
+  assert.ok(derivedAsset, 'Approved dimensional P geometry exists.');
+  const artworkRoot = 'app/src/pages/home/showcase-assets/';
+  const addedArtwork = after.filter(item => item.path.startsWith(artworkRoot));
+  const retained = after.filter(item => !item.path.startsWith(artworkRoot) && (item.path !== derivedPath || before.some(previous => previous.path === derivedPath)));
+  assert.deepEqual(retained, before, 'Existing recorded/sample content, media, fallback visuals and public brand assets must be unchanged.');
+  const provenancePath = artworkRoot + 'provenance.json';
+  const provenance = JSON.parse(await readFile(resolve(candidateSource, provenancePath), 'utf8'));
+  assert.equal(provenance.artworks.length, 10, 'Exactly ten approved showcase compositions.');
+  const expectedPaths = [provenancePath];
+  for (const artwork of provenance.artworks) {
+    for (const file of Object.values(artwork.files)) {
+      assert.ok(file.path.startsWith(artworkRoot) && !file.path.includes('..'), 'Artwork stays within its declared directory.');
+      const bytes = await readFile(resolve(candidateSource, file.path));
+      assert.equal(sha256(bytes), file.sha256, `Artwork provenance hash: ${file.path}`);
+      assert.equal(bytes.length, file.bytes, `Artwork provenance size: ${file.path}`);
+      expectedPaths.push(file.path);
+    }
+    for (const source of artwork.provenance) {
+      assert.ok(!source.source.includes('..'), 'Source paths are repository-relative.');
+      const baseline = await readFile(resolve(baselineSource, source.source));
+      const current = await readFile(resolve(candidateSource, source.source));
+      assert.equal(sha256(current), source.sha256, `Generation source identity: ${source.source}`);
+      if (source.excerpts) {
+        assert.equal(source.source, 'app/src/pages/coaches/CoachesPage.tsx', 'Only the deliberately restyled page uses excerpt preservation.');
+        assert.ok(source.excerpts.length > 0);
+        for (const excerpt of source.excerpts) {
+          assert.ok(excerpt.length > 0 && baseline.toString('utf8').includes(excerpt), 'Approved baseline contains the exact reused excerpt.');
+          assert.ok(current.toString('utf8').includes(excerpt), 'Current source retains the exact reused excerpt.');
+        }
+      } else assert.equal(sha256(baseline), source.sha256, `Unchanged approved baseline source: ${source.source}`);
+    }
+  }
+  assert.deepEqual(addedArtwork.map(item => item.path).sort(), expectedPaths.sort(), 'No undeclared showcase content is exempted from preservation.');
   const derived = JSON.parse(await readFile(resolve(candidateSource, derivedPath), 'utf8'));
   const approved = await readFile(resolve(candidateSource, 'app/astro/public/brand/posetek-p.svg'));
   verifyDerivedBrandShape(derived, approved, sha256);
-  report.contentAssets = { baselineSource, candidateSource, exactFiles: retained.length, bytes: retained.reduce((sum, item) => sum + item.bytes, 0), scope: 'Existing homepage JSON/media/static visuals; public brand/icons; coach-samples.ts. Only the newly derived brand-shape.json is separate; its approved SVG hash and complete contour commands are independently verified.', files: retained, derivedBrandGeometry: { ...derivedAsset, source: derived.source, sourceSha256: derived.sha256, commandCount: derived.commands.length, approvedContourExact: true } };
-  report.checks.push(`${retained.length} existing source content/media/brand files remain byte-identical; new P geometry exactly matches the approved source contour`);
+  report.contentAssets = { baselineSource, candidateSource, exactFiles: retained.length, bytes: retained.reduce((sum, item) => sum + item.bytes, 0), scope: 'Every existing homepage JSON/media/static visual, public brand/icon and coach-samples.ts is exact. The ten declared showcase compositions have complete file and original-source hash verification; the approved P contour is independently verified.', showcaseArtwork: { files: addedArtwork, bytes: addedArtwork.reduce((sum, item) => sum + item.bytes, 0), provenanceSha256: sha256(await readFile(resolve(candidateSource, provenancePath))) }, files: retained, derivedBrandGeometry: { ...derivedAsset, source: derived.source, sourceSha256: derived.sha256, commandCount: derived.commands.length, approvedContourExact: true } };
+  report.checks.push(`${retained.length} existing source content/media/brand files remain byte-identical; P geometry exactly matches the approved source contour; all 30 new artwork files match declared output/source provenance`);
 }
 
 try {
@@ -305,7 +336,7 @@ try {
     for (let index = 0; index < iterations; index++) for (const name of index % 2 ? ['candidate', 'baseline'] : ['baseline', 'candidate']) {
       report.builds[name].routes[route].push(await sample(origins[name], route, inventories[name]));
     }
-    for (const sampleResult of report.builds.candidate.routes[route]) assert.equal(sampleResult.workers.filter(worker => worker.name === 'posetek-brand').length, 0, 'Only the hero is eligible for initial worker rendering.');
+    for (const sampleResult of report.builds.candidate.routes[route]) assert.equal(sampleResult.workers.filter(worker => worker.name === 'posetek-brand').length, 0, 'The footer stays dormant at initial load.');
     const totals = name => {
       const samples = report.builds[name].routes[route];
       return Object.fromEntries([
@@ -315,6 +346,8 @@ try {
         ['workerScriptBodyBytes', median(samples.map(sample => sample.workerScripts.observedBodyBytes))],
         ['workerScriptRequests', median(samples.map(sample => sample.workerScripts.requestCount))],
         ['combinedObservedJavascriptBodyBytes', median(samples.map(sample => sample.javascript.encodedBodyBytes + sample.workerScripts.observedBodyBytes))],
+        ['initialImageBodyBytes', median(samples.map(sample => sample.images.encodedBodyBytes))],
+        ['initialImageRequests', median(samples.map(sample => sample.images.count))],
         ['cssTransferBytes', median(samples.map(sample => sample.css.transferBytes))],
         ['cssEncodedBodyBytes', median(samples.map(sample => sample.css.encodedBodyBytes))],
         ['cssRequests', median(samples.map(sample => sample.css.count))],

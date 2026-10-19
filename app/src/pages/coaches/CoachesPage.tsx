@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { MotionConfig } from "motion/react";
-import { MarketingGallery } from "../home/MarketingGallery";
+import { ShowcaseGallery, ShowcasePair, ShowcaseChapter } from "../home/ShowcaseGallery";
 import { ScrambleText } from "../home/MarketingEffects";
 import { useThemeColor } from "../../lib/use-theme-color";
 import { useBodyBackground } from "../../lib/use-body-background";
-import { HeadingReveal, MarketingJourney, MarketingCursor, RevealFrame } from "../home/MarketingJourney";
+import { MarketingJourney, MarketingCursor, RevealFrame } from "../home/MarketingJourney";
 import { MarketingFooter } from "../home/MarketingFooter";
 import { TEAM_ENQUIRY_HREF } from "../home/marketing-links";
-import { DemoDisclosure } from "../home/DemoDisclosure";
 import { injectClarity } from "../home/clarity";
 import { ClubExplorer } from "./ClubExplorer";
 import { PlayerEvidence } from "./PlayerEvidence";
@@ -67,30 +66,22 @@ export default function CoachesPage() {
         <div className="coach-service-strip"><span><strong>Club-wide</strong> perspective</span><span><strong>Team-by-team</strong> support</span><span><strong>Player-by-player</strong> focus</span></div>
       </section>
       <MarketingJourney audience="coaches" />
-        <MarketingGallery>
-      <section className="section shell coach-club-section chapter-feature" id="club" aria-labelledby="club-title">
-
-        <HeadingReveal className="section-heading"><div><p className="eyebrow">01 / Your club, connected</p><h2 id="club-title">One club. Every team. <em>Each player.</em></h2></div><p className="section-description">Managers see across the club. Coaches stay connected to their teams. Every player keeps their own profile.</p></HeadingReveal>
-        <DemoDisclosure kind="club" label="Club workspace"><RevealFrame><ClubExplorer teamId={teamId} onTeamChange={selectTeam}/></RevealFrame></DemoDisclosure>
-        <div className="coach-section-foot"><span>One team or several. The same connected approach.</span><a className="button-text" href="#players"><ScrambleText>Look at each player</ScrambleText> <CoachArrow down/></a></div>
-      </section>
-      <section className="section coach-evidence-section chapter-support" id="players" aria-labelledby="players-title"><div className="shell">
-        <HeadingReveal className="section-heading"><div><p className="eyebrow">02 / Evidence for every player</p><h2 id="players-title">A shared starting point. <em>Individual priorities.</em></h2></div><p className="section-description">Six tests reveal how players move and perform. Review each profile to find a clear training focus.</p></HeadingReveal>
-        <DemoDisclosure kind="evidence" label="Player evidence"><RevealFrame><PlayerEvidence teamId={teamId} playerId={playerId} onPlayerChange={setPlayerId}/></RevealFrame></DemoDisclosure>
-        <div className="coach-test-strip" aria-label="Six performance tests"><span>THE SIX TESTS</span>{["Sprint","Vertical jump","Broad jump","Dribbling","Change of direction","Shooting"].map(test=><span key={test}>{test}</span>)}</div>
-        <a className="button-text coach-test-link" href="/#tests"><ScrambleText>Explore the testing experience</ScrambleText> <CoachArrow/></a>
-      </div></section>
-      <section className="section shell coach-development-section chapter-feature" id="development" aria-labelledby="development-title">
-
-        <HeadingReveal className="section-heading"><div><p className="eyebrow">03 / From results to the next session</p><h2 id="development-title">Keep development moving. <em>Between every test.</em></h2></div><p className="section-description">PoseTek supports the plan. Coaches see the progress. Players take the next step in the mobile app.</p></HeadingReveal>
-        <DemoDisclosure kind="development" label="Player development"><RevealFrame><DevelopmentJourney key={player.id} player={player} teamName={team.name}/></RevealFrame></DemoDisclosure>
-      </section>
-      <section className="section coach-contact chapter-contact" id="contact" aria-labelledby="contact-title"><div className="shell">
-        <HeadingReveal className="coach-contact-heading"><div><p className="eyebrow">Built around your teams</p><h2 id="contact-title">Let’s plan your team’s next step.</h2></div><p>Tell us about your teams and priorities. We’ll arrange testing and ongoing support around your club.</p></HeadingReveal>
-        <ol className="coach-service-steps"><li><span>01</span><strong>Discuss your teams</strong><p>Your players, your priorities.</p></li><li><span>02</span><strong>Arrange testing</strong><p>A shared starting point.</p></li><li><span>03</span><strong>Agree ongoing support</strong><p>A next step for each team.</p></li></ol>
-        <div className="coach-contact-actions"><a className="button-primary" href={teamEnquiryHref}><ScrambleText>Talk about your team</ScrambleText> <CoachArrow/></a><a className="button-text" href="/signin"><ScrambleText>Coach sign in</ScrambleText> <CoachArrow/></a><span>Let’s start with a conversation.</span></div>
-      </div></section>
-      </MarketingGallery>
+      <ShowcaseGallery>
+        <ShowcasePair>
+          <ShowcaseChapter id="club" titleId="club-title" number="01" label="Your club, connected" title={<>One club. Every team. <em>Each player.</em></>} description="Managers see across the club. Coaches stay connected to their teams. Every player keeps their own profile." artwork="coaches-club" kind="club" caption="One team or several. The same connected approach." footer={<a href="#players">Look at each player ↓</a>}>
+            <ClubExplorer teamId={teamId} onTeamChange={selectTeam} />
+          </ShowcaseChapter>
+          <ShowcaseChapter id="players" titleId="players-title" number="02" label="Evidence for every player" title={<>A shared starting point. <em>Individual priorities.</em></>} description="Six tests reveal how players move and perform. Review each profile to find a clear training focus." artwork="coaches-evidence" kind="evidence" caption="Sprint · Vertical jump · Broad jump · Dribbling · Change of direction · Shooting" footer={<a href="/#tests">Explore the testing experience ↗</a>}>
+            <PlayerEvidence teamId={teamId} playerId={playerId} onPlayerChange={setPlayerId} />
+          </ShowcaseChapter>
+        </ShowcasePair>
+        <ShowcasePair>
+          <ShowcaseChapter id="development" titleId="development-title" number="03" label="From results to the next session" title={<>Keep development moving. <em>Between every test.</em></>} description="PoseTek supports the plan. Coaches see the progress. Players take the next step in the mobile app." artwork="coaches-development" kind="development" caption="Testing → Insight → Training → Retest">
+            <DevelopmentJourney key={player.id} player={player} teamName={team.name} />
+          </ShowcaseChapter>
+          <ShowcaseChapter id="contact" titleId="contact-title" number="04" label="Built around your teams" title={<>Let’s plan your team’s <em>next step.</em></>} description="Tell us about your teams and priorities. We’ll arrange testing and ongoing support around your club." artwork="coaches-contact" caption="Your players, your priorities. A shared starting point. A next step for each team." action={{ href: teamEnquiryHref, label: "Talk about your team" }} footer={<><ol><li>Discuss your teams</li><li>Arrange testing</li><li>Agree ongoing support</li></ol><a href="/signin">Coach sign in ↗</a><p>Let’s start with a conversation.</p></>} />
+        </ShowcasePair>
+      </ShowcaseGallery>
     </main>
     <MarketingFooter audience="coaches" />
     <MarketingCursor />

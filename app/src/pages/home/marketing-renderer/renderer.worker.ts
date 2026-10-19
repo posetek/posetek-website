@@ -1,6 +1,7 @@
-import { ACESFilmicToneMapping, AgXToneMapping, WebGLRenderer } from "three";
+import { ACESFilmicToneMapping, AgXToneMapping, NoToneMapping, WebGLRenderer } from "three";
 import { createBrandScene } from "./brand-scene";
 import { createHeroScene } from "./hero-scene";
+import { createGalleryScene } from "./gallery-scene";
 import type { RendererInput, RendererOutput, RendererSize, RendererView } from "./protocol";
 import type { WorkerScene } from "./scene";
 
@@ -38,6 +39,11 @@ const resize = () => {
   content.resize(size.width / size.height);
 };
 const telemetry = () => send({ type: "frame", generation, telemetry: { frames, ...content!.telemetry() } });
+const renderContent = () => {
+  if (content!.render) content!.render(renderer!);
+  else renderer!.render(content!.scene, content!.camera);
+  frames += 1;
+};
 const draw = (now: number) => {
   frame = 0;
   if (!active || !ready || disposed || !renderer || !content) return;
@@ -45,8 +51,8 @@ const draw = (now: number) => {
     content.update(view);
     const moving = content.step(previousTime ? Math.min(.05, (now - previousTime) / 1000) : 1 / 60);
     previousTime = moving ? now : 0;
-    renderer.render(content.scene, content.camera); frames += 1;
-    if (now - lastTelemetry >= 100 || !moving) { telemetry(); lastTelemetry = now; }
+    renderContent();
+    if (view.kind === "gallery" || now - lastTelemetry >= 100 || !moving) { telemetry(); lastTelemetry = now; }
     if (moving) requestDraw();
   } catch { fail("draw"); }
 };
@@ -80,14 +86,14 @@ async function initialize(canvas: OffscreenCanvas) {
     renderer.debug.checkShaderErrors = true;
     renderer.debug.onShaderError = () => { throw new Error("shader-link"); };
     canvas.addEventListener("webglcontextlost", event => { event.preventDefault(); fail("context-lost"); });
-    renderer.toneMapping = view.kind === "hero" ? AgXToneMapping : ACESFilmicToneMapping;
+    renderer.toneMapping = view.kind === "hero" ? AgXToneMapping : view.kind === "gallery" ? NoToneMapping : ACESFilmicToneMapping;
     if (view.kind === "brand") { renderer.toneMappingExposure = 1.1; renderer.setClearColor(0x04130e, 0); }
     if (!await eligible()) return;
     stage = "geometry";
-    content = view.kind === "hero" ? createHeroScene(view) : createBrandScene(view);
+    content = view.kind === "hero" ? createHeroScene(view) : view.kind === "gallery" ? createGalleryScene(view, requestDraw) : createBrandScene(view);
     resize();
     if (!await eligible()) return;
-    stage = "environment"; content.prepare?.(renderer);
+    stage = "environment"; await content.prepare?.(renderer);
     if (!await eligible()) return;
     stage = "shaders";
     await renderer.compileAsync(content.scene, content.camera);
@@ -95,7 +101,7 @@ async function initialize(canvas: OffscreenCanvas) {
     // Warm every hero material (including both transparent ball sides) before
     // hiding unused figures. The transferred canvas still has zero opacity.
     stage = "warmup";
-    renderer.render(content.scene, content.camera); frames += 1;
+    renderContent();
     await finishGpu();
     if (!await eligible()) return;
     stage = "first-frame";
@@ -105,7 +111,7 @@ async function initialize(canvas: OffscreenCanvas) {
     do {
       renderedRevision = revision;
       content.update(view, true); content.step(0); resize();
-      renderer.render(content.scene, content.camera); frames += 1;
+      renderContent();
       await finishGpu();
       if (!await eligible()) return;
     } while (renderedRevision !== revision);
@@ -126,9 +132,18 @@ scope.onmessage = event => {
   } else if (message.type === "dispose") { dispose(); scope.close(); }
   else if (message.type === "activity") {
     active = message.active;
-    if (!active) pause();
+    if (!active) { pause(); content?.pause?.(); }
     else { resume?.(); resume = undefined; requestDraw(); }
-  } else if (message.type === "view") { view = message.view; revision += 1; requestDraw(); }
+  } else if (message.type === "view") {
+    view = message.view; revision += 1;
+    // DOM geometry and backing dimensions must belong to the same gallery
+    // revision; the adapter's coalesced resize message may arrive one RAF later.
+    if (view.kind === "gallery" && size) {
+      size = { ...size, width: view.width, height: view.height };
+      if (active && ready) { try { resize(); } catch { fail("resize"); } }
+    }
+    requestDraw();
+  }
   else if (message.type === "resize") {
     size = message.size; revision += 1;
     if (active && ready) { try { resize(); requestDraw(); } catch { fail("resize"); } }

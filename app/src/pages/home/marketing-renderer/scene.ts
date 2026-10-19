@@ -8,7 +8,10 @@ export interface WorkerScene {
   resize(aspect: number): void;
   step(seconds: number): boolean;
   orbit(x: number, y: number): void;
+  pause?(): void;
   telemetry(): Omit<RendererTelemetry, "frames">;
-  prepare?(renderer: WebGLRenderer): void;
+  prepare?(renderer: WebGLRenderer): void | Promise<void>;
+  /** Gallery draws bounded, scissored preview meshes into one shared viewport. */
+  render?(renderer: WebGLRenderer): void;
   dispose(): void;
 }

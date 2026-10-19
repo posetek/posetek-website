@@ -1,7 +1,15 @@
 # PoseTek engineering handbook
 
-Current production: [public-site release](../PUBLIC_SITE_REVAMP_RELEASE.md) and
-[verified receipt](../../deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json).
+Current production: [showcase refinement release](../PUBLIC_SITE_SHOWCASE_RELEASE.md)
+and [verified receipt](../../deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
+The exact accepted deploy `6ad58598033b1b6ba8b4d6c2` is live; all 2,001 prior
+protected files remain exact and the reconciled baseline protects 2,106 files.
+Live checks and their orientation-rerun qualification are recorded in the receipt.
+
+Implementation and REA evidence: [showcase depth](../PUBLIC_SITE_SHOWCASE_DEPTH.md).
+The [candidate receipt](../../deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json) remains
+a pre-publication checkpoint. The [preceding public-site release](../PUBLIC_SITE_REVAMP_RELEASE.md)
+and [its receipt](../../deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json) are historical.
 
 Public-site implementation history: [interaction polish](../PUBLIC_SITE_INTERACTION_POLISH.md),
 continuing [first interaction and editorial pacing](../PUBLIC_SITE_FIRST_INTERACTION.md),
