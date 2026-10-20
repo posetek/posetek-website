@@ -1,5 +1,18 @@
 # PoseTek website project context
 
+## Administrator intake position release (October 20, 2026)
+
+Admin player creation now accepts **Position (optional) → Not recorded**.
+Website `6ad7f9e34d086d5f74247912` preserves the prior application except for
+this change, plus the current marketing, feedback and coach enrollment entries.
+All 2,117 artifact files match production; the reconciled baseline protects 2,115.
+See [behavior and release boundaries](docs/ADMIN_OPTIONAL_POSITION.md) and
+[production evidence](deployment/ADMIN_OPTIONAL_POSITION_PRODUCTION.json).
+Runtime branch `codex/admin-optional-position-runtime` must not merge into main.
+The held Backend candidate requires compatibility qualification before publication;
+this release changes no backend, rules, indexes, native build or automation.
+
+
 ## Optional administrator intake position (October 20, 2026)
 
 Admin player creation accepts an unrecorded position while preserving required
