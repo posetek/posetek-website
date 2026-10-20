@@ -1,5 +1,12 @@
 # PoseTek website project context
 
+## Existing-session continuation candidate (October 20, 2026)
+
+The sign-in page now offers an explicit return to an already
+authenticated account through the existing role and access checks. This is a
+source candidate, not a production release or proof of a particular reported
+logout. See [behavior, validation and release boundaries](docs/EXISTING_SESSION_CONTINUATION.md).
+
 ## Current showcase refinement release (October 18, 2026)
 
 The accepted Players/Coaches showcase refinement is live at [posetek.net](https://posetek.net).

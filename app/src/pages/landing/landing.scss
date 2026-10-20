@@ -1274,6 +1274,23 @@
     line-height: 1.5;
   }
 
+  .existing-session {
+    display: grid;
+    gap: 12px;
+  }
+
+  .existing-session .login-support {
+    margin: 0 0 8px;
+  }
+
+  .existing-session-help {
+    justify-self: start;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
   #closeModal {
     display: none;
   }
