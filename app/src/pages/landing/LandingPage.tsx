@@ -44,6 +44,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [invitationLink, setInvitationLink] = useState(() => { capturePlayerInvitationLink(window); return initialPlayerInvitationLink(); });
   const [signedIn, setSignedIn] = useState(Boolean(auth.currentUser));
+  const [authReady, setAuthReady] = useState(false);
   const [invitationCheck, setInvitationCheck] = useState<"checking" | "ready" | "unavailable" | "error" | null>(invitationLink.present ? "checking" : null);
 
   // Overlay modals (the login panel is inline now — legacy showModal(loginModal)
@@ -67,10 +68,13 @@ export default function LandingPage() {
   const [loginError, setLoginError] = useState("");
   const [loginSuccess, setLoginSuccess] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  const [continueLoading, setContinueLoading] = useState(false);
+  const [switchLoading, setSwitchLoading] = useState(false);
   const [pendingActivation, setPendingActivation] = useState(false);
   const [signInHelp, setSignInHelp] = useState(false);
   const loginMounted = useRef(false);
   const authEpoch = useRef(0);
+  const observedUid = useRef(auth.currentUser?.uid || null);
 
   // Player-code signup form
   const [playerCode, setPlayerCode] = useState(invitationLink.code);
@@ -162,8 +166,14 @@ export default function LandingPage() {
   useEffect(() => {
     loginMounted.current = true;
     const unsubscribe = auth.onAuthStateChanged((user: any) => {
+      const nextUid = user?.uid || null;
+      if (observedUid.current !== nextUid) {
+        observedUid.current = nextUid;
+        setLoginError(""); setLoginSuccess("");
+      }
       ++authEpoch.current;
       setSignedIn(Boolean(user));
+      setAuthReady(true);
       setPendingActivation(false);
       if (!user && getSafeReturnToUrl()) showLoginPanel();
     });
@@ -284,6 +294,66 @@ export default function LandingPage() {
     else navigate(destination);
   }
 
+  async function openAccount(user: any, isCurrent: () => boolean, passwordSignIn: boolean) {
+    const access = await loadAccountAccess(user, isCurrent);
+    if (!isCurrent()) return;
+    if (access.kind === "activation") {
+      const returnTo = getSafeReturnToUrl();
+      if (access.reason === "unlinked" && returnTo && new URL(returnTo).pathname === "/join") { redirectAfterAuth("pending"); return; }
+      setPendingActivation(access.reason !== "staff-inactive");
+      setLoginSuccess(access.reason === "admin-unverified"
+        ? "You are signed in. Ask a PoseTek administrator for your account activation link, then open it to finish access. No email has been sent."
+        : access.reason === "staff-inactive"
+          ? "You are signed in, but your staff access is not active. Ask your organization admin to check your assignment."
+          : "You are signed in. Open your staff access link to connect your account. If you expected a player profile, ask your coach to check your account link.");
+      return;
+    }
+    if (access.role === "admin") {
+      const identity = await refreshAdminIdentity(user);
+      if (!isCurrent()) return;
+      if (!identity.isAdmin) throw new Error("Account access changed. Sign in again.");
+      if (passwordSignIn) await upsertAdminProfile(identity);
+    } else if (passwordSignIn && access.role === "independent") {
+      const coachDoc = await findCoach(db, user.uid);
+      if (!isCurrent()) return;
+      await coachDoc?.ref.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
+    } else if (passwordSignIn && access.role === "player" && access.playerId) {
+      await db.collection("players").doc(access.playerId).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+    if (isCurrent()) redirectAfterAuth(access.role, access.playerId || null);
+  }
+
+  async function handleContinue() {
+    const user = auth.currentUser;
+    if (!user || !loginMounted.current || continueLoading || switchLoading || loginLoading) return;
+    const revision = authEpoch.current;
+    const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
+    setContinueLoading(true);
+    setLoginError(""); setLoginSuccess(""); setPendingActivation(false);
+    try { await openAccount(user, isCurrent, false); }
+    catch (error: any) {
+      if (isCurrent()) setLoginError(accountError(error, "We could not load your account access. Your sign-in has been kept; try again, or use your staff invitation to finish activation."));
+    } finally {
+      if (loginMounted.current) setContinueLoading(false);
+    }
+  }
+
+  async function handleSwitchAccount() {
+    if (switchLoading || loginLoading) return;
+    // Cancel a pending access lookup before signOut's Auth callback arrives.
+    const revision = ++authEpoch.current;
+    setContinueLoading(false);
+    setSwitchLoading(true);
+    setLoginError(""); setLoginSuccess(""); setPendingActivation(false);
+    setLoginEmail(""); setLoginPassword("");
+    try { await auth.signOut(); }
+    catch (error: any) {
+      if (loginMounted.current && authEpoch.current === revision) setLoginError(accountError(error, "Could not sign out. Please try again."));
+    } finally {
+      if (loginMounted.current) setSwitchLoading(false);
+    }
+  }
+
   // Login handler (legacy loginForm submit)
   async function handleLogin() {
     const email = loginEmail;
@@ -300,32 +370,7 @@ export default function LandingPage() {
       const revision = authEpoch.current;
       isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
 
-      const access = await loadAccountAccess(user, isCurrent);
-      if (!isCurrent()) return;
-      if (access.kind === "activation") {
-        const returnTo = getSafeReturnToUrl();
-        if (access.reason === "unlinked" && returnTo && new URL(returnTo).pathname === "/join") { redirectAfterAuth("pending"); return; }
-        setPendingActivation(access.reason !== "staff-inactive");
-        setLoginSuccess(access.reason === "admin-unverified"
-          ? "You are signed in. Ask a PoseTek administrator for your account activation link, then open it to finish access. No email has been sent."
-          : access.reason === "staff-inactive"
-            ? "You are signed in, but your staff access is not active. Ask your organization admin to check your assignment."
-            : "You are signed in. Open your staff access link to connect your account. If you expected a player profile, ask your coach to check your account link.");
-        return;
-      }
-      if (access.role === "admin") {
-        const identity = await refreshAdminIdentity(user);
-        if (!isCurrent()) return;
-        if (!identity.isAdmin) throw new Error("Account access changed. Sign in again.");
-        await upsertAdminProfile(identity);
-      } else if (access.role === "independent") {
-        const coachDoc = await findCoach(db, user.uid);
-        if (!isCurrent()) return;
-        await coachDoc?.ref.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
-      } else if (access.role === "player" && access.playerId) {
-        await db.collection("players").doc(access.playerId).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
-      }
-      if (isCurrent()) redirectAfterAuth(access.role, access.playerId || null);
+      await openAccount(user, isCurrent, true);
     } catch (error: any) {
       if (isCurrent()) setLoginError(accountError(error, "We could not load your account access. Your sign-in has been kept; try again, or use your staff invitation to finish activation."));
     } finally {
@@ -548,7 +593,16 @@ export default function LandingPage() {
                   &times;
                 </button>
               </div>
-              <form
+              {!authReady ? <p className="login-support" role="status">Checking your sign-in…</p> : signedIn ? (
+                <div className="existing-session" aria-label="Signed-in account">
+                  <p className="login-support">You are already signed in.</p>
+                  <button type="button" className="submit-btn" disabled={continueLoading || switchLoading || loginLoading || !auth.currentUser} onClick={() => void handleContinue()}>
+                    {continueLoading || loginLoading ? "Opening your account…" : "Continue with signed-in account"}
+                  </button>
+                  <button type="button" className="secondary-action" disabled={switchLoading || loginLoading} onClick={() => void handleSwitchAccount()}>{switchLoading ? "Switching account…" : "Use a different account"}</button>
+                  <button type="button" className="text-link existing-session-help" onClick={() => setSignInHelp(value => !value)}>Forgot password or need sign-in help?</button>
+                </div>
+              ) : <form
                 id="loginForm"
                 data-clarity-mask="true"
                 onSubmit={(e) => {
@@ -603,18 +657,6 @@ export default function LandingPage() {
                     Forgot password or need sign-in help?
                   </a>
                 </div>
-                <div className="error-message" id="loginError" role="alert" style={{ display: loginError ? "block" : "none" }}>
-                  {loginError}
-                </div>
-                <div
-                  className="success-message"
-                  id="loginSuccess"
-                  role="status"
-                  aria-live="polite"
-                  style={{ display: loginSuccess ? "block" : "none" }}
-                >
-                  {loginSuccess}
-                </div>
                 <button type="submit" className="submit-btn" id="loginSubmit" disabled={loginLoading}>
                   <span style={{ opacity: loginLoading ? 0.5 : 1 }}>Sign In</span>
                   <span
@@ -624,7 +666,9 @@ export default function LandingPage() {
                     style={{ display: loginLoading ? "block" : "none" }}
                   ></span>
                 </button>
-              </form>
+              </form>}
+              <div className="error-message" id="loginError" role="alert" style={{ display: loginError ? "block" : "none" }}>{loginError}</div>
+              <div className="success-message" id="loginSuccess" role="status" aria-live="polite" style={{ display: loginSuccess ? "block" : "none" }}>{loginSuccess}</div>
               {signInHelp && <aside className="account-signin-help" aria-label="Sign-in help"><strong>Forgot your password?</strong><p>Players and independent coaches can request a reset email for their existing account.</p><button className="secondary-action" type="button" disabled={loginLoading} onClick={() => { void handleForgotPassword(); }}>Reset password by email</button><p>{STAFF_RECOVERY_HELP}</p><Link className="text-link" to="/join">Open a private recovery or access code</Link><AccountRecoveryRequest initialEmail={loginEmail} /></aside>}
               {pendingActivation && <Link className="secondary-action activation-pending" to="/join">Finish staff activation</Link>}
               <div className="signup-prompt">
