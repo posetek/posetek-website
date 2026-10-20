@@ -1,5 +1,11 @@
 # PoseTek website project context
 
+## Optional administrator intake position (October 20, 2026)
+
+Admin player creation accepts an unrecorded position while preserving required
+contact/team fields and other staff forms. See [behavior and compatibility](docs/ADMIN_OPTIONAL_POSITION.md).
+Source integration is separate from the verified application release.
+
 ## Existing-session continuation candidate (October 20, 2026)
 
 The sign-in page now offers an explicit return to an already
