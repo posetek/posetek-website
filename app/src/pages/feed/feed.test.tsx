@@ -61,10 +61,11 @@ describe("feed offline rendering", () => {
   it.each(['', '&panel=people', '&panel=settings'])('keeps shared player chrome throughout Community %s', panel => {
     const html = renderPage(`/feed.html?preview=1${panel}`);
     const navigation = html.match(/<nav class="player-bottom-nav"[\s\S]*?<\/nav>/)?.[0] || '';
-    expect(navigation.match(/<a /g)).toHaveLength(6);
-    expect(PLAYER_TABS.map(tab => tab.label)).toEqual(['Profile', 'AI Coach', 'Drills', 'Training', 'Community', 'Standings']);
+    expect(navigation.match(/<a /g)).toHaveLength(5);
+    expect(PLAYER_TABS.map(tab => tab.label)).toEqual(['Profile', 'AI Coach', 'Results', 'Workouts', 'Leaderboards']);
     for (const tab of PLAYER_TABS) expect(navigation).toContain(`>${tab.label}</span>`);
-    expect(navigation).toMatch(/aria-current="page"[^>]*href="\/feed.html|href="\/feed.html[^>]*aria-current="page"/);
+    expect(navigation).not.toContain('>Community</span>');
+    expect(navigation).not.toContain('aria-current="page"');
     expect(html).toContain('aria-label="Community sections"');
     expect(html).toContain('Find people');
     expect(html).toContain('Sharing settings');
@@ -76,7 +77,7 @@ describe("feed offline rendering", () => {
   it('retains chrome while loading without enabling self-player navigation before authorization', () => {
     const html = renderPage('/feed.html?activity=activity-1&organizationId=club-1');
     const navigation = html.match(/<nav class="player-bottom-nav"[\s\S]*?<\/nav>/)?.[0] || '';
-    expect(navigation.match(/aria-disabled="true"/g)).toHaveLength(6);
+    expect(navigation.match(/aria-disabled="true"/g)).toHaveLength(5);
     expect(html).toContain('Loading your community');
   });
 
