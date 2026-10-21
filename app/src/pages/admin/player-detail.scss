@@ -93,3 +93,11 @@
     dd.admin-player-summary-detail { min-height: 0; font-size: 12px; }
   }
 }
+
+.pt-admin .admin-phone-form {
+  max-width: 440px; margin-top: 18px;
+  label { display: grid; gap: 8px; color: var(--admin-dim); font-size: 13px; }
+  input { width: 100%; box-sizing: border-box; }
+  .admin-note { margin: 8px 0 14px; }
+  .admin-phone-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+}
