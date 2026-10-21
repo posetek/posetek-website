@@ -1,6 +1,6 @@
 # Player profile and team results
 
-Candidate website changes make the player’s own profile the default destination
+The published website makes the player’s own profile the default destination
 for sign-in and ordinary signup. Explicit result/workout links and staff access
 retain their destinations. Player Community is removed from the tab bar; its
 source and existing staff tools remain available for later work.
@@ -29,7 +29,7 @@ without a team place or average. The newest known course is the default.
 
 The companion Backend change adds this field to the existing effective-result
 projection and the existing authorized team response; it introduces no new client
-write or permission. Publish that narrowly scoped reader before the website.
+write or permission. That narrowly scoped reader was published before the website.
 Older clients can ignore the additive field. Without the backend change, the new
 website safely withholds timed rankings until a recorded course can be verified.
 
@@ -56,8 +56,53 @@ operator artifacts. Drafting a message does not send it.
 
 ## Release boundary
 
-Source integration is separate from production release. Compose this patch onto
-the currently approved runtime, preserving the live marketing, feedback and coach
-enrollment artifacts and held policy/deletion/session candidates. Validate the
-exact candidate at phone widths before promotion; keep `[skip netlify]` on source
-integration. Native app changes are outside this website-first scope.
+Source integration is separate from production release. Future application
+releases must compose onto the approved runtime, preserving live marketing,
+feedback and coach enrollment artifacts and held policy/deletion/session
+candidates. Validate the exact candidate at phone widths before promotion and
+keep `[skip netlify]` on source integration. Native app changes are outside this
+website-first scope.
+
+## Verified production release
+
+Website `6ad92e7fec1a407bec937389` was promoted from the exact accepted draft and
+verified on October 21, 2026 at 22:15 UTC. Its 2,156 artifact files match all 2,157
+provider records; 2,143 predecessor records remain exact and twelve runtime assets
+were added. Marketing, isolated feedback, coach enrollment, icons and effective
+headers/redirects are preserved. The reconciled baseline protects 2,154 files
+and passed the ordinary preservation build at 22:16 UTC.
+
+Source [PR #94](https://github.com/posetek/posetek_website/pull/94) merged as
+`8e53f9b5483124810a9b09e4fb4b7182fe105e4f`. Production uses runtime
+`4c1ba8ea213060fd54e572adaa1fc893c3d460c0`, composed onto approved application
+`fd9db5be33e6eda3dac2ad37f17d65efa7bb7ecf`. The runtime branch must not merge into
+main because the source tree retains unrelated held policy/deletion/session
+candidates. The composition restored the exact captured feedback and coach entry
+documents after their shared compiled chunk changed; no preservation guard was
+weakened.
+
+Candidate browser acceptance passed 21 checks, including sixteen synthetic preview
+and anonymous checks, three ordinary administrator sign-in/scope checks, and two
+authorized team-reader calls against the deployed backend. The team responses
+passed scope, result-exclusion and recorded-course checks. Player layout coverage
+includes 360/390/430px and desktop. No real player account was
+impersonated or claimed; player sign-in routing is verified by source tests and
+synthetic preview, not an end-to-end claimed-player login. An initial unscoped
+roster HTTP 409 resolved after selecting the authorized organization/team. Physical
+phone acceptance is not claimed. Production inventory, effective configuration,
+and 36 primary-host route/asset checks passed. Four production browser checks also
+passed: two synthetic player previews cover Profile/navigation and Leaderboards,
+and two normal authenticated Admin reads confirm saved active plans and their
+reviewed prescriptions. Admin read-only athlete preview retains the existing
+staff view; it is not acceptance of a claimed-player session.
+
+Backend [PR #35](https://github.com/posetek/posetek-backend/pull/35) published only
+`getTeamLeaderboard` v3 using a source-only update from its exact reviewed overlay.
+The deployed archive, protected configuration and IAM were verified; all 142
+unrelated functions, rules release inventory and gateway remain unchanged.
+No rules, indexes, gateway, catalog or native release is included.
+
+Read [website evidence](../deployment/PARENT_PLAYER_PRODUCTION.json) and
+[backend evidence](../deployment/PARENT_PLAYER_BACKEND_PRODUCTION.json).
+Separately authorized athlete planning and account-claim evidence stays in private
+operator records. It is not embedded in this public receipt.
