@@ -42,11 +42,11 @@ export default function PlayerContactCard({ player, onSaved, readOnly = false }:
       {readOnly && <div><dt>Phone number</dt><dd>{recorded?.trim() || "Not recorded"}</dd></div>}
     </dl>
     {!readOnly && <form className="admin-phone-form" onSubmit={save}>
-      <label>Phone number<input type="tel" inputMode="tel" autoComplete="tel" maxLength={32} required
+      <label className="admin-field">Phone number<input type="tel" inputMode="tel" autoComplete="tel" maxLength={32} required
         value={phone} disabled={busy || conflict} onChange={event => { setPhone(event.target.value); setMessage(""); }}
         aria-describedby="admin-phone-help" /></label>
       <p className="admin-note" id="admin-phone-help">10-digit US number; +1 is also accepted.</p>
-      <div className="admin-phone-actions"><button type="submit" className="primary-button"
+      <div className="admin-phone-actions"><button type="submit" className="primary-cta"
         disabled={busy || conflict || (normalized !== null && normalized === savedPhone)}>{busy ? "Saving…" : "Save phone"}</button>
         {failed && <button type="button" className="quiet-button" disabled={busy} onClick={() => void onSaved()}>Refresh profile</button>}
       </div>
