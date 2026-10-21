@@ -1,5 +1,15 @@
 # PoseTek website
 
+## Parent-facing player experience candidate (October 21, 2026)
+
+Player sign-in opens Profile and the skill map. Player navigation uses Results,
+Workouts and Leaderboards, with Community removed from the tab bar. Per-test team
+comparisons explain units, direction, missing results and ties. See
+[the candidate handoff](docs/PARENT_PLAYER_EXPERIENCE.md) for scope and validation.
+This source candidate is not a production release; preserve the current approved
+runtime and separate held candidates during composition.
+
+
 ## Administrator intake position release (October 20, 2026)
 
 Admin player creation now accepts **Position (optional) → Not recorded**.

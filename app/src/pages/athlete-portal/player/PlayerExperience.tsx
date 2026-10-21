@@ -17,7 +17,7 @@ import { useCoachConfig } from './gateway';
 import { personalDraftLink } from './personal-conversation';
 import { defaultDataset, intakeSnapshot, playerProfile } from './scoring';
 import type { Row } from './execution';
-import PlayerShell, { PLAYER_TABS, communityPath } from './PlayerShell';
+import PlayerShell, { PLAYER_TABS } from './PlayerShell';
 import './player.css';
 import PlayerFeedbackInvitation, { PlayerResultsFeedbackLink } from './PlayerFeedbackInvitation';
 import { claimBrowserFeedbackInvitation, showResultsFeedback } from './feedback-invitation';
@@ -25,7 +25,7 @@ import { claimBrowserFeedbackInvitation, showResultsFeedback } from './feedback-
 export { PLAYER_TABS } from './PlayerShell';
 export function playerRoute(search: string) {
   const p = new URLSearchParams(search), raw = p.has('drill') ? 'drills' : p.get('view') || 'home';
-  return { view: raw === 'profile' ? 'home' : raw === 'feed' || PLAYER_TABS.some(t => t.view === raw) ? raw : 'home',
+  return { view: raw === 'profile' || raw === 'feed' ? 'home' : PLAYER_TABS.some(t => t.view === raw) ? raw : 'home',
     drill: DRILLS.some(d => d.key === p.get('drill')) ? p.get('drill')! : 'shooting', session: p.get('session'), rep: p.get('rep') };
 }
 export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalContext; initialReps: Record<string, Row[]> }) {
@@ -55,7 +55,6 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
     if (!current()) return;
     void claimBrowserFeedbackInvitation().then(claimed => { if (claimed && current()) setFeedbackInvitation(true); });
   };
-  useEffect(() => { if (route.view === 'feed') navigate(communityPath(location.search), { replace: true }); }, [route.view, location.search, navigate]);
   useEffect(() => { setVisited(old => new Set([...old, route.view])); }, [route.view]);
   useEffect(() => {
     if (route.view !== 'training') window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
@@ -87,7 +86,6 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const playerCtx = useMemo(() => ({ ...ctx, athlete, provisionalEstimates, allStatsReps: () => all, allResultReps: () => Object.values(reps).flat() }), [ctx, athlete, all, reps, provisionalEstimates]);
   const go = (view: string, drill?: string, session?: string, rep?: string) => {
     if (route.view === 'training' && view !== 'training') window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
-    if (view === 'feed') { navigate(communityPath(location.search)); return; }
     const params = new URLSearchParams(location.search);
     params.set('view', view); ['drill', 'session', 'rep'].forEach(k => params.delete(k));
     if (drill) params.set('drill', drill); if (session) params.set('session', session); if (rep) params.set('rep', rep);
@@ -98,9 +96,9 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} onNavigate={view => go(view, view === 'drills' ? route.drill : undefined)} onSignOut={preview ? undefined : () => { void auth.signOut(); }}>
       {preview && <p className="player-preview-note">Local preview · sample data · no account changes</p>}
       {refreshError && <p className="player-error" role="status">Could not refresh your latest results: {refreshError}</p>}
-      {route.view === 'home' && <><PlayerProfile ctx={playerCtx} profile={profile} onDrills={rep => go('drills', 'shooting', rep ? rep.sessionFolder || `session${rep.sessionNumber}` : undefined, rep?.id)} />{showResultsFeedback(ctx.access, profile.totalReps) && <PlayerResultsFeedbackLink />}</>}
+      {route.view === 'home' && <><PlayerProfile ctx={playerCtx} profile={profile} onWorkouts={() => go('training')} onLeaderboards={() => go('leaderboards')} onDrills={rep => go('drills', 'shooting', rep ? rep.sessionFolder || `session${rep.sessionNumber}` : undefined, rep?.id)} />{showResultsFeedback(ctx.access, profile.totalReps) && <PlayerResultsFeedbackLink />}</>}
       {visited.has('aiCoach') && <div hidden={route.view !== 'aiCoach'}><h1>Your AI Coach</h1><CoachChat playerId={ctx.playerId!} preview={preview} personalStore={personal} athlete={athlete} active={route.view === 'aiCoach'} onHandoff={r => { setRequest(r); if (r.conversationId) navigate({ pathname: location.pathname, search: personalDraftLink(location.search, r.conversationId) }); else go('training'); }} /></div>}
-      {route.view === 'drills' && <section className="player-drills"><p className="eyebrow">Your measured progress</p><h1>Drills</h1><p>Revisit your sessions, see your progress, and watch saved videos.</p><nav className="player-week-rail" aria-label="Drill results">{DRILLS.map(d => <button key={d.key} aria-pressed={d.key === route.drill} onClick={() => go('drills', d.key)}>{d.short || d.label}<small>{reps[d.key]?.length || 0} reps</small></button>)}</nav>
+      {route.view === 'drills' && <section className="player-drills"><p className="eyebrow">Your measured progress</p><h1>Results</h1><p>Explore each test, follow your progress, and watch saved videos.</p><nav className="player-week-rail" aria-label="Drill results">{DRILLS.map(d => <button key={d.key} aria-pressed={d.key === route.drill} onClick={() => go('drills', d.key)}>{d.short || d.label}<small>{reps[d.key]?.length || 0} reps</small></button>)}</nav>
         {route.session ? <SessionView drill={activeDrill} folder={route.session} selectedId={route.rep} reps={reps[activeDrill.key] || []} access={ctx.access} playerId={ctx.playerId} shareToken={null} onBack={() => go('drills', route.drill)} onSelectRep={id => go('drills', route.drill, route.session!, String(id))} /> : <DrillDashboard drill={activeDrill} reps={reps[activeDrill.key] || []} athlete={athlete} onOpenRep={(folder, id) => go('drills', route.drill, folder, String(id))} />}
         <p className="muted-copy">Record and process new drills in the PoseTek app. Video appears here when it was saved to the cloud.</p>
         {showResultsFeedback(ctx.access, reps[activeDrill.key]?.length || 0) && <PlayerResultsFeedbackLink />}

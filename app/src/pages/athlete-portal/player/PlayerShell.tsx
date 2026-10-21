@@ -5,10 +5,9 @@ import './player.css';
 export const PLAYER_TABS = [
   { view: 'home', label: 'Profile', icon: 'person' },
   { view: 'aiCoach', label: 'AI Coach', icon: 'auto_awesome' },
-  { view: 'drills', label: 'Drills', icon: 'sports_soccer' },
-  { view: 'training', label: 'Training', icon: 'fitness_center' },
-  { view: 'feed', label: 'Community', icon: 'groups' },
-  { view: 'leaderboards', label: 'Standings', icon: 'leaderboard' },
+  { view: 'drills', label: 'Results', icon: 'sports_soccer' },
+  { view: 'training', label: 'Workouts', icon: 'fitness_center' },
+  { view: 'leaderboards', label: 'Leaderboards', icon: 'leaderboard' },
 ] as const;
 
 /** Only social route context crosses from the player portal into Community. */
@@ -55,7 +54,7 @@ export default function PlayerShell({ activeView, children, search = '', pathnam
   return <div className={`pt-pose pt-player${className ? ` ${className}` : ''}`}>
     <header className="player-header">
       <Link className="player-wordmark" to={playerTabPath('home', search, pathname)} aria-label="PoseTek profile" aria-disabled={navigationDisabled || undefined} onClick={event => navigate(event, 'home')}>POSETEK<span>●</span></Link>
-      <span>{PLAYER_TABS.find(tab => tab.view === activeView)?.label}</span>
+      <span>{PLAYER_TABS.find(tab => tab.view === activeView)?.label || (activeView === 'feed' ? 'Community' : '')}</span>
       {onSignOut && <button className="player-signout" onClick={onSignOut}>Sign out</button>}
     </header>
     <main className={`player-main${mainClassName ? ` ${mainClassName}` : ''}`}>{children}</main>
