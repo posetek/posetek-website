@@ -1,5 +1,18 @@
 # PoseTek website context
 
+## Administrator phone correction release (October 21, 2026)
+
+Admin Profile → Contact details now supports verified parent/guardian phone
+corrections. Website `6ad90a23e4b4a4ece16b2729` preserves the approved runtime
+plus this editor; all 2,125 artifact files match production and the reconciled
+baseline protects 2,123. Backend publishes only `updateAdminPlayerPhone` v1; all
+141 unrelated functions, rules, indexes and held candidates remain unchanged.
+Read [behavior](docs/ADMIN_PHONE_EDIT.md), [website receipt](deployment/ADMIN_PHONE_EDIT_PRODUCTION.json)
+and [backend receipt](deployment/ADMIN_PHONE_BACKEND_PRODUCTION.json).
+Runtime branch `codex/admin-phone-runtime` must not merge into main. Keep
+`[skip netlify]` on source integration and preserve the current exact artifact.
+
+
 ## Administrator intake position release (October 20, 2026)
 
 Admin player creation now accepts **Position (optional) → Not recorded**.
