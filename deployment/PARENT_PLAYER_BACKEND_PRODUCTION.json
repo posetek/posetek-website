@@ -1,0 +1,23 @@
+{
+  "completedAt": "2026-10-21T22:11:24.318535+00:00",
+  "pr": "https://github.com/posetek/posetek-backend/pull/35",
+  "approvedHead": "b2dba9aa18ff0c1acfcc81c96787c0854221a7a7",
+  "mergeCommit": "bfba471faa1e69bd50c99f269d7b3fcb8136dc9d",
+  "endpoint": "getTeamLeaderboard",
+  "versionBefore": "2",
+  "versionAfter": "3",
+  "exactDeployedArchiveSha256": "ff5ba79ab08fe4cf6cdb69f8e1756497701b19d6887e52b16abf340f720adea9",
+  "protectedConfigurationUnchanged": true,
+  "iamUnchanged": true,
+  "unrelatedFunctionCount": 142,
+  "unrelatedFunctionsUnchanged": true,
+  "rulesReleaseInventoryUnchanged": true,
+  "agentGatewayUnchanged": true,
+  "sourceOnlyUpdateMask": "sourceUploadUrl",
+  "applyAttempts": 1,
+  "schemaVersion": 1,
+  "status": "published_verified",
+  "compatibility": "Additive courseDistanceMeters and canonical team name in the existing authorized response; older clients can ignore the new field.",
+  "scope": "Only getTeamLeaderboard received the reviewed source overlay; this is not a deployment of the full Backend main candidate.",
+  "authenticatedAcceptance": "Two ordinary authorized team calls passed through the accepted website candidate after deployment; exact private responses were checked for scope, qualification and recorded-course values. No claimed-player login or physical-device acceptance is implied."
+}

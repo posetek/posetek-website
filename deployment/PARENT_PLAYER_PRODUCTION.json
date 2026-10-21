@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "accepted": true,
+  "checkedAt": "2026-10-21T22:15:09.062Z",
+  "deploymentId": "6ad92e7fec1a407bec937389",
+  "previousDeploymentId": "6ad917085d813c55f716152c",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "localInventorySha256": "810602c2556145b32be63495c15ec246b14c8a3a1d5f034444d6a7b7e80b2b9c",
+  "providerInventorySha256": "3eada711a8c8372b5e0eca5756fe93cfdbd7e4ee80fcfafd3756ddccf83779cf",
+  "beforeInventorySha256": "03a0382bd1fe4f38cbaf589dae5b066296de965a64ca47a5ff45a2fb155184ac",
+  "committedBaselineSha256": "26095f04b3b39c446c5d31e0bce3f2cc61328c5d99da877370aec049e66b0630",
+  "localFiles": 2156,
+  "providerFiles": 2157,
+  "preservedBeforeFiles": 2143,
+  "addedFiles": 12,
+  "publicFilesByteVerified": 7,
+  "effectiveConfigurationPreserved": true,
+  "checkedRoutes": 12,
+  "checkedNewAssetUrls": 24,
+  "status": "published_verified",
+  "primaryHostRoutes": 36,
+  "promotion": "Exact accepted draft restored without rebuilding",
+  "runtimeSourceCommit": "4c1ba8ea213060fd54e572adaa1fc893c3d460c0",
+  "runtimeBaseCommit": "fd9db5be33e6eda3dac2ad37f17d65efa7bb7ecf",
+  "featureSourceCommit": "f39e1fe15c9ddb748addd06cedd621584df564d7",
+  "sourceMergeCommit": "8e53f9b5483124810a9b09e4fb4b7182fe105e4f",
+  "featurePullRequest": "https://github.com/posetek/posetek_website/pull/94",
+  "backendPullRequest": "https://github.com/posetek/posetek-backend/pull/35",
+  "backendReceipt": "PARENT_PLAYER_BACKEND_PRODUCTION.json",
+  "protectedBaselineFiles": 2154,
+  "reconciledBaselineSha256": "a0cde3635b9d63be1a33cd7ad035aa40d5faa3ab63b8c0576219db2950686f7a",
+  "rulesChanged": false,
+  "indexesChanged": false,
+  "gatewayChanged": false,
+  "nativeChanged": false,
+  "catalogChanged": false,
+  "validation": {
+    "runtimeTests": 1989,
+    "candidateBrowserChecks": 21,
+    "candidatePreviewChecks": 16,
+    "candidateAdministratorChecks": 3,
+    "candidatePreviewPhysicalPhoneTested": false,
+    "candidateLimitations": "Player landing is covered by source tests and synthetic preview; no player account was impersonated or claimed. An initial unscoped roster HTTP 409 resolved after choosing the authorized organization/team.",
+    "featureCI": "https://github.com/posetek/posetek_website/actions/runs/39678733829",
+    "runtimeCI": "https://github.com/posetek/posetek_website/actions/runs/39678856391",
+    "backendCI": "https://github.com/posetek/posetek-backend/actions/runs/39678081609",
+    "productionBrowser": {
+      "accepted": true,
+      "checkedAt": "2026-10-21T22:21:25.150407+00:00",
+      "origin": "https://posetek.net",
+      "checks": 4,
+      "syntheticPreviewChecks": 2,
+      "authenticatedAdminChecks": 2,
+      "scope": [
+        "Synthetic production preview confirms Profile/chart, five player tabs and Community removal.",
+        "Synthetic production preview confirms leaderboard measurements, direction, own place and team average.",
+        "Two ordinary authenticated Admin reads confirm saved active plans and their reviewed prescriptions."
+      ],
+      "limitations": [
+        "No real claimed-player sign-in was tested.",
+        "No physical-device acceptance is claimed.",
+        "Admin read-only player preview uses the existing staff athlete view, not the new player experience."
+      ],
+      "privateEvidenceSha256": "6bed1f81e65f40882be2d9386d53e26f0525d17bd5b5bce6bf79f025e1eaf583"
+    },
+    "ordinaryPreservationBuild": {
+      "passed": true,
+      "completedAt": "2026-10-21T22:16:08Z",
+      "verifiedProtectedFiles": 2154,
+      "logSha256": "4df9d457df64ad8c09599f047fa0fb92c564cc846b0a562e88d3fbab841c66ca"
+    },
+    "candidateAuthorizedLeaderboardCalls": 2,
+    "candidateAuthorizedLeaderboardScope": "Two authorized team responses checked for matching team scope, qualified-result exclusions and validated recorded-course values; private team and athlete evidence is retained outside this repository.",
+    "receiptReleaseGuardTests": 41
+  },
+  "rollback": {
+    "website": "Restore previously verified deployment 6ad917085d813c55f716152c, then verify serving inventory and primary-host routes.",
+    "data": "Website rollback does not undo separately authorized saved cohort changes; their operation receipts and recovery context remain private."
+  }
+}
