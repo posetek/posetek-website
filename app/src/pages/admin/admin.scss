@@ -743,6 +743,15 @@
   }
   .rt-frame-label { font-size: 13px; }
 
+  .rt-jump-technique {
+    min-width: 0;
+    .rt-diff { table-layout: fixed; overflow-wrap: anywhere; }
+    .rt-diff th:first-child { width: 22%; }
+    .rt-frame-field { grid-template-columns: minmax(0, 1fr) 76px auto; }
+    .rt-frame-field > button:last-child { grid-column: 3; }
+    .admin-field textarea { width: 100%; min-height: 90px; }
+  }
+
   .rt-range-field {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

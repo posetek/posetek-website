@@ -56,6 +56,7 @@ import {
   trackToSignedMeters,
 } from "../lib/repTools";
 import type { FrameRange, Mark, Point, ShuttleFrames, StartingSide } from "../lib/repTools";
+import JumpTechniqueEditor from "./JumpTechniqueEditor";
 import { resultsPath } from "../lib/results";
 import { ADMIN_RETURN_STATE } from '../lib/useAdminNavigation';
 
@@ -74,6 +75,7 @@ interface Loaded {
   rep: any;
   artifacts: RepArtifactBundle;
   revisions: RepRevisionRow[];
+  revisionError: boolean;
 }
 
 const SKELETON: [number, number][] = [
@@ -90,6 +92,7 @@ export default function RepTools() {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [generation, setGeneration] = useState(0);
+  const [savedRevision, setSavedRevision] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = "Rep tools | PoseTek admin";
@@ -102,9 +105,9 @@ export default function RepTools() {
       const [player, artifacts, revisions] = await Promise.all([
         loadPlayer(playerId).catch(() => null),
         loadRepArtifacts(drill, rep, playerId),
-        loadRepRevisions(playerId, repId).catch(() => [] as RepRevisionRow[]),
+        loadRepRevisions(playerId, repId).then(rows => ({ rows, error: false })).catch(() => ({ rows: [] as RepRevisionRow[], error: true })),
       ]);
-      if (live) setLoaded({ player, rep, artifacts, revisions });
+      if (live) setLoaded({ player, rep, artifacts, revisions: revisions.rows, revisionError: revisions.error });
     })().catch(error => { if (live) setLoadError(error?.message || "The rep could not be loaded."); });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -132,6 +135,8 @@ export default function RepTools() {
 
   const athleteName = loaded.player?.name ?? fullName(loaded.artifacts?.metadata ?? {});
   return (
+    <>
+    {savedRevision && <p className="admin-banner good" role="status">Saved revision {savedRevision}. The correction has been reloaded.</p>}
     <RepToolsLoaded
       key={`${repId}:${generation}`}
       drillLabel={drill.label}
@@ -142,8 +147,9 @@ export default function RepTools() {
       loaded={loaded}
       back={sessionParam ? `${back}?session=${encodeURIComponent(sessionParam)}` : back}
       spec={spec}
-      onReload={() => setGeneration(current => current + 1)}
+      onReload={(id) => { setSavedRevision(id ?? null); setGeneration(current => current + 1); }}
     />
+    </>
   );
 }
 
@@ -173,7 +179,7 @@ interface ToolProps {
   loaded: Loaded;
   back: string;
   spec: ReturnType<typeof toolSpecFor>;
-  onReload: () => void;
+  onReload: (revisionId?: string) => void;
 }
 
 function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, loaded, back, spec, onReload }: ToolProps) {
@@ -440,7 +446,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       const result = await pushRepRevision(payload);
       setPushed(result.revisionId);
       setConfirming(false);
-      onReload();
+      onReload(result.revisionId);
     } catch (error: any) {
       setPushError(error?.message || "The change could not be pushed.");
     } finally {
@@ -736,6 +742,10 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
         </div>
 
         <aside className="rt-side">
+          {drillKey === "jump" && <JumpTechniqueEditor playerId={playerId} repId={repId} athleteName={athleteName}
+            source={artifacts.jumpTechnique} originalHeight={num(rep.jumpHeight)} originalAngles={rep}
+            revisionId={rep.adminRevision?.revisionId ?? null} currentFrame={frame} lastFrame={lastFrame} seekTo={seekTo} onSaved={onReload} />}
+
           {!spec && (
             <section className="admin-card">
               <h3>No tools for this drill</h3>
@@ -748,7 +758,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
               <h3>Event frames</h3>
               <p className="admin-note">Scrub to the moment, then "Use current". {rederive ? "Every time below is re-derived from these frames over the measured fps, exactly as the phone does." : ""}</p>
               <div className="rt-frame-fields">
-                {spec.frameFields.map(field => (
+                {spec.frameFields.filter(field => drillKey !== "jump" || field.key === "landingFrame").map(field => (
                   <div className="rt-frame-field" key={field.key} title={field.hint}>
                     <span className="rt-frame-label">{field.label}</span>
                     <input
@@ -1003,7 +1013,8 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
 
           <section className="admin-card">
             <h3>Revisions</h3>
-            {revisions.length === 0 && <p className="admin-note">No admin revisions yet. This rep is exactly as the phone processed it.</p>}
+            {loaded.revisionError && <p className="form-message" role="alert">Revision history is unavailable. Reload to try again; this does not mean the rep has no revisions.</p>}
+            {!loaded.revisionError && revisions.length === 0 && <p className="admin-note">No admin revisions yet. This rep is exactly as the phone processed it.</p>}
             {revisions.map(revision => (
               <div className="rt-revision" key={revision.id}>
                 <div className="admin-row-meta">
@@ -1012,6 +1023,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
                   <span>{Object.keys(revision.fields).length} fields</span>
                   {revision.restored && <span className="admin-chip">restored</span>}
                 </div>
+                {revision.recoveryRequired && <p role="alert">This save needs recovery. Restore its backup before another correction.</p>}
                 {revision.note && <blockquote>{revision.note}</blockquote>}
                 {!revision.restored && (
                   restoreArmed === revision.id ? (
