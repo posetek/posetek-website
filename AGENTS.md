@@ -1,5 +1,20 @@
 # PoseTek website context
 
+## Administrator jump technique release (October 21, 2026)
+
+Admin Rep tools now saves reviewed jump phases and derived joint angles with
+restorable revisions. Website `6ad917085d813c55f716152c` has 2,144 verified artifact
+files; the reconciled baseline protects 2,142. Backend revision writer v5, restore
+v4 and new history reader v1 are source/configuration/IAM verified. All unrelated
+functions, marketing, feedback, coach enrollment, rules and held candidates are
+preserved. Read [behavior](docs/ADMIN_JUMP_TECHNIQUE.md),
+[website receipt](deployment/JUMP_TECHNIQUE_PRODUCTION.json) and
+[backend receipt](deployment/JUMP_TECHNIQUE_BACKEND_PRODUCTION.json).
+Runtime branch `codex/jump-technique-runtime` must not merge into main. Keep
+`[skip netlify]` on source integration. Private athlete corrections and media
+remain outside the public repository.
+
+
 ## Administrator phone correction release (October 21, 2026)
 
 Admin Profile → Contact details now supports verified parent/guardian phone
