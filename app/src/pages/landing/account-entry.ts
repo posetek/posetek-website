@@ -9,6 +9,7 @@ export function accountDestination(role: AccountRole, playerId: string | null, s
   const target = getSafeReturnToUrl(search, base, origin);
   if (!target) return home;
   const path = new URL(target).pathname;
+  if (role === "player" && ["/feed", "/feed.html"].includes(path)) return home;
   const staff = role === "admin" || role === "manager" || role === "coach" || role === "independent";
   if (path === "/admin" || path.startsWith("/admin/")) return role === "admin" ? target : home;
   if (role === "pending") return path === "/join" ? target : home;

@@ -141,7 +141,7 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
   const states = workoutStates(plan?.id || '', logs);
   const progress = plan ? weekProgress(plan, week || undefined, logs, ctx.allStatsReps(), recordedSessions) : null;
   const openPlan = () => { setSeed(''); setIntake(true); setPanel(''); };
-  const back = <button className="text-button" disabled={applying} onClick={() => { setPanel(''); setReview(null); setChatTarget(null); setDrillId(''); setProposal(null); }}>← Training</button>;
+  const back = <button className="text-button" disabled={applying} onClick={() => { setPanel(''); setReview(null); setChatTarget(null); setDrillId(''); setProposal(null); }}>← Workouts</button>;
   const message = (error || store.error) && <p className="player-error" role="alert">{error || store.error}</p>;
   const openPersonal = (w?: Row, create = false) => { setSeed(''); setPersonalSource(undefined); setPersonalSelected(w); setPersonalHandoff(undefined); setConversationOpen(false); setPersonalCreate(create); if (create) personal.newConversation(); setPersonalOpen(true); setPersonalEntry(v => v + 1); };
   const personalResume = personal.enabled ? personal.workouts.find(w => personal.logs[w.workoutId] && !personal.logs[w.workoutId].endedAt) : undefined;
@@ -170,7 +170,7 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     </>;
   }
   if (panel === 'details') return <>{back}<section className="portal-card"><h2>Plan details</h2><p>{plan.assessment?.summary}</p><p>{plan.horizonWeeks} weeks · {plan.sessionsPerWeek || plan.intake?.sessionsPerWeek} sessions per week · {plan.minutesPerSession || plan.intake?.minutesPerSession} minutes per session</p><p>Goals: {(plan.intake?.goals || []).join(', ')}</p>{plan.intake?.freeTextGoals && <p>{plan.intake.freeTextGoals}</p>}{(plan.focusAreas || []).map((f: Row, i: number) => <p key={i}>{f.domain || f.title}: {f.rationale || f.reason}</p>)}<p>{(plan.disclaimers || []).join(' ')}</p><button className="hub-secondary" onClick={openPlan}>Start a new plan</button></section></>;
-  return <section className="player-training"><p className="eyebrow">Your training</p><h1>Make every session count.</h1>{message}
+  return <section className="player-training"><p className="eyebrow">Your training</p><h1>Your workouts</h1><p>Follow your assigned sessions, use the rest timers, and save each workout when you finish.</p>{message}
     {reveal && <section className="portal-card"><h2>Your plan is ready</h2><p>{plan.assessment?.summary}</p><button onClick={() => setReveal(false)}>Explore my plan</button></section>}
     {plan.status === 'completed' && <section className="portal-card"><h2>Block complete</h2><p>Review your work and build your next block.</p><button className="primary-cta" onClick={openPlan}>Plan my next block</button></section>}
     {personalResume && <button className="primary-cta player-next" onClick={() => openPersonal(personalResume)}><span><small>Resume personal workout</small><strong>{personalResume.title}</strong></span><span>→</span></button>}
