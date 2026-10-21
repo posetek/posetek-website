@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6ad7f9e34d086d5f74247912",
-  "sourceCommit": "2977c3cf7a9ea657d316a0632a5b5b682af8bfdb",
-  "url": "https://6ad7f9e34d086d5f74247912--posetek.netlify.app",
+  "deploymentId": "6ad90a23e4b4a4ece16b2729",
+  "sourceCommit": null,
+  "url": "https://6ad90a23e4b4a4ece16b2729--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "9b1eafb5209568491a5fa24d6a61e43c2eb37989",
-    "size": 3763,
+    "sha": "9187019ae395f0d1ec41df9591fac134a05f59da",
+    "size": 3751,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -449,6 +449,11 @@
       "path": "/_astro/adminpage.buoakwc-.js",
       "sha": "ee9311de1f28020dde4bf73d9eb76e958c2517a8",
       "size": 15087
+    },
+    {
+      "path": "/_astro/adminpage.bycb0q-k.js",
+      "sha": "856ce17443003db02505df1dbd3ac92ccd9f6773",
+      "size": 14051
     },
     {
       "path": "/_astro/adminpage.bysvdzaw.js",
@@ -923,6 +928,11 @@
     {
       "path": "/_astro/applicationroot.exlucfq5.js",
       "sha": "e01353fc9ff7b93974accf81d8c8a8a333918ed2",
+      "size": 18124
+    },
+    {
+      "path": "/_astro/applicationroot.midhcet4.js",
+      "sha": "71f6cd6a7d078cb99b0eb27d5cebefc1e86f6463",
       "size": 18124
     },
     {
@@ -2126,6 +2136,11 @@
       "size": 29231
     },
     {
+      "path": "/_astro/homepage.bnt8cwv1.js",
+      "sha": "5f2d3940d0a12c020175755566161fceb4d40f44",
+      "size": 29231
+    },
+    {
       "path": "/_astro/homepage.culglisj.js",
       "sha": "4715f2aa87c62608761a2a2ee8fe79e6ced8ce00",
       "size": 34285
@@ -2726,6 +2741,11 @@
       "size": 60056
     },
     {
+      "path": "/_astro/mount.bqfhnflz.css",
+      "sha": "d36200b5908c755b7104d05b5a96aa025ebc0cef",
+      "size": 152
+    },
+    {
       "path": "/_astro/mount.bzi4hpii.js",
       "sha": "ade8d08e8bfe4df001988d0ad0ea46aa5e56e33b",
       "size": 813792
@@ -2739,6 +2759,11 @@
       "path": "/_astro/mount.dl9nca7l.css",
       "sha": "92aac38cde59c0e259686613041735889bb55ae8",
       "size": 152
+    },
+    {
+      "path": "/_astro/mount.izdwrnt_.js",
+      "sha": "1cb74f9da6b05a9d0f2c7330e53a211ab1786da8",
+      "size": 813800
     },
     {
       "path": "/_astro/movementdemo.6pzsqxkt.js",
@@ -3221,6 +3246,11 @@
       "size": 44193
     },
     {
+      "path": "/_astro/playerdetail.bu0cbmzb.js",
+      "sha": "4e2a1445bcae7306d59203b72ed43eafb30c1fc6",
+      "size": 46639
+    },
+    {
       "path": "/_astro/playerdetail.bvlmfka5.css",
       "sha": "53529b248e69a2d5a5e4a9d4fb1f0e9e0c1328a4",
       "size": 7947
@@ -3274,6 +3304,11 @@
       "path": "/_astro/playerdetail.d8hcnwqt.js",
       "sha": "484dbf39ea3d0b51d2eaf86c9e9c9eca3de48f82",
       "size": 39142
+    },
+    {
+      "path": "/_astro/playerdetail.dh04tqh-.css",
+      "sha": "8a9f6154fa27b452f4940c6d079d781e0c076c3c",
+      "size": 9046
     },
     {
       "path": "/_astro/playerdetail.dlwcvne7.css",
@@ -3946,6 +3981,11 @@
       "size": 10814
     },
     {
+      "path": "/_astro/supportpage.d4kkyaws.js",
+      "sha": "d22f07d293bdb7820e55ecb628952b5e46e7613c",
+      "size": 10814
+    },
+    {
       "path": "/_astro/supportpage.dfeyi3qh.js",
       "sha": "12227715fd8b42fcb1d3b0300fb0b94c1dd79680",
       "size": 10366
@@ -4532,8 +4572,8 @@
     },
     {
       "path": "/application.html",
-      "sha": "3b8baaa2514c93984b8e45b4f60471823d4b7598",
-      "size": 15760
+      "sha": "de7b8f2d2760b5281060c9dd798cf62fe2cef86b",
+      "size": 15761
     },
     {
       "path": "/assets/accesslinkcard-bwk4cx6k.css",
@@ -10622,6 +10662,5 @@
       "size": 66488,
       "localPath": "videopage.html"
     }
-  ],
-  "sourceNote": "Admin optional-position runtime based on approved application 57e9e03e139a287accfad7889d96747b3ad6ecc3. Only administrator intake changes; current marketing, feedback and coach-entry bytes preserved. Do not merge runtime branch into main."
+  ]
 }
