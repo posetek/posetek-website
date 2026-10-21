@@ -1,0 +1,32 @@
+{
+  "verifiedAt": 1792608615.77779,
+  "functions": {
+    "updateAdminPlayerPhone": {
+      "versionId": "1",
+      "sourceSha256": "b0f4d1d0633e671a70b8248ee55f9c13aa50d812022d71c401b854c1ad5d21c3",
+      "status": "ACTIVE",
+      "definition": {
+        "timeout": "30s",
+        "availableMemoryMb": 256,
+        "maxInstances": 5,
+        "secrets": [],
+        "httpsTrigger": true,
+        "publicInvoker": true,
+        "ingressSettings": "ALLOW_ALL",
+        "callable": true
+      },
+      "iamSha256": "c6cf2cc98bc936614be37132d9483504cc106a3779d3a1b407a401c62726d57c",
+      "runtimeConfig": {
+        "present": false
+      }
+    }
+  },
+  "unrelatedFunctionsPreserved": true,
+  "triggerRuntimeAndTransportVerified": true,
+  "runtimeModuleClosureVerified": true,
+  "source": "b039a94",
+  "onlyEndpoint": "updateAdminPlayerPhone",
+  "unrelatedFunctionCount": 141,
+  "rulesChanged": false,
+  "authorization": "Verified PoseTek administrator; fresh Auth directory validation; actor/player deletion locks; exact prior value transaction guard"
+}

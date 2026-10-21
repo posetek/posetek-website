@@ -1,0 +1,61 @@
+{
+  "verifiedAt": 1792612865.260504,
+  "functions": {
+    "adminReviseRep": {
+      "versionId": "5",
+      "sourceSha256": "796e1a51c22d84630a734225e201f5e1b9d64e2bb2ab69e14ca70c1d38fb9827",
+      "status": "ACTIVE",
+      "definition": {
+        "sourceOnly": true,
+        "runtime": "nodejs22",
+        "timeout": "120s"
+      },
+      "iamSha256": "2096af9bf6cf45dd0de0a30c92f781d54c123fe7512b25d1f2b6ad8cd6d38cf3",
+      "runtimeConfig": {
+        "present": false
+      }
+    },
+    "adminRestoreRepRevision": {
+      "versionId": "4",
+      "sourceSha256": "061e13e2bb3da3bce3693a5997d05e403c2433e63912ad2f6263cce58c951958",
+      "status": "ACTIVE",
+      "definition": {
+        "sourceOnly": true,
+        "runtime": "nodejs22",
+        "timeout": "120s"
+      },
+      "iamSha256": "2c50d65150521862a3cf580ee1416f8067320b61e44d1c94e05e5289f5ad888a",
+      "runtimeConfig": {
+        "present": false
+      }
+    },
+    "adminGetRepRevisions": {
+      "versionId": "1",
+      "sourceSha256": "b7ef628946c242ec682d6531d2e069fde744994e7461c605c65ca5e18909a77c",
+      "status": "ACTIVE",
+      "definition": {
+        "sourceOnly": false,
+        "runtime": "nodejs22",
+        "timeout": "30s"
+      },
+      "iamSha256": "f1a9f10954d713b96703b5326d75da3988d01dbbb2ace1151f4eef20d8a31037",
+      "runtimeConfig": {
+        "present": false
+      }
+    }
+  },
+  "unrelatedFunctionsPreserved": true,
+  "triggerRuntimeAndTransportVerified": true,
+  "runtimeModuleClosureVerified": true,
+  "status": "published_verified",
+  "sourceCommit": "09aed5749ad75a448a1f259a6af2f8fc756883a5",
+  "reviewedHead": "d72b635ecce6b5ce98b24898b3c7f40f91557fef",
+  "pullRequest": "https://github.com/posetek/posetek-backend/pull/34",
+  "ci": "https://github.com/posetek/posetek-backend/actions/runs/39664748399",
+  "existingEndpointConfigurationAndIamPreserved": true,
+  "clientRulesChanged": false,
+  "unrelatedProductsReleased": false,
+  "unauthenticatedRequestsDenied": 3,
+  "revisionTests": 27,
+  "deployedSourceFiles": 7
+}

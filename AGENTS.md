@@ -1,5 +1,84 @@
 # PoseTek website context
 
+## Administrator jump technique release (October 21, 2026)
+
+Admin Rep tools now saves reviewed jump phases and derived joint angles with
+restorable revisions. Website `6ad917085d813c55f716152c` has 2,144 verified artifact
+files; the reconciled baseline protects 2,142. Backend revision writer v5, restore
+v4 and new history reader v1 are source/configuration/IAM verified. All unrelated
+functions, marketing, feedback, coach enrollment, rules and held candidates are
+preserved. Read [behavior](docs/ADMIN_JUMP_TECHNIQUE.md),
+[website receipt](deployment/JUMP_TECHNIQUE_PRODUCTION.json) and
+[backend receipt](deployment/JUMP_TECHNIQUE_BACKEND_PRODUCTION.json).
+Runtime branch `codex/jump-technique-runtime` must not merge into main. Keep
+`[skip netlify]` on source integration. Private athlete corrections and media
+remain outside the public repository.
+
+
+## Administrator phone correction release (October 21, 2026)
+
+Admin Profile → Contact details now supports verified parent/guardian phone
+corrections. Website `6ad90a23e4b4a4ece16b2729` preserves the approved runtime
+plus this editor; all 2,125 artifact files match production and the reconciled
+baseline protects 2,123. Backend publishes only `updateAdminPlayerPhone` v1; all
+141 unrelated functions, rules, indexes and held candidates remain unchanged.
+Read [behavior](docs/ADMIN_PHONE_EDIT.md), [website receipt](deployment/ADMIN_PHONE_EDIT_PRODUCTION.json)
+and [backend receipt](deployment/ADMIN_PHONE_BACKEND_PRODUCTION.json).
+Runtime branch `codex/admin-phone-runtime` must not merge into main. Keep
+`[skip netlify]` on source integration and preserve the current exact artifact.
+
+
+## Administrator intake position release (October 20, 2026)
+
+Admin player creation now accepts **Position (optional) → Not recorded**.
+Website `6ad7f9e34d086d5f74247912` preserves the prior application except for
+this change, plus the current marketing, feedback and coach enrollment entries.
+All 2,117 artifact files match production; the reconciled baseline protects 2,115.
+See [behavior and release boundaries](docs/ADMIN_OPTIONAL_POSITION.md) and
+[production evidence](deployment/ADMIN_OPTIONAL_POSITION_PRODUCTION.json).
+Runtime branch `codex/admin-optional-position-runtime` must not merge into main.
+The held Backend candidate requires compatibility qualification before publication;
+this release changes no backend, rules, indexes, native build or automation.
+
+
+## Current showcase refinement release (October 18, 2026)
+
+The accepted Players/Coaches showcase refinement is live at [posetek.net](https://posetek.net).
+Deploy `6ad58598033b1b6ba8b4d6c2` was promoted unchanged at 20:37:19 PDT from runtime
+`785da39a9e65927016066254a611906b0bf0b4fb`. All 2,108 artifact files match production;
+all 2,001 prior protected files remain exact, including application, feedback and
+coach enrollment. The reconciled baseline protects 2,106 files.
+
+Live acceptance covers 91 unique public checks across the initial runs and an
+unchanged orientation and closing reruns, plus four headless WebKit support checks.
+Initial responsive-image and decorative-fetch cancellations are retained and disclosed.
+Candidate hardware timing and its qualifications remain separate; physical-phone
+acceptance is not claimed. No backend, authentication or persisted-data changes
+were published. Approved application policy/support bytes and native/content holds
+remain preserved. Read the [showcase release handoff](docs/PUBLIC_SITE_SHOWCASE_RELEASE.md)
+and [production receipt](deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
+Source integration retains `[skip netlify]`; future unmarked main pushes still
+use the existing automatic publishing configuration.
+
+
+## Preceding public-site release (October 18, 2026)
+
+The initial Players/Coaches revamp was published before the showcase refinement above.
+Deploy `6ad536a9103351c79863f77f` was promoted unchanged at 14:42:52 PDT from
+runtime `9fa587ac341c993023ee0174b7bfe1e96a44d247`. All 2,003 artifact files match
+production; all 1,985 previous protected files remain byte-identical, including
+application, feedback and coach enrollment. The reconciled baseline protects
+2,001 files, adding only the 16 retained assets from this artifact.
+
+Live acceptance passed 82 public interaction checks, 29 cold-start checks and
+four WebKit support checks. Desktop and mobile viewport evidence includes
+360/390/430/768/1440/1920px; physical-phone acceptance is not claimed. No backend,
+authentication or persisted-data changes were published. Approved application
+policy/support bytes and separate native/content holds remain preserved.
+Read the [release handoff](docs/PUBLIC_SITE_REVAMP_RELEASE.md) and
+[production receipt](deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json).
+
+
 ## Current backend ownership — migration branch
 
 Shared Firebase/runtime source moved to `posetek/posetek-backend`. Read

@@ -1,5 +1,5 @@
 /* Profile fields every staff-created player carries (mobile docs/plans/PLAYER_CREATION_FIELDS_PLAN.md).
-   Phone and position are required; height and weight are optional, entered in ft/in and lb,
+   Phone is required; position is optional only for admin intake. Height and weight are optional, entered in ft/in and lb,
    and sent as cm and kg. The callables enforce the same rules server-side. */
 import { isPosition, type Position } from "./contracts/types";
 
@@ -38,9 +38,9 @@ export function weightKg(input: StaffPlayerProfileInput): number | null {
 }
 
 /** First missing or invalid field, in form order; null when the profile can be saved. */
-export function missingRequirement(input: StaffPlayerProfileInput, requiresWeight = false): string | null {
+export function missingRequirement(input: StaffPlayerProfileInput, requiresWeight = false, positionOptional = false): string | null {
   if (!normalizePhone(input.phone)) return blank(input.phone) ? "Enter a phone number." : "Enter a 10-digit US phone number.";
-  if (!isPosition(input.position)) return "Choose a position.";
+  if (!(positionOptional && input.position === "") && !isPosition(input.position)) return "Choose a position.";
   if (!(blank(input.heightFeet) && blank(input.heightInches)) && heightCm(input) === null) return "Enter a valid height, or leave it blank.";
   if (requiresWeight && weightKg(input) === null) return "Enter the player's weight in pounds.";
   if (!blank(input.weightPounds) && weightKg(input) === null) return "Enter a valid weight, or leave it blank.";
@@ -49,7 +49,8 @@ export function missingRequirement(input: StaffPlayerProfileInput, requiresWeigh
 
 /** Callable / Firestore fields. Call only when `missingRequirement` is null. */
 export function staffPlayerProfileFields(input: StaffPlayerProfileInput): Record<string, string | number> {
-  const fields: Record<string, string | number> = { phone_number: normalizePhone(input.phone)!, position: input.position };
+  const fields: Record<string, string | number> = { phone_number: normalizePhone(input.phone)! };
+  if (isPosition(input.position)) fields.position = input.position;
   const height = heightCm(input), weight = weightKg(input);
   if (height !== null) fields.height = height;
   if (weight !== null) fields.weight = weight;

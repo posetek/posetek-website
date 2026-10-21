@@ -19,6 +19,7 @@ export function PlayerEvidence({ teamId, playerId, onPlayerChange }: { teamId: s
   const panelId = useId();
   return <div className="cx-evidence" aria-label="Illustrative player evidence">
     <div className="cx-evidence-top"><span>{team.name} / Individual insight</span><span className="cx-example-label">Illustrative example</span></div>
+    <label className="cx-player-select">Choose a sample player<select value={playerId} onChange={event => onPlayerChange(event.target.value)}>{team.players.map(item => <option key={item.id} value={item.id}>{item.name} · {item.position}</option>)}</select></label>
     <div className="cx-evidence-layout">
       <div className="cx-player-options" role="group" aria-label={`Choose a sample player from ${team.name}`}><span className="cx-overline">Choose a player</span>{team.players.map(item => <button type="button" key={item.id} aria-pressed={item.id === player.id} aria-controls={panelId} onClick={() => onPlayerChange(item.id)}><span className="cx-shirt-number" aria-hidden="true">{String(item.number).padStart(2, "0")}</span><span><strong>{item.name}</strong><small>{item.position}</small></span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m10 6 6 6-6 6" stroke="currentColor" strokeWidth="1.5" /></svg></button>)}<p>Different players.<br />Different next steps.</p></div>
       <div id={panelId} className="cx-player-detail">

@@ -1,5 +1,22 @@
 # PoseTek engineering handbook
 
+Current production: [showcase refinement release](../PUBLIC_SITE_SHOWCASE_RELEASE.md)
+and [verified receipt](../../deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
+The exact accepted deploy `6ad58598033b1b6ba8b4d6c2` is live; all 2,001 prior
+protected files remain exact and the reconciled baseline protects 2,106 files.
+Live checks and their orientation-rerun qualification are recorded in the receipt.
+
+Implementation and REA evidence: [showcase depth](../PUBLIC_SITE_SHOWCASE_DEPTH.md).
+The [candidate receipt](../../deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json) remains
+a pre-publication checkpoint. The [preceding public-site release](../PUBLIC_SITE_REVAMP_RELEASE.md)
+and [its receipt](../../deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json) are historical.
+
+Public-site implementation history: [interaction polish](../PUBLIC_SITE_INTERACTION_POLISH.md),
+continuing [first interaction and editorial pacing](../PUBLIC_SITE_FIRST_INTERACTION.md),
+building on the [revamp candidate](../PUBLIC_SITE_REVAMP.md).
+Its ordinary guarded artifact preserves the application; do not substitute the
+full application release builder or infer production approval from a green PR.
+
 Migration branch: [Backend source consolidation, stage 1](../BACKEND_MIGRATION.md) is implemented for validation. Production ownership has not switched.
 
 This is the entry point for engineering work across the website, private mobile
@@ -8,6 +25,11 @@ all three repositories; website authenticated-emulator support is also merged. U
 [rollout record](MAIN_ROLLOUT.md) for exact PR, merge and hosted-check evidence.
 Neither a merged CI workflow nor a green local command proves that secrets,
 remote protections, paid review, staging, or a production release are active.
+
+Pre-publication marketing checkpoint: [artifact and acceptance receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json).
+The [composition checkpoint](../PUBLIC_SITE_COMPOSITION.md) is historical; its
+guarded preview has been superseded by the exact candidate promoted on October 18.
+For future work, keep source integration separate from exact-artifact promotion.
 
 ## Start with the task
 

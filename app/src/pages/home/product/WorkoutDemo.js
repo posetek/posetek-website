@@ -10,6 +10,7 @@ import { TacticalIcon } from "../TacticalIcon";
 import { DemoPitch } from "./DrillDiagram";
 import { DrillMedia } from "./DrillMedia";
 import { createDemoWorkout, formatDuration, workoutReducer, formatDose, initialWorkoutState, focusFromRequest } from "./product-demo";
+import { useDemoDisclosure } from "../DemoDisclosure";
 import { focusWorkoutHeading } from "./workout-focus";
 import "./product-demo.css";
 import "./workout-section.css";
@@ -21,6 +22,7 @@ function CheckIcon() {
     });
 }
 function WorkoutDemo({ active = true, initialRequest = ``, requestId = 0 }) {
+    const { expanded, expand } = useDemoDisclosure();
     let [choices, setChoices] = (0, React.useState)({
         minutes: initialRequest ? 20 : 30, energy: `normal`, focus: focusFromRequest(initialRequest)
     });
@@ -97,6 +99,9 @@ function WorkoutDemo({ active = true, initialRequest = ``, requestId = 0 }) {
             focusWorkoutHeading(containerRef.current);
         }
     }, [state.step, choosingFocus, active]);
+    React.useEffect(() => {
+        if (!expanded && state.step === `training` && !state.paused) dispatch({ type: `pause` });
+    }, [expanded, state.step, state.paused]);
     let workout = state.workout;
     let currentSegment = workout?.segments[state.segment];
     let currentDrill = currentSegment && workout?.drills[currentSegment.drill];
@@ -112,6 +117,7 @@ function WorkoutDemo({ active = true, initialRequest = ``, requestId = 0 }) {
         ...n, [e]: t
     }));
     let transition = e => {
+        expand();
         shouldFocusRef.current = true;
         dispatch(e);
     };
@@ -120,7 +126,7 @@ function WorkoutDemo({ active = true, initialRequest = ``, requestId = 0 }) {
         setChoosingFocus(e);
     };
     return (0, jsxRuntime.jsxs)(`div`, {
-        ref: containerRef, className: `product-demo workout-demo`, "aria-labelledby": headingId, children: [
+        ref: containerRef, className: `product-demo workout-demo`, "data-workout-step": state.step, "aria-labelledby": headingId, children: [
             (0, jsxRuntime.jsxs)(`div`, {
                 className: `pd-topbar`, children: [
                     (0, jsxRuntime.jsx)(`span`, {
@@ -310,7 +316,7 @@ Your focus.` : workout?.title
                                     })
                                 ]
                             }), state.step === `review` && workout && (0, jsxRuntime.jsxs)(BlurFade, {
-                                duration: .3, blur: `4px`, children: [
+                                duration: .3, blur: `4px`, className: `pd-review-scene`, children: [
                                     (0, jsxRuntime.jsxs)(`div`, {
                                         className: `pd-heading`, children: [
                                             (0, jsxRuntime.jsxs)(`div`, {
@@ -347,7 +353,7 @@ Your focus.` : workout?.title
                                         className: `pd-proposal-list`, children: workout.drills.map((e, t) => (0, jsxRuntime.jsx)(MagicCard, {
                                             className: `pd-drill-card`, gradientFrom: `#b7f34a`, gradientTo: `#4bd7e8`, gradientColor: `#b7f34a12`, gradientOpacity: .4, children: (0, jsxRuntime.jsxs)(`div`, {
                                                 className: `pd-drill-row`, children: [
-                                                    (0, jsxRuntime.jsx)(`button`, { type: `button`, className: `pd-drill-select`, "aria-label": `View ${e.title || e.name}`, "aria-pressed": selectedDrillIndex === t, onClick: () => setSelectedDrillIndex(t), children: `View drill` }),
+                                                    (0, jsxRuntime.jsx)(`button`, { type: `button`, className: `pd-drill-select`, "aria-label": `View ${e.title || e.name}`, "aria-pressed": selectedDrillIndex === t, onClick: () => { setSelectedDrillIndex(t); expand(); }, children: `View drill` }),
                                                     (0, jsxRuntime.jsxs)(`span`, {
                                                         className: `pd-drill-order`, children: [
                                                             `0`, t + 1
@@ -408,9 +414,7 @@ Your focus.` : workout?.title
                                                     })
                                                 ]
                                             }), (0, jsxRuntime.jsx)(`button`, {
-                                                type: `button`, className: `pd-icon-button`, "aria-label": state.paused ? `Resume workout timer` : `Pause workout timer`, onClick: () => dispatch({
-                                                    type: `pause`
-                                                }), children: (0, jsxRuntime.jsx)(TacticalIcon, {
+                                                type: `button`, className: `pd-icon-button`, "aria-label": state.paused ? `Resume workout timer` : `Pause workout timer`, onClick: () => { expand(); dispatch({ type: `pause` }); }, children: (0, jsxRuntime.jsx)(TacticalIcon, {
                                                     kind: state.paused ? `play` : `pause`
                                                 })
                                             })

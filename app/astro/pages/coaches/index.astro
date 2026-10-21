@@ -1,11 +1,12 @@
 ---
 import Document from "../../layouts/Document.astro";
 import CoachesPage from "../../../src/pages/coaches/CoachesPage";
+import MarketingNavigation from "../../components/MarketingNavigation.astro";
 ---
 <Document marketing title="PoseTek for Coaches & Clubs | Start with every player."
   description="A team-by-team approach to player development. PoseTek connects soccer performance testing, individual training and ongoing support for coaches and clubs."
   socialDescription="Know your team. Understand each player. Connect performance testing to focused training and retesting with PoseTek."
   canonical="https://posetek.net/coaches">
   <Fragment set:html={"<!-- posetek-coaches-entry -->"} />
-  <div id="root"><CoachesPage client:load /></div>
+  <div class="pt-home pt-revamp pt-marketing-shell"><MarketingNavigation audience="coaches" /><div id="root"><CoachesPage client:load /></div></div>
 </Document>

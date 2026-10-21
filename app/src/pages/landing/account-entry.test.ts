@@ -24,7 +24,7 @@ describe("account entry destinations", () => {
     expect(route("manager")).toBe("/organization");
     expect(route("coach")).toBe("/insights");
     expect(route("independent")).toBe("/insights");
-    expect(route("player")).toBe("/feed?player=canonical-player&userType=player");
+    expect(route("player")).toBe("/athlete?player=canonical-player&userType=player");
     expect(route("pending")).toBe("/join");
   });
   it.each(["/admin", "/admin/access", "/admin/user-issues?issue=" + "a".repeat(64), "/admin/accounts/player/example?workoutSource=personalWorkoutLogs&workoutLog=log-1"])("preserves the admin destination only for administrators: %s", target => {
@@ -33,7 +33,7 @@ describe("account entry destinations", () => {
   });
   it("returns players to Training and preserves canonical player parameters", () => {
     expect(route("player", "/programs?player=canonical-player")).toBe(origin + "/programs?player=canonical-player");
-    expect(route("player", "/feed.html?activity=123")).toBe(origin + "/feed.html?activity=123");
+    expect(route("player", "/feed.html?activity=123")).toBe("/athlete?player=canonical-player&userType=player");
   });
   it.each(["/admin/accounts?orgId=club&directoryTab=staff&search=Ana&page=2", "/admin/organizations?orgId=club&teamId=u15", "/admin/programs?players=ana&orgId=club&teamId=u15", "/admin/programs/personalized?players=ana", "/admin/accounts/coach/coach-1?directoryTab=staff", "/admin/accounts/player/ana/results/sprint?orgId=club", "/admin/accounts/player/ana/results/sprint/rep-1?session=s"]) ("restores workspace/evidence sign-in intent only for admins: %s", target => {
     expect(route("admin", target)).toBe(origin + target);
@@ -43,7 +43,7 @@ describe("account entry destinations", () => {
     expect(getSafeReturnToUrl("?returnTo=" + encodeURIComponent(target), base, origin)).toBeNull();
   });
   it.each(["/organization", "/insights", "/roster", "/coachesview.html"]) ("does not route a player to staff-only surface %s", target => {
-    expect(route("player", target)).toBe("/feed?player=canonical-player&userType=player");
+    expect(route("player", target)).toBe("/athlete?player=canonical-player&userType=player");
   });
   it("does not confuse independent coaches with managed staff", () => {
     expect(route("independent", "/insights")).toBe(origin + "/insights");
