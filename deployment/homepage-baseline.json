@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6ad58598033b1b6ba8b4d6c2",
-  "sourceCommit": "785da39a9e65927016066254a611906b0bf0b4fb",
-  "url": "https://6ad58598033b1b6ba8b4d6c2--posetek.netlify.app",
+  "deploymentId": "6ad7f9e34d086d5f74247912",
+  "sourceCommit": "2977c3cf7a9ea657d316a0632a5b5b682af8bfdb",
+  "url": "https://6ad7f9e34d086d5f74247912--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "0dbcb27354007786e2390ab53f021e908a5afba2",
-    "size": 3746,
+    "sha": "9b1eafb5209568491a5fa24d6a61e43c2eb37989",
+    "size": 3763,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -409,6 +409,11 @@
       "path": "/_astro/adminoverview.k-chkv0q.js",
       "sha": "15a2e081ed3c39c9eb310c68b9b4d8ef285be010",
       "size": 263
+    },
+    {
+      "path": "/_astro/adminpage.4yvcb_0d.js",
+      "sha": "02ace4ea58c975efe25f205601a6f40185adc2cf",
+      "size": 14051
     },
     {
       "path": "/_astro/adminpage.7hskynxr.css",
@@ -946,6 +951,11 @@
       "size": 17370
     },
     {
+      "path": "/_astro/applicationroot.zr824day.js",
+      "sha": "f6626c8e9757ae835dc76fa448da569b292737ec",
+      "size": 18124
+    },
+    {
       "path": "/_astro/athleteportalpage.4ismhgov.js",
       "sha": "3720e5f5b77642afb754362e72b8848ade6a6c40",
       "size": 303341
@@ -1268,6 +1278,11 @@
     {
       "path": "/_astro/coachdetail.bxvl4dao.js",
       "sha": "1ab2fea400b6636cd6b85b39856706ac31801402",
+      "size": 4726
+    },
+    {
+      "path": "/_astro/coachdetail.bzzwz4bg.js",
+      "sha": "7834c3770f9a8530b394571595b3eab85bc693c3",
       "size": 4726
     },
     {
@@ -2261,6 +2276,11 @@
       "size": 83755
     },
     {
+      "path": "/_astro/insightspage.begzqeqm.js",
+      "sha": "086ad03f21f274d82ecb5edca8264a1a512b33be",
+      "size": 89245
+    },
+    {
       "path": "/_astro/insightspage.bgq8jact.js",
       "sha": "36652aa386487e6659cc7113dd9ed912281259a0",
       "size": 84974
@@ -2646,6 +2666,11 @@
       "size": 12880
     },
     {
+      "path": "/_astro/monitoraccounts.cuokrn61.js",
+      "sha": "8734ae2f6b26279c591136435c3b7ece4a03d16b",
+      "size": 60082
+    },
+    {
       "path": "/_astro/monitoraccounts.cysqx59z.js",
       "sha": "10b162428089058638e9fe9d12142772b94565e5",
       "size": 59521
@@ -2826,6 +2851,11 @@
       "size": 8168
     },
     {
+      "path": "/_astro/navigation.wa6mgl3k.js",
+      "sha": "8eb2d4ee0bd9d8a928ee8b7196859ea2299e2ec7",
+      "size": 8275
+    },
+    {
       "path": "/_astro/notfoundpage.bf7sb5ch.js",
       "sha": "cfa76c9d1c9e9c8058b9143c74472b5802f5065c",
       "size": 1340
@@ -2954,6 +2984,11 @@
       "path": "/_astro/organizationpage.ct-6oulw.js",
       "sha": "9c59099abdfa8d0993023b57a3144769acfe0a3e",
       "size": 20462
+    },
+    {
+      "path": "/_astro/organizationpage.cu0v72nl.js",
+      "sha": "b240421711d6c79fc0fa6f6fd5e25b2c4a188218",
+      "size": 20981
     },
     {
       "path": "/_astro/organizationpage.d_3pt43p.js",
@@ -3219,6 +3254,11 @@
       "path": "/_astro/playerdetail.crzapxs5.js",
       "sha": "1f2904c34052467e005cb2e35acc2be67b2a9e6a",
       "size": 44188
+    },
+    {
+      "path": "/_astro/playerdetail.cxyxysmi.js",
+      "sha": "3d823dd518969460c0f32e05930db61fe0a6a7ef",
+      "size": 44193
     },
     {
       "path": "/_astro/playerdetail.d0l9hy5x.js",
@@ -3916,6 +3956,11 @@
       "size": 10366
     },
     {
+      "path": "/_astro/supportpage.dj9tzjun.js",
+      "sha": "a47567912666c8b87b00cda695379df413afe328",
+      "size": 10814
+    },
+    {
       "path": "/_astro/supportpage.dtkmhcjc.js",
       "sha": "677f19c092ce126870c334e6e79f0be34d4600e3",
       "size": 10366
@@ -4487,8 +4532,8 @@
     },
     {
       "path": "/application.html",
-      "sha": "b23f8e221c6cbd6d5f558836ff89c02d3a85ac2c",
-      "size": 15761
+      "sha": "3b8baaa2514c93984b8e45b4f60471823d4b7598",
+      "size": 15760
     },
     {
       "path": "/assets/accesslinkcard-bwk4cx6k.css",
@@ -10578,7 +10623,5 @@
       "localPath": "videopage.html"
     }
   ],
-  "applicationSourceCommit": "57e9e03e139a287accfad7889d96747b3ad6ecc3",
-  "coachEnrollmentSourceCommit": "8eaf3ffd35848c3cf7ca753cc9fd4030cc4fb524",
-  "sourceNote": "Public Players/Coaches showcase artifact 785da39a9e65927016066254a611906b0bf0b4fb was promoted unchanged on October 18, 2026 at 20:37:19 PDT. All 2,001 previous protected records remain exact; 105 retained Astro assets were added. Active application runtime remains 57e9e03e139a287accfad7889d96747b3ad6ecc3. Runtime freeze codex/coach-overview-runtime preserves approved privacy/support source from 139162a04a1aa2afefda78c62bf2715d9667acbc. Held candidate remains on main. Isolated coach enrollment and feedback retain verified predecessor bytes. See deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json."
+  "sourceNote": "Admin optional-position runtime based on approved application 57e9e03e139a287accfad7889d96747b3ad6ecc3. Only administrator intake changes; current marketing, feedback and coach-entry bytes preserved. Do not merge runtime branch into main."
 }
