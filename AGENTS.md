@@ -1,5 +1,22 @@
 # PoseTek website context
 
+## Parent-facing player experience release (October 21, 2026)
+
+Player sign-in opens Profile and the skill map. Player navigation uses Results,
+Workouts and Leaderboards, with Community removed from the tab bar. The exact
+reviewed website `6ad92e7fec1a407bec937389` is published and byte-verified:
+2,156 artifacts match 2,157 provider records; the reconciled baseline protects
+2,154 files and passes the ordinary preservation build. Marketing, feedback,
+coach enrollment and held policy/session candidates remain preserved. Only
+Backend `getTeamLeaderboard` v3 was updated.
+
+Read [behavior and verification limits](docs/PARENT_PLAYER_EXPERIENCE.md),
+[website receipt](deployment/PARENT_PLAYER_PRODUCTION.json) and
+[backend receipt](deployment/PARENT_PLAYER_BACKEND_PRODUCTION.json).
+Source PR #94 is separate from runtime `4c1ba8e`; do not merge
+`codex/parent-player-runtime` into main. Keep `[skip netlify]` on source and
+receipt integration. Private cohort operations and parent drafts stay outside Git.
+
 ## Administrator jump technique release (October 21, 2026)
 
 Admin Rep tools now saves reviewed jump phases and derived joint angles with

@@ -1,10 +1,18 @@
 # PoseTek engineering handbook
 
-Current production: [showcase refinement release](../PUBLIC_SITE_SHOWCASE_RELEASE.md)
-and [verified receipt](../../deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
-The exact accepted deploy `6ad58598033b1b6ba8b4d6c2` is live; all 2,001 prior
-protected files remain exact and the reconciled baseline protects 2,106 files.
-Live checks and their orientation-rerun qualification are recorded in the receipt.
+Current application production: [player profile and team results](../PARENT_PLAYER_EXPERIENCE.md)
+and [verified receipt](../../deployment/PARENT_PLAYER_PRODUCTION.json).
+The exact accepted deploy `6ad92e7fec1a407bec937389` is live; the reconciled
+baseline protects 2,154 files and passes the ordinary preservation build.
+Source integration, the composed runtime and browser acceptance limits are
+recorded separately in the receipt.
+
+Preserved marketing: [showcase refinement release](../PUBLIC_SITE_SHOWCASE_RELEASE.md)
+and [its historical receipt](../../deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
+That October 18 deploy `6ad58598033b1b6ba8b4d6c2` preserved 2,001 prior files
+and established a 2,106-file baseline at that checkpoint. Its live checks and
+orientation-rerun qualification remain recorded there; the current application
+release preserves those marketing documents and assets.
 
 Implementation and REA evidence: [showcase depth](../PUBLIC_SITE_SHOWCASE_DEPTH.md).
 The [candidate receipt](../../deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json) remains
