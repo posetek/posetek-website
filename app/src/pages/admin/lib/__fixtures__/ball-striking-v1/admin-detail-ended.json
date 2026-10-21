@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "session": {
+    "schemaVersion": 1,
+    "sessionId": "bec1b0ea-f6db-4014-a4e0-1b43c8bf99cc",
+    "revision": 3,
+    "status": "ended",
+    "reference": {
+      "referenceId": "6bcf6527-5315-4d07-9193-84b1557fad40",
+      "versionId": "6bcf6527-5315-4d07-9193-84b1557fad40",
+      "title": "Synthetic reference"
+    },
+    "goal": "",
+    "repCount": 1,
+    "playerId": "p",
+    "actorUid": "athlete",
+    "playerDisplayName": "Synthetic",
+    "createdAt": "2026-10-17T21:12:48.765884+00:00",
+    "updatedAt": "2026-10-17T21:12:48.770282+00:00",
+    "endedAt": "2026-10-17T21:12:48.770281+00:00",
+    "memory": {
+      "schemaVersion": 1,
+      "goal": "",
+      "focuses": [],
+      "recentReps": [
+        {
+          "repId": "r",
+          "ordinal": 1,
+          "cue": "Keep your plant knee softly bent.",
+          "evidenceIds": [
+            "contact.knee"
+          ],
+          "resultSummary": "The contact measurement supports this focus.",
+          "qualityNotes": []
+        }
+      ],
+      "trendSummary": ""
+    }
+  },
+  "turns": [
+    {
+      "requestId": "0066b136-5e8f-45e2-9fd8-26e93799cbf1",
+      "kind": "rep",
+      "ordinal": 1,
+      "repId": "r",
+      "createdAt": "2026-10-17T21:12:48.767007+00:00",
+      "status": "complete",
+      "input": {
+        "goal": "",
+        "referenceTitle": "Synthetic reference",
+        "memoryRevision": 0,
+        "focuses": [],
+        "message": null
+      },
+      "tools": [
+        {
+          "name": "provided_kick_evidence",
+          "section": "measurements",
+          "phase": null,
+          "availableCount": 1,
+          "returnedCount": 1,
+          "evidence": [
+            {
+              "id": "contact.knee",
+              "label": "knee_flexion",
+              "athlete": 80,
+              "reference": 90,
+              "units": "deg",
+              "qualityNotes": []
+            }
+          ]
+        },
+        {
+          "name": "inspect_kick_evidence",
+          "section": "measurements",
+          "phase": null,
+          "availableCount": 1,
+          "returnedCount": 1,
+          "evidence": [
+            {
+              "id": "contact.knee",
+              "label": "knee_flexion",
+              "athlete": 80,
+              "reference": 90,
+              "units": "deg",
+              "qualityNotes": []
+            }
+          ]
+        }
+      ],
+      "decisionSummary": "The contact measurement supports this focus.",
+      "spokenOutput": "Keep your plant knee softly bent.",
+      "qualityNotes": [],
+      "model": {
+        "id": "claude-opus-5-5",
+        "provider": "anthropic_direct",
+        "effort": "medium"
+      },
+      "latencyMs": 0,
+      "error": null
+    },
+    {
+      "requestId": "305ea5b0-2059-4cdf-9d67-a3a6d893089f",
+      "kind": "chat",
+      "ordinal": null,
+      "repId": null,
+      "createdAt": "2026-10-17T21:12:48.768368+00:00",
+      "status": "complete",
+      "input": {
+        "goal": "",
+        "referenceTitle": "Synthetic reference",
+        "memoryRevision": 1,
+        "focuses": [],
+        "message": "Explain the cue"
+      },
+      "tools": [
+        {
+          "name": "provided_kick_evidence",
+          "section": "measurements",
+          "phase": null,
+          "availableCount": 1,
+          "returnedCount": 1,
+          "evidence": [
+            {
+              "id": "contact.knee",
+              "label": "knee_flexion",
+              "athlete": 80,
+              "reference": 90,
+              "units": "deg",
+              "qualityNotes": []
+            }
+          ]
+        },
+        {
+          "name": "inspect_kick_evidence",
+          "section": "measurements",
+          "phase": null,
+          "availableCount": 1,
+          "returnedCount": 1,
+          "evidence": [
+            {
+              "id": "contact.knee",
+              "label": "knee_flexion",
+              "athlete": 80,
+              "reference": 90,
+              "units": "deg",
+              "qualityNotes": []
+            }
+          ]
+        }
+      ],
+      "decisionSummary": "The contact measurement supports this focus.",
+      "spokenOutput": "Keep your plant knee softly bent.",
+      "qualityNotes": [],
+      "model": {
+        "id": "claude-opus-5-5",
+        "provider": "anthropic_direct",
+        "effort": "medium"
+      },
+      "latencyMs": 0,
+      "error": null
+    },
+    {
+      "requestId": "0ac3cfa9-7bbf-42ad-a397-e6606ea95b30",
+      "kind": "chat",
+      "ordinal": null,
+      "repId": null,
+      "createdAt": "2026-10-17T21:12:48.769965+00:00",
+      "status": "uncertain",
+      "input": {
+        "goal": "",
+        "referenceTitle": "Synthetic reference",
+        "memoryRevision": 2,
+        "focuses": [],
+        "message": "Why?"
+      },
+      "tools": [
+        {
+          "name": "inspect_kick_evidence",
+          "section": "measurements",
+          "phase": null,
+          "availableCount": 1,
+          "returnedCount": 1,
+          "evidence": [
+            {
+              "id": "contact.knee",
+              "label": "knee_flexion",
+              "athlete": 80,
+              "reference": 90,
+              "units": "deg",
+              "qualityNotes": []
+            }
+          ]
+        }
+      ],
+      "decisionSummary": "",
+      "spokenOutput": "",
+      "qualityNotes": [],
+      "model": {
+        "id": "claude-opus-5-5",
+        "provider": "anthropic_direct",
+        "effort": "medium"
+      },
+      "latencyMs": 0,
+      "error": {
+        "code": "provider_error",
+        "message": "The synthetic provider did not settle"
+      }
+    },
+    {
+      "requestId": "0d1c28b1-a06e-4b8d-87dd-e5c5db16737d",
+      "kind": "end",
+      "ordinal": null,
+      "repId": null,
+      "createdAt": "2026-10-17T21:12:48.770335+00:00",
+      "status": "complete",
+      "input": {
+        "goal": "",
+        "referenceTitle": "Synthetic reference",
+        "memoryRevision": 3,
+        "focuses": [],
+        "message": null
+      },
+      "tools": [
+        {
+          "name": "inspect_kick_evidence",
+          "section": "measurements",
+          "phase": null,
+          "availableCount": 1,
+          "returnedCount": 1,
+          "evidence": [
+            {
+              "id": "contact.knee",
+              "label": "knee_flexion",
+              "athlete": 80,
+              "reference": 90,
+              "units": "deg",
+              "qualityNotes": []
+            }
+          ]
+        }
+      ],
+      "decisionSummary": "",
+      "spokenOutput": "Ball Striking Session ended.",
+      "qualityNotes": [],
+      "model": {
+        "id": "claude-opus-5-5",
+        "provider": "anthropic_direct",
+        "effort": "medium"
+      },
+      "latencyMs": 0,
+      "error": null
+    }
+  ],
+  "nextCursor": null
+}

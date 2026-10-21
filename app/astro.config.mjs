@@ -29,6 +29,10 @@ export default defineConfig({
       },
     },
   }],
-  vite: { plugins: [tailwindcss()], build: { chunkSizeWarningLimit: 1500 } },
+  vite: {
+    // Both technique values are public browser configuration, never credentials.
+    envPrefix: ["PUBLIC_", "VITE_TECHNIQUE_GATEWAY_URL", "VITE_TECHNIQUE_APPCHECK_SITE_KEY"],
+    plugins: [tailwindcss()], build: { chunkSizeWarningLimit: 1500 },
+  },
   devToolbar: { enabled: false },
 });

@@ -8,9 +8,9 @@ import AdminHeader from "./AdminHeader";
 describe("admin navigation", () => {
   it("combines the directory while retaining Device performance, User issues and the account menu", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready email="admin@example.test" onSignOut={() => {}} /></MemoryRouter>);
-    for (const path of ["accounts", "programs", "analysis", "drills", "ai-incidents", "device-performance", "user-issues", "feedback"]) expect(html).toContain(`href="/admin/${path}"`);
+    for (const path of ["accounts", "programs", "analysis", "ball-striking-sessions", "drills", "ai-incidents", "device-performance", "user-issues", "feedback"]) expect(html).toContain(`href="/admin/${path}"`);
     expect(html).not.toContain('href="/admin"');
-    expect((html.match(/class="admin-section-link/g) ?? []).length).toBe(8);
+    expect((html.match(/class="admin-section-link/g) ?? []).length).toBe(9);
     expect(html).toContain("People &amp; organizations");
     expect(html).toContain("Device performance");
     expect(html.indexOf("AI incidents")).toBeLessThan(html.indexOf("Device performance"));

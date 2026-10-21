@@ -42,6 +42,7 @@ const DevicePerformance = lazy(() => import("./views/DevicePerformance"));
 const DevicePerformanceDetail = lazy(() => import("./views/DevicePerformanceDetail"));
 const UserIssues = lazy(() => import("./views/UserIssues"));
 const AppFeedback = lazy(() => import("./views/AppFeedback"));
+const BallStrikingSessions = lazy(() => import("./views/BallStrikingSessions"));
 
 export default function AdminPage() {
   const location = useLocation();
@@ -129,6 +130,8 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="accounts/player/:playerId/results/:drillKey/:repId" element={<RepTools />} />
           <Route path="programs" element={<PersonalizedPrograms />} />
           <Route path="analysis" element={<AnalysisWorkspace />} />
+          <Route path="ball-striking-sessions" element={<BallStrikingSessions preview={preview} />} />
+          <Route path="ball-striking-sessions/:sessionId" element={<BallStrikingSessions preview={preview} />} />
           <Route path="ai-incidents" element={<AiIncidents />} />
           <Route path="device-performance" element={<PhonePerformance preview={preview} />} />
           <Route path="device-performance/team-sessions" element={<TeamSessionPerformance preview={preview} />} />

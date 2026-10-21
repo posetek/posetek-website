@@ -1,5 +1,15 @@
 # PoseTek website project context
 
+
+## Ball striking review source candidate (2026-10-17)
+
+The admin Coaching hub includes a read-only Ball striking sessions viewer with
+plain-language coach replies, brief decisions and collapsible context/evidence.
+It uses the shared Backend's typed audit endpoint and requires legitimate
+Web App Check plus explicit canonical gateway configuration. This source has not
+been published; see [the handoff](docs/BALL_STRIKING_SESSION_REVIEW.md) for validation
+and remaining release prerequisites.
+
 ## Parent-facing player experience release (October 21, 2026)
 
 Player sign-in opens Profile and the skill map. Player navigation uses Results,
@@ -101,6 +111,7 @@ The implementation history remains in [the revamp guide](docs/PUBLIC_SITE_REVAMP
 [first-interaction follow-up](docs/PUBLIC_SITE_FIRST_INTERACTION.md) and
 [final polish](docs/PUBLIC_SITE_INTERACTION_POLISH.md). Their candidate receipts
 record pre-publication checkpoints; the production receipt above is current.
+
 
 <!-- coach-enrollment-current:start -->
 ## Current coach enrollment release

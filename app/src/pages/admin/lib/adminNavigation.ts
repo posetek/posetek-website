@@ -233,5 +233,5 @@ export function adminAccountResetPath(path: string): string {
   if (path.startsWith("/admin/device-performance")) return "/admin/device-performance";
   const key = adminToolKey(path);
   if (key === "directory") return "/admin/accounts";
-  return ["programs", "analysis", "drills", "ai-incidents", "user-issues", "feedback", "access"].includes(key) ? `/admin/${key}` : "/admin/accounts";
+  return ["programs", "analysis", "ball-striking-sessions", "drills", "ai-incidents", "user-issues", "feedback", "access"].includes(key) ? `/admin/${key}` : "/admin/accounts";
 }
