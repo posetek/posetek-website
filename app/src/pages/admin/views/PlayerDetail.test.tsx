@@ -63,21 +63,23 @@ describe('full-width player workspace', () => {
 });
 
 describe('administrator player contact details', () => {
-  const profile = (value: PlayerRow) => renderToStaticMarkup(
-    <PlayerProfileContent player={value} data={{ coach: null, note: null }} onSaved={async () => {}} />,
+  const profile = (value: PlayerRow, readOnly = false) => renderToStaticMarkup(
+    <PlayerProfileContent player={value} readOnly={readOnly} data={{ coach: null, note: null }} onSaved={async () => {}} />,
   );
-  it('shows saved email and canonical phone as read-only text in Profile', () => {
+  it('shows an editable phone and read-only email in Profile', () => {
     const html = profile({ ...player, raw: { phone_number: ' (925)-872-7208 ' } });
     expect(html).toContain('aria-label="Player contact details"');
     expect(html).toContain('<dt>Email</dt><dd>athlete@example.test</dd>');
-    expect(html).toContain('<dt>Phone number</dt><dd>(925)-872-7208</dd>');
+    expect(html).toContain('value=" (925)-872-7208 "');
+    expect(html).toContain('Save phone');
     expect(html).not.toContain('type="email"');
-    expect(html).not.toContain('type="tel"');
+    expect(html).toContain('type="tel"');
   });
   it('keeps each missing contact independent and does not coerce malformed phone values', () => {
-    expect(profile({ ...player, raw: {} })).toContain('<dt>Phone number</dt><dd>Not recorded</dd>');
+    expect(profile({ ...player, raw: {} })).toContain('value=""');
     const html = profile({ ...player, email: ' ', raw: { phone_number: { number: '9258727208' } } });
-    expect(html.match(/<dd>Not recorded<\/dd>/g)).toHaveLength(2);
+    expect(html.match(/<dd>Not recorded<\/dd>/g)).toHaveLength(1);
+    expect(html).toContain('value=""');
     expect(html).not.toContain('[object Object]');
   });
   it('renders the selected player contacts without retaining another player’s values', () => {
@@ -88,6 +90,12 @@ describe('administrator player contact details', () => {
     expect(next).toContain('(415)-555-0123');
     expect(next).not.toContain('athlete@example.test');
     expect(next).not.toContain('(925)-872-7208');
+  });
+  it('keeps read-only previews free of a phone editor', () => {
+    const html = profile({ ...player, raw: {} }, true);
+    expect(html).toContain('<dt>Phone number</dt><dd>Not recorded</dd>');
+    expect(html).not.toContain('type="tel"');
+    expect(html).not.toContain('Save phone');
   });
   it('does not mount the contact card in Results, Workouts or AI incidents', () => {
     for (const panel of ['results', 'workouts', 'ai-incidents'] as const) {
