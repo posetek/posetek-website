@@ -12,6 +12,7 @@ import { cloud, db, storage } from "../../../lib/firebase";
 import type { Drill } from "../../athlete-portal/lib/drills";
 import { normalizeRep, sessionFolder } from "../../athlete-portal/lib/metrics";
 import { artifactFolder } from "../../athlete-portal/lib/metrics";
+import { JUMP_ARTIFACTS, type JumpSources } from "./jumpTechnique";
 import { parseArtifactJson } from "./repTools";
 import type { RevisionPayload } from "./repTools";
 
@@ -27,6 +28,7 @@ export interface RepArtifactBundle {
   markerConfig: any;
   adminAnnotations: any;
   ballBoxes: any;
+  jumpTechnique: JumpSources;
   /** Artifact names found directly in the rep folder. */
   files: string[];
 }
@@ -84,7 +86,8 @@ export async function loadRepArtifacts(drill: Drill, rep: any, playerId: string)
     MARKER_CONFIG_NAMES[drill.key] ? readJsonAt(root.child(MARKER_CONFIG_NAMES[drill.key])) : Promise.resolve(null),
   ]);
 
-  return { folder, sessionRoot, mediaUrl, mediaName, pose, metadata, reprocessContext, arucoCorners, markerConfig, adminAnnotations, ballBoxes, files };
+  const jumpTechnique = drill.key === "jump" ? Object.fromEntries(await Promise.all(JUMP_ARTIFACTS.map(async name => [name, await readJsonAt(base.child(name))]))) : {};
+  return { folder, sessionRoot, mediaUrl, mediaName, pose, metadata, reprocessContext, arucoCorners, markerConfig, adminAnnotations, ballBoxes, jumpTechnique, files };
 }
 
 export interface RepRevisionRow {
@@ -94,25 +97,15 @@ export interface RepRevisionRow {
   note: string;
   fields: Record<string, any>;
   restored: boolean;
-  previous: Record<string, any>;
+  previous?: Record<string, any>;
+  recoveryRequired?: boolean;
 }
 
 export async function loadRepRevisions(playerId: string, repId: string): Promise<RepRevisionRow[]> {
-  const snapshot = await db.collection("players").doc(playerId).collection("reps").doc(repId).collection("revisions").get();
-  return snapshot.docs
-    .map(doc => {
-      const data: any = doc.data() || {};
-      return {
-        id: doc.id,
-        createdAtMillis: Number(data.createdAtMillis || data.createdAt?.toMillis?.() || 0),
-        byEmail: data.byEmail ? String(data.byEmail) : null,
-        note: String(data.note || ""),
-        fields: data.fields || {},
-        restored: Boolean(data.restoredAtMillis),
-        previous: data.previous || {},
-      };
-    })
-    .sort((a, b) => b.createdAtMillis - a.createdAtMillis);
+  const result = await cloud.httpsCallable("adminGetRepRevisions")({ playerId, repId });
+  const data = result.data as { revisions: RepRevisionRow[] };
+  if (!Array.isArray(data.revisions)) throw new Error("Revision history could not be loaded.");
+  return data.revisions;
 }
 
 export interface ReviseResult {
@@ -129,4 +122,12 @@ export async function pushRepRevision(payload: RevisionPayload): Promise<ReviseR
 export async function restoreRepRevision(playerId: string, repId: string, revisionId: string): Promise<any> {
   const result = await cloud.httpsCallable("adminRestoreRepRevision")({ playerId, repId, revisionId });
   return result.data;
+}
+
+export async function pushJumpTechnique(payload: {
+  playerId: string; repId: string; drill: "jump"; note: string;
+  jumpTechnique: { keyFrames: number[]; expectedKeyFrames: number[]; expectedRevisionId: string | null };
+}): Promise<ReviseResult> {
+  const result = await cloud.httpsCallable("adminReviseRep")(payload);
+  return result.data as ReviseResult;
 }
