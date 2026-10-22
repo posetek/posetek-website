@@ -227,6 +227,29 @@
     .training-schedule-row, .training-evidence-list details, .training-demo-references article { border-color: var(--surface-border); }
     .training-demo-references a { color: var(--accent); }
 
+    // The recorded-results renderer is shared with the dark athlete portal.
+    // Keep its pale chart labels and lime evidence line readable without
+    // changing that renderer or any manager/coach presentation.
+    .admin-player-panel .drill-dashboard .chart-wrap {
+      background: #0c1d16; border-radius: 8px; padding: 12px;
+    }
+    .admin-player-panel {
+      // These icons repeat adjacent visible labels. Suppressing only these
+      // decorative slots also avoids clipped ligatures if the font is offline.
+      .admin-drill-tabs .material-symbols-outlined,
+      .drill-dashboard .hero-icon,
+      .drill-dashboard .no-results > .material-symbols-outlined { display: none; }
+      .drill-dashboard .session-button > .material-symbols-outlined {
+        display: grid; place-items: center; width: 20px; height: 20px; font-size: 0;
+        &::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+      }
+      .drill-dashboard .session-row.open .session-button > .material-symbols-outlined::after { transform: rotate(225deg); }
+      .ai-player-incidents .admin-row > .material-symbols-outlined {
+        display: grid; place-items: center; width: 20px; height: 24px; font-size: 0;
+        &::after { content: "›"; font: 26px/1 system-ui, sans-serif; }
+      }
+    }
+
     .analysis-workspace {
       .active { color: var(--accent); background: #e4f0e9; border-color: #91b19f; }
       .analysis-status { color: var(--accent); background: #edf5f0; }

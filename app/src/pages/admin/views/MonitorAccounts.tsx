@@ -233,11 +233,11 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
     {pane === "report" && <><p className="admin-note">{attention ? "Activity totals reflect reporting filters; queue name search changes only the player list." : "Name/email search and account pages change the player list, not organization/team summary totals."}</p>
     <p className="admin-note">Testing coverage is {request.testingWindow === "cumulative" ? "cumulative through the selected end date" : "limited to the selected period"}. Workouts and estimated use cover {request.startDate} through {request.endDate}, in {request.timezone.replaceAll("_", " ")}. Reporting follows current membership; excluded history and uncollected use remain distinct from zero.</p></>}
     {legacy && <p className="admin-note" role="status">Activity reporting is unavailable for this legacy organization. Its accounts and signup controls remain available below.</p>}
+      {metrics.loading && <p role="status">{metrics.rebuilding ? "Preparing the latest complete activity report…" : "Loading activity reporting…"}</p>}
+      {metrics.error && <LoadError message={metrics.error} retry={() => { metrics.refresh(); refreshQueue(); }} />}
     <DirectoryWorkspaceTabs active={activeView} listLabel={showPeople ? "People" : state.orgId ? "Teams" : "Organizations"} onChange={selected => choose(selected === "list" ? { directoryPane: "list" } : { directoryPane: "report", reportView: selected })} />
     {pane === "report" && <section id={`workspace-report-panel-${view}`} role="tabpanel" aria-labelledby={`workspace-report-tab-${view}`}>
       {report && view === "overview" && <WorkspaceAttention data={report} onChange={update} />}
-      {metrics.loading && <p role="status">{metrics.rebuilding ? "Preparing the latest complete activity report…" : "Loading activity reporting…"}</p>}
-      {metrics.error && <LoadError message={metrics.error} retry={() => { metrics.refresh(); refreshQueue(); }} />}
       <div id="directory-report-graphs" tabIndex={-1} role="region" aria-label="Report graphs">
         {report && <>{showPeople && <nav className="directory-graph-links" aria-label="Within this scope"><button type="button" className="directory-text-button" onClick={() => choose({ directoryPane: "list" })}>View people</button></nav>}<WorkspaceReportDetails data={report} request={request} onChange={update} /></>}
       </div>
