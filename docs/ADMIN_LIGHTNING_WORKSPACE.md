@@ -65,7 +65,7 @@ three CPU-contention timeouts; the corrected assertion and complete suite passed
 with four workers without changing timeout budgets. Existing lint warnings remain.
 
 Browser evidence includes 172 shell checks, 548 directory assertions, 432 specialist
-assertions and 96 actual player-record checks. Chromium and WebKit cover all six
+assertions and 100 actual player-record checks. Chromium and WebKit cover all six
 requested widths; populated records additionally cover 390/1440px. Synthetic success
 and failure callbacks exercise form boundaries, retained drafts and one-shot planner
 activation submission. They do not establish real backend execution. Phone input,

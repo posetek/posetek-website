@@ -234,6 +234,10 @@
       background: #0c1d16; border-radius: 8px; padding: 12px;
     }
     .admin-player-panel {
+      .admin-drill-tabs .drill-tab.active {
+        color: #fff; background: #185c43; border-color: #185c43;
+        .count { color: #123b2d; background: #e4f0e9; }
+      }
       // These icons repeat adjacent visible labels. Suppressing only these
       // decorative slots also avoids clipped ligatures if the font is offline.
       .admin-drill-tabs .material-symbols-outlined,
