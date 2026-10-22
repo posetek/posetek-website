@@ -3,6 +3,7 @@ import { Mesh, type WebGLRenderer } from "three";
 import { createGalleryScene } from "./gallery-scene";
 import { dampGalleryValue, galleryBendTarget, normalizedGalleryVelocity } from "./gallery-model";
 import type { GalleryCard, GalleryView } from "./protocol";
+import { createGalleryRevealProfiles } from "./gallery-reveal";
 
 const card = (id: string, y = 100): GalleryCard => ({ id, src: `https://example.test/${id}.webp`, x: 40, y, width: 600, height: 450, hovered: false, pointerX: 0, pointerY: 0, settled: false, revealEpoch: 0 });
 const view = (cards = [card("one")]): GalleryView => ({ kind: "gallery", revision: 1, scrollRevision: 0, width: 1440, height: 1000, scrollX: 0, scrollY: 0, velocity: 0, cards });
@@ -28,6 +29,23 @@ describe("gallery motion model", () => {
 });
 
 describe("one gallery scene with bounded textures", () => {
+  it("uses sharp smooth chapters and brief accent blends without changing the legacy reveal policy", async () => {
+    const profiles = createGalleryRevealProfiles(["a", "b", "c", "d", "e", "f"], 18274);
+    const accent = [...profiles].find(([, profile]) => profile.pixels > 1)!;
+    const smooth = [...profiles].find(([, profile]) => profile.pixels === 1)!;
+    const scene = createGalleryScene(view([
+      { ...card(accent[0]), revealProfile: accent[1] },
+      { ...card(smooth[0], 500), revealProfile: smooth[1] }, card("legacy", 300),
+    ]), vi.fn());
+    await scene.prepare?.(fakeRenderer()); scene.step(.05);
+    const uniforms = scene.scene.children.map(child => (child as Mesh<never, { uniforms: Record<string, { value: number }> } & import("three").Material>).material.uniforms);
+    expect(uniforms[0].uFluidReveal.value).toBe(1); expect(uniforms[0].uRevealPixels.value).toBeGreaterThan(1);
+    expect(uniforms[1].uRevealPixels.value).toBe(1); expect(uniforms[2].uFluidReveal.value).toBe(0);
+    scene.step(.32);
+    expect(scene.telemetry().galleryReveals!.filter(reveal => reveal.id !== "legacy").every(reveal => reveal.complete)).toBe(true);
+    expect(scene.telemetry().galleryReveals!.find(reveal => reveal.id === "legacy")!.complete).toBe(false);
+    expect(uniforms[0].uRevealPixels.value).toBe(1); scene.dispose();
+  });
   it("loads at most four textures and only acknowledges meshes actually drawn in the viewport", async () => {
     const scene = createGalleryScene(view([card("a"), card("b", 600), card("c", 1400), card("d", -500), card("e")]), vi.fn());
     await scene.prepare?.(fakeRenderer()); scene.step(0);

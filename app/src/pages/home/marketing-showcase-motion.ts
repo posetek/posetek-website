@@ -1,5 +1,6 @@
 import { createWorkerRenderer } from "./marketing-renderer/adapter";
 import { GALLERY_TEXTURE_LIMIT, normalizedGalleryVelocity } from "./marketing-renderer/gallery-model";
+import { createGalleryRevealProfiles, type GalleryRevealProfile } from "./marketing-renderer/gallery-reveal";
 import { navigationIsClosed, subscribeNavigation, type GalleryCard, type GalleryView, type RendererTelemetry } from "./marketing-renderer/protocol";
 
 type Frame = { element: HTMLElement; image: HTMLImageElement; card: GalleryCard };
@@ -22,7 +23,10 @@ export function attachMarketingShowcaseMotion(root: HTMLElement): () => void {
   let lastScroll = scrollY, lastScrollTime = performance.now(), velocity = 0;
   let drawnScrollY = scrollY, drawnScrollX = scrollX, hovered: string | undefined;
   let pointerPosition: { x: number; y: number } | undefined;
+  let initialHover = true;
   const reveals = new Map<string, RevealState>();
+  let profiles: Map<string, GalleryRevealProfile> | undefined;
+  let measuredWidth = 0, measuredHeight = 0;
   const observed = new Set<HTMLElement>();
   const initial: GalleryView = { kind: "gallery", revision, scrollRevision, width: innerWidth, height: innerHeight, scrollX, scrollY, velocity: 0, cards: [] };
   let latest = initial;
@@ -65,8 +69,7 @@ export function attachMarketingShowcaseMotion(root: HTMLElement): () => void {
   });
 
   const measure = () => {
-    layoutDirty = false; revision += 1;
-    root.dataset.showcaseRevision = String(revision);
+    layoutDirty = false;
     // All geometry reads precede presentation writes. Never measure the curved canvas.
     const measured: Frame[] = [];
     for (const element of root.querySelectorAll<HTMLElement>("[data-showcase-frame]")) {
@@ -79,10 +82,37 @@ export function attachMarketingShowcaseMotion(root: HTMLElement): () => void {
       if (src.origin !== location.origin || !["https:", "http:"].includes(src.protocol)) continue;
       if (!reveals.has(id)) reveals.set(id, { epoch: 0, complete: rect.top + rect.height <= 0, below: rect.top >= innerHeight });
       const reveal = reveals.get(id)!;
-      measured.push({ element, image, card: { id, src: src.href, x: rect.left + scrollX, y: rect.top + scrollY, width: rect.width, height: rect.height, hovered: false, pointerX: 0, pointerY: 0, settled: reveal.complete, revealEpoch: reveal.epoch } });
+      const previous = frames.find(frame => frame.element === element);
+      measured.push({ element, image, card: { id, src: src.href, x: rect.left + scrollX, y: rect.top + scrollY, width: rect.width, height: rect.height, hovered: false, pointerX: previous?.card.pointerX ?? 0, pointerY: previous?.card.pointerY ?? 0, settled: reveal.complete, revealEpoch: reveal.epoch } });
     }
+    if (!profiles && root.dataset.showcaseMotionPolicy === "fluid") {
+      const seed = globalThis.crypto?.getRandomValues(new Uint32Array(1))[0] ?? Math.floor(Math.random() * 0x100000000);
+      profiles = createGalleryRevealProfiles(measured.map(frame => frame.card.id), seed);
+    }
+    for (const frame of measured) {
+      frame.card.revealProfile = profiles?.get(frame.card.id);
+      if (frame.card.revealProfile) frame.element.dataset.showcaseRevealStyle = frame.card.revealProfile.pixels > 1 ? "accent" : "smooth";
+    }
+    const geometryChanged = measuredWidth !== innerWidth || measuredHeight !== innerHeight || measured.length !== frames.length || measured.some((frame, index) => {
+      const before = frames[index];
+      return !before || before.element !== frame.element || before.card.id !== frame.card.id ||
+        (["x", "y", "width", "height"] as const).some(key => Math.abs(before.card[key] - frame.card[key]) > .1);
+    });
+    const changedSources = measured.filter((frame, index) => frame.card.src !== frames[index]?.card.src);
+    // Image load and ResizeObserver notifications often repeat identical geometry.
+    // Keeping its acknowledged frame prevents a sharp → pixelated flash on every load.
+    if (!geometryChanged && !changedSources.length) return;
+    revision += 1; root.dataset.showcaseRevision = String(revision);
+    measuredWidth = innerWidth; measuredHeight = innerHeight;
     frames = measured;
-    overlay.style.height = `${innerHeight}px`; overlay.style.visibility = "hidden"; resetFrames("static");
+    if (geometryChanged) {
+      // A moved plane must receive a correctly aligned draw before replacing HTML.
+      overlay.style.height = `${innerHeight}px`; overlay.style.visibility = "hidden"; resetFrames("static");
+    } else {
+      // A responsive image changing source does not move the other planes. Its
+      // opaque HTML fallback covers only that old texture until the next draw.
+      for (const frame of changedSources) frame.element.dataset.showcaseRenderer = "static";
+    }
     for (const element of observed) if (!frames.some(frame => frame.element === element)) { observer?.unobserve(element); observed.delete(element); }
     for (const { element } of frames) if (!observed.has(element)) { observer?.observe(element); observed.add(element); }
   };
@@ -103,7 +133,10 @@ export function attachMarketingShowcaseMotion(root: HTMLElement): () => void {
     const control = document.activeElement?.closest("button, a, input, select, textarea, [tabindex]:not([tabindex='-1'])");
     focused = !!control && root.contains(control) && control.matches(":focus-visible");
     const expanded = !!root.querySelector("[data-showcase-panel]:not([hidden])");
-    if (pointerPosition && fine.matches && !expanded && !focused) updatePointer(document.elementFromPoint(pointerPosition.x, pointerPosition.y));
+    // A pointer can become stationary before this decorative import resolves.
+    // Native :hover supplies the current owner until real coordinates arrive;
+    // never reconstruct hover after touch, window exit, or loss of focus.
+    if (fine.matches && !expanded && !focused) updatePointer(pointerPosition ? document.elementFromPoint(pointerPosition.x, pointerPosition.y) : initialHover ? root.querySelector("[data-showcase-frame]:hover") : null);
     else hovered = undefined;
     const nearby = frames.filter(({ card }) => card.width > 0 && card.height > 0 && card.y + card.height > scrollY - 160 && card.y < scrollY + innerHeight + 160)
       .sort((a, b) => Math.abs(a.card.y + a.card.height / 2 - scrollY - innerHeight / 2) - Math.abs(b.card.y + b.card.height / 2 - scrollY - innerHeight / 2))
@@ -170,7 +203,7 @@ export function attachMarketingShowcaseMotion(root: HTMLElement): () => void {
     overlay.style.visibility = "hidden"; resetFrames("static"); queue();
   };
   const leaveGallery = () => { if (hovered) { hovered = undefined; queue(); } };
-  const clearPointer = () => { const hadHover = !!hovered; hovered = undefined; pointerPosition = undefined; if (hadHover) queue(); };
+  const clearPointer = () => { const hadHover = !!hovered; hovered = undefined; pointerPosition = undefined; initialHover = false; if (hadHover) queue(); };
   const leaveWindow = (event: PointerEvent) => { if (!event.relatedTarget) clearPointer(); };
   const pointerDown = (event: PointerEvent) => { if (event.pointerType !== "mouse") clearPointer(); };
   const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(invalidate);

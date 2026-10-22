@@ -637,6 +637,9 @@ check('Players: a genuinely delayed opened movement demo preserves a subsequent 
     const before = await snapshot(); assert.equal(before.pending, 'pending');
     release();
     await page.waitForFunction(() => document.querySelector('[data-demo="movement"]')?.dataset.demoState === 'ready');
+    // Native fragment navigation can still own scrolling when the import resolves.
+    // Its 180ms quiet period exceeds five steady RAFs; await the actual correction.
+    await page.waitForFunction(top => Math.abs(document.getElementById('profile').getBoundingClientRect().top - top) <= 2, before.profileTop);
     await stableScroll(page);
     const after = await snapshot();
     assert.ok(Math.abs(after.profileTop - before.profileTop) <= 2, `late loading preserves the real native fragment offset: ${JSON.stringify({ before, after })}`);
@@ -780,4 +783,44 @@ check('Players: a pointer initially over the hero activates the first preview br
   const actual = await page.evaluate(({ x, y }) => ({ hit: document.elementFromPoint(x, y)?.closest('[data-showcase-frame]')?.dataset.showcaseFrame, hovered: window.__showcaseBoundaryView.cards.filter(card => card.hovered).map(card => card.id) }), point);
   assert.equal(actual.hit, 'tests'); assert.deepEqual(actual.hovered, ['tests']);
   evidence.observations.push({ check: t.name, pointer: point, scrollDelta: delta, ...actual });
+});
+
+for (const timing of ['before scrolling', 'after scrolling']) check(`Players: a delayed decorative import attaches ${timing} without losing the stationary pointer`, async t => {
+  const { page } = await fixture(t);
+  let release, held = 0;
+  const gate = new Promise(done => { release = done; });
+  await page.route('**/*marketing-showcase-motion*.js', async route => { held++; await gate; await route.continue(); });
+  await page.addInitScript(() => {
+    window.__showcaseStartupPointerMoves = 0;
+    window.addEventListener('pointermove', () => window.__showcaseStartupPointerMoves++, { passive: true });
+    const NativeWorker = Worker;
+    window.Worker = class extends NativeWorker {
+      constructor(url, options) {
+        super(url, options);
+        const post = this.postMessage.bind(this);
+        this.postMessage = (message, ...rest) => {
+          if (options?.name === 'posetek-gallery' && message?.view?.kind === 'gallery') window.__showcaseStartupView = structuredClone(message.view);
+          return post(message, ...rest);
+        };
+      }
+    };
+  });
+  try {
+    await Promise.all([page.waitForRequest('**/*marketing-showcase-motion*.js'), visit(page, '/')]);
+    assert.ok(held > 0, 'the real decorative import is held');
+    assert.equal(await page.locator('[data-showcase-overlay]').count(), 0, 'gallery controller has not attached');
+    const point = await page.locator('[data-showcase-frame="tests"]').evaluate(node => { const r = node.getBoundingClientRect(); return { x: r.left + r.width / 2, y: 300 }; });
+    await page.mouse.move(point.x, point.y);
+    assert.equal(await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('[data-showcase-gallery]'), point), false);
+    if (timing === 'before scrolling') { release(); await page.locator('[data-showcase-overlay]').waitFor({ state: 'attached' }); }
+    const delta = await page.locator('[data-showcase-frame="tests"]').evaluate((node, y) => { const r = node.getBoundingClientRect(); return r.top + r.height / 2 - y; }, point.y);
+    await page.mouse.wheel(0, delta); await stableScroll(page);
+    if (timing === 'after scrolling') { release(); await page.locator('[data-showcase-overlay]').waitFor({ state: 'attached' }); }
+    await page.waitForFunction(() => window.__showcaseStartupView?.cards.some(card => card.id === 'tests' && card.hovered));
+    await page.waitForFunction(() => document.querySelector('[data-showcase-frame="tests"]')?.dataset.showcaseRenderer === 'ready');
+    const actual = await page.evaluate(({ x, y }) => ({ hit: document.elementFromPoint(x, y)?.closest('[data-showcase-frame]')?.dataset.showcaseFrame, hovered: window.__showcaseStartupView.cards.filter(card => card.hovered).map(card => card.id), pointerMoves: window.__showcaseStartupPointerMoves }), point);
+    assert.equal(actual.hit, 'tests'); assert.deepEqual(actual.hovered, ['tests']);
+    assert.equal(actual.pointerMoves, 1, 'no second pointer movement rescues the startup');
+    evidence.observations.push({ check: t.name, heldImports: held, pointer: point, scrollDelta: delta, ...actual });
+  } finally { release(); }
 });

@@ -1,5 +1,15 @@
 # PoseTek website project context
 
+## Homepage motion and first-click candidate — October 22, 2026
+
+Players now uses fluid artwork entrances with two brief, varied accents per
+visit. Shared footer links keep stationary click/touch geometry. The guarded
+candidate preserves all 2,154 current application artifacts; source review and
+hosted acceptance remain separate from production. Read the
+[REA findings, interaction checklist and verification](docs/HOMEPAGE_FLUID_INTERACTIONS.md).
+The Salesforce-inspired admin redesign is a separate source and release candidate.
+
+
 
 ## Ball striking review source candidate (2026-10-17)
 
