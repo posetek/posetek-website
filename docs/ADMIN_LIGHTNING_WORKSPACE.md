@@ -97,6 +97,8 @@ artifact, verified rollback evidence and post-promotion baseline reconciliation.
 
 ## Reproducing the browser fixtures
 
+The reusable runners and fixtures are delivered in companion [PR #99](https://github.com/posetek/posetek_website/pull/99). Integrate both the admin product PR and that companion before running these commands from a fresh checkout. This split keeps each independent review within the repository input limits.
+
 These files load the actual admin components into a loopback Vite preview with
 invented records and a replaced client transport. They are not imported by any
 production entry point. External requests are blocked and writes are recorded
