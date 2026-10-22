@@ -9,6 +9,8 @@ import { domainLabel } from "../../../lib/contracts/types";
 import type { AdjustmentDiff } from "../../../lib/contracts/types";
 import type { Issue } from "../lib/editor";
 import { NO_FEEDBACK_RATIONALE, RATIONALE_MAX, workoutRationale } from "../lib/rationale";
+import AdminModal from "./AdminModal";
+import Icon from "./AdminWorkspaceIcon";
 
 interface Props {
   playerName: string;
@@ -45,8 +47,7 @@ export default function RationaleDialog({
   }, [diff]);
 
   return (
-    <div className="admin-dialog-backdrop" role="dialog" aria-modal="true" aria-label="Why did you make these adjustments?">
-      <div className="admin-dialog">
+    <AdminModal label="Why did you make these adjustments?" onClose={onCancel} dismissDisabled={saving}>
         <h3>Why did you make the adjustments that you made?</h3>
         <p>
           Feedback is saved with the edit to help improve future workouts. Share what you
@@ -77,7 +78,7 @@ export default function RationaleDialog({
         </section>
 
         <div className={`admin-banner ${inProgress ? "warn" : "good"}`}>
-          <span className="material-symbols-outlined">{inProgress ? "pending_actions" : "smartphone"}</span>
+          <Icon name={inProgress ? "pending_actions" : "smartphone"} />
           <p>
             {inProgress
               ? `${playerName} has this workout open right now. Their session keeps the version they started — this edit applies from their next start, and nothing they have already done changes.`
@@ -107,7 +108,6 @@ export default function RationaleDialog({
             value={rationale}
             maxLength={RATIONALE_MAX}
             disabled={noFeedback || saving}
-            autoFocus
             placeholder="Swapped the second dribbling block for a change-of-direction drill — he is well ahead on ball control and 22nd percentile on agility, and the session was running four minutes long."
             onChange={event => setRationale(event.target.value)}
           />
@@ -139,7 +139,6 @@ export default function RationaleDialog({
             Write at least 3 characters of feedback, or select that you have none.
           </p>
         )}
-      </div>
-    </div>
+    </AdminModal>
   );
 }

@@ -35,6 +35,7 @@ import {
 } from "../lib/catalog";
 import type { DrillWrite } from "../lib/catalog";
 import DrillProductionPanel from "./DrillProductionPanel";
+import Icon from "./AdminWorkspaceIcon";
 
 interface FormState {
   name: string;
@@ -195,18 +196,18 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
   const [drill, setDrill] = useState<CatalogDrill | null>(null);
   const [loading, setLoading] = useState(mode === "edit");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ kind: "error" | "success"; text: string } | null>(null);
 
   useEffect(() => {
     document.title = mode === "create" ? "New drill | PoseTek admin" : `Edit ${drillId} | PoseTek admin`;
     if (mode !== "edit") return;
     loadDrill(drillId)
       .then(found => {
-        if (!found) { setMessage(`${drillId} is not in the catalog.`); return; }
+        if (!found) { setMessage({ kind: "error", text: `${drillId} is not in the catalog.` }); return; }
         setDrill(found);
         setForm(formFromDrill(found));
       })
-      .catch(error => setMessage(error?.message || "That drill could not be loaded."))
+      .catch(error => setMessage({ kind: "error", text: error?.message || "That drill could not be loaded." }))
       .finally(() => setLoading(false));
   }, [mode, drillId]);
 
@@ -223,15 +224,15 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
       if (mode === "create") {
         const newId = await createDrill(writeFrom(form));
         navigate(`/admin/drills/${newId}/edit`, { replace: true });
-        setMessage(`Created ${newId}. Add its clips below when you have them.`);
+        setMessage({ kind: "success", text: `Created ${newId}. Add its clips below when you have them.` });
       } else {
         const { updateDrill } = await import("../lib/catalog");
         const version = await updateDrill(drillId, writeFrom(form), drill?.catalogVersion);
         setDrill(await loadDrill(drillId));
-        setMessage(`Saved. The catalog is now version ${version}, so every device refetches.`);
+        setMessage({ kind: "success", text: `Saved. The catalog is now version ${version}, so every device refetches.` });
       }
     } catch (error: any) {
-      setMessage(error?.message || "That change could not be saved.");
+      setMessage({ kind: "error", text: error?.message || "That change could not be saved." });
     } finally {
       setSaving(false);
     }
@@ -241,7 +242,7 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
   if (mode === "edit" && drill?.needsMigration) {
     return (
       <div className="admin-banner warn">
-        <span className="material-symbols-outlined">sync_problem</span>
+        <Icon name="sync_problem" />
         <p>
           {drillId} is still a catalog v1 document. Editing it here would write a v2 shape over half
           a migration that the mobile side owns, so the web console reads it and leaves it alone.{" "}
@@ -255,7 +256,7 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
     <>
       <section className="admin-heading">
         <Link className="icon-button" to={mode === "create" ? "/admin/drills" : `/admin/drills/${drillId}`} aria-label="Back">
-          <span className="material-symbols-outlined">arrow_back</span>
+          <Icon name="arrow_back" />
         </Link>
         <div>
           <p className="eyebrow">{mode === "create" ? "New drill" : `Editing ${drillId}`}</p>
@@ -268,7 +269,7 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
         </div>
       </section>
 
-      {message && <div className="admin-banner good"><span className="material-symbols-outlined">info</span><p>{message}</p></div>}
+      {message && <div className={`admin-banner ${message.kind === "error" ? "danger" : "good"}`} role={message.kind === "error" ? "alert" : "status"}><p>{message.text}</p></div>}
 
       <div className="admin-grid-two">
         <section className="admin-card">
@@ -453,6 +454,7 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
           </label>
           <ListEditor
             label="Steps (1–12, one action each, imperative)"
+            entryLabel="Step"
             values={form.steps}
             maxEntries={12}
             maxChars={240}
@@ -465,12 +467,12 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
         <section className="admin-card">
           <h3>Coach comments</h3>
           <p className="admin-note">Athlete-facing: cues, then the success criterion, then any safety note.</p>
-          <ListEditor label="" values={form.coachComments} maxEntries={8} maxChars={200} onChange={set("coachComments")} />
+          <ListEditor label="" entryLabel="Coach comment" values={form.coachComments} maxEntries={8} maxChars={200} onChange={set("coachComments")} />
         </section>
         <section className="admin-card">
           <h3>Adaptive levers</h3>
           <p className="admin-note">Not athlete-facing. Prefix with “Easier:”, “Harder:” or “Lever:”.</p>
-          <ListEditor label="" values={form.adaptiveLevers} maxEntries={6} maxChars={200} onChange={set("adaptiveLevers")} />
+          <ListEditor label="" entryLabel="Adaptive lever" values={form.adaptiveLevers} maxEntries={6} maxChars={200} onChange={set("adaptiveLevers")} />
         </section>
       </div>
 
@@ -480,8 +482,9 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
         </ul>
       )}
 
-      <div className="admin-form-actions">
-        <Link className="quiet-button" to={mode === "create" ? "/admin/drills" : `/admin/drills/${drillId}`}>Cancel</Link>
+      <div className="admin-form-actions admin-save-bar">
+        <p>Review the fields before saving.{mode === "edit" && " Media and publication have separate controls below."}</p>
+        <Link className="quiet-button" aria-disabled={saving} onClick={event => { if (saving) event.preventDefault(); }} to={mode === "create" ? "/admin/drills" : `/admin/drills/${drillId}`}>Cancel</Link>
         <button className="primary-cta" type="button" disabled={saving || errors.length > 0} onClick={save}>
           {saving ? "Saving…" : mode === "create" ? "Create drill" : "Save drill"}
         </button>
@@ -513,8 +516,9 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
   );
 }
 
-function ListEditor({ label, values, maxEntries, maxChars, onChange }: {
+function ListEditor({ label, entryLabel, values, maxEntries, maxChars, onChange }: {
   label: string;
+  entryLabel: string;
   values: string[];
   maxEntries: number;
   maxChars: number;
@@ -527,6 +531,7 @@ function ListEditor({ label, values, maxEntries, maxChars, onChange }: {
         {values.map((value, index) => (
           <div className="admin-list-row" key={index}>
             <input
+              aria-label={`${entryLabel} ${index + 1}`}
               value={value}
               maxLength={maxChars}
               onChange={event => onChange(values.map((entry, position) => position === index ? event.target.value : entry))}
@@ -534,10 +539,10 @@ function ListEditor({ label, values, maxEntries, maxChars, onChange }: {
             <button
               className="icon-button danger"
               type="button"
-              aria-label={`Remove entry ${index + 1}`}
+              aria-label={`Remove ${entryLabel.toLowerCase()} ${index + 1}`}
               onClick={() => onChange(values.filter((_, position) => position !== index))}
             >
-              <span className="material-symbols-outlined">delete</span>
+              <Icon name="delete" />
             </button>
           </div>
         ))}
@@ -547,7 +552,7 @@ function ListEditor({ label, values, maxEntries, maxChars, onChange }: {
           disabled={values.length >= maxEntries}
           onClick={() => onChange([...values, ""])}
         >
-          <span className="material-symbols-outlined">add</span>Add
+          <Icon name="add" />Add
         </button>
       </div>
     </div>
@@ -610,7 +615,7 @@ function MediaUploader({ drillId, slot, asset, managed, onChanged }: {
             onChanged();
           }}
         >
-          <span className="material-symbols-outlined">delete</span>Remove this clip
+          <Icon name="delete" />Remove this clip
         </button>
       )}
     </div>

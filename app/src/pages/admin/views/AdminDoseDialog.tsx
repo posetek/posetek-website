@@ -11,6 +11,7 @@ import type { BlockV3 } from "../../../lib/contracts/types";
 import { BLOCK_KINDS, MAX_WHY_CHARS, doseBoundsFor } from "../lib/editor";
 import type { DosePatch } from "../lib/editor";
 import type { CatalogDrill } from "../../../lib/contracts/drillV2";
+import AdminModal from "./AdminModal";
 
 interface Props {
   block: BlockV3;
@@ -44,8 +45,7 @@ export default function AdminDoseDialog({ block, drill, onCancel, onSave }: Prop
   const set = (patch: Partial<BlockV3>) => setDraft(current => ({ ...current, ...patch }));
 
   return (
-    <div className="admin-dialog-backdrop" role="dialog" aria-modal="true" aria-label={`Dose for ${block.name}`}>
-      <div className="admin-dialog">
+    <AdminModal label={`Dose for ${block.name}`} onClose={onCancel}>
         <h3>{block.name}</h3>
         <p>
           {drill ? `Catalog range: ${bounds.sets.min}–${bounds.sets.max} sets × ${bounds.reps.min}–${bounds.reps.max} ${draft.repUnit}, rest ${bounds.restSeconds.min}–${bounds.restSeconds.max}s.` : "This drill is not in the catalog, so its ranges are unknown."}
@@ -150,7 +150,6 @@ export default function AdminDoseDialog({ block, drill, onCancel, onSave }: Prop
             Set the dose
           </button>
         </div>
-      </div>
-    </div>
+    </AdminModal>
   );
 }

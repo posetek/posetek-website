@@ -5,6 +5,7 @@ import type { AdminDirectoryState } from "../lib/adminNavigation";
 import { directoryLevelOf } from "../lib/adminNavigation";
 import { staffName } from "../lib/accountHierarchy";
 import "./directory-navigator.scss";
+import Icon from "./AdminWorkspaceIcon";
 
 type Choose = (patch: Partial<AdminDirectoryState>) => void;
 
@@ -28,15 +29,15 @@ export default function DirectoryNavigator({ organizations, state, choose, conte
   const selectOrganization = (orgId?: string) => { choose(directoryOrganizationPatch(state, orgId)); if (window.innerWidth <= 760) setOpen(false); };
   const selectTeam = (teamId?: string) => { choose({ orgId: organization?.id, teamId, coachId: undefined, directoryLevel: "people", directoryTab: "players" }); if (window.innerWidth <= 760) setOpen(false); };
   return <aside className="directory-navigator" aria-label="Organization and team navigation"><details open={open} onToggle={event => setOpen(event.currentTarget.open)}>
-    <summary><span><small>Browse</small><strong>{current}</strong></span><span className="material-symbols-outlined" aria-hidden="true">expand_more</span></summary>
+    <summary><span><small>Browse</small><strong>{current}</strong></span><Icon name="expand_more" /></summary>
     <nav aria-label="Organization hierarchy"><button type="button" className={`directory-nav-root${!state.orgId && level === "organizations" ? " selected" : ""}`} aria-current={!state.orgId && level === "organizations" ? "page" : undefined} onClick={() => selectOrganization()}>All organizations</button>
       {pending && !organizations.length && <p role="status">Loading organizations…</p>}
       {error && <><p className="admin-note" role="alert">{error}</p>{retry && <button type="button" className="quiet-button" onClick={retry}>Retry organizations</button>}</>}
       <ul className="directory-nav-organizations">{organizations.map(org => <li key={org.id}>
-        <button type="button" className={`directory-nav-org${state.orgId === org.id ? " selected" : ""}`} aria-current={state.orgId === org.id && !people ? "page" : undefined} onClick={() => selectOrganization(org.id)}>{org.logoUrl ? <img src={org.logoUrl} alt="" /> : <span className="material-symbols-outlined" aria-hidden="true">domain</span>}<span>{org.name}{org.schemaVersion !== 2 && <small>Legacy organization</small>}</span></button>
+        <button type="button" className={`directory-nav-org${state.orgId === org.id ? " selected" : ""}`} aria-current={state.orgId === org.id && !people ? "page" : undefined} onClick={() => selectOrganization(org.id)}>{org.logoUrl ? <img src={org.logoUrl} alt="" /> : <Icon name="domain" />}<span>{org.name}{org.schemaVersion !== 2 && <small>Legacy organization</small>}</span></button>
         {state.orgId === org.id && state.directoryTab === "players" && <ul className="directory-nav-teams"><li><button type="button" className={!state.teamId && !unassigned && people ? "selected" : ""} aria-current={!state.teamId && !unassigned && people ? "page" : undefined} onClick={() => selectTeam()}>{org.schemaVersion === 2 ? "All teams · people" : "Legacy roster · people"}</button></li>
           {org.schemaVersion === 2 && <li><button type="button" className={!state.teamId && unassigned && people ? "selected" : ""} aria-current={!state.teamId && unassigned && people ? "page" : undefined} onClick={() => { choose({ orgId: organization?.id, teamId: undefined, coachId: undefined, directoryLevel: "people", directoryLookup: "unassigned", directoryTab: "players" }); if (window.innerWidth <= 760) setOpen(false); }}>Unassigned / unavailable team</button></li>}
-          {context?.teams.filter(row => row.organizationId === org.id).map(row => <li key={row.id}><button type="button" className={state.teamId === row.id && people ? "selected" : ""} aria-current={state.teamId === row.id && people ? "page" : undefined} onClick={() => selectTeam(row.id)}><span className="material-symbols-outlined" aria-hidden="true">groups</span>{row.name}</button></li>)}
+          {context?.teams.filter(row => row.organizationId === org.id).map(row => <li key={row.id}><button type="button" className={state.teamId === row.id && people ? "selected" : ""} aria-current={state.teamId === row.id && people ? "page" : undefined} onClick={() => selectTeam(row.id)}><Icon name="groups" />{row.name}</button></li>)}
           {pending && <li><p role="status">Loading teams…</p></li>}
         </ul>}
       </li>)}</ul>
@@ -52,7 +53,7 @@ export function TeamDirectory({ organization, context, players, choose }: { orga
   return <section className="directory-team-directory" aria-labelledby="directory-teams-heading"><div className="directory-team-directory-heading"><div><h3 id="directory-teams-heading">Teams in {organization.name}</h3><p className="admin-note">Choose a team to view its reporting and people.</p></div><div className="directory-row-actions"><button type="button" className="quiet-button" onClick={() => choose({ teamId: undefined, coachId: undefined, directoryLevel: "people", directoryTab: "players" })}>{organization.schemaVersion === 2 ? "All teams" : "View legacy roster"}</button>{organization.schemaVersion === 2 && <button type="button" className="quiet-button" onClick={() => choose({ teamId: undefined, coachId: undefined, directoryLevel: "people", directoryLookup: "unassigned", directoryTab: "players" })}>Unassigned / unavailable team</button>}</div></div>
     {organization.schemaVersion !== 2 ? <p className="admin-note">This legacy organization has no canonical team directory. Its existing player and coach relationships remain available in the legacy roster.</p> : teams.length ? <div className="directory-team-cards">{teams.map(team => {
       const count = players.filter(player => player.organizationId === organization.id && player.teamId === team.id).length;
-      return <button type="button" key={team.id} className="directory-team-card" onClick={() => choose({ teamId: team.id, coachId: undefined, directoryLevel: "people", directoryTab: "players" })}><span className="directory-team-card-heading"><strong>{team.name}</strong><span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span><span>{count} {count === 1 ? "player" : "players"}</span><small>{context!.staff.filter(member => member.role === "coach" && member.status === "active" && member.teamIds.includes(team.id)).map(staffName).join(", ") || "No active coach assigned"}</small></button>;
+      return <button type="button" key={team.id} className="directory-team-card" onClick={() => choose({ teamId: team.id, coachId: undefined, directoryLevel: "people", directoryTab: "players" })}><span className="directory-team-card-heading"><strong>{team.name}</strong><Icon name="arrow_forward" /></span><span>{count} {count === 1 ? "player" : "players"}</span><small>{context!.staff.filter(member => member.role === "coach" && member.status === "active" && member.teamIds.includes(team.id)).map(staffName).join(", ") || "No active coach assigned"}</small></button>;
     })}</div> : <p className="admin-empty">No teams yet. Add one in Manage teams, or choose All teams to review unassigned players.</p>}
   </section>;
 }

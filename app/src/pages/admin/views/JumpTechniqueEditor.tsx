@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { JUMP_ANGLE_FIELDS, JUMP_PHASES, jumpFrames, previewJumpTechnique, type JumpSources } from "../lib/jumpTechnique";
 import { pushJumpTechnique } from "../lib/repToolsData";
+import AdminModal from "./AdminModal";
 
 type Props = {
   playerId: string; repId: string; athleteName: string; source: JumpSources;
@@ -50,13 +51,13 @@ export default function JumpTechniqueEditor(props: Props) {
     {problem && <p className="form-message" role="alert">{problem}</p>}
     <label className="admin-field"><span>Technique correction note</span><textarea maxLength={2000} value={note} disabled={saving} onChange={event => setNote(event.target.value)} placeholder="Describe the video evidence for this correction." /></label>
     {error && <p className="form-message" role="alert">{error}</p>}
-    <button className="primary-cta" type="button" disabled={saving || !preview?.changed || !note.trim()} onClick={() => setConfirming(true)}>Review technique correction</button>
-    {confirming && <div className="admin-dialog-backdrop" role="dialog" aria-modal="true" aria-label="Save jump technique correction"><div className="admin-dialog">
+    <button className="primary-cta" type="button" disabled={saving || !preview?.changed || !note.trim()} onClick={event => { event.currentTarget.focus({ preventScroll: true }); setConfirming(true); }}>Review technique correction</button>
+    {confirming && <AdminModal label="Save jump technique correction" onClose={() => setConfirming(false)} dismissDisabled={saving}>
       <h3>Save reviewed jump technique?</h3><p>{props.athleteName}: {frames.join(" → ")}. The selected frames, angles and available motion charts will be saved with a restorable revision.</p>
       <p>{frames[3] === expected?.[3] ? "Jump height stays unchanged." : `Jump height becomes ${preview?.height?.toFixed(6)} m.`} Failure flags stay unchanged.</p>
       <blockquote>{note}</blockquote>
       {error && <p role="alert">{error}</p>}
       <div className="admin-dialog-actions"><button className="quiet-button" type="button" disabled={saving} onClick={() => setConfirming(false)}>Keep reviewing</button><button className="primary-cta" type="button" disabled={saving} onClick={save}>{saving ? "Saving technique…" : "Save technique correction"}</button></div>
-    </div></div>}
+    </AdminModal>}
   </section>;
 }

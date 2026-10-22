@@ -1,5 +1,16 @@
 # PoseTek website project context
 
+## Admin workspace candidate — October 22, 2026
+
+The Salesforce-inspired admin refinement is in isolated source review: an
+admin-only workspace shell, list-first People & organizations, complete reporting
+tabs, persistent record navigation and consistent specialist forms. Read
+[the REA findings and release boundaries](docs/ADMIN_LIGHTNING_WORKSPACE.md).
+The homepage polish is a separate candidate. Production remains the approved
+October 21 release; held policy, session and Ball Striking work is excluded from
+the deliberate admin runtime composition. No backend or data contract changes.
+
+
 
 ## Ball striking review source candidate (2026-10-17)
 

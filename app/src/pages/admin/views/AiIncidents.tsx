@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import AdminModal from "./AdminModal";
 import { Link, useSearchParams } from "react-router-dom";
 import { PLAYER_INDEX_LIMIT, loadPlayer, loadPlayerIndex } from "../lib/accounts";
 import { accountPlayerPath } from "../lib/accountHierarchy";
@@ -314,7 +315,7 @@ const KIND_CHIP: Record<string, string> = { failure: "danger", refusal: "warn", 
 
 export function IncidentRow({ incident, name, to }: { incident: AiIncident; name?: string; to: string }) {
   return (
-    <Link className="admin-row ai-incident-row" to={to}>
+    <Link className="admin-row ai-incident-row" to={to} onClick={event => event.currentTarget.focus({ preventScroll: true })}>
       <span className="ai-row-time">{pacificShort(whenOf(incident))}</span>
       <span className="admin-row-copy">
         <strong>{incident.code} <span className="ai-row-capability">· {incident.capability}</span></strong>
@@ -341,14 +342,8 @@ export function IncidentRow({ incident, name, to }: { incident: AiIncident; name
 // MARK: - Drawer
 
 function DrawerFrame({ title, onClose, children }: { title: ReactNode; onClose: () => void; children: ReactNode }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
   return (
-    <div className="ai-drawer-backdrop" onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
-      <aside className="ai-drawer" role="dialog" aria-modal="true" aria-label="Incident detail">
+    <AdminModal label="Incident detail" onClose={onClose} drawer>
         <header className="ai-drawer-head">
           <h2>{title}</h2>
           <button className="icon-button" type="button" aria-label="Close" onClick={onClose}>
@@ -356,8 +351,7 @@ function DrawerFrame({ title, onClose, children }: { title: ReactNode; onClose: 
           </button>
         </header>
         {children}
-      </aside>
-    </div>
+    </AdminModal>
   );
 }
 
