@@ -22,7 +22,7 @@ The shell and directory drivers accept `POSETEK_ADMIN_PREVIEW_URL`. Check each
 script's default port. Never point these fixtures at production.
 
 Recorded implementation acceptance: 172 shell assertions; 548 directory assertions;
-52 reporting failure/retry assertions; 432 specialist assertions; 96 actual player
+52 reporting failure/retry assertions; 432 specialist assertions; 100 actual player
 record assertions. Both Chromium and WebKit cover 360/390/430/768/1440/1920 where
 applicable. Record and retry lanes focus on 390/1440. Viewport captures and JSON
 receipts are retained in ignored `artifacts/` directories.

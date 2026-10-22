@@ -238,6 +238,12 @@ if (recordsOnly) {
     await page.locator('.rep-button').waitFor();
     check(await page.locator('.rep-button').count()===1,'actual results render recorded rep');
     check(await fits(),'recorded results fit page');
+    const activeContrast=await page.locator('.admin-drill-tabs .drill-tab.active').evaluate(element=>{
+     const luminance=value=>{const c=value.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>n/255).map(n=>n<=.04045?n/12.92:((n+.055)/1.055)**2.4);return c[0]*.2126+c[1]*.7152+c[2]*.0722};
+     const ratio=style=>{const values=[luminance(style.color),luminance(style.backgroundColor)].sort((a,b)=>b-a);return(values[0]+.05)/(values[1]+.05)};
+     return {label:ratio(getComputedStyle(element)),count:ratio(getComputedStyle(element.querySelector('.count')))};
+    });
+    check(activeContrast.label>=4.5&&activeContrast.count>=4.5,`active result label/count contrast meets4.5:1 (${activeContrast.label.toFixed(2)}/${activeContrast.count.toFixed(2)})`);
     check(await page.locator('.chart-wrap').evaluate(element=>getComputedStyle(element).backgroundColor==='rgb(12, 29, 22)'),'shared chart pale labels retain a dark high-contrast plot');
     check(await page.locator('.admin-drill-tabs .material-symbols-outlined').evaluateAll(items=>items.every(item=>getComputedStyle(item).display==='none')),'redundant result icons remain font-independent');
     await page.evaluate(()=>scrollTo(0,0));await capture('results');await capturePanel('results');
