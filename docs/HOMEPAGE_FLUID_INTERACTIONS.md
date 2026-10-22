@@ -1,7 +1,7 @@
 # Homepage fluid motion and first-activation correction
 
-Status: local source correction awaiting new guarded assembly, October 22, 2026.
-The earlier guarded candidate below is superseded and must not be promoted.
+Status: implementation complete; corrected immutable candidate prepared, October 22, 2026.
+The final candidate receipt below supersedes the earlier assembly and local-preview notes.
 This is not a production
 receipt. Work starts from remote-main `bd7ce5febbbdcaed16c6ef35f2e3987603f68c93`
 in the isolated `codex/homepage-fluid-interactions` worktree. Source integration,
@@ -257,8 +257,8 @@ represented as a passing full performance run.
 
 ## Delivery boundary
 
-The earlier guarded preview on `http://127.0.0.1:4192/` still serves the superseded
-assembly. Port 4191 uses corrected compiled Astro output and must not be promoted.
+The historical previews and candidate digests above are superseded by the final
+immutable candidate below. Port 4192 now serves that corrected guarded assembly.
 The current baseline protects
 2,154 files from the October 21 parent/player release; older public-site counts
 are historical. The hosted follow-up records the initial source integration and
@@ -270,3 +270,48 @@ required remote CI, and accept the exact hosted artifact. Hardware cold-start
 timing, hosted acceptance and physical Safari/device review are not established
 by this local pass. Keep `[skip netlify]` on source integration and use the
 existing exact-candidate promotion/rollback workflow.
+
+
+## Final immutable candidate and acceptance record
+
+The corrected candidate is
+[6ada6e5a385faad3f4cd88ed](https://6ada6e5a385faad3f4cd88ed--posetek.netlify.app).
+Its application source is `b66a7306d6ece6358bd22e45aa9f0371ff86aede`; later edits
+to this delivery document do not change any compiled input. The final sorted
+artifact-manifest SHA-256 is
+`7083cee51af616e6a6d837f05c1e0fde2ec15e7e8f57b0060741781dfac14a74`.
+It contains 2,240 files / 170,418,415 bytes, and all 2,154 protected files match
+the fresh production baseline byte-for-byte. Provider inventory agrees and no
+files were removed. Only Players, Coaches and generated hosting configuration
+changed among existing provider records; no functions or edge functions changed.
+
+The exact hosted candidate passes 39 showcase checks, 11 first-activation checks
+and four WebKit support checks. The hosted receipts retain 107 responsive captures.
+Direct hashes, Back/Forward, retained demo state, AI handoff, reverse scrolling,
+stationary-pointer startup, menu interruption, failed rendering/imports/media,
+reduced motion and no-JavaScript navigation are included in those lanes.
+These browser results do not establish physical-phone acceptance.
+
+The first full hardware run passed 41/43 assertions. Its retained trace identifies
+GPU/system scheduling stalls rather than slow input handlers; the cause is not
+proven. A default-tracing repeat reported 43/43, but its event audit detected
+additional trusted scrolling in four late gallery cases, so that repeat is not
+clean timing acceptance. Both reports remain retained. The final timing outcome,
+raw-input audit and unchanged 100/50/200/100ms limits are recorded in the
+exact-artifact delivery receipt on [PR #97](https://github.com/posetek/posetek_website/pull/97).
+Only an audited full run can establish that timing lane; passing assertions alone
+are insufficient. No failed report is relabeled as a pass.
+
+Final receipts and responsive captures are retained under the worktree's ignored
+`artifacts/homepage-fluid-interactions/` directory. The local port 4192 preview
+serves this exact guarded artifact. Production remains separate from source
+integration, and the primary checkout is unchanged. All source commits use
+`[skip netlify]`; current CI and independent latest-revision review are linked on
+PR #97. Review is advisory, not user acceptance or production approval.
+
+This candidate and the application candidate in PR #98 preserve the same
+predecessor `6ad92e7fec1a407bec937389`. After either is released, recompose and
+reverify the other against the newly approved baseline before acceptance, so a
+later promotion cannot restore the earlier public or application entry. Preserve
+the verified predecessor inventory for rollback and reconcile the baseline after
+promotion through the guarded workflow.
