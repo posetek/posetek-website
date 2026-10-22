@@ -315,3 +315,32 @@ reverify the other against the newly approved baseline before acceptance, so a
 later promotion cannot restore the earlier public or application entry. Preserve
 the verified predecessor inventory for rollback and reconcile the baseline after
 promotion through the guarded workflow.
+
+### Cold-input presentation precondition
+
+The release timing investigation preserves four full-run receipts: the original
+41/43 failure, two assertion-green runs invalidated by additional trusted wheel
+input, and a native-audited 42/43 failure. The latter had no unsolicited wheel
+input, but its first raw CDP click arrived at page time 350ms before the initial
+page presentation at 556ms. DOMContentLoaded and a layout box had permitted input
+before the visitor could see the opener. The 273.3ms curtain-feedback failure
+remains a failure in its original receipt. The earlier trace-all 579.7ms failure
+occurred after first presentation and remains separately qualified; this
+precondition does not explain or retroactively pass that GPU-stall observation.
+
+The cold harness now requires a compositor PNG containing the actual closed Menu
+label and both glyph bars, with a foreground, onscreen, visible, unobstructed
+44px opener. It stops the capture before dispatching the first input and records
+the frame timestamp, precondition completion, SSR state and worker state. It
+applies to every fresh Chromium visit. It does not wait for hydration, worker
+readiness, fonts, network idle or finite animations. The held-SSR and first-input
+before-first-worker-frame assertions remain, as do the existing curtain/content
+feedback measurement and the 100/50/200/100ms budgets. Pixel inspection happens in
+the Node harness; it does not alter the page or create a main-thread renderer.
+
+This precondition adds compositor capture/readback overhead before the measured
+input window; retained PNGs and timestamps make that boundary reviewable. It is
+not a physical-device or operating-system display-latency measurement. Focused
+checks and the next complete native-audited hardware run must establish the new
+harness revision; this document does not claim a future passing result. The
+candidate's product inputs and immutable hosted bytes remain unchanged.
