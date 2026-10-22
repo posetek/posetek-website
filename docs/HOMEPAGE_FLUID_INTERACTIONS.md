@@ -1,5 +1,8 @@
 # Homepage fluid motion and first-activation correction
 
+Published October 22, 2026 in the [combined release](HOMEPAGE_ADMIN_POLISH_RELEASE.md).
+The candidate checkpoints and original verification qualifications below remain historical evidence.
+
 Status: implementation complete; corrected immutable candidate prepared, October 22, 2026.
 The final candidate receipt below supersedes the earlier assembly and local-preview notes.
 This is not a production

@@ -1,5 +1,8 @@
 # Admin workspace refinement
 
+Published October 22, 2026 in the [combined release](HOMEPAGE_ADMIN_POLISH_RELEASE.md).
+The candidate checkpoints and original verification qualifications below remain historical evidence.
+
 This change adapts Salesforce Lightning's navigation, list toolbar, filter drawer
 and grouped form presentation to PoseTek's existing administration workflows.
 The source branch starts at `bd7ce5febbbdcaed16c6ef35f2e3987603f68c93`.

@@ -1,5 +1,23 @@
 # PoseTek website context
 
+## Current homepage and admin workspace release — October 22, 2026
+
+Both updates are live in exact deployment `6ada849fa3505ca75b08ec3b`:
+2,270 artifact files match 2,271 provider records. The baseline protects 2,268
+files and passes the ordinary preservation build. Homepage motion and first-tap
+fixes are preserved alongside the admin-only workspace redesign; feedback and
+coach enrollment remain exact. PRs #97, #98 and #99 are merged with green CI and
+completed latest-revision advisory reviews.
+
+Read [the release handoff](docs/HOMEPAGE_ADMIN_POLISH_RELEASE.md) and
+[the production receipt](deployment/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json).
+The application uses approved runtime `499dc815` over `4c1ba8e`, not all of main.
+Held policy, session and Ball Striking candidates remain excluded. Keep runtime
+branches separate and retain `[skip netlify]` for source/receipt integration.
+No backend, rules, indexes, gateway, catalog or native release is included.
+Earlier sections are historical release checkpoints; their behavior is preserved
+unless the current handoff explicitly records an intended change.
+
 ## Parent-facing player experience release (October 21, 2026)
 
 Player sign-in opens Profile and the skill map. Player navigation uses Results,
