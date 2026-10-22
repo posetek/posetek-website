@@ -151,3 +151,47 @@ essential local navigation and controls are checked without a font service.
 Run `node scripts/admin-workspace.browser.mjs`, `node scripts/admin-directory.browser.mjs`,
 and the specialist command above against the local preview. Add `--records-only`
 to the specialist driver for populated, missing, loading and failed player records.
+
+
+## Final hosted candidate — October 22, 2026
+
+The immutable application candidate is
+[6ada727995f9097db531de87](https://6ada727995f9097db531de87--posetek.netlify.app/admin/accounts).
+It was composed from approved-runtime branch commit
+`499dc81502a56d8b7b01c36e5ee780af55b87244`; its admin UI matches source revision
+`a8dc41baf82d63ebdfce614dd4d1aa76ffbb639c`, apart from the explicitly excluded
+held navigation/routes already described above. Later documentation edits do not
+change that runtime. This runtime branch must never be merged into main.
+
+The sorted candidate inventory has SHA-256
+`238c3a6bce0a068fd828f0e4ade967d08db0f0582a1c810ac1f321583ed87e48`.
+It contains 2,186 files / 167,870,147 bytes. Provider inventory and local hashes
+agree. All 2,153 protected files outside the application entry remain exact;
+marketing, feedback and coach enrollment are unchanged. The full build initially
+regenerated feedback/coach island references and correctly failed their guard.
+The final composition first verified and preserved those existing documents,
+then used the unchanged deliberate application-release composer. No guard was
+weakened. The original failure is retained with the receipt.
+
+All 96 hosted guest-route checks passed in Chromium and WebKit at 360, 390, 430,
+768, 1440 and 1920px: protected routes, disabled preview bypass, first-activation
+sign-in, Back/reload, no overflow and no page exceptions. Thirteen HTTP/alias and
+security-header checks also passed. These checks do not establish populated
+hosted-admin or physical-phone acceptance; populated workflows use the local
+synthetic fixtures documented above. Earlier superseded candidate receipts and
+a transient hosted HTTP 500 are retained, not relabeled as passes.
+
+Independent exact-revision source and runtime reviews found no remaining issues
+after correcting reporting retry visibility and active results-tab contrast.
+Computed active label/count contrast is 7.92:1 and 10.62:1. Review is advisory,
+not acceptance or deployment approval. Current CI and review links are attached
+to product PR #98 and browser companion PR #99.
+
+Production remained `6ad92e7fec1a407bec937389` during verification. Final inventory,
+HTTP checks, runtime exclusion proof, review and browser captures are retained
+under the runtime worktree's ignored `.netlify/admin-lightning/` directory.
+Only this exact accepted artifact may be promoted through the guarded workflow.
+The homepage candidate in PR #97 shares the same predecessor: after either
+candidate is released, recompose and reverify the other against that new baseline
+before accepting it. Retain the predecessor inventory for rollback and reconcile
+the release baseline after any promotion.
