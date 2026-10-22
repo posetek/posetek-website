@@ -23,6 +23,7 @@ export function attachMarketingShowcaseMotion(root: HTMLElement): () => void {
   let lastScroll = scrollY, lastScrollTime = performance.now(), velocity = 0;
   let drawnScrollY = scrollY, drawnScrollX = scrollX, hovered: string | undefined;
   let pointerPosition: { x: number; y: number } | undefined;
+  let initialHover = true;
   const reveals = new Map<string, RevealState>();
   let profiles: Map<string, GalleryRevealProfile> | undefined;
   let measuredWidth = 0, measuredHeight = 0;
@@ -132,7 +133,10 @@ export function attachMarketingShowcaseMotion(root: HTMLElement): () => void {
     const control = document.activeElement?.closest("button, a, input, select, textarea, [tabindex]:not([tabindex='-1'])");
     focused = !!control && root.contains(control) && control.matches(":focus-visible");
     const expanded = !!root.querySelector("[data-showcase-panel]:not([hidden])");
-    if (pointerPosition && fine.matches && !expanded && !focused) updatePointer(document.elementFromPoint(pointerPosition.x, pointerPosition.y));
+    // A pointer can become stationary before this decorative import resolves.
+    // Native :hover supplies the current owner until real coordinates arrive;
+    // never reconstruct hover after touch, window exit, or loss of focus.
+    if (fine.matches && !expanded && !focused) updatePointer(pointerPosition ? document.elementFromPoint(pointerPosition.x, pointerPosition.y) : initialHover ? root.querySelector("[data-showcase-frame]:hover") : null);
     else hovered = undefined;
     const nearby = frames.filter(({ card }) => card.width > 0 && card.height > 0 && card.y + card.height > scrollY - 160 && card.y < scrollY + innerHeight + 160)
       .sort((a, b) => Math.abs(a.card.y + a.card.height / 2 - scrollY - innerHeight / 2) - Math.abs(b.card.y + b.card.height / 2 - scrollY - innerHeight / 2))
@@ -199,7 +203,7 @@ export function attachMarketingShowcaseMotion(root: HTMLElement): () => void {
     overlay.style.visibility = "hidden"; resetFrames("static"); queue();
   };
   const leaveGallery = () => { if (hovered) { hovered = undefined; queue(); } };
-  const clearPointer = () => { const hadHover = !!hovered; hovered = undefined; pointerPosition = undefined; if (hadHover) queue(); };
+  const clearPointer = () => { const hadHover = !!hovered; hovered = undefined; pointerPosition = undefined; initialHover = false; if (hadHover) queue(); };
   const leaveWindow = (event: PointerEvent) => { if (!event.relatedTarget) clearPointer(); };
   const pointerDown = (event: PointerEvent) => { if (event.pointerType !== "mouse") clearPointer(); };
   const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(invalidate);

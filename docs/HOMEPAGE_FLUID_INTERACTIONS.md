@@ -1,9 +1,12 @@
 # Homepage fluid motion and first-activation correction
 
-Status: local guarded candidate, October 22, 2026. This is not a production
+Status: local source correction awaiting new guarded assembly, October 22, 2026.
+The earlier guarded candidate below is superseded and must not be promoted.
+This is not a production
 receipt. Work starts from remote-main `bd7ce5febbbdcaed16c6ef35f2e3987603f68c93`
 in the isolated `codex/homepage-fluid-interactions` worktree. Source integration,
-hosted acceptance and publication remain separate. Guarded assembly is complete.
+hosted acceptance and publication remain separate. The first guarded assembly
+completed; hosted verification then identified the startup correction below.
 
 ## Behavior
 
@@ -44,6 +47,55 @@ chapter/deep-link history and AI Coach → workout handoff are unchanged. The
 hydration-independent native menu remains available before the React gallery.
 No backend, authentication, API, persisted-data or signed-in screen changes are
 part of this candidate.
+
+## Hosted startup correction
+
+The first immutable candidate,
+`https://6ada68722e3bc746b5f5827d--posetek.netlify.app`, was assembled from
+`3da4939d20c4cd95fa76bafd611882af3acc7e89`. Its full showcase run passed 35/37:
+one teardown observed an aborted responsive DOM image, and the stationary-pointer
+case timed out. Both cases passed unchanged on a focused repeat. Three additional
+orientation runs decoded every selected image with no tested-origin failures;
+the original image cancellation's cause is not proven and its failed receipt is
+retained. No generic cancellation exemption was added.
+
+Controlled import gating did reproduce the pointer failure: the first mouse move
+occurred before the decorative module attached. After native scrolling brought
+the preview under the stationary pointer, DOM hit testing and its CSS cue were
+correct but the worker received no hovered card. Moving the pointer by one pixel
+recovered it. This is an inherited startup race exposed by hosted loading, rather
+than a shader-speed issue.
+
+The correction reads native `:hover` ownership while initial coordinates are
+unavailable, preserving neutral tilt until an actual pointer event arrives. It
+adds no listener or worker and retains all existing startup/activity gates. Touch,
+window exit and blur disable that initial fallback so stale native hover cannot
+reactivate decoration. Two browser regressions hold the real decorative import
+until before or after scrolling, then require worker hover and an acknowledged
+frame without a second pointer movement. Both fail against the first immutable
+candidate and pass against corrected local source; the original pointer case also
+passes. Public unit tests are now 240/240; TypeScript, the source marketing build
+and 11 local footer activation checks pass.
+
+The first corrected full local run passed 38/39. Its separate delayed-demo hash
+test sampled five steady frames before the existing 180ms navigation quiet period
+finished. A diagnostic kept the original failing assertion and recorded the
+profile offset returning from 354.5625px to 100.5625px after 300ms, against the
+initial 100.3125px landing. The test now waits for that same ±2px position invariant
+before its unchanged stable-scroll/final assertions. Application hash behavior
+was not changed. Both the original failure and the delayed observation remain in
+`startup-showcase/` and `hash-diagnosis/`.
+
+All 11 first-activation checks also pass on the first hosted candidate. Its
+`/coaches` link redirects to `/coaches/`; the ignored hosted harness explicitly
+checks that canonical destination and Coaches title. The initial exact-string
+URL mismatch remains recorded separately and is not a product navigation defect.
+
+Evidence is retained under `hosted-showcase/`, `hosted-focus-repeat/`,
+`hosted-diagnosis/`, `hosted-startup-regression-before/` and `startup-focused/` in
+the ignored artifact directory, with activation logs alongside them. The old
+`production-dist`, manifest and hosted candidate are unchanged. Release requires
+a new reviewed head, guarded assembly and immutable candidate for this correction.
 
 ## REA findings and correction evidence
 
@@ -157,7 +209,7 @@ under the ignored artifact directory include:
 - [ ] Exact hosted-candidate acceptance and independent latest-revision review.
 - [ ] Coordinated hardware cold-start timing and physical-device acceptance.
 
-## Guarded artifact and loading evidence
+## Earlier guarded artifact and loading evidence — superseded
 
 A fresh read of Netlify site `b1ccf990-286c-4367-bb67-ca0d9ea2a020` confirmed ready
 production deploy `6ad92e7fec1a407bec937389`. The builder independently checked the
@@ -205,11 +257,12 @@ represented as a passing full performance run.
 
 ## Delivery boundary
 
-The guarded preview is `http://127.0.0.1:4192/`. The earlier preview on port 4191
-uses compiled Astro output and must not be promoted. The current baseline protects
+The earlier guarded preview on `http://127.0.0.1:4192/` still serves the superseded
+assembly. Port 4191 uses corrected compiled Astro output and must not be promoted.
+The current baseline protects
 2,154 files from the October 21 parent/player release; older public-site counts
-are historical. No commit, push, hosted upload or production promotion occurred
-during this implementation pass.
+are historical. The hosted follow-up records the initial source integration and
+candidate; no production promotion occurred during this implementation pass.
 
 Before publication, the release owner must freshly verify the production
 baseline and exact artifact manifest again, complete current-revision review and

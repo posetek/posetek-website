@@ -11,11 +11,12 @@ class ElementStub extends EventTarget {
   image?: { currentSrc: string; src: string };
   frames: ElementStub[] = [];
   expandedPanel?: ElementStub;
+  hoveredFrame?: ElementStub;
   interactive = false;
   focusVisible = true;
   rect = { left: 40, top: 100, width: 600, height: 450 };
   remove = vi.fn(); setAttribute = vi.fn(); prepend = vi.fn();
-  querySelector(selector: string) { return selector.includes("data-showcase-panel") ? this.expandedPanel : this.image; }
+  querySelector(selector: string) { return selector === "[data-showcase-frame]:hover" ? this.hoveredFrame : selector.includes("data-showcase-panel") ? this.expandedPanel : this.image; }
   querySelectorAll() { return this.frames; }
   getBoundingClientRect() { return this.rect; }
   contains(node: unknown) { return node === this || this.frames.includes(node as ElementStub); }
@@ -73,8 +74,10 @@ describe("showcase progressive worker controller", () => {
     if (kind === "touch") fine.matches = false;
     if (kind === "narrow") desktop.matches = false;
     if (kind === "reduced") reduced.matches = true;
+    root.hoveredFrame = root.frames[0];
     const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush();
     expect(renderer.setActive).toHaveBeenLastCalledWith(false); expect(root.dataset.showcaseMotion).toBe("static");
+    expect(latest().cards.every(card => !card.hovered)).toBe(true);
     expect(root.frames[0].dataset.showcaseRenderer).toBe("static"); cleanup();
   });
   it("restores fallback synchronously on menu intent and rejects a late frame until a new eligible draw", () => {
@@ -198,11 +201,23 @@ describe("showcase progressive worker controller", () => {
     page.elementFromPoint.mockReturnValue(root.frames[0]); moveScroll(1300);
     expect(latest().cards[0].hovered).toBe(true); expect(page.elementFromPoint).toHaveBeenLastCalledWith(300, 300); cleanup();
   });
+  it("recognizes native hover after a stationary pointer predates the decorative attachment", () => {
+    root.frames[0].rect.top = 1500;
+    const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush();
+    expect(renderer.setActive).toHaveBeenLastCalledWith(false);
+    root.hoveredFrame = root.frames[0]; moveScroll(1300);
+    expect(latest().cards[0]).toMatchObject({ hovered: true, pointerX: 0, pointerY: 0 });
+    expect(page.elementFromPoint).not.toHaveBeenCalled();
+    root.hoveredFrame = undefined; moveScroll(1400);
+    expect(latest().cards[0].hovered).toBe(false);
+    expect(factory).toHaveBeenCalledOnce(); cleanup();
+  });
   it.each(["blur", "pointerout", "touch"])("clears stationary pointer coordinates after %s rather than inventing a later hover", type => {
     const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush();
     const move = new Event("pointermove"); Object.defineProperty(move, "target", { value: root.frames[0] });
     Object.assign(move, { clientX: 300, clientY: 300, pointerType: "mouse", buttons: 0 });
     page.elementFromPoint.mockReturnValue(root.frames[0]); browser.dispatchEvent(move); flush(); expect(latest().cards[0].hovered).toBe(true);
+    root.hoveredFrame = root.frames[0];
     const event = new Event(type === "touch" ? "pointerdown" : type);
     if (type === "touch") Object.assign(event, { pointerType: "touch" });
     if (type === "pointerout") Object.assign(event, { relatedTarget: null });
