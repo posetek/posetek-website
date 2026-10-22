@@ -11,11 +11,12 @@ class ElementStub extends EventTarget {
   image?: { currentSrc: string; src: string };
   frames: ElementStub[] = [];
   expandedPanel?: ElementStub;
+  hoveredFrame?: ElementStub;
   interactive = false;
   focusVisible = true;
   rect = { left: 40, top: 100, width: 600, height: 450 };
   remove = vi.fn(); setAttribute = vi.fn(); prepend = vi.fn();
-  querySelector(selector: string) { return selector.includes("data-showcase-panel") ? this.expandedPanel : this.image; }
+  querySelector(selector: string) { return selector === "[data-showcase-frame]:hover" ? this.hoveredFrame : selector.includes("data-showcase-panel") ? this.expandedPanel : this.image; }
   querySelectorAll() { return this.frames; }
   getBoundingClientRect() { return this.rect; }
   contains(node: unknown) { return node === this || this.frames.includes(node as ElementStub); }
@@ -73,8 +74,10 @@ describe("showcase progressive worker controller", () => {
     if (kind === "touch") fine.matches = false;
     if (kind === "narrow") desktop.matches = false;
     if (kind === "reduced") reduced.matches = true;
+    root.hoveredFrame = root.frames[0];
     const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush();
     expect(renderer.setActive).toHaveBeenLastCalledWith(false); expect(root.dataset.showcaseMotion).toBe("static");
+    expect(latest().cards.every(card => !card.hovered)).toBe(true);
     expect(root.frames[0].dataset.showcaseRenderer).toBe("static"); cleanup();
   });
   it("restores fallback synchronously on menu intent and rejects a late frame until a new eligible draw", () => {
@@ -109,6 +112,41 @@ describe("showcase progressive worker controller", () => {
     root.frames[0].rect.top = 300; observer.callback(); flush();
     expect(latest().cards[0].y).toBe(300); expect(observer.observe).toHaveBeenCalledTimes(2); expect(raf.size).toBe(0);
     deliver({ galleryRevision: oldRevision }); expect(overlay.style.visibility).toBe("hidden"); cleanup();
+  });
+  it("keeps an acknowledged frame visible through no-op image load and resize notifications", () => {
+    const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush(); callbacks.ready(); deliver();
+    const revision = latest().revision;
+    root.dispatchEvent(new Event("load")); Observer.instances[0].callback(); flush();
+    expect(latest().revision).toBe(revision);
+    expect(root.frames[0].dataset.showcaseRenderer).toBe("ready");
+    expect(overlay.style.visibility).toBe("visible"); cleanup();
+  });
+  it("restores only a replaced responsive image while keeping another aligned plane visible", () => {
+    const second = new ElementStub(); second.dataset.showcaseFrame = "two"; second.rect.top = 600;
+    second.image = { src: "https://example.test/two.webp", currentSrc: "" }; root.frames.push(second);
+    const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush(); callbacks.ready(); deliver({ galleryCards: ["one", "two"] });
+    const oldRevision = latest().revision;
+    second.image.currentSrc = "https://example.test/two-large.webp";
+    root.dispatchEvent(new Event("load")); flush();
+    expect(latest().revision).toBeGreaterThan(oldRevision);
+    expect(root.frames[0].dataset.showcaseRenderer).toBe("ready"); expect(second.dataset.showcaseRenderer).toBe("static");
+    expect(overlay.style.visibility).toBe("visible");
+    deliver({ galleryRevision: oldRevision, galleryCards: ["one", "two"] });
+    expect(second.dataset.showcaseRenderer).toBe("static");
+    deliver({ galleryCards: ["one", "two"] }); expect(second.dataset.showcaseRenderer).toBe("ready"); cleanup();
+  });
+  it("retains the visit's selected profiles through resize, scrolling, and directional rearming", () => {
+    root.dataset.showcaseMotionPolicy = "fluid";
+    root.frames = ["tests", "profile", "training", "ai-coach", "technique", "mobile-app"].map((id, index) => {
+      const element = new ElementStub(); element.dataset.showcaseFrame = id; element.rect.top = 100 + index * 500;
+      element.image = { src: `https://example.test/${id}.webp`, currentSrc: "" }; return element;
+    });
+    const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush();
+    const original = latest().cards[0].revealProfile;
+    expect(original).toBeDefined();
+    moveScroll(2000); moveScroll(0);
+    root.frames[0].rect.width = 610; Observer.instances[0].callback(); flush();
+    expect(latest().cards[0].revealProfile).toEqual(original); cleanup();
   });
   it("coalesces native scroll and compensates the last drawn canvas without transforming anchors", () => {
     const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush(); callbacks.ready(); deliver();
@@ -163,11 +201,23 @@ describe("showcase progressive worker controller", () => {
     page.elementFromPoint.mockReturnValue(root.frames[0]); moveScroll(1300);
     expect(latest().cards[0].hovered).toBe(true); expect(page.elementFromPoint).toHaveBeenLastCalledWith(300, 300); cleanup();
   });
+  it("recognizes native hover after a stationary pointer predates the decorative attachment", () => {
+    root.frames[0].rect.top = 1500;
+    const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush();
+    expect(renderer.setActive).toHaveBeenLastCalledWith(false);
+    root.hoveredFrame = root.frames[0]; moveScroll(1300);
+    expect(latest().cards[0]).toMatchObject({ hovered: true, pointerX: 0, pointerY: 0 });
+    expect(page.elementFromPoint).not.toHaveBeenCalled();
+    root.hoveredFrame = undefined; moveScroll(1400);
+    expect(latest().cards[0].hovered).toBe(false);
+    expect(factory).toHaveBeenCalledOnce(); cleanup();
+  });
   it.each(["blur", "pointerout", "touch"])("clears stationary pointer coordinates after %s rather than inventing a later hover", type => {
     const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush();
     const move = new Event("pointermove"); Object.defineProperty(move, "target", { value: root.frames[0] });
     Object.assign(move, { clientX: 300, clientY: 300, pointerType: "mouse", buttons: 0 });
     page.elementFromPoint.mockReturnValue(root.frames[0]); browser.dispatchEvent(move); flush(); expect(latest().cards[0].hovered).toBe(true);
+    root.hoveredFrame = root.frames[0];
     const event = new Event(type === "touch" ? "pointerdown" : type);
     if (type === "touch") Object.assign(event, { pointerType: "touch" });
     if (type === "pointerout") Object.assign(event, { relatedTarget: null });

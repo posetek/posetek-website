@@ -11,6 +11,7 @@ import { createHash } from 'node:crypto';
 import { chromium, webkit } from '../app/node_modules/playwright/index.mjs';
 import { createHomepagePreviewServer } from './serve-homepage-preview.mjs';
 import { requestFailureDetails, classifyPreviewCancellations } from './marketing-showcase.helpers.mjs';
+import { waitForPresentedOpener } from './marketing-cold-presentation.mjs';
 
 const output = process.env.MARKETING_OUTPUT ? resolve(process.env.MARKETING_OUTPUT) : fileURLToPath(new URL('../app/astro-dist/', import.meta.url));
 const artifacts = process.env.MARKETING_ARTIFACTS ? resolve(process.env.MARKETING_ARTIFACTS) : fileURLToPath(new URL('../artifacts/marketing-cold/', import.meta.url));
@@ -260,6 +261,12 @@ OffscreenCanvas.prototype.getContext = function (...args) {
     } } catch (error) { postErrors.push(`Trace collection failed: ${error.message}`); }
     const run = evidence.runs.find(row => row.name === t.name);
     if (run) run.network = state;
+    if (state.firstPresentation) {
+      const { png, ...proof } = state.firstPresentation;
+      state.firstPresentation = proof;
+      if (run) run.firstPresentation = proof;
+      await writeFile(resolve(artifacts, slug(t.name) + '.first-opener.png'), Buffer.from(png, 'base64'));
+    }
     const classified = await classifyPreviewCancellations(page, state.failureDetails);
     (evidence.requests.decorativeCancellations ??= []).push(...classified.expected.map(row => ({ check: t.name, ...row })));
     const unexpected = classified.unexpected.map(row => new URL(row.url).pathname).filter(path => !state.injected.includes(path));
@@ -275,10 +282,17 @@ OffscreenCanvas.prototype.getContext = function (...args) {
 function slug(name) { return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-$/, ''); }
 function markFailure(name, message) { const row = evidence.checks.find(row => row.name === name); if (row) { row.status = 'failed'; row.error = message; } throw new Error(message); }
 
-async function visit(page, route) {
+async function visit(f, route) {
+  const { page, cdp, state } = f;
   const response = await page.goto(origin + route, { waitUntil: 'domcontentloaded' });
   assert.equal(response.status(), 200);
-  // Intentionally no hydration, renderer, font, idle, or finite-animation wait.
+  // A raw CDP click can precede even the first presented page after DCL.
+  // Wait only for a compositor frame containing the actual visible opener.
+  // No hydration, renderer, font, idle, or finite-animation readiness gate.
+  state.firstPresentation = await waitForPresentedOpener(page, cdp);
+  state.firstPresentation.readyAt = await page.evaluate(() => performance.now());
+  const { frameTime, readyAt } = state.firstPresentation;
+  await page.evaluate(proof => { window.__cold.firstPresentation = proof; }, { frameTime, readyAt });
 }
 
 async function press(f, device, intent) {
@@ -314,6 +328,7 @@ async function nodeCondition(predicate, description) {
 function assertLatency(data) {
   const inputs = data.inputs.filter(row => row.intent);
   assert.ok(inputs.length >= 2, 'trusted menu input was observed');
+  assert.ok(data.firstPresentation && data.firstPresentation.frameTime <= inputs[0].timestamp && data.firstPresentation.readyAt <= inputs[0].timestamp, 'first menu input follows an actually presented opener');
   assert.ok(inputs.every(row => row.delay <= budgets.inputMaximum), `input delay <=${budgets.inputMaximum}ms: ${JSON.stringify(inputs)}`);
   assert.ok(data.feedback.some(row => row.intent === 'open'), 'actual opening feedback was observed');
   assert.ok(data.feedback.every(row => row.milliseconds <= budgets.feedback), `visible feedback <=${budgets.feedback}ms: ${JSON.stringify(data.feedback)}`);
@@ -333,7 +348,7 @@ async function finishRun(t, f, extra = {}) {
 for (const audience of audiences) for (const device of devices) {
   check(`${audience.name} ${device.name}: first SSR menu input works while page hydration is held`, async t => {
     const f = await fixture(t, device, { holdPage: audience.chunk });
-    await visit(f.page, audience.route);
+    await visit(f, audience.route);
     const before = await f.page.evaluate(() => document.querySelectorAll('astro-island[ssr]').length);
     assert.ok(before > 0, 'page is still server-rendered before the first input');
     await press(f, device, 'open'); await menuState(f.page, true);
@@ -356,7 +371,7 @@ for (const audience of audiences) for (const device of devices) {
 for (const device of devices) for (let iteration = 1; iteration <= iterations; iteration++) {
   check(`${device.name} cold ${iteration}: navigation stays responsive during a real worker first frame`, async t => {
     const f = await fixture(t, device, { trace: iteration === 1 });
-    await visit(f.page, '/');
+    await visit(f, '/');
     await press(f, device, 'open'); await menuState(f.page, true);
     await press(f, device, 'close'); await menuState(f.page, false);
     // This wait selects the startup race, not a ready/warm renderer. First input
@@ -396,7 +411,7 @@ check('five-run hardware input medians meet the cold responsiveness budget', asy
 
 check('late worker load cannot draw behind open navigation and recovers after explicit close', async t => {
   const device = devices[0], f = await fixture(t, device, { holdWorker: true });
-  await visit(f.page, '/');
+  await visit(f, '/');
   await press(f, device, 'open'); await menuState(f.page, true);
   await press(f, device, 'close'); await menuState(f.page, false);
   await f.page.waitForFunction(() => window.__cold.workers.length > 0);
@@ -416,7 +431,7 @@ check('late worker load cannot draw behind open navigation and recovers after ex
 for (const fault of ['worker-404', 'worker-constructor', 'no-offscreen', 'canvas-transfer', 'worker-never-ready', 'worker-context', 'worker-shader']) {
   check(`${fault}: startup failure preserves hero controls, footer fallback and navigation`, async t => {
     const device = devices[1], f = await fixture(t, device, { fault });
-    await visit(f.page, '/');
+    await visit(f, '/');
     await press(f, device, 'open'); await menuState(f.page, true);
     await press(f, device, 'close'); await menuState(f.page, false);
     await f.page.waitForFunction(() => document.querySelector('.hero-pose-viewer')?.dataset.rendererState === 'failed', undefined, { timeout: 18_000 });
@@ -456,7 +471,7 @@ for (const fault of ['worker-404', 'worker-constructor', 'no-offscreen', 'canvas
 
 check('a worker crash after its real first frame restores the usable pose fallback', async t => {
   const device = devices[0], f = await fixture(t, device);
-  await visit(f.page, '/');
+  await visit(f, '/');
   await press(f, device, 'open'); await menuState(f.page, true);
   await press(f, device, 'close'); await menuState(f.page, false);
   await f.page.waitForFunction(() => Number(document.querySelector('.hero-pose-viewer')?.dataset.rendererFrames) > 0);
@@ -490,7 +505,7 @@ async function quietFrames(page, selector, timeout = 2500) {
 for (const device of devices) {
   check(`${device.name}: early pose, camera, resize, controlled visibility and reduced motion retain one worker`, async t => {
     const f = await fixture(t, device, { holdWorker: true });
-    await visit(f.page, '/');
+    await visit(f, '/');
     await press(f, device, 'open'); await menuState(f.page, true);
     await press(f, device, 'close'); await menuState(f.page, false);
     await nodeCondition(() => f.state.heldWorkers > 0, 'worker import reached hold before early pose selection');
@@ -562,7 +577,7 @@ for (const device of devices) {
 
   check(`${device.name}: footer worker starts around navigation and pauses offscreen`, async t => {
     const f = await fixture(t, device, { holdWorker: true });
-    await visit(f.page, '/coaches');
+    await visit(f, '/coaches');
     await press(f, device, 'open'); await menuState(f.page, true);
     await press(f, device, 'close'); await menuState(f.page, false);
     await f.page.locator('.marketing-footer-mark').scrollIntoViewIfNeeded();
@@ -606,7 +621,7 @@ for (const device of devices) {
 
 check('real worker WebGL context loss restores the static pose and keeps navigation usable', async t => {
   const device = devices[0], f = await fixture(t, device, { fault: 'context-loss' });
-  await visit(f.page, '/');
+  await visit(f, '/');
   await press(f, device, 'open'); await menuState(f.page, true);
   await press(f, device, 'close'); await menuState(f.page, false);
   await f.page.waitForFunction(() => document.querySelector('.hero-pose-viewer')?.dataset.renderer === 'webgl');
@@ -726,7 +741,7 @@ function assertGalleryDraw(data, gpu) {
 for (let galleryIteration = 1; galleryIteration <= iterations; galleryIteration++) {
   check(`gallery cold ${galleryIteration}: first navigation remains responsive during real textured preview startup`, async t => {
     const device = devices[0], f = await fixture(t, device, { holdWorker: true, trace: galleryIteration === 1 });
-    await visit(f.page, '/#tests');
+    await visit(f, '/#tests');
     await f.page.waitForFunction(() => window.__cold.workers.some(row => row.name === 'posetek-gallery'));
     await nodeCondition(() => f.state.heldWorkers > 0, 'gallery worker request is genuinely held');
     await press(f, device, 'open'); await menuState(f.page, true);
@@ -781,7 +796,7 @@ check('gallery: actual scroll bend is bounded and settles; menu, focus, offscree
       window.addEventListener('scroll', () => record.scrolls.push({ time: performance.now(), y: scrollY }), { passive: true });
     }
   }, galleryScrollDiagnostic);
-  await visit(f.page, '/#tests'); await galleryReady(f.page);
+  await visit(f, '/#tests'); await galleryReady(f.page);
   await f.page.mouse.move(10, 140);
   await f.page.mouse.wheel(0, 160);
   await f.page.waitForFunction(() => Number(document.querySelector('[data-showcase-overlay]')?.dataset.galleryBend) > .001);
@@ -822,7 +837,7 @@ check('gallery: actual scroll bend is bounded and settles; menu, focus, offscree
 for (const fault of ['worker-404', 'worker-never-ready', 'worker-context', 'worker-shader', 'gallery-texture']) {
   check(`gallery ${fault}: original previews and their first explicit demo action survive`, async t => {
     const device = devices[0], f = await fixture(t, device, { fault });
-    await visit(f.page, '/#tests');
+    await visit(f, '/#tests');
     if (fault === 'gallery-texture') await f.page.waitForFunction(() => document.querySelector('[data-showcase-frame="tests"]')?.dataset.showcaseRenderer === 'failed');
     else await f.page.waitForFunction(() => document.querySelector('[data-showcase-gallery]')?.dataset.showcaseMotion === 'failed', undefined, { timeout: 18000 });
     const fallback = await assertGalleryFallback(f.page);
@@ -856,7 +871,7 @@ for (const fault of ['worker-404', 'worker-never-ready', 'worker-context', 'work
 for (const mode of ['touch', 'reduced-motion']) check(`gallery ${mode}: static previews avoid worker startup and keep the explicit demo usable`, async t => {
   const device = mode === 'touch' ? devices[1] : devices[0], f = await fixture(t, device);
   if (mode === 'reduced-motion') await f.page.emulateMedia({ reducedMotion: 'reduce' });
-  await visit(f.page, '/#tests');
+  await visit(f, '/#tests');
   await f.page.waitForFunction(() => !document.querySelector('astro-island[ssr]'));
   await nextFrames(f.page, 12); await assertGalleryFallback(f.page);
   const data = await snapshot(f.page);

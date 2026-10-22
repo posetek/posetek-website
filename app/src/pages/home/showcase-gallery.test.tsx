@@ -5,6 +5,10 @@ import CoachesPage from "../coaches/CoachesPage";
 import { DemoPanelContent, useDemoDisclosure } from "./DemoDisclosure";
 
 describe("public showcase initial document", () => {
+  it("opts only the Players page into the fluid chapter policy", () => {
+    expect(renderToStaticMarkup(<HomePage />)).toContain('data-showcase-motion-policy="fluid"');
+    expect(renderToStaticMarkup(<CoachesPage />)).not.toContain('data-showcase-motion-policy="fluid"');
+  });
   it.each([
     ["players", HomePage, ["tests", "profile", "training", "ai-coach", "technique", "mobile-app"]],
     ["coaches", CoachesPage, ["club", "players", "development", "contact"]],

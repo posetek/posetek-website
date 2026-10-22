@@ -10,7 +10,7 @@ type OpenOptions = { focus?: boolean; scroll?: boolean; opener?: HTMLElement };
 const ShowcaseContext = createContext({ active: null as string | null, enhanced: false, open: (_id: string, _options?: OpenOptions) => {}, close: (_id: string) => {} });
 
 /** Stable native document slots: previews and retained panels never reparent. */
-export function ShowcaseGallery({ children }: { children: ReactNode }) {
+export function ShowcaseGallery({ children, fluid = false }: { children: ReactNode; fluid?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<string | null>(null);
   const [enhanced, setEnhanced] = useState(false);
@@ -83,7 +83,7 @@ export function ShowcaseGallery({ children }: { children: ReactNode }) {
   }, [open]);
 
   return <ShowcaseContext.Provider value={{ active, enhanced, open, close }}>
-    <div ref={host} className="marketing-gallery showcase-gallery shell" data-showcase-gallery="" data-showcase-enhanced={enhanced || undefined} data-showcase-active={active || undefined} style={{ overflowAnchor: "none" }}>
+    <div ref={host} className="marketing-gallery showcase-gallery shell" data-showcase-gallery="" data-showcase-motion-policy={fluid ? "fluid" : undefined} data-showcase-enhanced={enhanced || undefined} data-showcase-active={active || undefined} style={{ overflowAnchor: "none" }}>
       {children}
       <noscript><p className="showcase-no-script">The previews show PoseTek’s recorded and sample experiences. Enable JavaScript to explore the interactive demos.</p></noscript>
     </div>

@@ -85,7 +85,7 @@ export default function HomePage() {
         </section>
 
         <MarketingJourney audience="players" />
-        <ShowcaseGallery>
+        <ShowcaseGallery fluid>
           <ShowcasePair>
             <ShowcaseChapter id="tests" titleId="tests-title" number="01" label="Test & review" title={<>Six tests. <em>Every rep tells a story.</em></>} description="See how you move, control the ball, and strike. Choose a recorded rep to explore." artwork="players-testing" kind="movement" caption="Recorded reps · Six tests · Frame-by-frame playback" demoAnchors={["how-it-works"]} footer={<a href="#profile">Put it in perspective ↓</a>}>
               <div className="assessment-workspace">

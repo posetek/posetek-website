@@ -10,6 +10,15 @@ The homepage polish is a separate candidate. Production remains the approved
 October 21 release; held policy, session and Ball Striking work is excluded from
 the deliberate admin runtime composition. No backend or data contract changes.
 
+## Homepage motion and first-click candidate — October 22, 2026
+
+Players now uses fluid artwork entrances with two brief, varied accents per
+visit. Shared footer links keep stationary click/touch geometry. The guarded
+candidate preserves all 2,154 current application artifacts; source review and
+hosted acceptance remain separate from production. Read the
+[REA findings, interaction checklist and verification](../HOMEPAGE_FLUID_INTERACTIONS.md).
+The Salesforce-inspired admin redesign is a separate source and release candidate.
+
 
 Current application production: [player profile and team results](../PARENT_PLAYER_EXPERIENCE.md)
 and [verified receipt](../../deployment/PARENT_PLAYER_PRODUCTION.json).

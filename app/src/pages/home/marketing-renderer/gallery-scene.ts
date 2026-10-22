@@ -2,6 +2,7 @@ import { LinearFilter, Mesh, PerspectiveCamera, PlaneGeometry, Scene, ShaderMate
 import type { GalleryCard, GalleryView, RendererView } from "./protocol";
 import type { WorkerScene } from "./scene";
 import { GALLERY_TEXTURE_LIMIT, dampGalleryValue, galleryBendTarget } from "./gallery-model";
+import { galleryRevealProgress } from "./gallery-reveal";
 
 // A real segmented surface: curvature is in viewport/world space, before projection.
 export const galleryVertexShader = `
@@ -22,20 +23,34 @@ const fragmentShader = `
   uniform float uZoom;
   uniform float uBlur;
   uniform float uReveal;
+  uniform float uFluidReveal;
+  uniform float uRevealPixels;
   varying vec2 vUv;
-  void main() {
-    vec2 uv = .5 + (vUv - .5) / uZoom;
-    // Visible source texture clears in bounded 64/32/16/.../1 pixel steps.
-    float pixelSize = exp2(floor((1.0 - uReveal) * 6.0 + .00001));
-    vec2 block = uTexel * pixelSize;
-    uv = (floor(uv / block) + .5) * block;
+  vec4 sampleImage(vec2 uv, float pixelSize) {
+    if (pixelSize > 1.0) {
+      vec2 block = uTexel * pixelSize;
+      uv = (floor(uv / block) + .5) * block;
+    }
     vec2 offset = uTexel * uBlur;
     vec4 color = texture2D(uImage, uv) * .4;
     color += texture2D(uImage, uv + vec2(offset.x, 0.0)) * .15;
     color += texture2D(uImage, uv - vec2(offset.x, 0.0)) * .15;
     color += texture2D(uImage, uv + vec2(0.0, offset.y)) * .15;
     color += texture2D(uImage, uv - vec2(0.0, offset.y)) * .15;
-    gl_FragColor = color;
+    return color;
+  }
+  void main() {
+    vec2 uv = .5 + (vUv - .5) / uZoom;
+    if (uFluidReveal > .5) {
+      // Blend neighboring grids instead of snapping every card through the same
+      // six resolutions. Non-accent chapters sample the sharp artwork directly.
+      float level = log2(max(1.0, uRevealPixels));
+      float fine = exp2(floor(level));
+      gl_FragColor = sampleImage(uv, fine);
+      if (uRevealPixels > 1.0) gl_FragColor = mix(gl_FragColor, sampleImage(uv, fine * 2.0), smoothstep(0.0, 1.0, fract(level)));
+    } else {
+      gl_FragColor = sampleImage(uv, exp2(floor((1.0 - uReveal) * 6.0 + .00001)));
+    }
     #include <colorspace_fragment>
   }
 `;
@@ -71,6 +86,7 @@ export function createGalleryScene(initial: GalleryView, invalidate: () => void)
       uImage: { value: null }, uTexel: { value: new Vector2(1 / 1200, 1 / 900) },
       uBend: { value: 0 }, uHalfHeight: { value: initial.height / 2 },
       uZoom: { value: 1.06 }, uBlur: { value: 0 }, uReveal: { value: 0 },
+      uFluidReveal: { value: 0 }, uRevealPixels: { value: 1 },
     },
   });
   const load = async (entry: Entry) => {
@@ -151,14 +167,18 @@ export function createGalleryScene(initial: GalleryView, invalidate: () => void)
         if (Math.abs(entry.hover - hover) < .001) entry.hover = hover;
         if (Math.abs(entry.tiltX - x) < .0001) entry.tiltX = x;
         if (Math.abs(entry.tiltY - y) < .0001) entry.tiltY = y;
-        if (entry.texture && visible) entry.reveal.progress = Math.min(1, entry.reveal.progress + seconds / .65);
+        if (entry.texture && visible) entry.reveal.progress = Math.min(1, entry.reveal.progress + seconds / (card.revealProfile?.duration ?? .65));
         entry.pulse = Math.min(1, entry.pulse + seconds / .64);
         mesh.position.set(card.x - view.scrollX + card.width / 2 - view.width / 2, view.height / 2 - (card.y - view.scrollY + card.height / 2), 0);
         mesh.scale.set(card.width, card.height, 1); mesh.rotation.set(entry.tiltX, entry.tiltY, 0);
         const uniforms = mesh.material.uniforms;
-        uniforms.uBend.value = bend; uniforms.uHalfHeight.value = view.height / 2;
-        uniforms.uZoom.value = 1 + entry.hover * .08 + (1 - entry.reveal.progress) * .06;
+        const profile = card.revealProfile;
+        const progress = profile ? galleryRevealProgress(entry.reveal.progress, profile) : entry.reveal.progress;
+        uniforms.uBend.value = bend * (profile?.bendScale ?? 1); uniforms.uHalfHeight.value = view.height / 2;
+        uniforms.uZoom.value = 1 + entry.hover * .08 + (1 - progress) * (profile ? .02 : .06);
         uniforms.uReveal.value = entry.reveal.progress;
+        uniforms.uFluidReveal.value = profile ? 1 : 0;
+        uniforms.uRevealPixels.value = profile ? 1 + (profile.pixels - 1) * (1 - progress) : 1;
         uniforms.uBlur.value = entry.pulse < 1 ? Math.sin(entry.pulse * Math.PI) * 1.2 : 0;
         moving ||= !!entry.texture && visible && (entry.hover !== hover || entry.tiltX !== x || entry.tiltY !== y || entry.reveal.progress < 1 || entry.pulse < 1);
       }
