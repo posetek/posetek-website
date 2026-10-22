@@ -110,6 +110,41 @@ describe("showcase progressive worker controller", () => {
     expect(latest().cards[0].y).toBe(300); expect(observer.observe).toHaveBeenCalledTimes(2); expect(raf.size).toBe(0);
     deliver({ galleryRevision: oldRevision }); expect(overlay.style.visibility).toBe("hidden"); cleanup();
   });
+  it("keeps an acknowledged frame visible through no-op image load and resize notifications", () => {
+    const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush(); callbacks.ready(); deliver();
+    const revision = latest().revision;
+    root.dispatchEvent(new Event("load")); Observer.instances[0].callback(); flush();
+    expect(latest().revision).toBe(revision);
+    expect(root.frames[0].dataset.showcaseRenderer).toBe("ready");
+    expect(overlay.style.visibility).toBe("visible"); cleanup();
+  });
+  it("restores only a replaced responsive image while keeping another aligned plane visible", () => {
+    const second = new ElementStub(); second.dataset.showcaseFrame = "two"; second.rect.top = 600;
+    second.image = { src: "https://example.test/two.webp", currentSrc: "" }; root.frames.push(second);
+    const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush(); callbacks.ready(); deliver({ galleryCards: ["one", "two"] });
+    const oldRevision = latest().revision;
+    second.image.currentSrc = "https://example.test/two-large.webp";
+    root.dispatchEvent(new Event("load")); flush();
+    expect(latest().revision).toBeGreaterThan(oldRevision);
+    expect(root.frames[0].dataset.showcaseRenderer).toBe("ready"); expect(second.dataset.showcaseRenderer).toBe("static");
+    expect(overlay.style.visibility).toBe("visible");
+    deliver({ galleryRevision: oldRevision, galleryCards: ["one", "two"] });
+    expect(second.dataset.showcaseRenderer).toBe("static");
+    deliver({ galleryCards: ["one", "two"] }); expect(second.dataset.showcaseRenderer).toBe("ready"); cleanup();
+  });
+  it("retains the visit's selected profiles through resize, scrolling, and directional rearming", () => {
+    root.dataset.showcaseMotionPolicy = "fluid";
+    root.frames = ["tests", "profile", "training", "ai-coach", "technique", "mobile-app"].map((id, index) => {
+      const element = new ElementStub(); element.dataset.showcaseFrame = id; element.rect.top = 100 + index * 500;
+      element.image = { src: `https://example.test/${id}.webp`, currentSrc: "" }; return element;
+    });
+    const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush();
+    const original = latest().cards[0].revealProfile;
+    expect(original).toBeDefined();
+    moveScroll(2000); moveScroll(0);
+    root.frames[0].rect.width = 610; Observer.instances[0].callback(); flush();
+    expect(latest().cards[0].revealProfile).toEqual(original); cleanup();
+  });
   it("coalesces native scroll and compensates the last drawn canvas without transforming anchors", () => {
     const cleanup = attachMarketingShowcaseMotion(root as unknown as HTMLElement); flush(); callbacks.ready(); deliver();
     vi.advanceTimersByTime(16); vi.stubGlobal("scrollY", 20); browser.dispatchEvent(new Event("scroll"));

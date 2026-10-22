@@ -1,4 +1,5 @@
 import type { PitchView, Point3 } from "../latest-hero/pose-model";
+import type { GalleryRevealProfile } from "./gallery-reveal";
 
 export type NavigationPhase = "closed" | "opening" | "open" | "closing";
 export type RendererState = "queued" | "preparing" | "ready" | "paused" | "failed";
@@ -8,6 +9,7 @@ export interface HeroView extends PitchView { kind: "hero"; }
 export interface GalleryCard {
   id: string; src: string; x: number; y: number; width: number; height: number;
   hovered: boolean; pointerX: number; pointerY: number; settled: boolean; revealEpoch: number;
+  revealProfile?: GalleryRevealProfile;
 }
 export interface GalleryView {
   kind: "gallery"; revision: number; scrollRevision: number;
