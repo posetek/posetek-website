@@ -10,7 +10,7 @@ describe("admin navigation", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready email="admin@example.test" onSignOut={() => {}} /></MemoryRouter>);
     for (const path of ["accounts", "programs", "analysis", "drills", "ai-incidents", "device-performance", "user-issues", "feedback"]) expect(html).toContain(`href="/admin/${path}"`);
     expect(html).not.toContain('href="/admin"');
-    expect((html.match(/class="admin-section-link/g) ?? []).length).toBe(8);
+    expect((html.match(/class="admin-section-link/g) ?? []).length).toBe(9);
     expect(html).toContain("People &amp; organizations");
     expect(html).toContain("Device performance");
     expect(html.indexOf("AI incidents")).toBeLessThan(html.indexOf("Device performance"));
@@ -20,8 +20,9 @@ describe("admin navigation", () => {
     expect(html).toContain("Account access");
     expect(html).toContain("Technique review");
     expect(html).toMatch(/href="\/insights\?from=organization&amp;view=overview"[^>]*>Overview<\/a>/);
-    expect(html).toContain("Coaching hub");
-    expect(html).toContain("System &amp; User Insights");
+    expect(html).toContain("Training");
+    expect(html).toContain("Review tools");
+    expect(html).toContain("System &amp; support");
     expect(html).toContain(">Overview<");
   });
 
@@ -50,7 +51,7 @@ describe("admin navigation", () => {
 
   it("keeps the admin scope when leaving Device performance, whose own filters stay behind", () => {
     const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/device-performance?orgId=club&teamId=team&drill=sprint&cursor=p2"]}><AdminHeader ready onSignOut={() => {}} /></MemoryRouter>);
-    expect(html).toContain('href="/admin/accounts?orgId=club&amp;teamId=team&amp;page=1&amp;directoryLevel=people"');
+    expect(html).toContain('href="/admin/accounts?orgId=club&amp;teamId=team&amp;page=1&amp;directoryLevel=people&amp;directoryPane=list"');
     expect(html).not.toContain("drill=sprint");
     expect(html).not.toContain('aria-label="Admin organization scope"');
   });

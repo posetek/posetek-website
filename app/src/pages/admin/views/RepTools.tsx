@@ -17,6 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AdminModal from "./AdminModal";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { drillByKey } from "../../athlete-portal/lib/drills";
 import { fullName, repNumber, sessionNumber } from "../../athlete-portal/lib/metrics";
@@ -1004,7 +1005,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
               {pushError && <p className="form-message" role="alert">{pushError}</p>}
               <div className="admin-form-actions">
                 <span className="admin-note">{changedCount} field{changedCount === 1 ? "" : "s"} change.</span>
-                <button className="primary-cta" type="button" disabled={pushing || Boolean(run) || (changedCount === 0 && !comMarks.length && !ballMarks.length)} onClick={() => setConfirming(true)}>
+                <button className="primary-cta" type="button" disabled={pushing || Boolean(run) || (changedCount === 0 && !comMarks.length && !ballMarks.length)} onClick={event => { event.currentTarget.focus({ preventScroll: true }); setConfirming(true); }}>
                   <span className="material-symbols-outlined">publish</span>Push changes
                 </button>
               </div>
@@ -1042,8 +1043,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       </div>
 
       {confirming && (
-        <div className="admin-dialog-backdrop" role="dialog" aria-modal="true" aria-label="Push the re-processed rep">
-          <div className="admin-dialog">
+        <AdminModal label="Push the re-processed rep" onClose={() => setConfirming(false)} dismissDisabled={pushing}>
             <h3>Overwrite this rep?</h3>
             <p>
               {athleteName} · {sessionLabel} · {drillLabel}. The rep document and its metadata.json are replaced with the values on the right of the table; dashboards, leaderboards and the app read them immediately. The current version is kept as a revision you can restore.
@@ -1061,8 +1061,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
               <button className="quiet-button" type="button" disabled={pushing} onClick={() => setConfirming(false)}>Not yet</button>
               <button className="primary-cta" type="button" disabled={pushing} onClick={push}>{pushing ? "Pushing…" : "Push and overwrite"}</button>
             </div>
-          </div>
-        </div>
+        </AdminModal>
       )}
     </>
   );

@@ -20,7 +20,8 @@ import "./admin.scss";
 import "./admin-surfaces.scss";
 import "../../styles/admin-theme.scss";
 import "./admin-dashboard.scss";
-import AdminHeader from "./views/AdminHeader";
+import AdminWorkspace from "./views/AdminWorkspace";
+import "./admin-lightning-surfaces.scss";
 import AdminBreadcrumbs, { isPlayerDetailRoute } from "./views/AdminBreadcrumbs";
 
 const DrillLibrary = lazy(() => import("./views/DrillLibrary"));
@@ -160,11 +161,10 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
   }
 
   return (
-    <div className={`pt-pose portal-body pt-admin${session.kind === "ready" ? " admin-ready" : ""}`}>
-      <AdminHeader key={uid} ready={session.kind === "ready"} preview={preview} uid={uid}
-        email={session.kind === "ready" ? session.identity.email : undefined} onSignOut={() => void signOut()} />
-      <main className="admin-shell">{session.kind === "ready" && !isPlayerDetailRoute(location.pathname) && <AdminBreadcrumbs />}{body}</main>
-    </div>
+    <AdminWorkspace ready={session.kind === "ready"} preview={preview} uid={uid}
+      email={session.kind === "ready" ? session.identity.email : undefined} onSignOut={() => void signOut()}>
+      {session.kind === "ready" && !isPlayerDetailRoute(location.pathname) && <AdminBreadcrumbs />}{body}
+    </AdminWorkspace>
   );
 }
 

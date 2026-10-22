@@ -291,7 +291,7 @@ export default function WorkoutEditor() {
             className="primary-cta"
             type="button"
             disabled={unchanged || errors.length > 0}
-            onClick={() => { setSaveError(null); setConfirming(true); }}
+            onClick={event => { event.currentTarget.focus({ preventScroll: true }); setSaveError(null); setConfirming(true); }}
           >
             <span className="material-symbols-outlined">save</span>Save
           </button>
@@ -406,7 +406,7 @@ export default function WorkoutEditor() {
                       <span className="material-symbols-outlined">arrow_downward</span>
                     </button>
                     <button className="icon-button" type="button" aria-label={`Set the dose for ${block.name}`}
-                            onClick={() => setDoseTarget(block)}>
+                            onClick={event => { event.currentTarget.focus({ preventScroll: true }); setDoseTarget(block); }}>
                       <span className="material-symbols-outlined">tune</span>
                     </button>
                     <button className="icon-button danger" type="button" aria-label={`Delete ${block.name}`}

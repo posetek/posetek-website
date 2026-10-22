@@ -1,0 +1,140 @@
+// Administrator chrome is independent of WorkspaceHeader and every manager/coach route.
+.pt-admin.admin-workspace {
+  --workspace-rail-width: 248px;
+  --workspace-toolbar-height: 76px;
+  min-height: 100dvh;
+  background: #eef1f0;
+
+  .admin-workspace__icon { display:block; flex:none; width:20px; height:20px; overflow:hidden; }
+  .admin-workspace__toolbar {
+    position: fixed; inset: 0 0 auto; z-index: 70; height: var(--workspace-toolbar-height);
+    display: flex; align-items: center; gap: 24px; padding: 0 28px 0 24px;
+    border-bottom: 1px solid #d7dfdb; background: #fff; color: #142d25; color-scheme: light;
+  }
+  .admin-workspace__brand { min-height:44px; display:flex; align-items:center; gap:10px; width:calc(var(--workspace-rail-width) - 24px); flex-shrink:0; color:#123e2f; text-decoration:none; font-size:15px; font-weight:850; letter-spacing:.12em; }
+  .admin-workspace__mark { display:block; width:36px; height:36px; object-fit:contain; }
+  .admin-workspace__badge { padding:3px 6px; border:1px solid #d7dfdb; border-radius:5px; font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:#586b63; }
+  .admin-workspace__account { position:relative; margin-left:auto; }
+  .admin-workspace__account summary { display:flex; align-items:center; gap:5px; min-height:44px; cursor:pointer; list-style:none; border-radius:8px; padding:3px; }
+  .admin-workspace__account summary::-webkit-details-marker { display:none; }
+  .admin-workspace__avatar { display:grid; place-items:center; width:34px; height:34px; background:#e7efea; border:1px solid #cfdbd3; border-radius:50%; color:#164d38; font-size:13px; font-weight:750; }
+  .admin-workspace__account .admin-workspace__icon { font-size:18px; }
+  .admin-workspace__account-panel { position:absolute; right:0; top:calc(100% + 12px); width:280px; max-width:calc(100vw - 24px); display:grid; gap:2px; padding:14px; border:1px solid #d7dfdb; border-radius:12px; background:#fff; box-shadow:0 18px 50px #123e2f26; }
+  .admin-workspace__account-label { color:#61746b; font-size:11px; }
+  .admin-workspace__account-panel > strong { color:#142d25; padding:0 4px 14px; font-size:13px; font-weight:650; overflow-wrap:anywhere; }
+  .admin-workspace__account-panel a, .admin-workspace__account-panel button { display:flex; align-items:center; gap:10px; min-height:44px; padding:10px; border:0; border-radius:6px; color:#243e33; background:transparent; text-decoration:none; text-align:left; font:inherit; font-size:13px; cursor:pointer; }
+  .admin-workspace__account-panel :is(a,button):hover { background:#edf3ef; }
+  .admin-workspace__account-panel button { margin-top:4px; border-top:1px solid #e5eae7; border-radius:0 0 6px 6px; }
+
+  .admin-workspace__rail { position:fixed; inset:var(--workspace-toolbar-height) auto 0 0; z-index:50; display:flex; flex-direction:column; width:var(--workspace-rail-width); overflow-y:auto; overscroll-behavior:contain; padding:26px 14px 18px; background:#123b2d; color:#dbe9df; color-scheme:dark; scrollbar-width:thin; scrollbar-color:#527461 transparent; }
+  .admin-workspace__rail-intro { display:flex; justify-content:space-between; align-items:center; padding:0 12px 22px; }
+  .admin-workspace__rail-intro > div { display:grid; gap:5px; }
+  .admin-workspace__rail-intro span { color:#a3bcae; font-size:9px; font-weight:650; letter-spacing:.13em; }
+  .admin-workspace__rail-intro strong { color:#fff; font-size:15px; font-weight:650; }
+  .admin-workspace__nav-group { margin-top:23px; }
+  .admin-workspace__nav-group h2 { margin:0 12px 7px; color:#9fbcac; font-size:10px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; }
+  .admin-workspace__rail .admin-section-link, .admin-workspace__overview { display:flex; align-items:center; gap:11px; width:100%; min-height:44px; margin:2px 0; padding:10px 12px; border:1px solid transparent; border-radius:7px; color:#dbe9df; background:none; text-decoration:none; font-size:12px; line-height:1.4; font-weight:520; transition:background 140ms ease, color 140ms ease; }
+  .admin-workspace__rail .admin-section-link .admin-workspace__icon { width:20px; flex:none; font-size:19px; color:#a7c5b4; }
+  .admin-workspace__overview { position:relative; padding-left:43px; }
+  .admin-workspace__overview::before { position:absolute; left:12px; width:17px; height:17px; content:""; border:1.5px solid currentColor; border-radius:3px; background:linear-gradient(90deg, transparent 44%, currentColor 44%, currentColor 53%, transparent 53%),linear-gradient(transparent 44%, currentColor 44%, currentColor 53%, transparent 53%); opacity:.8; }
+  .admin-workspace__rail .admin-section-link:hover, .admin-workspace__overview:hover { background:#224b3b; color:#fff; }
+  .admin-workspace__rail .admin-section-link.active, .admin-workspace__overview.active { background:#d1f18e; color:#163b28; font-weight:700; }
+  .admin-workspace__rail .admin-section-link.active .admin-workspace__icon { color:#274f33; }
+  .admin-workspace__rail :focus-visible { outline:2px solid #d1f18e; outline-offset:2px; }
+  .admin-workspace__rail-footer { display:flex; align-items:center; gap:8px; padding:28px 12px 0; margin-top:auto; color:#91af9f; font-size:10px; }
+  .admin-workspace__status-dot { width:5px; height:5px; flex:none; border-radius:50%; background:#a9cd82; }
+
+  .admin-workspace__context { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:51px; margin-left:var(--workspace-rail-width); padding:calc(var(--workspace-toolbar-height) + 15px) 30px 15px; border-bottom:1px solid #d7dfdb; background:#f9fbfa; color:#61746b; font-size:12px; }
+  .admin-workspace__context > span { display:flex; align-items:center; gap:10px; min-width:0; }
+  .admin-workspace__context .admin-workspace__icon { font-size:18px; flex:none; }
+  .admin-workspace__context strong { color:#203e30; font-weight:600; }
+  .admin-workspace__preview { color:#6d6138; background:#f5efd8; border:1px solid #e8dfb5; border-radius:5px; padding:4px 8px; font-size:10px; }
+  &.admin-ready .admin-workspace__content { width:calc(100% - var(--workspace-rail-width)); max-width:none; margin:0 0 0 var(--workspace-rail-width); padding:30px clamp(20px,2.1vw,40px) 72px; }
+  &:not(.admin-ready) .admin-workspace__content { padding-top:calc(var(--workspace-toolbar-height) + 36px); }
+  .admin-workspace__content:focus { outline:none; }
+  .admin-workspace__skip { position:fixed; top:8px; left:16px; z-index:110; transform:translateY(-160%); padding:12px 16px; background:#d1f18e; color:#123b2d; border-radius:7px; text-decoration:none; font-weight:700; }
+  .admin-workspace__skip:focus { transform:translateY(0); }
+  .admin-workspace__menu, .admin-workspace__drawer-close { display:none; }
+  .admin-workspace__toolbar :focus-visible { outline:2px solid #185c43; outline-offset:3px; }
+
+  .admin-workspace__search { position:relative; display:flex; align-items:center; gap:10px; width:min(100%,470px); height:46px; margin-left:clamp(0px,4vw,70px); padding:0 12px; border:1px solid #cfdad4; border-radius:8px; background:#f7f9f8; color:#61746b; }
+  .admin-workspace__search:focus-within { border-color:#39775c; box-shadow:0 0 0 3px #185c4312; background:#fff; }
+  .admin-workspace__search > .admin-workspace__icon { font-size:20px; }
+  .admin-workspace__search input { width:100%; min-width:0; height:100%; margin:0; padding:0; border:0; outline:0; background:transparent; color:#142d25; font:inherit; font-size:12px; box-shadow:none; }
+  .admin-workspace__search input:focus-visible { outline:none; }
+  .admin-workspace__search input::placeholder { color:#687b71; opacity:1; }
+  .admin-workspace__search kbd { display:grid; place-items:center; width:21px; height:22px; flex:none; border:1px solid #d7dfdb; border-radius:4px; background:#fff; font:11px inherit; color:#7e8c84; }
+  .admin-workspace__search-panel { position:absolute; left:0; right:0; top:calc(100% + 10px); overflow:hidden; background:#fff; border:1px solid #d7dfdb; border-radius:10px; box-shadow:0 18px 50px #123e2f26; }
+  .admin-workspace__search-panel > p { display:flex; justify-content:space-between; gap:10px; margin:0; padding:12px 14px; border-bottom:1px solid #e5eae7; color:#334f42; font-size:11px; font-weight:700; }
+  .admin-workspace__search-panel > p span { color:#7c8c83; font-weight:400; }
+  .admin-workspace__search-panel ul { display:block; max-height:min(430px,60dvh); margin:0; padding:6px; overflow-y:auto; list-style:none; }
+  .admin-workspace__search-panel li { margin:0; border-radius:6px; }
+  .admin-workspace__search-panel li[aria-selected="true"] { background:#edf4ef; }
+  .admin-workspace__search-panel a { display:flex; align-items:center; gap:10px; min-height:58px; padding:8px; color:#244c39; text-decoration:none; }
+  .admin-workspace__search-panel a > span:nth-child(2) { display:grid; min-width:0; gap:3px; flex:1; }
+  .admin-workspace__search-panel strong { font-size:12px; font-weight:650; }
+  .admin-workspace__search-panel small { color:#61746b; font-size:10px; line-height:1.4; }
+  .admin-workspace__search-panel .admin-workspace__icon { font-size:18px; }
+  .admin-workspace__search-panel a > .admin-workspace__icon:last-child { color:#8ca195; font-size:15px; }
+  .admin-workspace__search-empty { padding:20px; font-size:12px; line-height:1.6; }
+
+  .admin-workspace__launchpad { margin:0 0 30px; }
+  .admin-workspace__welcome { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:26px 28px; border:1px solid #d7dfdb; border-radius:12px; background:linear-gradient(105deg,#fff 40%,#e6f0e5); color:#183c2c; }
+  .admin-workspace__welcome p { margin:0 0 8px; color:#5a7465; font-size:10px; font-weight:650; letter-spacing:.12em; }
+  .admin-workspace__welcome h1 { margin:0 0 8px; color:#183c2c; font-size:clamp(24px,2.1vw,34px); font-weight:650; letter-spacing:-.045em; line-height:1.15; }
+  .admin-workspace__welcome > div > span { color:#64776a; font-size:13px; }
+  .admin-workspace__welcome-mark { display:block; width:76px; height:76px; flex:none; object-fit:contain; }
+  .admin-workspace__launchpad nav { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-top:14px; }
+  .admin-workspace__launchpad nav a { display:flex; align-items:flex-start; gap:10px; min-width:0; padding:18px 14px; border:1px solid #d7dfdb; border-radius:10px; background:#fff; color:#284e3a; text-decoration:none; transition:border-color 150ms ease,box-shadow 150ms ease; }
+  .admin-workspace__launchpad nav a:hover { border-color:#8cad98; box-shadow:0 3px 10px #143e2f0b; }
+  .admin-workspace__launchpad nav a > span:nth-child(2) { display:grid; gap:6px; flex:1; min-width:0; }
+  .admin-workspace__launchpad nav .admin-workspace__icon { font-size:20px; }
+  .admin-workspace__launchpad nav .admin-workspace__icon:last-child { font-size:16px; color:#7a9784; }
+  .admin-workspace__launchpad strong { color:#234331; font-size:12px; font-weight:650; }
+  .admin-workspace__launchpad small { color:#6c7e73; font-size:11px; line-height:1.5; }
+
+  @media(min-width:1800px) { --workspace-rail-width:264px; .admin-workspace__rail .admin-section-link, .admin-workspace__overview { font-size:13px; } }
+  @media(max-width:1050px) {
+    --workspace-toolbar-height:72px;
+    .admin-workspace__toolbar { gap:14px; padding:0 20px; }
+    .admin-workspace__brand { width:auto; font-size:13px; }
+    .admin-workspace__search { margin-left:auto; width:min(100%,440px); }
+    .admin-workspace__menu, .admin-workspace__drawer-close { display:grid; place-items:center; flex:none; width:44px; height:44px; border:0; border-radius:7px; cursor:pointer; }
+    .admin-workspace__menu { color:#194833; background:#edf3ef; }
+    .admin-workspace__drawer-close { color:#dbe9df; background:#244c3b; }
+    .admin-workspace__rail { z-index:100; inset:0 auto 0 0; width:min(320px,calc(100vw - 48px)); padding-top:max(24px,env(safe-area-inset-top)); transform:translateX(-100%); visibility:hidden; pointer-events:none; transition:transform 180ms ease,visibility 180ms; }
+    .admin-workspace__rail.is-open { transform:translateX(0); visibility:visible; pointer-events:auto; }
+    .admin-workspace__rail .admin-section-link, .admin-workspace__overview { font-size:13px; min-height:46px; }
+    .admin-workspace__backdrop { position:fixed; inset:0; z-index:90; background:#08251c80; }
+    .admin-workspace__context { margin-left:0; padding-left:24px; padding-right:24px; }
+    &.admin-ready .admin-workspace__content { margin-left:0; width:100%; padding:26px 24px 60px; }
+    .admin-workspace__launchpad nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  }
+  @media(max-width:650px) {
+    --workspace-toolbar-height:122px;
+    .admin-workspace__toolbar { display:grid; grid-template-columns:44px minmax(0,1fr) 56px; gap:6px 10px; padding:8px 16px 10px; }
+    .admin-workspace__brand { gap:8px; }
+    .admin-workspace__mark { width:31px; height:31px; }
+    .admin-workspace__badge { font-size:8px; }
+    .admin-workspace__account { grid-column:3; grid-row:1; }
+    .admin-workspace__search { grid-column:1 / -1; grid-row:2; width:100%; height:46px; margin:0; }
+    .admin-workspace__search input { font-size:16px; }
+    .admin-workspace__search kbd { display:none; }
+    .admin-workspace__search-panel { top:calc(100% + 7px); }
+    .admin-workspace__search-panel strong { font-size:13px; }
+    .admin-workspace__search-panel small { font-size:11px; }
+    .admin-workspace__context { padding-left:16px; padding-right:16px; font-size:11px; }
+    .admin-workspace__context > span { gap:6px; flex-wrap:wrap; }
+    .admin-workspace__context > span > span:not(.admin-workspace__icon) { display:none; }
+    .admin-workspace__context > span > .admin-workspace__icon:nth-child(3) { display:none; }
+    .admin-workspace__preview { max-width:120px; font-size:9px; }
+    &.admin-ready .admin-workspace__content { padding:22px 16px 56px; }
+    &:not(.admin-ready) { --workspace-toolbar-height:72px; .admin-workspace__toolbar { display:flex; } }
+    .admin-workspace__welcome { padding:22px 20px; }
+    .admin-workspace__welcome-mark { display:none; }
+    .admin-workspace__launchpad nav { gap:8px; }
+    .admin-workspace__launchpad nav a { padding:14px 12px; }
+    .admin-workspace__launchpad nav a > .admin-workspace__icon:last-child { display:none; }
+  }
+  @media(prefers-reduced-motion:reduce) { .admin-workspace__rail, .admin-section-link, .admin-workspace__overview, .admin-workspace__launchpad nav a { transition:none; } }
+}
