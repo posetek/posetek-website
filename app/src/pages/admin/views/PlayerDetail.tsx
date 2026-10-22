@@ -46,7 +46,9 @@ import PlayerSummary from "./PlayerSummary";
 import { PlayerHierarchyBreadcrumbs } from "./AdminBreadcrumbs";
 import { PlayerWorkoutHistoryContent } from "./PlayerWorkoutHistory";
 import "../player-detail.scss";
+import "./admin-directory-lightning.scss";
 import PlayerContactCard from "./PlayerContactCard";
+import Icon from "./AdminWorkspaceIcon";
 import { useReadOnlyReport } from '../../../lib/useReadOnlyReport';
 import { useForegroundReport } from '../../../lib/foreground-report';
 
@@ -93,10 +95,11 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
   if (player.organizationId) plannerQuery.set('orgId', player.organizationId); else plannerQuery.delete('orgId');
   if (player.teamId) plannerQuery.set('teamId', player.teamId); else plannerQuery.delete('teamId');
   return <>
+      <div className="admin-record-header">
       <PlayerHierarchyBreadcrumbs player={player} />
       <section className="admin-heading">
         <Link className="icon-button" state={ADMIN_RETURN_STATE} to={adminPlayerReturn(location.search)} aria-label="Back to people and organizations">
-          <span className="material-symbols-outlined">arrow_back</span>
+          <Icon name="arrow_back" />
         </Link>
         <div>
           <p className="eyebrow">Athlete{player.organizationId ? " · organization member" : ""}</p>
@@ -108,19 +111,19 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
         </div>
         <div className="admin-heading-actions">
           {player.organizationId && <Link className="quiet-button" to={`/admin/access?orgId=${encodeURIComponent(player.organizationId)}&playerId=${encodeURIComponent(player.id)}`}>
-            <span className="material-symbols-outlined" aria-hidden="true">key</span>Help with sign-in
+            <Icon name="key" />Help with sign-in
           </Link>}
           <Link className="primary-cta small" to={adminPlannerPath(player.id, plannerQuery.toString())}>
-            <span className="material-symbols-outlined" aria-hidden="true">fitness_center</span>Prescribe workouts
+            <Icon name="fitness_center" />Prescribe workouts
           </Link>
           <Link className="quiet-button" to={`/athlete?player=${encodeURIComponent(player.id)}&returnTo=${encodeURIComponent(location.pathname + location.search)}`}>
-            <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>Read-only player preview
+            <Icon name="open_in_new" />Read-only player preview
           </Link>
         </div>
       </section>
-
-      {summary ?? <PlayerSummary player={player} refreshKey={reportRevision} workoutEvidence={panel === 'workouts' ? workoutEvidence : null} onBusy={setSummaryBusy} onRefresh={panel === 'workouts' ? undefined : refreshActivity} foreground={panel !== 'workouts'} />}
       <PlayerDetailTabs playerId={player.id} selected={panel} />
+      </div>
+      {summary ?? <PlayerSummary player={player} refreshKey={reportRevision} workoutEvidence={panel === 'workouts' ? workoutEvidence : null} onBusy={setSummaryBusy} onRefresh={panel === 'workouts' ? undefined : refreshActivity} foreground={panel !== 'workouts'} />}
       <div role="tabpanel" id={`admin-player-panel-${panel}`} aria-labelledby={`admin-player-tab-${panel}`} tabIndex={0} className="admin-player-panel">
         {children ?? <>
           {panel === 'results' && <AdminResults embedded athlete={athlete} />}

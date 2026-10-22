@@ -31,7 +31,7 @@ describe("organization → team → people navigation", () => {
   it("marks a team as the current people scope without marking its ancestor as current", () => {
     const html = render({ ...state, teamId: "a", directoryLevel: "people" });
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toMatch(/class="selected" aria-current="page"[^>]*><span[^>]*>groups<\/span>Academy/);
+    expect(html).toMatch(/class="selected" aria-current="page"[^>]*><svg[^>]*aria-hidden="true"[^>]*>.*?<\/svg>Academy/);
     expect(html).not.toMatch(/directory-nav-org selected" aria-current="page"/);
   });
   it("gives All teams and Unassigned mutually exclusive current states", () => {

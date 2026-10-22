@@ -1,6 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { adminAccountResetPath, adminDirectoryPath, adminPlayerPath, adminPlayerReturn, adminPlannerPath, adminPlayerLinkFromReport, adminToolKey, adminToolPath, legacyOrganizationsPath, legacyAdminWorkspacePath, parseAdminDirectoryState, supportsAdminScope, validatedAdminReturn, workspaceReportSearch, workspaceReportRequest, withWorkspaceReport, directoryLevelOf, selectDirectoryScope } from "./adminNavigation";
 import { accountDestination } from "../../landing/account-entry";
+import { directoryWorkspacePaneOf } from "./adminNavigation";
+
+describe("list-first directory presentation", () => {
+  it.each([["", "list"], ["?reportView=testing", "report"], ["?reportView=testing&reportMode=attention", "list"], ["?directoryPane=list&reportView=testing", "list"], ["?directoryPane=report", "report"], ["?directoryPane=invalid", "list"]])("restores the intended view for %s", (search, pane) => {
+    expect(directoryWorkspacePaneOf(parseAdminDirectoryState(search))).toBe(pane);
+  });
+  it("retains a chosen pane through reload, player and planner returns", () => {
+    const state = parseAdminDirectoryState("?orgId=club&teamId=team&directoryPane=list&reportView=testing&search=Ana&page=2");
+    const destination = adminDirectoryPath(state);
+    expect(parseAdminDirectoryState(destination.split("?")[1])).toEqual(state);
+    const player = new URL(adminPlayerPath("ana", "workouts", state), "https://posetek.net");
+    const planner = new URL(adminPlannerPath("ana", player.search), "https://posetek.net");
+    const returned = new URL(planner.searchParams.get("returnTo")!, "https://posetek.net");
+    expect(adminPlayerReturn(returned.search)).toBe(destination);
+    expect(directoryWorkspacePaneOf(selectDirectoryScope(state, { teamId: "other" }))).toBe("list");
+  });
+  it("preserves explicit presentation on old directory aliases", () => {
+    expect(legacyAdminWorkspacePath("?view=testing&directoryPane=list")).toContain("directoryPane=list");
+    expect(legacyOrganizationsPath("?reportView=testing&directoryPane=list")).toContain("directoryPane=list");
+  });
+});
 
 it("clears session identity on account change and keeps session/player cursors out of other tools", () => {
   expect(adminAccountResetPath("/admin/ball-striking-sessions/session-id")).toBe("/admin/ball-striking-sessions");

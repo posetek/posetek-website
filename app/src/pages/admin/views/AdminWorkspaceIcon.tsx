@@ -1,0 +1,37 @@
+// Small local SVGs keep essential navigation usable before external fonts load.
+const paths: Record<string, string> = {
+  refresh: "M20 10a8 8 0 1 0-1 7M20 3v7h-7",
+  delete: "M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7",
+  add: "M12 4v16M4 12h16",
+  smartphone: "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2ZM10 5h4M11 19h2",
+  pending_actions: "M13 3H5v18h6M8 3V1h6v2M8 8h5M8 12h3M17 12a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0 2v3l2 1",
+  sync_problem: "M20 7a8 8 0 0 0-13-3L4 7M4 2v5h5M4 17a8 8 0 0 0 13 3l3-3M20 22v-5h-5M12 8v5M12 16h.01",
+  menu: "M4 6h16M4 12h16M4 18h16",
+  close: "m6 6 12 12M18 6 6 18",
+  expand_more: "m6 9 6 6 6-6",
+  chevron_right: "m9 6 6 6-6 6",
+  search: "M10.5 3a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15ZM16 16l5 5",
+  north_east: "M6 18 18 6M6 6h12v12",
+  arrow_forward: "M4 12h16m-6-6 6 6-6 6",
+  arrow_back: "M20 12H4m6-6-6 6 6 6",
+  domain: "M4 21V3h11v18M15 9h5v12M2 21h20M8 7h3M8 11h3M8 15h3M8 19h3",
+  fitness_center: "M4 7v10M7 4v16M17 4v16M20 7v10M7 12h10",
+  open_in_new: "M14 3h7v7M21 3l-9 9M10 3H3v18h18v-7",
+  groups: "M8 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm8 1a2.5 2.5 0 1 0 0 5M2 20v-3a6 6 0 0 1 12 0v3H2Zm15-8a5 5 0 0 1 5 5v3h-5",
+  person: "M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM4 21v-3a8 8 0 0 1 16 0v3",
+  calendar_month: "M5 5h14a2 2 0 0 1 2 2v13H3V7a2 2 0 0 1 2-2ZM7 3v4M17 3v4M3 10h18M7 14h3M14 14h3M7 17h3",
+  exercise: "m6 3-3 3 15 15 3-3M3 10l7-7M14 21l7-7M2 5l3-3M19 22l3-3",
+  view_in_ar: "M12 3 3 8v9l9 5 9-5V8l-9-5ZM3 8l9 5 9-5M12 13v9",
+  sports_soccer: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 6-4 3 2 5h4l2-5-4-3Zm0-6v6M3 8l5 3M6 20l4-4M18 20l-4-4M21 8l-5 3",
+  shield: "m12 2 8 3v6c0 5-3 8-8 11-5-3-8-6-8-11V5l8-3Zm0 5v6M12 17h.01",
+  devices: "M4 16H2V4h15v4M7 16v4M3 20h8M14 8h8v14h-8V8ZM17 19h2",
+  bug_report: "M9 4 7 2M15 4l2-2M8 8V6a4 4 0 0 1 8 0v2M6 8h12v7a6 6 0 0 1-12 0V8ZM2 10h4M18 10h4M2 15h4M18 15h4M4 21l3-3M20 21l-3-3M12 9v10",
+  chat_bubble_outline: "M4 3h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8l-6 4V5a2 2 0 0 1 2-2ZM7 8h10M7 13h7",
+  key: "M8 3a5 5 0 1 0 0 10A5 5 0 0 0 8 3Zm3 9 10 10M16 17l3-3M19 20l3-3",
+  dynamic_feed: "M4 7H2v15h15v-2M7 2h15v15H7V2ZM11 6h7M11 10h7M11 14h4",
+  logout: "M10 3H3v18h7M8 12h14m-5-5 5 5-5 5",
+  space_dashboard: "M3 3h7v9H3V3ZM14 3h7v5h-7V3ZM14 12h7v9h-7v-9ZM3 16h7v5H3v-5Z",
+};
+export default function AdminWorkspaceIcon({ name }: { name: string }) {
+  return <svg className="admin-workspace__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d={paths[name] || paths.space_dashboard} /></svg>;
+}

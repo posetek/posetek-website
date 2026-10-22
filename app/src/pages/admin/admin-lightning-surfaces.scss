@@ -1,0 +1,378 @@
+// The admin workspace owns these tokens. Shared coach, manager and athlete
+// pages keep their existing theme, including when a planner module is reused.
+.pt-admin.admin-workspace {
+  --surface-0: #eef1f0;
+  --surface-1: #fff;
+  --surface-2: #f6f8f7;
+  --surface-border: #d7dfdb;
+  --text-primary: #142d25;
+  --text-muted: #586b63;
+  --accent: #185c43;
+  --status-good: #237448;
+  --status-warning: #8a570f;
+  --status-danger: #b22e38;
+  --status-neutral: #657b70;
+  --admin-bg: var(--surface-0);
+  --admin-bar: var(--surface-1);
+  --admin-panel: var(--surface-1);
+  --admin-panel-strong: var(--surface-2);
+  --admin-line: var(--surface-border);
+  --admin-text: var(--text-primary);
+  --admin-dim: var(--text-muted);
+  --admin-accent: var(--accent);
+  --admin-warn: var(--status-warning);
+  --admin-danger: var(--status-danger);
+  --admin-card-radius: 10px;
+  --admin-field-radius: 6px;
+  --lime: var(--accent);
+  --green: var(--status-good);
+  --text: var(--text-primary);
+  --muted: var(--text-muted);
+  --line: var(--surface-border);
+  color: var(--text-primary);
+  color-scheme: light;
+
+  // Embedded reports carry the legacy Insights root. Inherit the approved
+  // admin palette instead of reinstating its standalone dark tokens.
+  .admin-workspace__content .pt-insights {
+    --surface-0: inherit;
+    --surface-1: inherit;
+    --surface-2: inherit;
+    --surface-border: inherit;
+    --text-primary: inherit;
+    --text-muted: inherit;
+    --accent: inherit;
+    --status-good: inherit;
+    --status-warning: inherit;
+    --status-danger: inherit;
+    --status-neutral: inherit;
+    color-scheme: light;
+    background: transparent;
+  }
+
+  // The native top layer supplies actual modality. It keeps the same visual
+  // furniture while protecting save confirmations from background clicks.
+  .admin-modal {
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border: 0;
+    color: var(--text-primary);
+    background: transparent;
+    &:not([open]) { display: none; }
+    &::backdrop { background: #0c211bac; }
+    > :focus { outline: none; }
+    &.ai-drawer-backdrop { padding: 0; }
+  }
+
+  .admin-workspace__content {
+    min-width: 0;
+    color-scheme: light;
+    :where(h1, h2, h3, h4) { color: var(--text-primary); }
+    :where(h1) { letter-spacing: -.035em; line-height: 1.2; }
+    :where(p) { line-height: 1.6; }
+    :where(a) { text-underline-offset: 3px; }
+    :where(button, a, input, select, textarea, summary):focus-visible {
+      outline: 3px solid #257856;
+      outline-offset: 3px;
+    }
+    :where(button, input, select, textarea) { font: inherit; }
+    :where(button):not(.dp-seg), :where(summary) { min-height: 44px; }
+    :where(button):not(.dp-seg) { min-width: 44px; }
+    :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+      min-height: 44px;
+      max-width: 100%;
+      color: var(--text-primary);
+      background: var(--surface-1);
+      border-color: var(--surface-border);
+      border-radius: var(--admin-field-radius);
+      color-scheme: light;
+    }
+    :where(input, textarea)::placeholder { color: #6b7c74; opacity: 1; }
+    :where(select option) { color: var(--text-primary); background: #fff; }
+    // WebKit's native single-select can ignore min-height while using its
+    // platform picker. Explicit height retains the picker and a 44px target.
+    select:not([multiple]):not([size]), select[size="1"] { height: 44px; }
+    :where(input[type="checkbox"], input[type="radio"], input[type="range"], progress) { accent-color: var(--accent); }
+    :where(input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"]) { border-color: var(--status-danger); }
+    :where(input, textarea, select):user-invalid { border-color: var(--status-danger); }
+    :where(button, input, select, textarea):disabled { cursor: not-allowed; }
+    :where(pre, code, dd) { overflow-wrap: anywhere; }
+
+    .admin-heading, .admin-page-heading, .personalized-heading {
+      margin: 0 0 24px;
+      padding: 0 0 22px;
+      border-bottom: 1px solid var(--surface-border);
+    }
+    .admin-page-heading { display: flex; justify-content: space-between; align-items: start; gap: 20px; }
+    .admin-heading h1, .admin-page-heading h1, .personalized-heading h1 { font-size: clamp(26px, 2.4vw, 34px); }
+    .admin-heading h2 { font-size: 22px; }
+    .admin-heading p, .admin-page-heading p, .personalized-heading p { color: var(--text-muted); max-width: 78ch; }
+    .eyebrow, .admin-eyebrow { color: var(--accent); font-size: 11px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+
+    .admin-card, .admin-editor-main, .admin-picker, .admin-workout, .portal-card, .empty-card,
+    .personalized-card, .insights-card, .insights-tile, .dp-tile, .ai-section {
+      background: var(--surface-1);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--admin-card-radius);
+      box-shadow: 0 1px 2px #142d2505;
+    }
+    .admin-card, .personalized-card { padding: 24px; }
+    .admin-card h3, .personalized-card h3 { font-size: 18px; }
+    .admin-card > h2, .personalized-card > h2 { font-size: 22px; letter-spacing: -.025em; }
+    .admin-banner, .form-message { background: var(--surface-2); border-color: var(--surface-border); color: var(--text-primary); }
+    .admin-banner.warn, .admin-issue.warning, .personalized-notice { background: #fff7e8; border-color: #e6c894; color: #74480b; }
+    .admin-banner.danger, .admin-issue.error, .form-message[role="alert"] { background: #fff1f1; border-color: #e8b9bc; color: #a02a32; }
+    .admin-banner.good { background: #edf7f0; border-color: #bddcc8; color: #1d5c39; }
+    .admin-issue { padding: 12px 14px; }
+
+    .quiet-button, .primary-cta, .icon-button, .quiet-button.small, .primary-cta.small, .icon-button.small {
+      min-height: 44px;
+      min-width: 44px;
+      border-radius: var(--admin-field-radius);
+      font-size: 13px;
+      font-weight: 650;
+      transform: none;
+      box-shadow: none;
+    }
+    .quiet-button, .icon-button { color: var(--accent); background: #fff; border: 1px solid #bacbc2; }
+    .quiet-button:hover:not(:disabled), .icon-button:hover:not(:disabled) { color: #104c35; background: #edf5f0; border-color: #91b19f; }
+    .primary-cta { color: #fff; background: var(--accent); border: 1px solid var(--accent); }
+    .primary-cta:hover:not(:disabled) { color: #fff; background: #104c35; border-color: #104c35; }
+    .quiet-button.active, .quiet-button.selected, .admin-access-modes .selected {
+      color: #124c34; background: #e4f0e9; border-color: #8ab39c;
+    }
+    .primary-cta:disabled, .quiet-button:disabled, .icon-button:disabled { opacity: .55; }
+    .search-field { background: #fff; border: 1px solid #bacbc2; border-radius: var(--admin-field-radius); }
+    .search-field input { background: transparent; min-height: 22px; padding: 0; }
+    .search-field:focus-within { box-shadow: 0 0 0 2px #25785620; border-color: #257856; }
+    .admin-toolbar, .dp-filters { gap: 12px; padding: 16px; background: #fff; border: 1px solid var(--surface-border); border-radius: var(--admin-card-radius); }
+    .admin-toolbar select { background: #fff; color: var(--text-primary); }
+    .admin-toolbar > label:not(.search-field) { display: flex; gap: 8px; align-items: center; }
+    .admin-chip { color: var(--text-muted); background: var(--surface-2); border-color: var(--surface-border); }
+    .admin-chip.accent { color: #1e5f40; background: #edf7f0; border-color: #bed9c7; }
+    .admin-chip.warn { color: #81510b; background: #fff6e5; border-color: #ead3a9; }
+    .admin-chip.danger { color: #a02a32; background: #fff1f1; border-color: #e8b9bc; }
+
+    .admin-rows { gap: 8px; }
+    .admin-row, .issue-row { background: #fff; border-color: var(--surface-border); border-radius: 8px; padding: 16px 18px; }
+    .admin-row:hover, .issue-row:hover { background: #f7faf8; border-color: #93b19f; }
+    .admin-row-copy strong { font-size: 15px; }
+    .admin-block, .admin-editor-block, .admin-picker-row, .admin-adjustment, .rt-annotate-row, .rt-revision, .admin-time-bar {
+      background: var(--surface-2); border-color: var(--surface-border);
+    }
+    .admin-workout > header { background: #f7faf8; padding: 18px 20px; }
+    .admin-block { border-bottom-color: var(--surface-border); }
+    .admin-picker { top: 96px; }
+    .admin-batch-bar { bottom: 12px; background: #fff; box-shadow: 0 4px 16px #142d2512; }
+    .admin-field > span, .admin-form legend { color: var(--text-primary); font-size: 13px; font-weight: 650; }
+    .admin-checks label { background: #fff; min-height: 44px; border-radius: 6px; }
+    .admin-checks label:has(input:checked) { background: #edf5f0; border-color: #91b19f; }
+    .admin-field-row { gap: 16px; }
+    .admin-list-editor { margin-top: 16px; }
+    .admin-form-actions { gap: 12px; }
+    .admin-save-bar {
+      position: sticky; bottom: 12px; z-index: 8;
+      margin: 20px 0; padding: 14px 18px;
+      background: #fff; border: 1px solid var(--surface-border); border-radius: 8px;
+      box-shadow: 0 4px 18px #142d2512;
+    }
+    .admin-save-bar > p { flex: 1 1 180px; margin: 0; color: var(--text-muted); font-size: 12px; }
+    .admin-dialog { background: #fff; color: var(--text-primary); border-color: var(--surface-border); border-radius: 12px; }
+    .admin-dialog-actions { border-top: 1px solid var(--surface-border); padding-top: 18px; }
+    .admin-dialog blockquote { color: var(--text-muted); overflow-wrap: anywhere; }
+    .admin-media-slot { background: var(--surface-2); }
+
+    // Specialist planner modules are also reused by coaches and athletes.
+    // Override their legacy dark literals only within this admin workspace.
+    .personalized-planner {
+      .personalized-heading { max-width: none; }
+      input:not([type="checkbox"]), select, textarea {
+        color: var(--text-primary); background: #fff; border-color: var(--surface-border);
+        border-radius: var(--admin-field-radius);
+      }
+      .personalized-review > a { color: var(--accent); }
+      label, .personalized-steps a { color: var(--text-primary); }
+      .personalized-meta, .personalized-evidence-summary, .personalized-player-name span,
+      .personalized-steps small, .personalized-priority-limit, .personalized-priority-time span,
+      .personalized-progress-check p, .personalized-time-budget span, .personalized-time-budget small,
+      .personalized-findings small, .personalized-workouts article p, .personalized-workouts article span,
+      .personalized-workouts article small { color: var(--text-muted); }
+      .personalized-status { color: var(--status-warning); }
+      .is-error { color: var(--status-danger); }
+      .personalized-steps a { background: #fff; border-color: var(--surface-border); border-radius: 8px; }
+      .personalized-steps a:hover { border-color: #91b19f; background: #f5faf6; }
+      .personalized-steps span { border-color: #bed0c5; color: var(--accent); background: #edf5f0; }
+      .personalized-player { border-bottom-color: var(--surface-border); padding: 14px 8px; }
+      .personalized-player.is-focused { background: #edf5f0; }
+      .personalized-player-name { color: var(--text-primary); }
+      .personalized-time-budget, .personalized-priority-time, .personalized-progress-check,
+      .personalized-workouts article, .personalized-activation { border-color: var(--surface-border); }
+      .personalized-priority, .personalized-review details, fieldset {
+        background: var(--surface-2); border-color: var(--surface-border); border-radius: 8px;
+      }
+      .personalized-priority.is-conditionalEstimate { border-color: #d8b879; }
+      .personalized-priority-rank { border-color: #bed0c5; color: var(--accent); }
+      .personalized-jobs > div { background: var(--surface-2); }
+      .personalized-equipment label, .personalized-checkbox { min-height: 44px; }
+      .personalized-review summary { min-height: 44px; }
+      .personalized-activation { padding: 20px; background: #edf5f0; border: 1px solid #bed9c7; border-radius: 8px; }
+      .personalized-table-scroll th, .personalized-table-scroll td { border-color: var(--surface-border); }
+    }
+    .planner-switch a, .planner-switch span { color: var(--text-muted); border-color: var(--surface-border); background: #fff; border-radius: 6px; }
+    .planner-switch [aria-current] { color: var(--accent); background: #e4f0e9; border-color: #a6c8b4; }
+    .training-context, .training-readiness { background: var(--surface-2); border-color: var(--surface-border); border-radius: 8px; }
+    .training-schedule-row, .training-evidence-list details, .training-demo-references article { border-color: var(--surface-border); }
+    .training-demo-references a { color: var(--accent); }
+
+    // The recorded-results renderer is shared with the dark athlete portal.
+    // Keep its pale chart labels and lime evidence line readable without
+    // changing that renderer or any manager/coach presentation.
+    .admin-player-panel .drill-dashboard .chart-wrap {
+      background: #0c1d16; border-radius: 8px; padding: 12px;
+    }
+    .admin-player-panel {
+      .admin-drill-tabs .drill-tab.active {
+        color: #fff; background: #185c43; border-color: #185c43;
+        .count { color: #123b2d; background: #e4f0e9; }
+      }
+      // These icons repeat adjacent visible labels. Suppressing only these
+      // decorative slots also avoids clipped ligatures if the font is offline.
+      .admin-drill-tabs .material-symbols-outlined,
+      .drill-dashboard .hero-icon,
+      .drill-dashboard .no-results > .material-symbols-outlined { display: none; }
+      .drill-dashboard .session-button > .material-symbols-outlined {
+        display: grid; place-items: center; width: 20px; height: 20px; font-size: 0;
+        &::after { content: ""; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+      }
+      .drill-dashboard .session-row.open .session-button > .material-symbols-outlined::after { transform: rotate(225deg); }
+      .ai-player-incidents .admin-row > .material-symbols-outlined {
+        display: grid; place-items: center; width: 20px; height: 24px; font-size: 0;
+        &::after { content: "›"; font: 26px/1 system-ui, sans-serif; }
+      }
+    }
+
+    .analysis-workspace {
+      .active { color: var(--accent); background: #e4f0e9; border-color: #91b19f; }
+      .analysis-status { color: var(--accent); background: #edf5f0; }
+      .analysis-annotation-tools { background: var(--surface-2); }
+      .analysis-original, .analysis-priority, .analysis-annotation { border-color: var(--surface-border); }
+      .analysis-check { min-height: 44px; }
+      pre { background: var(--surface-2); color: var(--text-primary); }
+      th, td { border-color: var(--surface-border); }
+    }
+    .rt-card { background: #fff; border: 1px solid var(--surface-border); border-radius: 10px; overflow: hidden; }
+    .rt-stage { background: #0c1d16; }
+    .rt-stage .rt-frame-chip, .rt-stage .viewer-badge { color: #fff; }
+    .rt-playback { background: #f6f8f7; border-top: 1px solid var(--surface-border); color: var(--text-primary); }
+    .rt-frame-fields { gap: 12px; }
+    .rt-transport .quiet-button.small, .rt-frame-field .icon-button.small { min-width: 44px; min-height: 44px; }
+    .rt-frame-field { grid-template-columns: minmax(84px, 1fr) 84px auto auto; }
+    .rt-jump-technique .rt-frame-field { grid-template-columns: minmax(0, 1fr) 76px auto; }
+    .rt-diff th, .rt-diff td { border-color: var(--surface-border); padding: 10px 8px; }
+    .rt-diff thead { background: var(--surface-2); }
+    .rt-check { min-height: 44px; }
+
+    .ai-drawer { background: var(--surface-0); color: var(--text-primary); }
+    .ai-drawer-head { position: sticky; top: -20px; z-index: 2; padding: 16px 0; background: var(--surface-0); border-bottom: 1px solid var(--surface-border); }
+    .ai-incident-row { grid-template-columns: 118px minmax(0, 1fr) auto; }
+    .ai-bar { min-height: 44px; }
+    .ai-message { background: #fff; }
+    .ai-fields > div { padding: 5px 0; }
+    .ai-date input { padding: 8px; border: 1px solid var(--surface-border); }
+
+    .dp-page {
+      --dp-saving: #3a7198;
+      .dp-more-body { width: min(900px, 100%); }
+      .dp-chip-button, .dp-text-button, .dp-role select { min-height: 44px; }
+      .dp-table thead { background: var(--surface-2); }
+      .dp-table th, .dp-table td { padding: 12px; }
+      .dp-attempt-row { background: #fff; }
+      .dp-attempt-row:hover { border-color: #91b19f; background: #f7faf8; }
+      .dp-bar { height: 44px; }
+      .dp-seg { min-height: 44px; }
+      .dp-table-wrap { border: 1px solid var(--surface-border); border-radius: 6px; }
+      .dp-table { margin: 0; }
+    }
+    .team-tabs button { min-height: 44px; }
+    .phone-card-heading, .team-section-heading { padding-bottom: 16px; border-bottom: 1px solid var(--surface-border); }
+    .phone-chart .phone-dot-wall { fill: #326d98; }
+    .user-issues-admin { max-width: none; padding: 0; }
+    .issue-filters, .issue-account-filter { padding: 16px; background: #fff; border: 1px solid var(--surface-border); border-radius: 8px; }
+    .issue-detail .issue-filters { padding: 0; border: 0; }
+    .issue-row small { opacity: 1; color: var(--text-muted); }
+    .issue-row > span:last-child { color: var(--accent); }
+    .issue-screenshot { display: block; max-width: 100%; height: auto; border: 1px solid var(--surface-border); border-radius: 8px; }
+    .app-feedback-admin { max-width: none; }
+    .feedback-metrics > div { padding: 16px; background: var(--surface-2); border: 1px solid var(--surface-border); border-radius: 8px; }
+    .feedback-answers > div { padding: 12px; background: var(--surface-2); border-radius: 6px; }
+    .feedback-response header { padding-bottom: 16px; border-bottom: 1px solid var(--surface-border); }
+    .admin-access-confirm { background: #edf5f0; border: 1px solid #bed9c7; }
+    .admin-access-revoke { background: #fff7e8; border: 1px solid #e6c894; }
+    .admin-access-list-heading { padding-bottom: 16px; border-bottom: 1px solid var(--surface-border); }
+
+    // The overview uses the same report components without changing their data.
+    .insights-controls { padding: 18px; }
+    .insights-refresh { min-width: 44px; }
+    // Essential refresh feedback does not depend on a remote icon font.
+    .insights-refresh .material-symbols-outlined {
+      font-size: 0;
+      &::after { content: "↻"; font: 24px/1 system-ui, sans-serif; }
+    }
+    .insights-tabs button, .insights-period-presets button, .insights-text-button,
+    .insights-breakdown-table button { min-height: 44px; }
+    .insights-period-presets button[aria-pressed="true"] { background: #e4f0e9; }
+    .insights-tile { padding: 20px; }
+    .insights-tile strong { font-size: 30px; letter-spacing: -.035em; }
+    .insights-custom-period form { box-shadow: 0 8px 28px #142d2518; }
+    .insights-card h2 { font-size: 18px; }
+    .insights-chart { min-width: 0; }
+    .insights-table-scroll, .personalized-table-scroll, .analysis-table-wrap, .admin-table-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+  }
+
+  @media (max-width: 1100px) {
+    .admin-workspace__content {
+      .personalized-setup, .analysis-review-columns, .rt-layout { grid-template-columns: minmax(0, 1fr); }
+      .dp-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  }
+  @media (max-width: 760px) {
+    .admin-workspace__content {
+      .admin-page-heading { flex-wrap: wrap; }
+      .admin-card, .personalized-card, .admin-editor-main { padding: 18px 16px; }
+      .admin-toolbar, .dp-filters, .issue-filters, .issue-account-filter { padding: 14px; }
+      .admin-form-actions { align-items: stretch; }
+      .admin-form-actions > .quiet-button, .admin-form-actions > .primary-cta { flex: 1 1 120px; }
+      .admin-save-bar { bottom: max(8px, env(safe-area-inset-bottom)); padding: 12px; }
+      .admin-save-bar > p { flex-basis: 100%; }
+      .admin-picker { position: static; }
+      .admin-batch-bar { bottom: max(8px, env(safe-area-inset-bottom)); }
+      .rt-frame-field { grid-template-columns: minmax(0, 1fr) 76px auto; }
+      .rt-frame-field > .quiet-button { grid-column: auto; }
+      .rt-frame-field > button:last-child { grid-column: 3; }
+      .rt-playback { grid-template-columns: 1fr; }
+      .rt-stage { min-height: 0; }
+      .rt-jump-technique .rt-frame-field { grid-template-columns: minmax(0, 1fr) 70px auto; }
+      .ai-incident-row { grid-template-columns: minmax(0, 1fr); }
+      .ai-drawer-head { top: -16px; }
+      .feedback-metrics { gap: 8px; }
+      .feedback-metrics > div { padding: 12px; }
+      .feedback-metrics dd { font-size: 26px; }
+      .feedback-pagination { flex-wrap: wrap; }
+      .admin-access-list-heading { align-items: start; }
+      .insights-tile { padding: 16px; }
+      .insights-tile strong { font-size: 25px; }
+    }
+  }
+  @media (max-width: 430px) {
+    .admin-workspace__content {
+      .personalized-fields, .personalized-comparison, .analysis-videos.paired { grid-template-columns: minmax(0, 1fr); }
+      .training-library-row .admin-row-actions { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .admin-dialog-actions > button { flex: 1 1 100%; }
+      .feedback-share-link > div { flex-wrap: wrap; }
+      .feedback-share-link input { flex: 1 1 160px; }
+    }
+  }
+}

@@ -6,6 +6,7 @@ vi.mock("../../../lib/organization-data", () => ({ getClubContext: vi.fn(), club
 import MonitorAccounts, { DirectoryPlayersTable, DirectoryTabs, PlayerReporting } from "./MonitorAccounts";
 import type { PlayerRow } from "../lib/accounts";
 import type { AdminDirectoryState } from "../lib/adminNavigation";
+import { DirectoryWorkspaceTabs } from "./DirectoryWorkspaceControls";
 const state: AdminDirectoryState = { orgId: "club", teamId: "team", directoryTab: "players", search: "Example", page: 1 };
 const player: PlayerRow = { id: "athlete", name: "Example Athlete", email: "player@example.test", coachId: null, organizationId: "club", teamId: "team", registered: true, signupCode: null, raw: { organizationId: "club", birthDate: "2011-01-01" } };
 
@@ -24,11 +25,28 @@ describe("admin directory presentation", () => {
     expect(html.match(/aria-selected="true"/g)).toHaveLength(1); expect(html.match(/tabindex="0"/g)).toHaveLength(1);
     expect(html).toContain('id="directory-tab-staff" role="tab" aria-selected="true" aria-controls="directory-panel-staff"');
   });
-  it("opens Results from the name and exposes one-action Workouts/Profile without losing directory state", () => {
+  it("opens Results from the name and retains Workouts/Profile in the row action menu without losing directory state", () => {
     const html = renderToStaticMarkup(<MemoryRouter><DirectoryPlayersTable players={[player]} state={state} choose={() => {}} /></MemoryRouter>);
     expect(html).toContain('id="admin-player-athlete"'); expect(html).toContain('aria-label="Workouts for Example Athlete"'); expect(html).toContain('aria-label="Profile for Example Athlete"');
     expect(html).toContain("playerTab=workouts"); expect(html).toContain("playerTab=profile"); expect(html).toContain("search=Example"); expect(html).toContain("page=1"); expect(html).toContain("returnTo=");
     expect(html).not.toContain("playerTab=results"); expect(html).not.toContain("/admin/organizations");
+    expect(html).toContain('aria-label="Open actions for Example Athlete"');
+  });
+  it("leads with people and keeps the complete report in explicitly selected tabs", () => {
+    const render = (directoryPane?: "list" | "report") => renderToStaticMarkup(<MemoryRouter><PlayerReporting state={{ ...state, directoryPane }} choose={() => {}} scope={{ kind: "organization", organizationId: "club" }} scopeLabel="Club" accountRows={[player]} enabled showPeople toolbar={<p>Find a player in this organization</p>} /></MemoryRouter>);
+    const list = render();
+    expect(list).toContain('id="admin-player-athlete"');
+    expect(list).not.toContain('id="directory-report-graphs"');
+    const report = render("report");
+    expect(report).toContain('id="directory-report-graphs"');
+    expect(report).not.toContain('id="admin-player-athlete"');
+    for (const label of ["People", "Overview", "Testing", "Workouts", "Usage"]) expect(list).toContain(label);
+  });
+  it("keeps one keyboard entry point across list and reporting tabs", () => {
+    const html = renderToStaticMarkup(<DirectoryWorkspaceTabs active="list" listLabel="Teams" onChange={() => {}} />);
+    expect(html.match(/role="tab"/g)).toHaveLength(5);
+    expect(html.match(/tabindex="0"/g)).toHaveLength(1);
+    expect(html).toContain('aria-controls="workspace-report-panel-list"');
   });
   it("limits visible invitations/profile rows to the current page", () => {
     const players = Array.from({ length: 45 }, (_, index) => ({ ...player, id: `p${index}`, name: `Player ${index}` }));
