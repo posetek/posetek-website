@@ -1,25 +1,22 @@
 # PoseTek website project context
 
-## Admin workspace candidate — October 22, 2026
+## Current homepage and admin workspace release — October 22, 2026
 
-The Salesforce-inspired admin refinement is in isolated source review: an
-admin-only workspace shell, list-first People & organizations, complete reporting
-tabs, persistent record navigation and consistent specialist forms. Read
-[the REA findings and release boundaries](docs/ADMIN_LIGHTNING_WORKSPACE.md).
-The homepage polish is a separate candidate. Production remains the approved
-October 21 release; held policy, session and Ball Striking work is excluded from
-the deliberate admin runtime composition. No backend or data contract changes.
+Both updates are live in exact deployment `6ada849fa3505ca75b08ec3b`:
+2,270 artifact files match 2,271 provider records. The baseline protects 2,268
+files and passes the ordinary preservation build. Homepage motion and first-tap
+fixes are preserved alongside the admin-only workspace redesign; feedback and
+coach enrollment remain exact. PRs #97, #98 and #99 are merged with green CI and
+completed latest-revision advisory reviews.
 
-## Homepage motion and first-click candidate — October 22, 2026
-
-Players now uses fluid artwork entrances with two brief, varied accents per
-visit. Shared footer links keep stationary click/touch geometry. The guarded
-candidate preserves all 2,154 current application artifacts; source review and
-hosted acceptance remain separate from production. Read the
-[REA findings, interaction checklist and verification](docs/HOMEPAGE_FLUID_INTERACTIONS.md).
-The Salesforce-inspired admin redesign is a separate source and release candidate.
-
-
+Read [the release handoff](docs/HOMEPAGE_ADMIN_POLISH_RELEASE.md) and
+[the production receipt](deployment/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json).
+The application uses approved runtime `499dc815` over `4c1ba8e`, not all of main.
+Held policy, session and Ball Striking candidates remain excluded. Keep runtime
+branches separate and retain `[skip netlify]` for source/receipt integration.
+No backend, rules, indexes, gateway, catalog or native release is included.
+Earlier sections are historical release checkpoints; their behavior is preserved
+unless the current handoff explicitly records an intended change.
 
 ## Ball striking review source candidate (2026-10-17)
 

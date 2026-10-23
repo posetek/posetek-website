@@ -1,38 +1,31 @@
 # PoseTek engineering handbook
 
-## Admin workspace candidate — October 22, 2026
+## Current homepage and admin workspace release — October 22, 2026
 
-The Salesforce-inspired admin refinement is in isolated source review: an
-admin-only workspace shell, list-first People & organizations, complete reporting
-tabs, persistent record navigation and consistent specialist forms. Read
-[the REA findings and release boundaries](../ADMIN_LIGHTNING_WORKSPACE.md).
-The homepage polish is a separate candidate. Production remains the approved
-October 21 release; held policy, session and Ball Striking work is excluded from
-the deliberate admin runtime composition. No backend or data contract changes.
+Both updates are live in exact deployment `6ada849fa3505ca75b08ec3b`:
+2,270 artifact files match 2,271 provider records. The baseline protects 2,268
+files and passes the ordinary preservation build. Homepage motion and first-tap
+fixes are preserved alongside the admin-only workspace redesign; feedback and
+coach enrollment remain exact. PRs #97, #98 and #99 are merged with green CI and
+completed latest-revision advisory reviews.
 
-## Homepage motion and first-click candidate — October 22, 2026
+Read [the release handoff](../HOMEPAGE_ADMIN_POLISH_RELEASE.md) and
+[the production receipt](../../deployment/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json).
+The application uses approved runtime `499dc815` over `4c1ba8e`, not all of main.
+Held policy, session and Ball Striking candidates remain excluded. Keep runtime
+branches separate and retain `[skip netlify]` for source/receipt integration.
+No backend, rules, indexes, gateway, catalog or native release is included.
+Earlier sections are historical release checkpoints; their behavior is preserved
+unless the current handoff explicitly records an intended change.
 
-Players now uses fluid artwork entrances with two brief, varied accents per
-visit. Shared footer links keep stationary click/touch geometry. The guarded
-candidate preserves all 2,154 current application artifacts; source review and
-hosted acceptance remain separate from production. Read the
-[REA findings, interaction checklist and verification](../HOMEPAGE_FLUID_INTERACTIONS.md).
-The Salesforce-inspired admin redesign is a separate source and release candidate.
+Preserved application behavior: [player profile and team results](../PARENT_PLAYER_EXPERIENCE.md)
+and [its historical receipt](../../deployment/PARENT_PLAYER_PRODUCTION.json).
+The October 21 checkpoint recorded 2,154 protected files; the current combined
+release above replaces that artifact baseline while retaining those player flows.
 
-
-Current application production: [player profile and team results](../PARENT_PLAYER_EXPERIENCE.md)
-and [verified receipt](../../deployment/PARENT_PLAYER_PRODUCTION.json).
-The exact accepted deploy `6ad92e7fec1a407bec937389` is live; the reconciled
-baseline protects 2,154 files and passes the ordinary preservation build.
-Source integration, the composed runtime and browser acceptance limits are
-recorded separately in the receipt.
-
-Preserved marketing: [showcase refinement release](../PUBLIC_SITE_SHOWCASE_RELEASE.md)
+Public showcase history: [showcase refinement release](../PUBLIC_SITE_SHOWCASE_RELEASE.md)
 and [its historical receipt](../../deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
-That October 18 deploy `6ad58598033b1b6ba8b4d6c2` preserved 2,001 prior files
-and established a 2,106-file baseline at that checkpoint. Its live checks and
-orientation-rerun qualification remain recorded there; the current application
-release preserves those marketing documents and assets.
+The current homepage polish builds on that accepted interaction language.
 
 Implementation and REA evidence: [showcase depth](../PUBLIC_SITE_SHOWCASE_DEPTH.md).
 The [candidate receipt](../../deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json) remains
