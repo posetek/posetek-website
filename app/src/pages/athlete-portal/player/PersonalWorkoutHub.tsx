@@ -13,6 +13,7 @@ import { confirmedSetup, emptySetup, locationSetup, readRememberedSetup, remembe
 import { locationFromRequest } from './guided-workout';
 import type { SetupDraft } from './training-access';
 import PlayerWorkout from './PlayerWorkout';
+import AISharingControl from './AISharingControl';
 import './personal-workouts.css';
 
 export function PersonalPrescription({ proposal, catalog = [] }: { proposal: Row; catalog?: Row[] }) {
@@ -131,11 +132,12 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
   if (!store.enabled) return <section className="portal-card"><h2>Personal workouts</h2><p>Personal workout tools are not enabled for this account yet.</p><button onClick={onBack}>Back to training</button></section>;
   return <section className={`personal-workouts${coachOnly ? ' personal-coach-creation' : ''}`}>
     {!coachOnly && <><button className="text-button" disabled={blocked} onClick={() => { if (mode === 'list') onBack(); else { setMode('list'); onSelection?.(); } }}>← {mode === 'list' ? 'Training' : 'Personal workouts'}</button><p className="eyebrow">Your own sessions</p><h1>{mode === 'chat' ? p ? 'Your workout conversation.' : 'Create your workout.' : mode === 'saved' ? selected?.title || 'Your workout' : 'Personal workouts'}</h1></>}{notice}
-    {mode === 'list' && <><p>Tell your AI coach what you want to work on, review your session, then make it yours.</p><button className="primary-cta" disabled={blocked} onClick={() => begin()}>Create workout</button>
+    {mode === 'list' && <><p>Tell your AI coach what you want to work on, review your session, then make it yours.</p><AISharingControl preview={preview} /><button className="primary-cta" disabled={blocked} onClick={() => begin()}>Create workout</button>
       {!!store.conversations?.length && <section className="portal-card"><h2>Workout conversations</h2><p className="muted-copy">Private drafts and earlier revisions stay here.</p>{store.conversations.map(c => <button className="player-list-button" key={c.id} disabled={blocked} onClick={() => void openConversation(c.id)}><strong>{c.title || 'Workout conversation'}</strong><small>{c.publishedWorkoutId ? 'Published workout · continue conversation' : 'Private draft · continue conversation'}</small></button>)}</section>}
       {!store.loaded ? <p role="status">Loading your workouts…</p> : !store.workouts.length ? <section className="portal-card"><h2>Your first session starts here</h2><p>Create a single workout without a multiweek plan. Review the prescription before publishing it.</p></section> : <div className="personal-workout-list">{[...store.workouts].sort((a, b) => String(b.scheduledDate).localeCompare(String(a.scheduledDate))).map(w => { const log = store.logs[w.workoutId]; return <button className="player-list-button" key={w.workoutId} disabled={blocked} onClick={() => openSaved(w)}><span className="personal-workout-meta">{log?.endedAt ? 'Finished' : log ? 'Resume' : 'Ready'} · {w.scheduledDate}</span><strong>{w.title}</strong><small>{w.estimatedMinutes} min · {w.blocks?.length || 0} drills</small></button>; })}</div>}
     </>}
     {mode === 'chat' && <>
+      <AISharingControl preview={preview} />
       {sourceRef && <p className="muted-copy">You are creating a personal copy. Your assigned workout stays as prescribed.</p>}{store.conversationLoading && <p role="status">Opening your saved conversation…</p>}
       {setupNotice && <p className="workout-pause-note" role="status">{setupNotice}</p>}
       {!p && !store.conversationLoading && <WorkoutSetupWizard store={store} playerId={playerId} athlete={athlete} setup={setup} onSetup={setSetup} initialRequest={requestText} initialMinutes={initialHandoff?.timeAvailableMinutes ?? initialHandoff?.workoutRef?.timeAvailableMinutes ?? source?.workout?.budgetMinutes} initialFocus={source?.workout?.intake?.focusDomains || source?.workout?.focusDomains} scheduledDate={scheduledDate} onDate={setScheduledDate} today={today} latestDate={latest.toISOString().slice(0, 10)} timezone={timezone} preview={preview} disabled={blocked} canGenerate={personalCapabilityEnabled(config, 'generate_personal_workout', preview)} onGenerate={generateGuided} resumeDraft={!source && !initialHandoff && !editing && !copyFromWorkoutId} />}

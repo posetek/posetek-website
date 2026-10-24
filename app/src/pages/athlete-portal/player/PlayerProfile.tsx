@@ -11,6 +11,7 @@ import TechniqueAnalysis from './TechniqueAnalysis';
 import { activeProvisionalEstimates, provisionalScore, type ProvisionalEstimate } from '../../../lib/provisional-estimates';
 import ProvisionalEstimateNote from '../../../components/athlete-stats/ProvisionalEstimateNote';
 import PlayerAgeField from './PlayerAgeField';
+import AISharingControl from './AISharingControl';
 
 export function SkillProfile({ profile, estimate = null, estimates = estimate ? [estimate] : [] }: { profile: Profile; estimate?: ProvisionalEstimate | null; estimates?: ProvisionalEstimate[] }) {
   const [selection, setSelection] = useState(() => [...profile.axes].filter(a => a.score !== null).sort((a, b) => a.score! - b.score!)[0]?.key || 'striking');
@@ -72,6 +73,7 @@ export default function PlayerProfile({ ctx, profile, onDrills, onWorkouts, onLe
     <SkillProfile profile={profile} estimates={activeProvisionalEstimates(ctx.provisionalEstimates, ctx.allResultReps?.() || ctx.allStatsReps())} />
     <section className="player-profile-actions" aria-label="Explore your progress">{onLeaderboards && <button onClick={onLeaderboards}><span className="material-symbols-outlined" aria-hidden="true">leaderboard</span><strong>Team leaderboards</strong><small>See your place in each test</small></button>}{onWorkouts && <button onClick={onWorkouts}><span className="material-symbols-outlined" aria-hidden="true">fitness_center</span><strong>Your workouts</strong><small>Follow your assigned plan</small></button>}</section>
     <section className="portal-card"><h2>Profile details</h2><PlayerAgeField playerId={ctx.playerId!} athlete={ctx.athlete} editable={ctx.access === 'athlete' || ctx.access === 'preview'} preview={ctx.access === 'preview'} /><p>{ctx.athlete.position || 'Position not recorded'}</p><div className="player-measurements"><span><small>Height</small>{heightText(Number(ctx.athlete.height) || null)}</span><span><small>Weight</small>{weightText(Number(ctx.athlete.weight) || null)}</span></div><button className="hub-secondary" onClick={() => setBody(v => !v)}>{body ? 'Close body scan' : 'View body scan'}</button>{body && <BodyProfileView ctx={ctx} />}</section>
+    {(ctx.access === 'athlete' || ctx.access === 'preview') && <AISharingControl preview={ctx.access === 'preview'} />}
     {sessionError && <p className="player-error" role="status">Session history could not refresh: {sessionError}</p>}
     <section className="player-session-stats"><div><strong>{streak}</strong><small>Day streak</small></div><div><strong>{sessions.length || profile.totalSessions}</strong><small>Total sessions</small></div><div><strong>{favorite || '—'}</strong><small>Favorite drill</small></div></section>
     <TechniqueAnalysis playerId={ctx.playerId!} reps={ctx.allStatsReps()} preview={ctx.access === 'preview'} onReplay={onDrills} />
