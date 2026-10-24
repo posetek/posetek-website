@@ -1,8 +1,28 @@
 # PoseTek website project context
 
-## Current homepage and admin workspace release — October 22, 2026
+## Current web AI-sharing recovery release — October 24, 2026
 
-Both updates are live in exact deployment `6ada849fa3505ca75b08ec3b`:
+Exact reviewed deployment `6adc6d7bf370755a2aabc65b` is live. Players can review
+AI sharing from Coach, personal Workouts and their own Profile, explicitly allow
+or decline, and retry a blocked AI request after allowing sharing. Opening the
+control never saves consent or starts generation. No real account choice was
+changed during release verification.
+
+All 2,292 artifact files match the provider inventory (2,293 records including
+routing metadata). The reconciled baseline protects 2,290 files. Marketing,
+feedback, coach enrollment and historical assets remain exact. Runtime `bb3274c` contains approved `499dc815` plus this fix; held
+policy, session and Ball Striking candidates remain excluded. Keep runtime
+branches separate and retain `[skip netlify]` on source and receipt integration.
+
+For consent behavior, release verification or the next application release, read
+[the handoff](docs/WEB_AI_SHARING_RECOVERY.md) and
+[the production receipt](deployment/WEB_AI_SHARING_PRODUCTION.json).
+No backend, rules, indexes, gateway, catalog or native release is included.
+Earlier sections remain historical checkpoints of preserved behavior.
+
+## Preceding homepage and admin workspace release — October 22, 2026
+
+Both updates were published in exact deployment `6ada849fa3505ca75b08ec3b`:
 2,270 artifact files match 2,271 provider records. The baseline protects 2,268
 files and passes the ordinary preservation build. Homepage motion and first-tap
 fixes are preserved alongside the admin-only workspace redesign; feedback and
@@ -11,7 +31,7 @@ completed latest-revision advisory reviews.
 
 Read [the release handoff](docs/HOMEPAGE_ADMIN_POLISH_RELEASE.md) and
 [the production receipt](deployment/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json).
-The application uses approved runtime `499dc815` over `4c1ba8e`, not all of main.
+That release used approved runtime `499dc815` over `4c1ba8e`, not all of main.
 Held policy, session and Ball Striking candidates remain excluded. Keep runtime
 branches separate and retain `[skip netlify]` for source/receipt integration.
 No backend, rules, indexes, gateway, catalog or native release is included.
