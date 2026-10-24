@@ -9,6 +9,7 @@ import type { PendingPersonalJob, PersonalCapability } from './personal-workouts
 import { checkedPersonalConversation, checkedPersonalProposal, orderedPersonalMessages, personalProposalWithPublication, personalPublishParams, personalRefinementParams, personalTimestamp, publishedPersonalWorkoutId, readPersonalConversation, restorePersonalSelection } from './personal-workout-conversations';
 import type { PersonalSelection } from './personal-workout-conversations';
 import { confirmedSetup, setupFromIntake } from './training-access';
+import { aiSharingError, assertAIJobEnabled } from './ai-sharing';
 
 const sampleCatalog = [
   { drillId: 'SPD-SAMPLE', name: 'Quick feet practice', domain: 'speed', equipment: [] },
@@ -131,14 +132,17 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
         if (found.exists && (job?.requestedByUid !== uid || job?.playerId !== playerId || job?.capability !== record.capability || job?.params?.requestId !== record.params.requestId)) throw new Error('The saved request does not match this workout action.');
         return found.exists;
       },
-        create: async () => { await ref.set({ schemaVersion: 1, capability: record.capability, playerId,
+        create: async () => {
+          try { assertAIJobEnabled(uid, record.capability); }
+          catch (error) { throw Object.assign(error as Error, { definitiveRejection: true }); }
+          await ref.set({ schemaVersion: 1, capability: record.capability, playerId,
           params: record.params, requestedByUid: uid, clientVersion: 'web-personal-workouts-v1', status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp() }); } });
       if (generation.current !== token || auth.currentUser?.uid !== uid) throw new Error('The selected player changed.');
       const result = await new Promise<Row>((resolve, reject) => {
         const stop = ref.onSnapshot(snapshot => {
           const job = snapshot.data();
           if (!job) return;
-          if (job.status === 'failed') { terminal = true; stop(); reject(new Error(job.error?.detail || job.error?.message || 'This workout could not be checked. Review your details and try again.')); }
+          if (job.status === 'failed') { terminal = true; stop(); reject(aiSharingError(job.error?.code, job.error?.detail || job.error?.message || 'This workout could not be checked. Review your details and try again.')); }
           else if (job.status === 'complete') { terminal = true; stop(); resolve(job.result || {}); }
           else if (generation.current === token) setStatus(job.status === 'running' ? record.capability === 'generate_personal_workout' ? 'Building a workout to review…' : 'Checking and saving…' : 'Request received. Waiting for a check…');
         }, e => { stop(); reject(e); });

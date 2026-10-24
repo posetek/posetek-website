@@ -16,6 +16,7 @@ import type { Drill } from "./drills";
 import { DRILLS } from "./drills";
 import { accepted, fullName, mergeUnique, normalizeRep, num, repNumber, sessionNumber } from "./metrics";
 import { boardsFromPlayers, number } from "./mobile";
+import { assertAIJobEnabled } from '../player/ai-sharing';
 
 export type Access = "athlete" | "coach" | "manager" | "admin" | "shared" | "preview";
 
@@ -187,6 +188,9 @@ export async function storageJson(reference: any): Promise<any> {
 }
 
 export async function submitLlmJob(playerId: string, capability: string, params: any): Promise<any> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Sign in before creating an AI request.');
+  assertAIJobEnabled(user.uid, capability);
   const ref = db.collection("llmJobs").doc();
   const ownerUid = auth.currentUser?.uid || null;
   try { await ref.set({
@@ -194,7 +198,7 @@ export async function submitLlmJob(playerId: string, capability: string, params:
     capability,
     playerId,
     params,
-    requestedByUid: auth.currentUser!.uid,
+    requestedByUid: user.uid,
     clientVersion: "1.1+4",
     status: "pending",
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../../lib/firebase';
 import type { Row } from './execution';
+import { aiSharingError, assertAISharingEnabled } from './ai-sharing';
 
 export type Frame = { event: string; data: Row };
 export function parseFrame(frame: string): Frame | null {
@@ -18,21 +19,25 @@ export function parseFrame(frame: string): Frame | null {
 export async function streamCoach(body: Row, signal: AbortSignal, onFrame: (frame: Frame) => void): Promise<void> {
   const user = auth.currentUser;
   if (!user) throw new Error('Sign in to speak with your coach.');
+  assertAISharingEnabled(user.uid);
+  const idToken = await user.getIdToken();
+  if (auth.currentUser?.uid !== user.uid) throw new Error('Your account changed. Sign in again before sending.');
+  assertAISharingEnabled(user.uid);
   const response = await fetch('https://us-central1-kickai-69dd0.cloudfunctions.net/aiCoachStreamProxy', {
     method: 'POST', signal,
-    headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+    headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json', Accept: 'text/event-stream' },
     body: JSON.stringify({ schemaVersion: 1, clientVersion: '1.1+4', ...body }),
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.error?.message || error.message || `Coach unavailable (${response.status}).`);
+    throw aiSharingError(error.error?.code || error.code, error.error?.message || error.message || `Coach unavailable (${response.status}).`);
   }
   if (!response.body) throw new Error('No reply received. Try again.');
   const reader = response.body.getReader(), decoder = new TextDecoder();
   let buffer = '', completed = false;
   const apply = (text: string) => {
     const frame = parseFrame(text); if (!frame) return;
-    if (frame.event === 'error') throw new Error(frame.data.message || 'The coach could not finish.');
+    if (frame.event === 'error') throw aiSharingError(frame.data.code, frame.data.message || 'The coach could not finish.');
     if (completed) return;
     if (frame.event === 'done') completed = true;
     onFrame(frame);
