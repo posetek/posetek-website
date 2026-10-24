@@ -1,8 +1,9 @@
 # Web AI-sharing recovery
 
-Status: reviewed hosted draft; production publication is separate.
+Status: published and byte-verified October 24, 2026 at 5:27:30 AM PDT. The exact
+reviewed candidate was promoted without rebuilding.
 
-[Candidate preview](https://6adc6d7bf370755a2aabc65b--posetek.netlify.app/athlete?preview=1&view=aiCoach) · [artifact receipt](../deployment/WEB_AI_SHARING_CANDIDATE.json) · [source PR #102](https://github.com/posetek/posetek_website/pull/102).
+[Production receipt](../deployment/WEB_AI_SHARING_PRODUCTION.json) · [historical candidate receipt](../deployment/WEB_AI_SHARING_CANDIDATE.json) · [merged source PR #102](https://github.com/posetek/posetek_website/pull/102).
 
 All 2,292 guarded artifact files match the provider inventory, which includes
 2,293 records with generated routing metadata. Of the 2,268 protected files,
@@ -10,8 +11,21 @@ All 2,292 guarded artifact files match the provider inventory, which includes
 Provider routing metadata adds the exact consent proxy. No prior file is
 removed. Players, Coaches, feedback and coach enrollment remain exact. Hosted
 preview checks cover Coach, Profile and workout creation at 390/1280px; the
-consent proxy rejects both absent and invalid tokens. Production remains
-`6ada849fa3505ca75b08ec3b`.
+consent proxy rejects both absent and invalid tokens. Production is now
+`6adc6d7bf370755a2aabc65b`; all 13 production route checks passed. The reconciled
+baseline protects 2,290 files, including the 22 added runtime assets. All 37
+historical `localPath` recovery records are retained. The prior deployment
+`6ada849fa3505ca75b08ec3b` remains the recovery reference.
+
+The ordinary guarded build passed against all 2,290 protected files after
+reconciliation; its output was checked only and was not published. Independent
+production verification matched the accepted artifact, checked six canonical
+routes, and confirmed both missing and invalid tokens receive `401 unauthenticated`
+from the consent proxy. Live browser verification passed five synthetic preview
+checks at an 889px viewport, with no document overflow and visible consent
+controls measuring 44/52/52px high. Two captures are hashed in the production
+receipt. No authenticated consent save, provider generation, real athlete account
+change or physical-phone acceptance is claimed.
 
 The gateway rejects AI coaching and workout generation when the signed-in
 account has no valid AI-sharing receipt. The website previously displayed that
@@ -49,11 +63,14 @@ code-only exemption boundary. All fixtures are synthetic. Desktop/mobile browser
 preview checks establish layout and preview interactions, not authenticated
 provider generation or physical-phone acceptance.
 
-Release preparation must use the approved runtime `499dc815` plus this patch,
-with the fresh `6ada849fa3505ca75b08ec3b` preservation inventory and guarded
-application builder. Main also contains held policy/session/Ball Striking source;
-it must not be published as a whole. Keep `[skip netlify]` on source integration,
-retain exact draft acceptance, and record production promotion separately.
+The published runtime `bb3274c` contains approved `499dc815` plus this patch.
+Source PR #102 merged as `a9dc512` with passing source and merge CI and a
+completed latest-revision advisory review. Main also contains held
+policy/session/Ball Striking source; future application releases must compose
+from the approved runtime and fresh serving inventory. Keep `[skip netlify]`
+on source and receipt integration and preserve the exact-artifact workflow.
+Recovery must preserve unrelated accepted surfaces and retained assets; no
+rollback or data reversal was performed.
 
 ## CI dependency requalification — October 24, 2026
 
