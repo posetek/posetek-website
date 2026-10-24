@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "status": "reviewed_draft_not_published",
+  "checkedAt": "2026-10-24T08:38:25.517880+00:00",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "deploymentId": "6adc6d7bf370755a2aabc65b",
+  "url": "https://6adc6d7bf370755a2aabc65b--posetek.netlify.app",
+  "productionUnchanged": "6ada849fa3505ca75b08ec3b",
+  "sourceFeatureCommit": "ea2fd92",
+  "sourcePR": "https://github.com/posetek/posetek_website/pull/102",
+  "runtimeCommit": "bb3274c",
+  "approvedRuntimeBase": "499dc81502a56d8b7b01c36e5ee780af55b87244",
+  "artifactDigest": "163043e7b4467e66a564f6b0ce9bebe560bedf5edf78c2305dc96608db0b562b",
+  "artifactFiles": 2292,
+  "providerRecords": 2293,
+  "preservedProtectedFiles": 2267,
+  "changedProviderPaths": [
+    "/application.html",
+    "/netlify.toml"
+  ],
+  "removedFiles": 0,
+  "preservedMarketing": [
+    {
+      "path": "/index.html",
+      "sha": "30ddbcbcdf2bfc333062090e210f9066ad815247",
+      "size": 59682
+    },
+    {
+      "path": "/coaches/index.html",
+      "sha": "befe1336a443daa9239e521f51a0ee6a1475a352",
+      "size": 47530
+    }
+  ],
+  "preservedIsolatedEntries": [
+    {
+      "path": "/feedback.html",
+      "generated": {
+        "sha": "d4f4eea8d588cde66e27ccdef21ce687892a3d85",
+        "size": 5816
+      },
+      "preserved": {
+        "sha": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+        "size": 5816
+      }
+    },
+    {
+      "path": "/coach-join.html",
+      "generated": {
+        "sha": "42e4420404dba75b54fc276fad0b5f8368256c98",
+        "size": 6842
+      },
+      "preserved": {
+        "sha": "12f8e0dcefb18c3f960e52b8304480c3e8f5b9c8",
+        "size": 6842
+      }
+    }
+  ],
+  "assembly": {
+    "initialCommand": "build-astro-release.mjs --preserve-marketing",
+    "initialResult": "guard refused regenerated coach-join entry",
+    "resolution": "Re-ran ordinary guard; staged exact verified feedback and coach-enrollment entries; composed with unchanged guarded export and fresh marketing verification.",
+    "releaseGuardsChanged": false
+  },
+  "validation": {
+    "frontendSourceTests": 2163,
+    "frontendRuntimeTests": 2027,
+    "sourceTypeScript": true,
+    "sourceSvelte": true,
+    "sourceLint": "passed with existing warnings",
+    "advisorySourceReview": "completed; two privacy findings corrected, account-wide wording narrowed",
+    "hostedRouteChecks": 13,
+    "unauthenticatedConsentProxyChecks": [
+      {
+        "name": "missing-token",
+        "status": 401,
+        "code": "unauthenticated",
+        "message": "Missing or invalid ID token",
+        "contentType": "application/json"
+      },
+      {
+        "name": "invalid-token",
+        "status": 401,
+        "code": "unauthenticated",
+        "message": "ID token verification failed: Wrong number of segments in token: b'synthetic-invalid-token'",
+        "contentType": "application/json"
+      }
+    ],
+    "mobileViewport": 390,
+    "mobileDocumentWidth": 390,
+    "consentButtonHeights": [
+      44,
+      52,
+      44
+    ],
+    "desktopViewport": 1280,
+    "desktopDocumentWidth": 1280,
+    "previewFlows": [
+      "Coach draft retained after preview allowance",
+      "own Profile control",
+      "workout creation control",
+      "preview decline status"
+    ]
+  },
+  "limits": [
+    "No authenticated consent or provider generation performed",
+    "No physical-phone acceptance",
+    "Source CI initially failed an inherited expired exception; explicit bounded requalification is part of the source PR",
+    "No production publish or source merge",
+    "No real account consent, workouts, notifications or messages changed"
+  ],
+  "recovery": "Do not broadly restore an old deployment. Prepare an exact application correction against the current serving inventory, preserving unrelated accepted surfaces.",
+  "functionsPublished": 0,
+  "edgeFunctionsPublished": 0
+}

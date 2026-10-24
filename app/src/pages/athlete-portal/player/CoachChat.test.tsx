@@ -26,6 +26,9 @@ vi.mock('../../../lib/firebase', () => {
 vi.mock('../lib/mobile', () => ({ dateText: () => '' }));
 vi.mock('../views/shared', () => ({ MultilineText: () => null }));
 vi.mock('./CoachPersonalWorkout', () => ({ default: () => null }));
+vi.mock('./AISharingControl', () => ({ default: function AISharingControl({ onAllowed }: { onAllowed?: () => void }) {
+  return <button onClick={onAllowed}>Review AI sharing</button>;
+} }));
 vi.mock('./coach-prompts', () => ({ coachPrompts: () => [], coachToolStatus: () => '' }));
 vi.mock('./gateway', () => ({
   useCoachConfig: () => ({ coachWorkspaceEnabled: false }), capabilityEnabled: () => true,
@@ -66,7 +69,7 @@ function history() {
   button(render(), 'History').props.onClick(); return render();
 }
 
-describe('Coach History server-read handoff', () => {
+describe('Coach chat history and AI sharing recovery', () => {
   beforeEach(() => {
     harness.states.length = 0; harness.refs.length = 0; harness.get.mockReset(); harness.stream.mockReset();
     harness.get.mockResolvedValue({ docs: [] }); harness.stream.mockResolvedValue(undefined);
@@ -122,5 +125,31 @@ describe('Coach History server-read handoff', () => {
     expect(find(render(), element => element.type === 'textarea').props.disabled).toBe(false);
     submit(render()); await vi.waitFor(() => expect(harness.stream).toHaveBeenCalledTimes(1));
     expect(harness.stream.mock.calls[0][0]).not.toHaveProperty('conversationId');
+  });
+
+  it('keeps a blocked request available and offers AI sharing review without automatically retrying', async () => {
+    harness.stream.mockRejectedValueOnce(Object.assign(new Error('Review AI sharing before using your coach.'), { code: 'ai_consent_required' }));
+    submit(render());
+    await vi.waitFor(() => expect(render().props['aria-busy']).toBe(false));
+    const blocked = render();
+    expect(text(blocked)).toContain('Review AI sharing before using your coach.');
+    expect(find(blocked, element => element.type === 'textarea').props.value).toBe('Yes, build it.');
+    const control = find(blocked, element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
+    expect(control.props.preview).toBe(false);
+    const review = (control.type as (props: any) => ReactElement<any>)(control.props);
+    button(review, 'Review AI sharing').props.onClick();
+    expect(text(render())).not.toContain('Review AI sharing before using your coach.');
+    expect(find(render(), element => element.type === 'textarea').props.value).toBe('Yes, build it.');
+    expect(harness.stream).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not hide an unrelated coach failure when AI sharing is allowed', async () => {
+    harness.stream.mockRejectedValueOnce(Object.assign(new Error('The coach is temporarily unavailable.'), { code: 'unavailable' }));
+    submit(render());
+    await vi.waitFor(() => expect(render().props['aria-busy']).toBe(false));
+    const control = find(render(), element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
+    control.props.onAllowed();
+    expect(text(render())).toContain('The coach is temporarily unavailable.');
+    expect(harness.stream).toHaveBeenCalledTimes(1);
   });
 });

@@ -10,8 +10,8 @@
       ],
       "severity": "high",
       "owner": "taiyyoson",
-      "reason": "Requalified 2026-10-15 under the user-authorized migration review through 2026-10-22: Astro remains static with no server adapter; the Firestore browser export and built HTML/JS exclude grpc-js. GHSA-m9gg-hp2v-232j concerns server getAuthContext certificate authorization when requireClientCertificate is false; that server path is absent from this deployment. Reassess on SSR, adapter, bundle or SDK changes. No forced override, dependency upgrade or audit policy change.",
-      "expires": "2026-10-22"
+      "reason": "Requalified 2026-10-24 through 2026-10-31 for the AI-sharing recovery candidate: fresh app audit retains only the two existing high-severity paths for this advisory. Package manifest, lockfile and Astro configuration are unchanged by the fix. The approved-runtime candidate passed the static Firestore transport check across 119 HTML/JS files: no server adapter or grpc-js browser transport. The primary advisory concerns server getAuthContext certificate authorization when requireClientCertificate is false; this affected API is absent from the static client bundle. Reassess on SSR, adapter, bundle, SDK or credential-path changes. See docs/WEB_AI_SHARING_RECOVERY.md. No dependency override or audit-policy change.",
+      "expires": "2026-10-31"
     },
     {
       "advisory": "https://github.com/advisories/GHSA-m9gg-hp2v-232j",
@@ -23,8 +23,8 @@
       ],
       "severity": "high",
       "owner": "taiyyoson",
-      "reason": "Requalified 2026-10-15 under the user-authorized migration review through 2026-10-22: Astro remains static with no server adapter; the Firestore browser export and built HTML/JS exclude grpc-js. GHSA-m9gg-hp2v-232j concerns server getAuthContext certificate authorization when requireClientCertificate is false; that server path is absent from this deployment. Reassess on SSR, adapter, bundle or SDK changes. No forced override, dependency upgrade or audit policy change.",
-      "expires": "2026-10-22"
+      "reason": "Requalified 2026-10-24 through 2026-10-31 for the AI-sharing recovery candidate: fresh app audit retains only the two existing high-severity paths for this advisory. Package manifest, lockfile and Astro configuration are unchanged by the fix. The approved-runtime candidate passed the static Firestore transport check across 119 HTML/JS files: no server adapter or grpc-js browser transport. The primary advisory concerns server getAuthContext certificate authorization when requireClientCertificate is false; this affected API is absent from the static client bundle. Reassess on SSR, adapter, bundle, SDK or credential-path changes. See docs/WEB_AI_SHARING_RECOVERY.md. No dependency override or audit-policy change.",
+      "expires": "2026-10-31"
     }
   ]
 }

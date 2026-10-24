@@ -7,6 +7,7 @@ import type { Row } from './execution';
 import { coachPrompts, coachToolStatus } from './coach-prompts';
 import type { PersonalWorkoutStore } from './use-personal-workouts';
 import CoachPersonalWorkout from './CoachPersonalWorkout';
+import AISharingControl from './AISharingControl';
 
 type Props = { playerId: string; preview: boolean; capability?: string; context?: Row; initialText?: string;
   onDraft?: (draft: Row | null) => void; onHandoff?: (request: Row) => void; personalStore?: PersonalWorkoutStore; athlete?: Row; active?: boolean };
@@ -19,6 +20,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const [memory, setMemory] = useState<Row | null>(null), [showMemory, setShowMemory] = useState(false);
   const [status, setStatus] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [errorCode, setErrorCode] = useState('');
   const controller = useRef<AbortController | null>(null), conversation = useRef<string | null>(null);
   const historyLoadingRef = useRef(false);
   const turn = useRef(0), messageRoot = useRef<HTMLDivElement>(null);
@@ -33,7 +35,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
     const base = db.collection('players').doc(playerId).collection('aiConversations')
       .where('capability', '==', capability).where('createdByUid', '==', auth.currentUser?.uid || '');
     return base.onSnapshot(s => setHistory(s.docs.map(d => ({ ...d.data(), id: d.id })).sort((a: Row, b: Row) =>
-      (b.lastMessageAt?.toMillis?.() || 0) - (a.lastMessageAt?.toMillis?.() || 0))), e => setError(`History: ${e.message}`));
+      (b.lastMessageAt?.toMillis?.() || 0) - (a.lastMessageAt?.toMillis?.() || 0))), e => { setError(`History: ${e.message}`); setErrorCode(''); });
   }, [playerId, preview, capability]);
   useEffect(() => () => { turn.current++; controller.current?.abort(); }, []);
   useEffect(() => { messageRoot.current?.scrollTo({ top: messageRoot.current.scrollHeight }); }, [messages, answer]);
@@ -41,7 +43,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const reset = () => {
     turn.current++; controller.current?.abort(); controller.current = null;
     historyLoadingRef.current = false; setHistoryLoading(false);
-    conversation.current = null; setMessages([]); setAnswer(''); setSending(false); setError(''); onDraft?.(null);
+    conversation.current = null; setMessages([]); setAnswer(''); setSending(false); setError(''); setErrorCode(''); onDraft?.(null);
   };
   const openHistory = async (item: Row) => {
     reset(); const token = turn.current;
@@ -77,7 +79,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const send = async (text: string, memoryAction?: Row) => {
     if (!canChat || controller.current || historyLoadingRef.current || (!memoryAction && !text.trim())) return;
     const token = ++turn.current;
-    controller.current = new AbortController(); setSending(true); setError(''); setAnswer(''); onDraft?.(null);
+    controller.current = new AbortController(); setSending(true); setError(''); setErrorCode(''); setAnswer(''); onDraft?.(null);
     if (!memoryAction) { setDraft(''); setMessages(rows => [...rows, { role: 'user', content: text }]); }
     let full = '', proposal: Row | null = null, memorySnapshot: Row | null = null, handoff: Row | null = null;
     try {
@@ -113,6 +115,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
     } catch (e: any) {
       if (token === turn.current) {
         setError(e.name === 'AbortError' ? 'Reply stopped. Check the saved conversation before sending again.' : e.message);
+        setErrorCode(typeof e.code === 'string' ? e.code : '');
         if (!memoryAction) setDraft(text);
       }
       if (token === turn.current) onDraft?.(null);
@@ -145,6 +148,9 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
     </div>
     {error && <div className="player-error" role="alert"><p>{error}</p>{conversation.current && <button type="button" disabled={sending} onClick={() => void openHistory({ id: conversation.current, workoutTarget: context?.workoutRef })}>Load saved conversation</button>}</div>}
     {!canChat && <p>{config ? 'Your coach is temporarily unavailable. Your history is still here.' : 'Connecting to your coach…'}</p>}
+    <AISharingControl preview={preview} onAllowed={() => {
+      if (['ai_consent_required', 'ai_consent_unavailable'].includes(errorCode)) { setError(''); setErrorCode(''); }
+    }} />
     <form className="chat-composer" onSubmit={e => { e.preventDefault(); void send(draft.trim()); }}>
       <textarea aria-label="Message your coach" value={draft} onChange={e => setDraft(e.target.value)} maxLength={capability === 'workout_chat' ? 500 : 2000} placeholder="Message your coach…" rows={2} disabled={sending || historyLoading} />
       <button type="submit" disabled={!canChat || sending || historyLoading || !draft.trim()} aria-label="Send message"><span className="material-symbols-outlined">arrow_upward</span></button>
