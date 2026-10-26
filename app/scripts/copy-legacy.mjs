@@ -30,7 +30,6 @@ const SKIP = new Set([
   "firestore.indexes.json",
   "netlify.toml",
   "cors.json",
-  "Music - Shortcut.lnk",
 ]);
 
 mkdirSync(dist, { recursive: true });
