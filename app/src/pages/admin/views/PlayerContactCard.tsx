@@ -10,6 +10,7 @@ function PhoneEditor({ playerId, contactType, recorded, basis, onSaved }: {
   const label = contactType === "player" ? "Player phone" : "Parent/guardian phone";
   const [phone, setPhone] = useState(recorded || "");
   const [savedPhone, setSavedPhone] = useState(recorded);
+  const [savedHere, setSavedHere] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [failed, setFailed] = useState(false);
@@ -26,7 +27,7 @@ function PhoneEditor({ playerId, contactType, recorded, basis, onSaved }: {
     try {
       const value = await saveClassifiedPhone(playerId, contactType, phone, savedPhone);
       if (!mounted.current) return;
-      setPhone(value || ""); setSavedPhone(value); setMessage(label + " saved.");
+      setPhone(value || ""); setSavedPhone(value); setSavedHere(true); setMessage(label + " saved.");
       // The exact callable response verifies this save. A page refresh would
       // unmount the sibling editor and discard its independent draft/save.
     } catch (error) {
@@ -48,7 +49,7 @@ function PhoneEditor({ playerId, contactType, recorded, basis, onSaved }: {
       {failed && <button type="button" className="quiet-button" disabled={busy} onClick={() => void onSaved()}>Refresh profile</button>}
     </div>
     {message && <p className="form-message" role={failed ? "alert" : "status"}>{message}</p>}
-    {savedPhone && <p className="admin-note">{savedPhone === recorded ? basis : "Entered by administrator"}</p>}
+    {savedPhone && <p className="admin-note">{savedHere ? "Entered by administrator" : basis}</p>}
   </form>;
 }
 
