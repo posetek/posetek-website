@@ -9,6 +9,7 @@ import { fullName } from "../lib/metrics";
 import { CHAT_SUGGESTIONS, dateText, number, timestamp } from "../lib/mobile";
 import { LockedPage, MultilineText, PageHero, PortalLoading } from "./shared";
 import type { PortalContext } from "./shared";
+import { streamCoach } from "../player/gateway";
 
 interface StreamState {
   user: string;
@@ -120,42 +121,15 @@ function AiCoachContent({ ctx }: { ctx: PortalContext }) {
     // deltas into it (duplicate-id bug), garbling the transcript.
     setStream({ user: message, answer: "", failed: null });
     setBusy(true);
-    controllerRef.current = new AbortController();
+    const controller = new AbortController();
+    controllerRef.current = controller;
     try {
-      const token = await auth.currentUser!.getIdToken();
-      const response = await fetch("https://us-central1-kickai-69dd0.cloudfunctions.net/aiCoachStreamProxy", {
-        method: "POST",
-        signal: controllerRef.current.signal,
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", Accept: "text/event-stream" },
-        body: JSON.stringify({
-          schemaVersion: 1,
-          capability: "pose_chat",
-          playerId: ctx.playerId,
-          message,
-          clientVersion: "1.1+4",
-          ...(conversationIdRef.current ? { conversationId: conversationIdRef.current } : {}),
-        }),
-      });
-      if (!response.ok) {
-        const body = await response.text();
-        let detail = `AI Coach returned ${response.status}`;
-        try {
-          const parsed = JSON.parse(body);
-          detail = parsed.error?.message || parsed.message || detail;
-        } catch { /* keep default detail */ }
-        throw new Error(detail);
-      }
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "", answer = "";
-      const applyFrame = (frame: string) => {
-        let event = "message", data = "";
-        frame.split(/\r?\n/).forEach(line => {
-          if (line.startsWith("event:")) event = line.slice(6).trim();
-          if (line.startsWith("data:")) data += line.slice(5).trim();
-        });
-        if (!data) return;
-        const payload = JSON.parse(data);
+      let answer = "";
+      await streamCoach({
+        capability: "pose_chat", playerId: ctx.playerId, message,
+        ...(conversationIdRef.current ? { conversationId: conversationIdRef.current } : {}),
+      }, controller.signal, ({ event, data: payload }) => {
+        if (controller.signal.aborted || controllerRef.current !== controller) return;
         if (event === "start") conversationIdRef.current = payload.conversationId;
         if (event === "delta") {
           answer += payload.text || "";
@@ -165,31 +139,24 @@ function AiCoachContent({ ctx }: { ctx: PortalContext }) {
           }
         }
         if (event === "tool") setToolStatus(`${payload.status === "completed" ? "Checked" : "Checking"} ${String(payload.name || "athlete data").replace(/_/g, " ")}…`);
-        if (event === "error") throw new Error(payload.message || "AI Coach could not answer.");
-      };
-      while (true) {
-        const { value, done } = await reader.read();
-        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-        const frames = buffer.split(/\r?\n\r?\n/);
-        buffer = frames.pop() || "";
-        frames.forEach(applyFrame);
-        if (done) break;
-      }
-      if (buffer.trim()) applyFrame(buffer);
+      });
+      if (controller.signal.aborted || controllerRef.current !== controller) return;
       if (conversationIdRef.current) {
         attach(conversationIdRef.current);
         void loadConversations();
       }
     } catch (error: any) {
-      if (error.name !== "AbortError") {
+      if (!controller.signal.aborted && controllerRef.current === controller && error.name !== "AbortError") {
         const failed = error.message || "AI Coach is temporarily unavailable.";
         setStream(prev => (prev ? { ...prev, failed } : prev));
       }
     } finally {
-      controllerRef.current = null;
-      focusAfterBusyRef.current = true;
-      setBusy(false);
-      setToolStatus(null);
+      if (controllerRef.current === controller) {
+        controllerRef.current = null;
+        focusAfterBusyRef.current = true;
+        setBusy(false);
+        setToolStatus(null);
+      }
     }
   }
 
