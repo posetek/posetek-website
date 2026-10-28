@@ -16,3 +16,13 @@ export async function savePlayerPhone(playerId: string, input: string, expectedP
   if (data?.playerId !== playerId || data.phone !== phone) throw new Error("The save could not be verified. Refresh the profile before trying again.");
   return phone;
 }
+
+export type ContactType = "player" | "parent";
+export async function saveClassifiedPhone(playerId: string, contactType: ContactType, input: string, expectedPhone: string | null): Promise<string | null> {
+  const phone = input.trim() === "" ? null : normalizedPlayerPhone(input);
+  if (input.trim() && !phone) throw new Error("Enter a complete 10-digit US phone number.");
+  const response = await cloud.httpsCallable("updateAdminPlayerPhone")({ playerId, contactType, phone, expectedPhone });
+  const data = response.data as { playerId?: string; contactType?: string; phone?: string | null } | null;
+  if (data?.playerId !== playerId || data.contactType !== contactType || data.phone !== phone) throw new Error("The save could not be verified. Refresh the profile before trying again.");
+  return phone;
+}
