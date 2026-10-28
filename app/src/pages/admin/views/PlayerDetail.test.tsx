@@ -70,8 +70,11 @@ describe('administrator player contact details', () => {
     const html = profile({ ...player, raw: { phone_number: ' (925)-872-7208 ' } });
     expect(html).toContain('aria-label="Player contact details"');
     expect(html).toContain('<dt>Email</dt><dd>athlete@example.test</dd>');
-    expect(html).toContain('value=" (925)-872-7208 "');
-    expect(html).toContain('Save phone');
+    expect(html).toContain('Previous contact number');
+    expect(html).toContain(' (925)-872-7208 ');
+    expect(html).toContain('Save player phone');
+    expect(html).toContain('Save parent/guardian phone');
+    expect(html).not.toContain('value=" (925)-872-7208 "');
     expect(html).not.toContain('type="email"');
     expect(html).toContain('type="tel"');
   });
@@ -93,7 +96,8 @@ describe('administrator player contact details', () => {
   });
   it('keeps read-only previews free of a phone editor', () => {
     const html = profile({ ...player, raw: {} }, true);
-    expect(html).toContain('<dt>Phone number</dt><dd>Not recorded</dd>');
+    expect(html).toContain('<dt>Player phone</dt><dd>Not recorded</dd>');
+    expect(html).toContain('<dt>Parent/guardian phone</dt><dd>Not recorded</dd>');
     expect(html).not.toContain('type="tel"');
     expect(html).not.toContain('Save phone');
   });

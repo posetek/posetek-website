@@ -1,5 +1,12 @@
 # PoseTek website project context
 
+## Player and parent contacts candidate (October 28, 2026)
+
+The owner requested separate editable player and parent/guardian phone fields,
+with identified contacts populated from private roster/signup evidence. Source
+and release boundaries are in [the contact handoff](docs/PLAYER_PARENT_CONTACTS.md).
+This candidate does not change the published release recorded below.
+
 ## Current web AI-sharing recovery release — October 24, 2026
 
 Exact reviewed deployment `6adc6d7bf370755a2aabc65b` is live. Players can review
