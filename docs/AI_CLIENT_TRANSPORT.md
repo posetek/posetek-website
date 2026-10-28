@@ -37,6 +37,14 @@ they do not change the sharing preference. Server athlete ownership, deletion
 and revision checks remain authoritative. This uses the existing chat API,
 not a new memory endpoint or direct database writer.
 
+Commands send the native-compatible `Update coach memory` message because the
+existing HTTP/chat validators require nonblank text. The memory branch treats
+this as a command, not a transcript turn. The final UI test exercises serialized
+requests through the real transport; backend contract tests independently verify
+all four privacy actions without a provider or transcript after withdrawal.
+The existing UI still gates controls on feature/workspace visibility during kill
+switches; this increment does not resolve that separate UI/backend discrepancy.
+
 ## Validation
 
 Focused synthetic suites cover shared wire payloads, metadata, fragmented SSE,
@@ -54,6 +62,10 @@ The candidate passed all 196 web test files (2,200 tests), the TypeScript build,
 and scoped lint. Scoped lint retains pre-existing CoachChat render-purity/ref
 warnings on unchanged code. The baseline targeted suites passed before edits.
 Dependencies were installed from the unchanged lockfile outside Git.
+
+After the memory command-envelope review fix, the affected suites passed 33
+tests and TypeScript passed again. The full 2,200-test run preceded that final
+small fix; the final tests verify the changed wire request directly.
 
 This is source-level verification, not authenticated browser/provider acceptance.
 Production release remains separate and must preserve the approved runtime and
