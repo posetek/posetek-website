@@ -90,7 +90,7 @@ describe('explicit account-scoped AI sharing', () => {
 
 describe('coach-memory privacy actions after AI-sharing withdrawal', () => {
   const request = (memoryAction: Record<string, unknown>, context: Record<string, unknown> = {}) => ({
-    capability: 'pose_chat', playerId: 'player-doc', message: '', context: { coachWorkspaceVersion: 1, memoryAction, ...context },
+    capability: 'pose_chat', playerId: 'player-doc', message: 'Update coach memory', context: { coachWorkspaceVersion: 1, memoryAction, ...context },
   });
   async function withdraw() {
     harness.fetch.mockRejectedValueOnce(new TypeError('Offline'));

@@ -125,7 +125,8 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       if (token === turn.current) { controller.current = null; setSending(false); setStatus(''); }
     }
   };
-  const memoryCommand = (kind: string, extra: Row = {}) => void send('', { kind, ...(kind !== 'list' ? { expectedRevision: memory?.workspace.revision } : {}), ...extra });
+  // Match native: the chat envelope requires text even for code-only memory commands.
+  const memoryCommand = (kind: string, extra: Row = {}) => void send('Update coach memory', { kind, ...(kind !== 'list' ? { expectedRevision: memory?.workspace.revision } : {}), ...extra });
   return <section className="player-chat" aria-busy={sending || historyLoading}>
     <div className="player-actions">
       <button type="button" disabled={historyLoading} onClick={() => setShowHistory(v => !v)}>History</button>
