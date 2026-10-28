@@ -55,8 +55,8 @@ export default function PlayerContactCard({ player, onSaved, readOnly = false }:
 }) {
   const raw = player.raw || {};
   const legacy = text(raw.phone_number);
-  const additionalParents = Array.isArray(raw.additional_parent_contacts) ? raw.additional_parent_contacts.filter(
-    (value): value is { name?: string; phone: string } => value !== null && typeof value === "object" && typeof value.phone === "string"
+  const additionalParents: { name?: string; phone: string }[] = Array.isArray(raw.additional_parent_contacts) ? raw.additional_parent_contacts.filter(
+    (value: unknown): value is { name?: string; phone: string } => value !== null && typeof value === "object" && "phone" in value && typeof value.phone === "string"
   ) : [];
   return <section className="admin-card admin-contact-details" aria-label="Player contact details">
     <h3>Contact details</h3>
