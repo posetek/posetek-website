@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../../lib/firebase';
 import type { Row } from './execution';
-import { aiSharingError, assertAISharingEnabled } from './ai-sharing';
+import { aiSharingError, assertAIChatEnabled } from './ai-sharing';
 
 export type Frame = { event: string; data: Row };
 export function parseFrame(frame: string): Frame | null {
@@ -32,10 +32,10 @@ export async function streamCoach(body: Row, signal: AbortSignal, onFrame: (fram
       ...(httpStatus === undefined ? {} : { httpStatus }),
     });
   };
-  assertAISharingEnabled(user.uid);
+  assertAIChatEnabled(user.uid, body);
   const idToken = await user.getIdToken();
   current();
-  assertAISharingEnabled(user.uid);
+  assertAIChatEnabled(user.uid, body);
   const response = await fetch('https://us-central1-kickai-69dd0.cloudfunctions.net/aiCoachStreamProxy', {
     method: 'POST', signal,
     headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json', Accept: 'text/event-stream',

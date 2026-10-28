@@ -92,8 +92,10 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
         return;
       }
       await streamCoach({ capability, playerId, message: text,
-        ...(conversation.current ? { conversationId: conversation.current } : {}),
-        context: { ...context, ...(workspace ? { coachWorkspaceVersion: 1 } : {}), ...(workspace && personalStore?.enabled ? { personalWorkoutFlowVersion: 1 } : {}), ...(memoryAction ? { memoryAction } : {}) },
+        ...(!memoryAction && conversation.current ? { conversationId: conversation.current } : {}),
+        // Memory commands are independent of the current chat/workout context.
+        context: memoryAction ? { coachWorkspaceVersion: 1, memoryAction }
+          : { ...context, ...(workspace ? { coachWorkspaceVersion: 1 } : {}), ...(workspace && personalStore?.enabled ? { personalWorkoutFlowVersion: 1 } : {}) },
       }, controller.current.signal, frame => {
         if (token !== turn.current) return;
         if (frame.event === 'start' && !memoryAction) conversation.current = frame.data.conversationId;

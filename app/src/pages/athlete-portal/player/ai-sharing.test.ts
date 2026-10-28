@@ -86,3 +86,50 @@ describe('explicit account-scoped AI sharing', () => {
     await expect(streamCoach({}, new AbortController().signal, () => {})).rejects.toMatchObject({ code: 'ai_consent_required' });
   });
 });
+
+
+describe('coach-memory privacy actions after AI-sharing withdrawal', () => {
+  const request = (memoryAction: Record<string, unknown>, context: Record<string, unknown> = {}) => ({
+    capability: 'pose_chat', playerId: 'player-doc', message: '', context: { coachWorkspaceVersion: 1, memoryAction, ...context },
+  });
+  async function withdraw() {
+    harness.fetch.mockRejectedValueOnce(new TypeError('Offline'));
+    await expect(setAISharing(false)).rejects.toThrow('Account-wide withdrawal could not be confirmed');
+    harness.fetch.mockClear();
+  }
+
+  it.each([
+    { kind: 'list' }, { kind: 'forget', memoryId: 'memory-1', expectedRevision: 3 },
+    { kind: 'forgetAll', expectedRevision: 3 }, { kind: 'setEnabled', enabled: false, expectedRevision: 3 },
+  ])('allows only the existing deterministic privacy command $kind without changing sharing', async action => {
+    await withdraw(); harness.fetch.mockResolvedValueOnce(new Response('event: memory\ndata: {"workspace":{"revision":4},"memories":[]}\n\nevent: done\ndata: {}\n\n'));
+    await expect(streamCoach(request(action), new AbortController().signal, () => {})).resolves.toBeUndefined();
+    expect(harness.fetch).toHaveBeenCalledTimes(1);
+    expect(() => assertAISharingEnabled(harness.user.uid)).toThrow('AI sharing is off');
+  });
+
+  it.each([
+    request({ kind: 'confirm', memoryId: 'memory-1', expectedRevision: 3 }),
+    request({ kind: 'setEnabled', enabled: true, expectedRevision: 3 }),
+    request({ kind: 'setEnabled', enabled: 0, expectedRevision: 3 }),
+    request({ kind: 'forget', memoryId: '../other', expectedRevision: 3 }),
+    request({ kind: 'forget', memoryId: 'memory-1', expectedRevision: true }),
+    request({ kind: 'forgetAll', expectedRevision: -1 }),
+    request({ kind: 'forgetAll', expectedRevision: 1.5 }),
+    request({ kind: 'list', extra: 'not-privacy' }),
+    request({ kind: 'list' }, { personalWorkoutFlowVersion: 1 }),
+    request({ kind: 'list' }, { coachWorkspaceVersion: '1' }),
+    { ...request({ kind: 'list' }), capability: 'coaching_chat' },
+    { capability: 'pose_chat', message: 'Remember this' },
+  ])('keeps generation, confirmation, enabling and malformed/combined requests blocked', async body => {
+    await withdraw();
+    await expect(streamCoach(body, new AbortController().signal, () => {})).rejects.toMatchObject({ code: 'ai_consent_required' });
+    expect(harness.fetch).not.toHaveBeenCalled();
+  });
+
+  it('preserves server refusal of a privacy action', async () => {
+    await withdraw(); harness.fetch.mockResolvedValueOnce(new Response('{"code":"permission_denied","message":"Only the athlete can manage memory"}', { status: 403 }));
+    await expect(streamCoach(request({ kind: 'list' }), new AbortController().signal, () => {})).rejects.toMatchObject({ code: 'permission_denied' });
+    expect(() => assertAISharingEnabled(harness.user.uid)).toThrow('AI sharing is off');
+  });
+});

@@ -26,16 +26,34 @@ interrupted turn remains visibly failed; cancellation cannot rebind a new
 conversation. No automatic retry is added. Durable background-job submission,
 recovery and observation remain unchanged.
 
+## Privacy commands after sharing withdrawal
+
+The existing memory list, forget, forget-all and disable commands can pass the
+browser's local AI-sharing gate after withdrawal. Only the exact deterministic
+`pose_chat` memory context/action shapes qualify. Confirmation, enabling memory,
+ordinary chat and malformed/combined requests still require sharing. Commands
+carry a memory-only context without a conversation or personal-workout marker;
+they do not change the sharing preference. Server athlete ownership, deletion
+and revision checks remain authoritative. This uses the existing chat API,
+not a new memory endpoint or direct database writer.
+
 ## Validation
 
 Focused synthetic suites cover shared wire payloads, metadata, fragmented SSE,
 EOF, terminal errors, HTTP errors, cancellation and account switches, plus the
-staff portal's existing non-workspace payload/history/preview behavior:
+staff portal's existing non-workspace payload/history/preview behavior. Privacy
+coverage includes failed withdrawal, exact action shapes, server refusal and
+isolated command payloads:
 
 ```sh
 npm --prefix app test -- src/pages/athlete-portal/player/gateway.test.ts src/pages/athlete-portal/views/AiCoachView.test.tsx src/pages/athlete-portal/player/player.test.tsx src/pages/athlete-portal/player/ai-sharing.test.ts src/pages/athlete-portal/player/CoachChat.test.tsx
 node app/node_modules/typescript/bin/tsc -b app
 ```
+
+The candidate passed all 196 web test files (2,200 tests), the TypeScript build,
+and scoped lint. Scoped lint retains pre-existing CoachChat render-purity/ref
+warnings on unchanged code. The baseline targeted suites passed before edits.
+Dependencies were installed from the unchanged lockfile outside Git.
 
 This is source-level verification, not authenticated browser/provider acceptance.
 Production release remains separate and must preserve the approved runtime and

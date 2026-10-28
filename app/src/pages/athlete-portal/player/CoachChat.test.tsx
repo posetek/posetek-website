@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const harness = vi.hoisted(() => ({
   states: [] as any[], refs: [] as { current: any }[], stateIndex: 0, refIndex: 0,
-  get: vi.fn(), stream: vi.fn(),
+  get: vi.fn(), stream: vi.fn(), config: { coachWorkspaceEnabled: false },
 }));
 vi.mock('react', async original => ({
   ...await original<typeof import('react')>(),
@@ -31,7 +31,7 @@ vi.mock('./AISharingControl', () => ({ default: function AISharingControl({ onAl
 } }));
 vi.mock('./coach-prompts', () => ({ coachPrompts: () => [], coachToolStatus: () => '' }));
 vi.mock('./gateway', () => ({
-  useCoachConfig: () => ({ coachWorkspaceEnabled: false }), capabilityEnabled: () => true,
+  useCoachConfig: () => harness.config, capabilityEnabled: () => true,
   validHandoff: () => false, streamCoach: harness.stream,
 }));
 import CoachChat from './CoachChat';
@@ -42,9 +42,9 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 const snapshot = (content: string) => ({ docs: [{ id: 'saved-message', data: () => ({ role: 'assistant', content }) }] });
-function render() {
+function render(overrides: Record<string, unknown> = {}) {
   harness.stateIndex = 0; harness.refIndex = 0;
-  return CoachChat({ playerId: 'synthetic-player', preview: false, initialText: 'Yes, build it.' });
+  return CoachChat({ playerId: 'synthetic-player', preview: false, initialText: 'Yes, build it.', ...overrides });
 }
 function text(node: any): string {
   if (Array.isArray(node)) return node.map(text).join('');
@@ -72,7 +72,7 @@ function history() {
 describe('Coach chat history and AI sharing recovery', () => {
   beforeEach(() => {
     harness.states.length = 0; harness.refs.length = 0; harness.get.mockReset(); harness.stream.mockReset();
-    harness.get.mockResolvedValue({ docs: [] }); harness.stream.mockResolvedValue(undefined);
+    harness.get.mockResolvedValue({ docs: [] }); harness.stream.mockResolvedValue(undefined); harness.config = { coachWorkspaceEnabled: false };
   });
 
   it('blocks the same-event send until history loads, then sends to the selected conversation', async () => {
@@ -152,4 +152,22 @@ describe('Coach chat history and AI sharing recovery', () => {
     expect(text(render())).toContain('The coach is temporarily unavailable.');
     expect(harness.stream).toHaveBeenCalledTimes(1);
   });
+
+  it('keeps memory commands separate from conversation and personal-workout context', async () => {
+    harness.config = { coachWorkspaceEnabled: true };
+    const props = { personalStore: { enabled: true }, context: { unrelated: 'conversation-context' } };
+    harness.stream.mockImplementation(async (_body, _signal, frame) => {
+      frame({ event: 'memory', data: { workspace: { revision: 3, enabled: true }, memories: [{ memoryId: 'm', status: 'active', text: 'Preference', category: 'preference' }] } });
+      frame({ event: 'done', data: {} });
+    });
+    button(render(props), 'Coach memory').props.onClick();
+    await vi.waitFor(() => expect(render(props).props['aria-busy']).toBe(false));
+    expect(harness.stream.mock.calls[0][0]).toEqual({ capability: 'pose_chat', playerId: 'synthetic-player', message: '',
+      context: { coachWorkspaceVersion: 1, memoryAction: { kind: 'list' } } });
+    button(render(props), 'Forget').props.onClick();
+    await vi.waitFor(() => expect(harness.stream).toHaveBeenCalledTimes(2));
+    expect(harness.stream.mock.calls[1][0]).toEqual({ capability: 'pose_chat', playerId: 'synthetic-player', message: '',
+      context: { coachWorkspaceVersion: 1, memoryAction: { kind: 'forget', memoryId: 'm', expectedRevision: 3 } } });
+  });
+
 });
