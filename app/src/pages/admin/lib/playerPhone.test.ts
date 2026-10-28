@@ -1,11 +1,20 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 const f = vi.hoisted(() => ({ save: vi.fn(), callable: vi.fn() }));
 vi.mock('../../../lib/firebase', () => ({ cloud: { httpsCallable: f.callable } }));
-import { normalizedPlayerPhone, savePlayerPhone } from './playerPhone';
+import { normalizedPlayerPhone, savePlayerPhone, saveClassifiedPhone } from './playerPhone';
 beforeEach(() => { vi.resetAllMocks(); f.callable.mockReturnValue(f.save); });
 it('normalizes US parent numbers and rejects incomplete or foreign numbers', () => {
   expect(normalizedPlayerPhone('+1 (707) 555-0123')).toBe('(707)-555-0123');
   for (const value of ['', '123', '1209585783', '7075550123 ext 2', '+44 2079460123']) expect(normalizedPlayerPhone(value)).toBeNull();
+});
+it('targets the chosen owner, permits unknown numbers and verifies the returned owner', async () => {
+  f.save.mockResolvedValue({ data: { playerId: 'athlete', contactType: 'parent', phone: '(707)-555-0123' } });
+  await expect(saveClassifiedPhone('athlete', 'parent', '7075550123', null)).resolves.toBe('(707)-555-0123');
+  expect(f.save).toHaveBeenCalledWith({ playerId: 'athlete', contactType: 'parent', phone: '(707)-555-0123', expectedPhone: null });
+  f.save.mockResolvedValue({ data: { playerId: 'athlete', contactType: 'player', phone: null } });
+  await expect(saveClassifiedPhone('athlete', 'player', ' ', '(707)-555-0123')).resolves.toBeNull();
+  expect(f.save).toHaveBeenLastCalledWith({ playerId: 'athlete', contactType: 'player', phone: null, expectedPhone: '(707)-555-0123' });
+  await expect(saveClassifiedPhone('athlete', 'parent', '', null)).rejects.toThrow('verified');
 });
 it('sends the exact prior contact for concurrency protection and verifies the saved identity', async () => {
   f.save.mockResolvedValue({ data: { playerId: 'athlete', phone: '(707)-555-0123' } });
