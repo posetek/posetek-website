@@ -21,3 +21,7 @@ functions/.runtimeconfig.json
 functions/.secret.local
 functions/.env*
 !functions/.env.example
+
+# Editor and OS clutter
+*.code-workspace
+*.lnk
