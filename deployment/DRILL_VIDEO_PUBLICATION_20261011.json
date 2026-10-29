@@ -82,6 +82,6 @@
     "publications": 1
   },
   "definitions": "Website library normalization counts absent legacy status as published. Library publication does not establish executable prescription or athlete eligibility.",
-  "handoff": "docs/DRILL_VIDEO_PUBLICATION_AUDIT.md",
+  "handoff": "docs/releases/DRILL_VIDEO_PUBLICATION_AUDIT.md",
   "privacy": "Private snapshots, storage metadata, operation journals and credentials remain outside Git. No download-token URL or private account identity is included."
 }

@@ -20,6 +20,6 @@ the separate marketing build and preview commands in the repository README.
 homepage release is assembled by `node scripts/build-production.mjs` from the
 repository root.
 
-- [Player architecture and mobile parity](../docs/PLAYER_EXPERIENCE.md)
+- [Player architecture and mobile parity](../docs/features/PLAYER_EXPERIENCE.md)
 - [Porting and routing conventions](PORTING.md)
 - [Latest homepage release receipt](../deployment/ANNOTATION_UPDATE_PRODUCTION.json)

@@ -330,7 +330,7 @@
     "websiteDeploymentId": "6ac38fde67d690075984e58b",
     "url": "https://6ac38fde67d690075984e58b--posetek.netlify.app",
     "method": "Restore the verified prior Netlify deployment and reconcile its inventory. Preserve privately stored v2 author snapshots until expiry or authorized erasure; do not relabel attributed records as historically anonymous. The receiver retains v1 compatibility; withdraw only the two scoped functions if needed.",
-    "handoff": "docs/APP_FEEDBACK.md",
+    "handoff": "docs/features/APP_FEEDBACK.md",
     "backendGuide": "deployments/app-feedback/README.md"
   }
 }

@@ -84,6 +84,6 @@
     "privateFieldMaskAndRevisionChecksPassed": true,
     "all80MappingChecksPassed": true
   },
-  "handoff": "docs/WHOLE_BODY_TRAINING.md",
+  "handoff": "docs/releases/WHOLE_BODY_TRAINING.md",
   "recovery": "Restore the previous website deployment if necessary; private reference fields are harmless to the older panel. Use saved before-images and fresh update-time guards for any metadata correction. Do not re-import the original drill manifest or replace athlete media."
 }

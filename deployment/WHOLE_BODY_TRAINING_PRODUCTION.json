@@ -165,7 +165,7 @@
     "syntheticDesktopAndMobileVisualQaPassed": true,
     "all80PassGatewayAndAuthoringSchema": true
   },
-  "handoff": "docs/WHOLE_BODY_TRAINING.md",
+  "handoff": "docs/releases/WHOLE_BODY_TRAINING.md",
   "rollback": "Preserve imported drafts and private-collection rules. Keep mobileVerified false; coordinate prior gateway and website restoration without deleting plans/logs. Do not restore the old broad private-data fallback.",
   "privacy": "No athlete identities, individual test values, private plan content or credentials are included."
 }

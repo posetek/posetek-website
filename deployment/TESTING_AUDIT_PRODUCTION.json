@@ -199,7 +199,7 @@
     "september16AttendeesMissingCategories": 9,
     "september16MissingProfileCategories": 10,
     "privateFollowUpDirectory": "PoseTek/Operations/PoseTek_Testing_Audit_Remediation_2026-09-17",
-    "recoveryDocumentation": "docs/VACAVILLE_REP_RECOVERY.md"
+    "recoveryDocumentation": "docs/releases/VACAVILLE_REP_RECOVERY.md"
   },
-  "handoff": "docs/TESTING_AUDIT_BUILD_HANDOFF.md"
+  "handoff": "docs/releases/TESTING_AUDIT_BUILD_HANDOFF.md"
 }

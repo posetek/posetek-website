@@ -150,7 +150,7 @@
     "nativeRulesNotDeployed": true
   },
   "recovery": {
-    "publicHandoff": "docs/PROVISIONAL_AGILITY_RECOVERY.md",
+    "publicHandoff": "docs/releases/PROVISIONAL_AGILITY_RECOVERY.md",
     "previousProductionReceipt": "deployment/PROVISIONAL_DRIBBLING_PRODUCTION.json",
     "privateReleaseEvidence": ".netlify/provisional-agility-release/",
     "privateRepairEvidence": ".netlify/vacaville-rep-investigation/",

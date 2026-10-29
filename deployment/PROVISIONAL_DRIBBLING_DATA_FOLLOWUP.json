@@ -71,7 +71,7 @@
     "productionPlannerGenerationEnabledWithoutGeneratingAPlan": true
   },
   "recovery": {
-    "publicHandoff": "docs/PROVISIONAL_DRIBBLING_RECOVERY.md",
+    "publicHandoff": "docs/releases/PROVISIONAL_DRIBBLING_RECOVERY.md",
     "privateEvidence": ".netlify/vacaville-rep-investigation/",
     "rollbackRequiresCurrentDocumentVersionCheck": true,
     "doNotEraseLaterReview": true,

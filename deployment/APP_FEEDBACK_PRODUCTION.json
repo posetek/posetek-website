@@ -275,7 +275,7 @@
   "recovery": {
     "restorePreviousWebsiteDeployment": "6ac06e0d420f2b6b34129fb5",
     "backend": "Retain endpoint for shared links or withdraw only the app-feedback codebase; do not relax client rules",
-    "handoff": "docs/APP_FEEDBACK.md",
-    "pilot": "docs/APP_FEEDBACK_PILOT.md"
+    "handoff": "docs/features/APP_FEEDBACK.md",
+    "pilot": "docs/features/APP_FEEDBACK_PILOT.md"
   }
 }

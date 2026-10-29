@@ -112,5 +112,5 @@
     "backend": "Original source archives, configuration and IAM snapshots remain private. Review a source-only rollback if required; do not deploy broad repository functions or native rules.",
     "data": "No invitation rotation, player claims, test-result or plan-data rollback belongs to this release"
   },
-  "handoff": "docs/PLAYER_INVITATION_LINKS.md"
+  "handoff": "docs/features/PLAYER_INVITATION_LINKS.md"
 }

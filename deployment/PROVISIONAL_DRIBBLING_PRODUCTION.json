@@ -128,7 +128,7 @@
     "nativeRulesNotDeployed": true
   },
   "recovery": {
-    "publicHandoff": "docs/PROVISIONAL_DRIBBLING_RECOVERY.md",
+    "publicHandoff": "docs/releases/PROVISIONAL_DRIBBLING_RECOVERY.md",
     "privateReleaseEvidence": ".netlify/provisional-dribbling-release/",
     "privateRepairEvidence": ".netlify/vacaville-rep-investigation/",
     "preserveCanonicalResultsAndMediaServices": true,

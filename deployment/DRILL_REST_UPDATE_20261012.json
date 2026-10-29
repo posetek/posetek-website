@@ -413,6 +413,6 @@
     "functionsGatewayRulesIndexesOrNativePublished": false,
     "storageWrites": false
   },
-  "handoff": "docs/DRILL_REST_UPDATE.md",
+  "handoff": "docs/releases/DRILL_REST_UPDATE.md",
   "privacy": "No private snapshots, account identities, credentials or download-token URLs are included."
 }

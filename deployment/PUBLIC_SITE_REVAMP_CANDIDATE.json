@@ -339,7 +339,7 @@
     "acceptance": "acceptance-summary.json",
     "assetDelta": "asset-delta.json",
     "referenceBundle": "rea-comparison-final.json",
-    "referenceLedger": "docs/PUBLIC_SITE_INTERACTION_POLISH.md",
+    "referenceLedger": "docs/releases/PUBLIC_SITE_INTERACTION_POLISH.md",
     "visualReview": "visual-review.md",
     "latestHeadReview": "final-review.json",
     "runtimeCi": "runtime-corrected-checks.json",

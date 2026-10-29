@@ -77,6 +77,6 @@
     "protectedFiles": 1950,
     "ordinaryBuildPassed": true
   },
-  "handoff": "docs/ATHLETE_REST_TIMERS.md",
+  "handoff": "docs/releases/ATHLETE_REST_TIMERS.md",
   "privacy": "Private browser captures, fixture IDs, credentials, snapshots and journals remain outside Git."
 }

@@ -96,6 +96,6 @@
   },
   "recovery": {
     "restorePreviousWebsiteDeployment": "6ac17bc21377cbeaea114800",
-    "handoff": "docs/SITE_ICONS.md"
+    "handoff": "docs/releases/SITE_ICONS.md"
   }
 }
