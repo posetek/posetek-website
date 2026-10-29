@@ -1,0 +1,647 @@
+{
+  "status": "published; exact accepted artifact",
+  "recordedAt": "2026-10-19T03:47:04.440Z",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "deployId": "6ad58598033b1b6ba8b4d6c2",
+  "url": "https://posetek.net",
+  "immutableUrl": "https://6ad58598033b1b6ba8b4d6c2--posetek.netlify.app",
+  "publishedAt": "2026-10-19T03:37:19.023Z",
+  "publishedLocal": "October 18, 2026 at 20:37:19 PDT",
+  "authorizedBy": "User explicit production-release instruction in this chat, October 18, 2026",
+  "operator": "Codex acting for Dylan Keller",
+  "runtimeSourceCommit": "785da39a9e65927016066254a611906b0bf0b4fb",
+  "acceptedReviewHead": "1e449a5eebd309e21d7e960bead365797d652901",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/86",
+  "candidateReceipt": "docs/releases/receipts/PUBLIC_SITE_SHOWCASE_CANDIDATE.json",
+  "method": "Promote existing immutable accepted draft with Netlify restoreSiteDeploy; no rebuild or upload",
+  "artifact": {
+    "files": 2108,
+    "providerRecords": 2109,
+    "manifestSha256": "380d9f34411a1aba31b375c6b19969bbc2b85b33c81935b2c4624de32b7c3df2",
+    "mismatches": 0,
+    "extraProviderPaths": [
+      "/netlify.toml"
+    ]
+  },
+  "preservation": {
+    "previousDeploy": "6ad536a9103351c79863f77f",
+    "previousProtectedFiles": 2001,
+    "protectedMismatches": 0,
+    "removed": 0,
+    "changedExistingPaths": [
+      "/index.html",
+      "/coaches/index.html",
+      "/netlify.toml"
+    ],
+    "addedAssets": 105,
+    "application": {
+      "path": "/application.html",
+      "sha": "b23f8e221c6cbd6d5f558836ff89c02d3a85ac2c",
+      "size": 15761
+    },
+    "feedback": {
+      "path": "/feedback.html",
+      "sha": "039a6cb1c652002dcd7e556359e5fbd1974ce426",
+      "size": 5816
+    },
+    "coachEnrollment": {
+      "path": "/coach-join.html",
+      "sha": "12f8e0dcefb18c3f960e52b8304480c3e8f5b9c8",
+      "size": 6842
+    },
+    "applicationSourceCommit": "57e9e03e139a287accfad7889d96747b3ad6ecc3",
+    "coachEnrollmentSourceCommit": "8eaf3ffd35848c3cf7ca753cc9fd4030cc4fb524",
+    "sourceNote": "Public Players/Coaches showcase artifact 785da39a9e65927016066254a611906b0bf0b4fb was promoted unchanged on October 18, 2026 at 20:37:19 PDT. All 2,001 previous protected records remain exact; 105 retained Astro assets were added. Active application runtime remains 57e9e03e139a287accfad7889d96747b3ad6ecc3. Runtime freeze codex/coach-overview-runtime preserves approved privacy/support source from 139162a04a1aa2afefda78c62bf2715d9667acbc. Held candidate remains on main. Isolated coach enrollment and feedback retain verified predecessor bytes. See deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json."
+  },
+  "baseline": {
+    "deploymentId": "6ad58598033b1b6ba8b4d6c2",
+    "files": 2106,
+    "addedProtectedFiles": 105,
+    "sourceCommit": "785da39a9e65927016066254a611906b0bf0b4fb",
+    "guardedBuild": "Passed node scripts/build-production.mjs after reconciliation; check-only output was not uploaded or published.",
+    "comparison": {
+      "checkedAt": "2026-10-19T03:46:36.651Z",
+      "acceptedFiles": 2108,
+      "rebuiltFiles": 2108,
+      "protectedFiles": 2106,
+      "mismatches": 0,
+      "acceptedManifestSha256": "380d9f34411a1aba31b375c6b19969bbc2b85b33c81935b2c4624de32b7c3df2",
+      "pathComparison": "Provider-normalized lowercase paths; bytes and sizes remain exact.",
+      "checkOnly": true,
+      "published": false
+    },
+    "preservationTests": {
+      "passed": 48,
+      "failed": 0
+    }
+  },
+  "liveVerification": {
+    "suites": {
+      "showcase": {
+        "passed": 37,
+        "failed": 0,
+        "captures": 107,
+        "mode": "Headless guest functional acceptance",
+        "network": {
+          "externalBlocked": 37,
+          "writesBlocked": 0,
+          "fontsAllowed": 238,
+          "unexpectedOriginFailures": 0,
+          "decorativeCancellations": [
+            {
+              "check": "players: 1440px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/players-technique.DNFXiv4_.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "technique"
+            },
+            {
+              "check": "players: 1440px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/players-mobile.DZiDoNZ1.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "mobile-app"
+            },
+            {
+              "check": "players: 1440px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/players-mobile.DZiDoNZ1.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "mobile-app"
+            },
+            {
+              "check": "players: 1440px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/players-technique.DNFXiv4_.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "technique"
+            },
+            {
+              "check": "players: 1440px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/players-testing.DvPdAM06.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "tests"
+            },
+            {
+              "check": "players: 1920px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/players-coach.L5AUl7WM.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "ai-coach"
+            },
+            {
+              "check": "players: 1920px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/players-technique.DNFXiv4_.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "technique"
+            },
+            {
+              "check": "players: 1920px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/players-mobile.DZiDoNZ1.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "mobile-app"
+            },
+            {
+              "check": "players: 1920px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/players-technique.DNFXiv4_.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "technique"
+            },
+            {
+              "check": "players: 1920px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/players-mobile.DZiDoNZ1.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "mobile-app"
+            },
+            {
+              "check": "coaches: 1920px paired previews and full-size inline demonstrations",
+              "url": "https://posetek.net/_astro/coaches-contact.bhT3jnII.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "contact"
+            },
+            {
+              "check": "Players: native chapter heading focus keeps depth active and stationary pointer hover follows scrolling",
+              "url": "https://posetek.net/_astro/players-coach.L5AUl7WM.webp",
+              "error": "net::ERR_ABORTED",
+              "resourceType": "fetch",
+              "domImageDecoded": true,
+              "workerCancelledCard": "ai-coach"
+            }
+          ]
+        },
+        "evidence": "artifacts/showcase-production/showcase/showcase-acceptance.json"
+      },
+      "revamp": {
+        "passed": 31,
+        "failed": 2,
+        "captures": 43,
+        "mode": "Headless guest functional acceptance",
+        "network": {
+          "externalBlocked": 37,
+          "writesBlocked": 0,
+          "fontsAllowed": 229,
+          "expectedOriginFailures": 3,
+          "unexpectedOriginFailures": 5,
+          "decorativeCancellations": []
+        },
+        "evidence": "artifacts/showcase-production/revamp/acceptance.json"
+      },
+      "orientationRerun": {
+        "passed": 2,
+        "failed": 0,
+        "captures": 2,
+        "mode": "Headless guest functional acceptance",
+        "network": {
+          "externalBlocked": 4,
+          "writesBlocked": 0,
+          "fontsAllowed": 20,
+          "expectedOriginFailures": 0,
+          "unexpectedOriginFailures": 0,
+          "decorativeCancellations": []
+        },
+        "evidence": "artifacts/showcase-production/revamp-orientation-rerun/acceptance.json"
+      },
+      "detail": {
+        "passed": 20,
+        "failed": 1,
+        "captures": 26,
+        "mode": "Headless guest functional acceptance",
+        "network": {
+          "externalBlocked": 21,
+          "writesBlocked": 0,
+          "fontsAllowed": 134,
+          "unexpectedOriginFailures": 2,
+          "decorativeCancellations": []
+        },
+        "evidence": "artifacts/showcase-production/detail/detail-acceptance.json"
+      },
+      "closingRerun": {
+        "passed": 1,
+        "failed": 0,
+        "captures": 2,
+        "mode": "Headless guest functional acceptance",
+        "network": {
+          "externalBlocked": 1,
+          "writesBlocked": 0,
+          "fontsAllowed": 13,
+          "unexpectedOriginFailures": 0,
+          "decorativeCancellations": []
+        },
+        "evidence": "artifacts/showcase-production/detail-closing-rerun/detail-acceptance.json"
+      },
+      "webkit": {
+        "passed": 4,
+        "failed": 0,
+        "captures": 4,
+        "mode": "WebKit support checks; no timing or physical-mobile acceptance",
+        "network": {
+          "writesBlocked": 0,
+          "externalBlocked": 2,
+          "injectedFailures": 0,
+          "unexpectedOriginFailures": 0
+        },
+        "evidence": "artifacts/showcase-production/webkit/cold-acceptance.json"
+      }
+    },
+    "orientationDiagnostic": [
+      {
+        "audience": "players",
+        "label": "orientation",
+        "aborts": [],
+        "decoded": [
+          {
+            "id": "tests",
+            "currentSrc": "https://posetek.net/_astro/players-testing.DvPdAM06.webp",
+            "complete": true,
+            "width": 357
+          },
+          {
+            "id": "profile",
+            "currentSrc": "https://posetek.net/_astro/players-profile.ysVRIJCC.webp",
+            "complete": true,
+            "width": 357
+          },
+          {
+            "id": "training",
+            "currentSrc": "https://posetek.net/_astro/players-training.CJjlJRtE.webp",
+            "complete": true,
+            "width": 357
+          },
+          {
+            "id": "ai-coach",
+            "currentSrc": "https://posetek.net/_astro/players-coach.L5AUl7WM.webp",
+            "complete": true,
+            "width": 357
+          },
+          {
+            "id": "technique",
+            "currentSrc": "https://posetek.net/_astro/players-technique.DNFXiv4_.webp",
+            "complete": true,
+            "width": 357
+          },
+          {
+            "id": "mobile-app",
+            "currentSrc": "https://posetek.net/_astro/players-mobile-600.CYhV_WLk.webp",
+            "complete": true,
+            "width": 357
+          }
+        ],
+        "responseStatuses": [
+          200
+        ]
+      },
+      {
+        "audience": "players",
+        "label": "zoom",
+        "aborts": [],
+        "decoded": [
+          {
+            "id": "tests",
+            "currentSrc": "https://posetek.net/_astro/players-testing.DvPdAM06.webp",
+            "complete": true,
+            "width": 688
+          },
+          {
+            "id": "profile",
+            "currentSrc": "https://posetek.net/_astro/players-profile.ysVRIJCC.webp",
+            "complete": true,
+            "width": 688
+          },
+          {
+            "id": "training",
+            "currentSrc": "https://posetek.net/_astro/players-training.CJjlJRtE.webp",
+            "complete": true,
+            "width": 688
+          },
+          {
+            "id": "ai-coach",
+            "currentSrc": "https://posetek.net/_astro/players-coach.L5AUl7WM.webp",
+            "complete": true,
+            "width": 688
+          },
+          {
+            "id": "technique",
+            "currentSrc": "https://posetek.net/_astro/players-technique.DNFXiv4_.webp",
+            "complete": true,
+            "width": 688
+          },
+          {
+            "id": "mobile-app",
+            "currentSrc": "https://posetek.net/_astro/players-mobile.DZiDoNZ1.webp",
+            "complete": true,
+            "width": 688
+          }
+        ],
+        "responseStatuses": [
+          200
+        ]
+      },
+      {
+        "audience": "coaches",
+        "label": "orientation",
+        "aborts": [
+          {
+            "url": "https://posetek.net/_astro/coaches-club.DCGnbWDs.webp",
+            "error": "net::ERR_ABORTED",
+            "viewport": [
+              390,
+              844,
+              1
+            ],
+            "activeReplacement": {
+              "id": "club",
+              "src": "https://posetek.net/_astro/coaches-club.DCGnbWDs.webp",
+              "currentSrc": "https://posetek.net/_astro/coaches-club-600.7coqcTPS.webp",
+              "srcset": "/_astro/coaches-club-600.7coqcTPS.webp 600w, /_astro/coaches-club.DCGnbWDs.webp 1200w",
+              "complete": true,
+              "width": 357,
+              "top": 1478.796875
+            }
+          },
+          {
+            "url": "https://posetek.net/_astro/coaches-evidence.DXRBAzc5.webp",
+            "error": "net::ERR_ABORTED",
+            "viewport": [
+              390,
+              844,
+              1
+            ],
+            "activeReplacement": {
+              "id": "players",
+              "src": "https://posetek.net/_astro/coaches-evidence.DXRBAzc5.webp",
+              "currentSrc": "https://posetek.net/_astro/coaches-evidence-600.jvLayG3b.webp",
+              "srcset": "/_astro/coaches-evidence-600.jvLayG3b.webp 600w, /_astro/coaches-evidence.DXRBAzc5.webp 1200w",
+              "complete": true,
+              "width": 357,
+              "top": 2097.046875
+            }
+          },
+          {
+            "url": "https://posetek.net/_astro/coaches-development.UH8SxaSq.webp",
+            "error": "net::ERR_ABORTED",
+            "viewport": [
+              390,
+              844,
+              1
+            ],
+            "activeReplacement": {
+              "id": "development",
+              "src": "https://posetek.net/_astro/coaches-development.UH8SxaSq.webp",
+              "currentSrc": "https://posetek.net/_astro/coaches-development-600.B8UHJVJW.webp",
+              "srcset": "/_astro/coaches-development-600.B8UHJVJW.webp 600w, /_astro/coaches-development.UH8SxaSq.webp 1200w",
+              "complete": true,
+              "width": 357,
+              "top": 2776.890625
+            }
+          },
+          {
+            "url": "https://posetek.net/_astro/coaches-contact.bhT3jnII.webp",
+            "error": "net::ERR_ABORTED",
+            "viewport": [
+              390,
+              844,
+              1
+            ],
+            "activeReplacement": {
+              "id": "contact",
+              "src": "https://posetek.net/_astro/coaches-contact.bhT3jnII.webp",
+              "currentSrc": "https://posetek.net/_astro/coaches-contact-600.9kNL0UxD.webp",
+              "srcset": "/_astro/coaches-contact-600.9kNL0UxD.webp 600w, /_astro/coaches-contact.bhT3jnII.webp 1200w",
+              "complete": true,
+              "width": 357,
+              "top": 3395.140625
+            }
+          }
+        ],
+        "decoded": [
+          {
+            "id": "club",
+            "currentSrc": "https://posetek.net/_astro/coaches-club-600.7coqcTPS.webp",
+            "complete": true,
+            "width": 357
+          },
+          {
+            "id": "players",
+            "currentSrc": "https://posetek.net/_astro/coaches-evidence-600.jvLayG3b.webp",
+            "complete": true,
+            "width": 357
+          },
+          {
+            "id": "development",
+            "currentSrc": "https://posetek.net/_astro/coaches-development-600.B8UHJVJW.webp",
+            "complete": true,
+            "width": 357
+          },
+          {
+            "id": "contact",
+            "currentSrc": "https://posetek.net/_astro/coaches-contact-600.9kNL0UxD.webp",
+            "complete": true,
+            "width": 357
+          }
+        ],
+        "responseStatuses": [
+          200
+        ]
+      },
+      {
+        "audience": "coaches",
+        "label": "zoom",
+        "aborts": [],
+        "decoded": [
+          {
+            "id": "club",
+            "currentSrc": "https://posetek.net/_astro/coaches-club.DCGnbWDs.webp",
+            "complete": true,
+            "width": 688
+          },
+          {
+            "id": "players",
+            "currentSrc": "https://posetek.net/_astro/coaches-evidence.DXRBAzc5.webp",
+            "complete": true,
+            "width": 688
+          },
+          {
+            "id": "development",
+            "currentSrc": "https://posetek.net/_astro/coaches-development.UH8SxaSq.webp",
+            "complete": true,
+            "width": 688
+          },
+          {
+            "id": "contact",
+            "currentSrc": "https://posetek.net/_astro/coaches-contact.bhT3jnII.webp",
+            "complete": true,
+            "width": 688
+          }
+        ],
+        "responseStatuses": [
+          200
+        ]
+      }
+    ],
+    "initialFunctional": {
+      "passed": 88,
+      "failed": 3,
+      "uniqueCases": 91,
+      "captures": 176
+    },
+    "focusedReruns": {
+      "passed": 3,
+      "failed": 0,
+      "captures": 4
+    },
+    "qualifications": [
+      "Original revamp31/33 and detail20/21 remain immutable evidence; do not describe an uninterrupted91/91 run.",
+      "Original revamp recorded five image ERR_ABORTED events. Passive replay reproduced all four Coaches1200w cancellations with already-decoded600w replacements at390px; Players technique did not reproduce and both its image variants decoded. All observed replay image responses were200.",
+      "Original detail recorded two aborted Players worker fetches. Its explicit cross-page navigation means the teardown classifier reads the new Coaches document, so prior-document cancellation/decode proof is unavailable. The unchanged focused rerun passed; original events are not retrospectively waived.",
+      "No page exceptions or write attempts; initial unexpected-request counters remain5revamp+2detail.",
+      "Headless WebKit is support coverage, not physical mobile or hardware timing."
+    ],
+    "visualReview": {
+      "inspectedCaptures": 21,
+      "unresolvedFindings": 0,
+      "evidence": "artifacts/showcase-production/visual-review.md",
+      "disclosure": "Artwork-author self-review; static desktop/mobile-emulation captures. One initially absent label was visible after animations settled; original evidence retained."
+    },
+    "functionalChecks": 91,
+    "qualification": "Original revamp run31/33 retained two native responsive-image request cancellations during orientation. Passive diagnostics confirmed decoded currentSrc replacements and200 responses; unchanged focused rerun2/2 passed. The detail run20/21 additionally retained two aborted decorative worker fetches whose prior-document cancellation proof was unavailable after explicit cross-page navigation; original events remain unclassified, the same closing case passed unchanged in a separate1/1 rerun. No failure exclusion or threshold was relaxed. The91 unique checks passed across initial runs and the separate two-case orientation and one-case closing reruns, not one uninterrupted clean run.",
+    "functionalCaptures": 180,
+    "webkitSupportChecks": 4,
+    "http": {
+      "requests": 294,
+      "routes": 22,
+      "assets": 80,
+      "mismatches": 0
+    },
+    "coldHardware": "Exact candidate acceptance is retained in the candidate receipt, with initial GPU stall and input contamination qualifications. No new production headful timing run was performed."
+  },
+  "sourceIntegration": {
+    "procedure": "Commit release receipt and baseline; complete latest-head advisory review and six CI checks; merge PR86 with [skip netlify] in title, pushed head and merge message. Verify main contains the reviewed head and current serving deployment remains this artifact.",
+    "evidence": "PR86 merge commit, current-head pinned advisory review and six required CI checks are authoritative; this receipt is not a self-referential final source-head assertion.",
+    "automaticPublishing": "Unmarked future main pushes still automatically build/publish. No hosting setting or lock was changed."
+  },
+  "observation": {
+    "window": "At least 5 minutes and through production desktop/mobile guest suites plus WebKit support checks",
+    "signals": [
+      "published deploy identity and complete provider inventory",
+      "all protected SHA-1 and size rows",
+      "live public and application alias HTTP hashes",
+      "desktop/mobile interaction and request-failure assertions"
+    ],
+    "stopConditions": [
+      "any artifact or protected byte mismatch",
+      "unexpected serving deployment",
+      "critical navigation/demo failure or failed-origin requests"
+    ],
+    "recovery": "Prepare and verify a forward artifact restoring prior public HTML and retained assets with the then-current protected application. Prior original HTML verified again before promotion. No application/data/rules rollback.",
+    "previousArtifact": "/Users/dylankeller/Developer/PoseTek-Worktrees/public-site-revamp/artifacts/marketing-production/accepted-dist",
+    "acceptedArtifact": "/Users/dylankeller/Developer/PoseTek-Worktrees/showcase-depth/artifacts/showcase-production/accepted-dist",
+    "recoveryExecuted": false
+  },
+  "scope": "Public Players/Coaches presentation only. No backend, authentication, public API, persisted data, Functions, rules, indexes, gateway, catalog, notifications or native changes.",
+  "limitations": [
+    "Viewport and touch sizes are desktop emulation, not physical-phone acceptance.",
+    "WebKit is headless support evidence, not timing or physical-device acceptance.",
+    "Controlled visibility tests inject document lifecycle properties/events.",
+    "No authenticated journey, user-data write or account creation was performed; protected compiled bytes and public routing are verified.",
+    "Saved original candidate timing failures and corrective test runs remain disclosed; no universal zero-stutter claim."
+  ],
+  "evidence": [
+    {
+      "path": "artifacts/showcase-production/promotion.json",
+      "bytes": 1805,
+      "sha256": "bb33372363bcd7265f5bafca1fe5c2299c695bd9248b45a4a0ad091f44f32a67"
+    },
+    {
+      "path": "artifacts/showcase-production/production-verification.json",
+      "bytes": 6976,
+      "sha256": "076e6ea3cb81f1b3d55cb2dbb455e0576181d6033786824934794c78cc271779"
+    },
+    {
+      "path": "artifacts/showcase-production/http-verification.json",
+      "bytes": 62953,
+      "sha256": "41797697e732eb2646247cc93719db677e8c414981b9184e01817c58bcbb88de"
+    },
+    {
+      "path": "artifacts/showcase-production/showcase/showcase-acceptance.json",
+      "bytes": 67296,
+      "sha256": "96a021ed029080efc28dd754c50dc77c51e06b6619bb522c7b9c15e82b16852d"
+    },
+    {
+      "path": "artifacts/showcase-production/revamp/acceptance.json",
+      "bytes": 15645,
+      "sha256": "8897e378e00fde6539a32330cbfb8d0f52d173f54c8dce40f6a8d6bd0ff649cb"
+    },
+    {
+      "path": "artifacts/showcase-production/revamp-orientation-rerun/acceptance.json",
+      "bytes": 1283,
+      "sha256": "daa385a0a6d6e782bfc21ccddb3cd677392b66c866e3ed184ab41645972e1e77"
+    },
+    {
+      "path": "artifacts/showcase-production/detail/detail-acceptance.json",
+      "bytes": 148192,
+      "sha256": "64f5e4fd12c17f79cb74d6b55c6cacd89000eb8763d0eb6e5c85c85104960068"
+    },
+    {
+      "path": "artifacts/showcase-production/detail-closing-rerun/detail-acceptance.json",
+      "bytes": 13870,
+      "sha256": "98b6956d947f4ba360c742fb48dde0f420d538279a0db58fc59e0ed4549f218e"
+    },
+    {
+      "path": "artifacts/showcase-production/webkit/cold-acceptance.json",
+      "bytes": 5035,
+      "sha256": "30a222868e0238a735512d756d6622ef4539870105c1b81d039db207f2702c75"
+    },
+    {
+      "path": "artifacts/showcase-production/orientation-diagnostic/summary.json",
+      "bytes": 6580,
+      "sha256": "4ab38c34a75a24e5ee8d936afe9688765d9673a1d2f6d3d4107f507745095eeb"
+    },
+    {
+      "path": "artifacts/showcase-production/browser-summary.json",
+      "bytes": 10629,
+      "sha256": "d69beca9518b9ea55adab2fdb4f496bc911651f56625f22469722ab9d1651b4b"
+    },
+    {
+      "path": "artifacts/showcase-production/club-caption-diagnostic.json",
+      "bytes": 1068,
+      "sha256": "2be2efe3171aba0d6ccdf02dcaf24b386b3b7ecc16e4daf739481043414eb791"
+    },
+    {
+      "path": "artifacts/showcase-production/visual-review.md",
+      "bytes": 7840,
+      "sha256": "8f00cac19537e6ecefb7f0904dc738d7f3b354378f0cfc912097a53deee50dab"
+    },
+    {
+      "path": "deployment/homepage-baseline.json",
+      "bytes": 296772,
+      "sha256": "f0fdb3daf1f44f391dafe3eb8df672cc19e25db512f8fbfae7c51b0f17082838"
+    },
+    {
+      "path": "artifacts/showcase-production/reconciled-build-verification.json",
+      "bytes": 369,
+      "sha256": "43e47ca59dba8f86f6205f5e9a119c82428fa5557395d3cfa90b9539245aea78"
+    },
+    {
+      "path": "artifacts/showcase-production/preservation-tests.log",
+      "bytes": 10978,
+      "sha256": "52741bb34143f3fba2023c8e38486f1934f7c5c31faa11a658a0b594896e9b82"
+    }
+  ]
+}

@@ -5,7 +5,7 @@
 The recorded pose data below remains the source of truth. The current viewer
 fits Meta's continuous MHR LOD3 anatomical surface, with the versioned athletic
 male display profile, around those unchanged landmarks. See
-[`MHR_PROVENANCE.md`](./MHR_PROVENANCE.md) for the pinned source, Apache license,
+[`MHR_PROVENANCE.md`](MHR_PROVENANCE.md) for the pinned source, Apache license,
 preparation script, fitting method and limitations. This is an illustrative
 template fit, not SAM inference, an athlete likeness or a calibrated body scan.
 

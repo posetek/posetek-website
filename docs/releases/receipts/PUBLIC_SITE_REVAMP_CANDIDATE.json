@@ -1,0 +1,349 @@
+{
+  "status": "hosted acceptance candidate; not promoted",
+  "date": "2026-10-18",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/85",
+  "baseCommit": "23e2ebed988e1677f6028ea6d7b5589273291ea1",
+  "sourceNote": "Subsequent commits contain acceptance-harness and documentation changes only. Latest-head CI and advisory review are pinned on PR85. The guarded runtime was not rebuilt after acceptance.",
+  "buildCommand": "node scripts/build-production.mjs",
+  "runtimeSourceCommit": "9fa587ac341c993023ee0174b7bfe1e96a44d247",
+  "artifact": {
+    "directory": "production-dist",
+    "files": 2003,
+    "manifestSha256": "205deec1f4de5920ba09a1c8a40ea67d0787808ec7b4ba4535280cec56c90662",
+    "manifestMethod": "SHA-256 of path, TAB, size, TAB, file SHA-256, LF for every file sorted by JavaScript path.localeCompare; full manifest in artifacts/marketing-polish/artifact-manifest.json."
+  },
+  "hosted": {
+    "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+    "deployId": "6ad536a9103351c79863f77f",
+    "url": "https://6ad536a9103351c79863f77f--posetek.netlify.app",
+    "context": "deploy-preview",
+    "state": "ready",
+    "publishedAt": null,
+    "providerRecords": 2004,
+    "fileHashMismatches": 0,
+    "caseCollisions": 0,
+    "inventoryComparison": "Netlify provider normalizes inventory paths to lowercase; exact SHA-1 and size compared for every uniquely normalized path.",
+    "redirectRules": 7,
+    "headerRules": 10,
+    "functionsDeployed": 0,
+    "edgeFunctionsDeployed": 0
+  },
+  "preservation": {
+    "servingDeployId": "6ad02adfcc90dffdb496f811",
+    "protectedFiles": 1985,
+    "protectedHashMismatches": 0,
+    "productionUnchangedAt": "2026-10-18T21:30:08.380Z",
+    "applicationHtmlSha1": "b23f8e221c6cbd6d5f558836ff89c02d3a85ac2c",
+    "baselineNote": "Reconciled to the already-serving October 15 main deploy; all 1,982 earlier records exact, three retained application chunks added. No application promotion.",
+    "sourceContentAssets": {
+      "files": 27,
+      "bytes": 3934045,
+      "hashMismatches": 0
+    }
+  },
+  "acceptance": {
+    "local": {
+      "passed": 82,
+      "failed": 0,
+      "screenshots": 113,
+      "unexpectedOriginFailures": 0,
+      "attemptedWrites": 0,
+      "suites": {
+        "regression": {
+          "passed": 33,
+          "failed": 0,
+          "screenshots": 43,
+          "unexpectedOriginFailures": 0,
+          "attemptedWrites": 0,
+          "report": "local-regression-release/acceptance.json"
+        },
+        "detail": {
+          "passed": 23,
+          "failed": 0,
+          "screenshots": 30,
+          "unexpectedOriginFailures": 0,
+          "attemptedWrites": 0,
+          "report": "local-detail-release/detail-acceptance.json"
+        },
+        "composition": {
+          "passed": 26,
+          "failed": 0,
+          "screenshots": 40,
+          "unexpectedOriginFailures": 0,
+          "attemptedWrites": 0,
+          "report": "local-composition-release/composition-acceptance.json"
+        }
+      }
+    },
+    "hosted": {
+      "passed": 82,
+      "failed": 0,
+      "screenshots": 113,
+      "unexpectedOriginFailures": 0,
+      "attemptedWrites": 0,
+      "suites": {
+        "regression": {
+          "passed": 33,
+          "failed": 0,
+          "screenshots": 43,
+          "unexpectedOriginFailures": 0,
+          "attemptedWrites": 0,
+          "report": "hosted-regression-release/acceptance.json"
+        },
+        "detail": {
+          "passed": 23,
+          "failed": 0,
+          "screenshots": 30,
+          "unexpectedOriginFailures": 0,
+          "attemptedWrites": 0,
+          "report": "hosted-detail-release/detail-acceptance.json"
+        },
+        "composition": {
+          "passed": 26,
+          "failed": 0,
+          "screenshots": 40,
+          "unexpectedOriginFailures": 0,
+          "attemptedWrites": 0,
+          "report": "hosted-composition-release/composition-acceptance.json"
+        }
+      }
+    },
+    "cold": {
+      "local": {
+        "passed": 29,
+        "failed": 0,
+        "screenshots": 9,
+        "unexpectedOriginFailures": 0,
+        "attemptedWrites": 0,
+        "report": "local-cold-release/cold-acceptance.json",
+        "mode": "headful hardware acceptance",
+        "browser": "153.0.8010.12",
+        "desktop": {
+          "samples": 40,
+          "median": 0.29999998211860657,
+          "maximum": 33.70000001788139
+        },
+        "touch": {
+          "samples": 40,
+          "median": 7.799999982118607,
+          "maximum": 20.900000005960464
+        },
+        "inputMaximumMs": 33.70000001788139,
+        "feedbackMaximumMs": 131,
+        "mainCommitMaximumMs": 16.392,
+        "traces": 28,
+        "limits": [
+          "390px touch is desktop emulation, not physical iOS or Android.",
+          "Fresh browser HTTP caches and workers; OS/driver shader caches are not cleared.",
+          "In-page event/RAF observers add measurement overhead; traces independently include compositor work.",
+          "The optional 4x CPU lane throttles renderer CPU scheduling; it does not emulate a phone GPU, memory, network or operating system.",
+          "Native background-tab/window minimization did not change document.visibilityState in this host even with focus emulation disabled; visibility lifecycle coverage explicitly injects visibility properties and events, not an actual hidden tab."
+        ]
+      },
+      "hosted": {
+        "passed": 29,
+        "failed": 0,
+        "screenshots": 9,
+        "unexpectedOriginFailures": 0,
+        "attemptedWrites": 0,
+        "report": "hosted-cold-verified/cold-acceptance.json",
+        "mode": "headful hardware acceptance",
+        "browser": "153.0.8010.12",
+        "desktop": {
+          "samples": 40,
+          "median": 0.19999998807907104,
+          "maximum": 2.699999988079071
+        },
+        "touch": {
+          "samples": 40,
+          "median": 7.4000000059604645,
+          "maximum": 16.5
+        },
+        "inputMaximumMs": 22.80000001192093,
+        "feedbackMaximumMs": 147.80000001192093,
+        "mainCommitMaximumMs": 0.941,
+        "traces": 28,
+        "limits": [
+          "390px touch is desktop emulation, not physical iOS or Android.",
+          "Fresh browser HTTP caches and workers; OS/driver shader caches are not cleared.",
+          "In-page event/RAF observers add measurement overhead; traces independently include compositor work.",
+          "The optional 4x CPU lane throttles renderer CPU scheduling; it does not emulate a phone GPU, memory, network or operating system.",
+          "Native background-tab/window minimization did not change document.visibilityState in this host even with focus emulation disabled; visibility lifecycle coverage explicitly injects visibility properties and events, not an actual hidden tab."
+        ]
+      },
+      "localWebKit": {
+        "passed": 4,
+        "failed": 0,
+        "screenshots": 4,
+        "unexpectedOriginFailures": 0,
+        "attemptedWrites": 0,
+        "report": "local-webkit-release/cold-acceptance.json"
+      },
+      "hostedWebKit": {
+        "passed": 4,
+        "failed": 0,
+        "screenshots": 4,
+        "unexpectedOriginFailures": 0,
+        "attemptedWrites": 0,
+        "report": "hosted-webkit-release/cold-acceptance.json"
+      },
+      "budgetsMs": {
+        "inputMaximum": 100,
+        "inputMedian": 50,
+        "visibleFeedback": 200,
+        "overlappingMainTask": 100
+      }
+    },
+    "widths": [
+      360,
+      390,
+      430,
+      768,
+      1440,
+      1920
+    ],
+    "additionalLandscapeWidth": 730,
+    "zoom": "200% desktop CSS-viewport equivalent; not browser-chrome or physical-device zoom",
+    "network": "Guest contexts; allowlisted origin GET/HEAD and optional Google font GET only; all other HTTP and WebSockets blocked.",
+    "runtimeCi": "https://github.com/posetek/posetek_website/actions/runs/39166901251",
+    "frontendTests": 2023,
+    "frontendTestFiles": 178,
+    "toolingReleaseTests": 78,
+    "pythonPolicyTests": 32,
+    "guestSmokeCases": 7,
+    "otherChecks": [
+      "TypeScript/Astro",
+      "Svelte zero errors and warnings",
+      "marketing build",
+      "lint with 229 warnings and zero errors",
+      "static Firestore transport across 116 compiled HTML/JS files",
+      "production dependency audit with existing time-limited exception"
+    ],
+    "limits": [
+      "Desktop Chromium hardware traces and desktop WebKit/touch viewports do not establish physical iOS/Android acceptance.",
+      "Hidden-page lifecycle checks use controlled visibility property/event injection; native backgrounding was unavailable on this automation host.",
+      "Fresh browser HTTP caches and workers do not clear OS/driver shader caches; no field-performance or phone GPU/network claim.",
+      "REA supports declared keyboard/click scenarios, not hover actions. Earlier reference shipped-source hover analysis is retained separately; a fresh direct script fetch returned 403 and no new digest is claimed.",
+      "Screenshots are visual samples, not timing measurements. Reference cookie overlay obscures some lower-right content.",
+      "Latest-head local Codex advisory review is same-provider with a separate reviewing agent; no paid hosted reviewer is activated.",
+      "44px checks cover visible HTML controls; optional technique SVG joints retain same-handler 44px measurement alternatives."
+    ],
+    "retainedFailures": [
+      {
+        "report": "local-detail/detail-acceptance.json",
+        "passed": 22,
+        "failed": 1,
+        "diagnosis": "Warm sample missed intermediate curtain frames during a concurrent run; initial SVG also incorrectly satisfied settled fallback readiness. Warm gate now requires actual worker presentation or explicit failure; cold lane has no readiness gate."
+      },
+      {
+        "report": "hosted-detail/detail-acceptance.json",
+        "passed": 22,
+        "failed": 1,
+        "diagnosis": "Warm phone footer capture used a stale position after preceding lazy content resolved. Progress .8894 matched actual 318.5px position. Final warm setup traverses preceding chapters; strict opacity and bounds remain."
+      },
+      {
+        "report": "local-cold/cold-acceptance.json",
+        "passed": 26,
+        "failed": 3,
+        "diagnosis": "Runtime 55987c6 captured matrix transforms interpolated discretely to singular scaleY(0), producing 201.9\u2013213.7ms curtain feedback. Runtime 9fa587a captures scaleY(d), preserving continuous interpolation. Timing budgets unchanged."
+      },
+      {
+        "report": "discrete-exit-reproducer/detail-acceptance.json",
+        "passed": 3,
+        "failed": 2,
+        "diagnosis": "New intermediate-shrink assertions reproduced the old frozen artifact defect on desktop and touch. Final artifact passes both."
+      },
+      {
+        "report": "hosted-cold-release/cold-acceptance.json",
+        "passed": 28,
+        "failed": 1,
+        "diagnosis": "Inert footer worker was correctly paused offscreen after about 9.44 eligible seconds, before its 10-second timeout. Final fault-specific harness records geometry, recenters only a wholly offscreen mark, keeps one 18-second deadline and requires startup-timeout. No forced renderer state; separate offscreen checks retained."
+      }
+    ]
+  },
+  "performance": {
+    "assetDelta": {
+      "priorManifest": "994864c12e139439bd8ead527c29e43a671c9448a546c4a91d0fc52244a87e20",
+      "candidateManifest": "205deec1f4de5920ba09a1c8a40ea67d0787808ec7b4ba4535280cec56c90662",
+      "priorBytes": 159384764,
+      "candidateBytes": 159389329,
+      "deltaBytes": 4565,
+      "deltaByExtension": {
+        ".css": 1181,
+        ".html": 2737,
+        ".js": 647
+      }
+    },
+    "sourceContentAssets": {
+      "files": 27,
+      "bytes": 3934045,
+      "hashMismatches": 0
+    },
+    "derivedBrandGeometry": {
+      "path": "app/src/pages/home/marketing-renderer/brand-shape.json",
+      "bytes": 1510,
+      "sha256": "fe3033511835c9b461b789064ef80b49ef7a7feef1544ceb0d9c9ec9afa00eab",
+      "source": "app/astro/public/brand/posetek-p.svg",
+      "sourceSha256": "22e673f3d95187fd9c19f919ce767e95002a8815fd5df5d062d8054a027911d6",
+      "commandCount": 22,
+      "approvedContourExact": true
+    },
+    "note": "Current comparison is uncompressed artifact size only. Earlier three-iteration loading measurements remain tied to runtime 9f7787a and are not relabeled as measurements of this revision.",
+    "historicalLoadingReceipt": "https://github.com/posetek/posetek_website/blob/60bb08bd0466aea93dd5e014637b2b9a24fadfe9/deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json"
+  },
+  "previousCandidate": {
+    "runtimeSourceCommit": "9f7787af19ad383de0f64effdb9e5e2c45e7962f",
+    "deployId": "6ad528ef95dcde1f17049c13",
+    "manifestSha256": "994864c12e139439bd8ead527c29e43a671c9448a546c4a91d0fc52244a87e20",
+    "receiptCommit": "60bb08bd0466aea93dd5e014637b2b9a24fadfe9"
+  },
+  "supersededPolishCandidate": {
+    "runtimeSourceCommit": "55987c6404c8d18ebb99a47aa38c9955cc4932cd",
+    "deployId": "6ad533272cd1fe8c060ba6ce",
+    "manifestSha256": "57655ca8777cdb838a7bf5b63d7adf679b1239126e649e7faef5907ac7925659",
+    "reason": "Discrete interrupted curtain exit exposed by strict cold acceptance; replaced before promotion."
+  },
+  "rollback": {
+    "previousDeployId": "6ad02adfcc90dffdb496f811",
+    "verifiedOriginalMarketingHtml": [
+      {
+        "path": "/index.html",
+        "sha": "9e6e486665e3fdd1257c23fe8a69cf8e72e619e4",
+        "size": 37689,
+        "exact": true,
+        "recovery": "Original uploaded bytes from Netlify raw file API, verified against current immutable inventory."
+      },
+      {
+        "path": "/coaches/index.html",
+        "sha": "829a6277b98f9f62b39908d1a3a39c230ae0efe1",
+        "size": 26209,
+        "exact": true,
+        "recovery": "Original uploaded bytes from Netlify raw file API, verified against current immutable inventory."
+      }
+    ],
+    "strategy": "Prepare a forward artifact restoring prior public HTML/assets while retaining the then-current protected application; verify inventory and hosted behavior before publication."
+  },
+  "release": {
+    "mainAutomaticallyPublishes": true,
+    "sourceCommitsSkipNetlify": true,
+    "remaining": [
+      "Human visual acceptance of the exact immutable candidate and a separate production-release instruction.",
+      "Follow the repository workflow to promote this exact artifact; do not substitute a rebuilt output.",
+      "Verify production inventory/smoke and reconcile the protected baseline only after approved promotion."
+    ]
+  },
+  "evidence": {
+    "directory": "artifacts/marketing-polish",
+    "manifest": "artifact-manifest.json",
+    "providerVerification": "draft-verification.json",
+    "acceptance": "acceptance-summary.json",
+    "assetDelta": "asset-delta.json",
+    "referenceBundle": "rea-comparison-final.json",
+    "referenceLedger": "docs/releases/PUBLIC_SITE_INTERACTION_POLISH.md",
+    "visualReview": "visual-review.md",
+    "latestHeadReview": "final-review.json",
+    "runtimeCi": "runtime-corrected-checks.json",
+    "runtimeCiLog": "runtime-corrected-ci.log",
+    "rollback": "artifacts/marketing-revamp/rollback/verification.json"
+  }
+}
