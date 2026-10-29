@@ -3,10 +3,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const identity = require('../firebase-identity.js');
+const identity = require('../legacy/firebase-identity.js');
 
 const root = path.resolve(__dirname, '..');
-const source = name => fs.readFileSync(path.join(root, name), 'utf8');
+const source = name => fs.readFileSync(path.join(root, 'legacy', name), 'utf8');
 const doc = (id, data, exists = true) => ({ id, exists, data: () => data });
 
 function database({ direct, rows = [], deniedField, deniedDirect = false } = {}) {

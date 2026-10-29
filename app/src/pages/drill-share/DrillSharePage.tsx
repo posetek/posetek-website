@@ -226,7 +226,7 @@ function DrillShareApp({ drill }: { drill: PageDrillKey }) {
   async function copyAthleteLink() {
     if (!player) return;
     if (preview) {
-      // Minted links keep the documented legacy .html shape (ATHLETE_RESULTS_LINKS.md);
+      // Minted links keep the documented legacy .html shape (docs/features/ATHLETE_RESULTS_LINKS.md);
       // the SPA serves those paths via its alias routes.
       const previewUrl = new URL(`/${config.page}`, window.location.origin);
       previewUrl.search = "?preview=1";

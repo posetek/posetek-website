@@ -8,6 +8,7 @@ import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const legacyDir = join(repoRoot, "legacy");
 const dist = join(repoRoot, "dist");
 
 // Pages now served by the React app (see app/src/App.tsx). Keep in sync.
@@ -24,7 +25,7 @@ const PORTED = new Set([
   "404.html",
 ]);
 
-// Root-level files never meant to be served.
+// Files in legacy/ never meant to be served.
 const SKIP = new Set([
   "firebase.json",
   "firestore.indexes.json",
@@ -36,9 +37,9 @@ const SKIP = new Set([
 mkdirSync(dist, { recursive: true });
 
 let copied = 0;
-for (const name of readdirSync(repoRoot)) {
+for (const name of readdirSync(legacyDir)) {
   if (PORTED.has(name) || SKIP.has(name)) continue;
-  const path = join(repoRoot, name);
+  const path = join(legacyDir, name);
   if (!statSync(path).isFile()) continue;
   if (!/\.(html|js|css|json|txt|xml|ico|svg|png|webmanifest)$/i.test(name)) continue;
   copyFileSync(path, join(dist, name));

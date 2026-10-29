@@ -129,6 +129,8 @@ releases. Follow the web handoff
 for preparation, preview, verification and baseline reconciliation; keep local
 snapshots and generated output outside Git.
 
+Not-yet-ported legacy pages and their scripts live in `legacy/` (see its README); served URLs are unchanged.
+
 Homepage work primarily belongs in `app/src/pages/home/`; Coaches source is in
 `app/src/pages/coaches/`. Astro document entries live in `app/astro/pages/` with
 shared metadata in `app/astro/layouts/Document.astro`. Root `index.html` and

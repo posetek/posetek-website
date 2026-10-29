@@ -2325,7 +2325,7 @@ Initial preparation verification (before the scrolling update):
 5. `docs/features/PLAYER_EXPERIENCE.md`: current player surfaces, ownership, mobile parity,
    and acceptance requirements.
 6. `app/PORTING.md`: routing, scoped CSS, shared Firebase/identity conventions.
-7. `ATHLETE_RESULTS_LINKS.md`, `functions/CLUB_CONTRACT.md`: share and organization
+7. `docs/features/ATHLETE_RESULTS_LINKS.md`, `functions/CLUB_CONTRACT.md`: share and organization
    contracts when a requested change actually touches those features.
 8. `docs/planner/`, `app/PLANNER_PERSONALIZATION_PLAN.md`, and `deployments/`:
    feature plans and historical integration/validation receipts.
@@ -2338,7 +2338,7 @@ Initial preparation verification (before the scrolling update):
 Earlier September 9 integration notes describe a unified build with no homepage
 bridge; the later homepage release notes and current build script supersede
 those build instructions. Old static-site agent descriptions, `images/README.md`,
-and parts of `STATIC_JUMP_UPDATES.md` are historical. Previous release test claims
+and parts of `docs/features/STATIC_JUMP_UPDATES.md` are historical. Previous release test claims
 are historical evidence, not a substitute for checking the next changed version.
 
 ## Website, UI, and 3D capabilities on this computer
