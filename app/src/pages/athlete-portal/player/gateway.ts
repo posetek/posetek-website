@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { auth, db } from '../../../lib/firebase';
 import type { Row } from './execution';
-import { aiSharingError, assertAISharingEnabled } from './ai-sharing';
+import { aiSharingError, assertAIChatEnabled } from './ai-sharing';
 
 export type Frame = { event: string; data: Row };
 export function parseFrame(frame: string): Frame | null {
@@ -14,45 +14,75 @@ export function parseFrame(frame: string): Frame | null {
   return { event, data: JSON.parse(lines.join('\n')) };
 }
 
-// Both chat surfaces share the transport and require a terminal done event.
+// Shared wire transport for the player workspace and the staff athlete portal.
 // Drafts, memory and handoffs stay tentative until the whole turn completes.
 export async function streamCoach(body: Row, signal: AbortSignal, onFrame: (frame: Frame) => void): Promise<void> {
+  signal.throwIfAborted();
   const user = auth.currentUser;
   if (!user) throw new Error('Sign in to speak with your coach.');
-  assertAISharingEnabled(user.uid);
+  let requestId: string = crypto.randomUUID();
+  const current = () => {
+    signal.throwIfAborted();
+    if (auth.currentUser?.uid !== user.uid) throw new Error('Your account changed. Sign in again before sending.');
+  };
+  const failure = (payload: Row, fallback: string, httpStatus?: number) => {
+    if (typeof payload.requestId === 'string' && payload.requestId) requestId = payload.requestId;
+    return Object.assign(aiSharingError(payload.code, payload.message || fallback), {
+      requestId, ...(typeof payload.incidentId === 'string' ? { incidentId: payload.incidentId } : {}),
+      ...(httpStatus === undefined ? {} : { httpStatus }),
+    });
+  };
+  assertAIChatEnabled(user.uid, body);
   const idToken = await user.getIdToken();
-  if (auth.currentUser?.uid !== user.uid) throw new Error('Your account changed. Sign in again before sending.');
-  assertAISharingEnabled(user.uid);
+  current();
+  assertAIChatEnabled(user.uid, body);
   const response = await fetch('https://us-central1-kickai-69dd0.cloudfunctions.net/aiCoachStreamProxy', {
     method: 'POST', signal,
-    headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-    body: JSON.stringify({ schemaVersion: 1, clientVersion: '1.1+4', ...body }),
+    headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json', Accept: 'text/event-stream',
+      'X-PoseTek-Request-Id': requestId, 'X-PoseTek-Client': 'web/athlete-portal' },
+    body: JSON.stringify({ schemaVersion: 1, clientVersion: '1.1+4', ...body, requestId }),
   });
+  try { current(); }
+  catch (error) { await response.body?.cancel().catch(() => {}); throw error; }
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw aiSharingError(error.error?.code || error.code, error.error?.message || error.message || `Coach unavailable (${response.status}).`);
+    current();
+    throw failure(error?.error && typeof error.error === 'object' ? { ...error, ...error.error } : error || {},
+      `Coach unavailable (${response.status}).`, response.status);
   }
-  if (!response.body) throw new Error('No reply received. Try again.');
+  if (!response.body) throw failure({}, 'No reply received. Try again.');
   const reader = response.body.getReader(), decoder = new TextDecoder();
   let buffer = '', completed = false;
+  const cancel = () => { void reader.cancel().catch(() => {}); };
+  signal.addEventListener('abort', cancel, { once: true });
   const apply = (text: string) => {
-    const frame = parseFrame(text); if (!frame) return;
-    if (frame.event === 'error') throw aiSharingError(frame.data.code, frame.data.message || 'The coach could not finish.');
     if (completed) return;
-    if (frame.event === 'done') completed = true;
+    current();
+    const frame = parseFrame(text); if (!frame) return;
+    if (typeof frame.data?.requestId === 'string' && frame.data.requestId) requestId = frame.data.requestId;
+    if (frame.event === 'error') throw failure(frame.data, 'The coach could not finish.');
+    if (frame.event === 'done') {
+      if (frame.data?.finishReason === 'error') throw failure(frame.data, 'The coach could not finish.');
+      completed = true;
+    }
     onFrame(frame);
   };
   try {
     while (true) {
+      current();
       const { done, value } = await reader.read();
+      current();
       buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
       const frames = buffer.split(/\r?\n\r?\n/); buffer = frames.pop() || '';
-      frames.forEach(apply);
+      for (const frame of frames) { apply(frame); if (completed) break; }
       if (done || completed) break;
     }
     if (!completed && buffer.trim()) apply(buffer);
-    if (!completed) throw new Error('The connection ended before the reply was saved. Reopen history or try again.');
-  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+    if (!completed) throw failure({}, 'The connection ended before the reply was saved. Reopen history or try again.');
+  } finally {
+    signal.removeEventListener('abort', cancel);
+    await reader.cancel().catch(() => {}); reader.releaseLock();
+  }
 }
 
 export function capabilityEnabled(config: Row | null, name: string): boolean {

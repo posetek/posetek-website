@@ -1,5 +1,12 @@
 # PoseTek website project context
 
+## Shared AI chat transport source candidate
+
+The player workspace and staff athlete portal now share the existing SSE
+transport, with request correlation and consistent terminal/error handling.
+Their feature payloads and interfaces remain distinct. This is not a release;
+see [the source handoff](docs/AI_CLIENT_TRANSPORT.md) for scope and validation.
+
 ## Current web AI-sharing recovery release — October 24, 2026
 
 Exact reviewed deployment `6adc6d7bf370755a2aabc65b` is live. Players can review

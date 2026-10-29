@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const harness = vi.hoisted(() => ({
   states: [] as any[], refs: [] as { current: any }[], stateIndex: 0, refIndex: 0,
-  get: vi.fn(), stream: vi.fn(),
+  get: vi.fn(), stream: vi.fn(), config: { coachWorkspaceEnabled: false },
 }));
 vi.mock('react', async original => ({
   ...await original<typeof import('react')>(),
@@ -21,7 +21,7 @@ vi.mock('react', async original => ({
 vi.mock('../../../lib/firebase', () => {
   const chain: any = { get: harness.get };
   for (const method of ['collection', 'doc', 'orderBy']) chain[method] = () => chain;
-  return { auth: { currentUser: { uid: 'owned-player' } }, db: chain };
+  return { auth: { currentUser: { uid: 'owned-player', getIdToken: async () => 'synthetic-token' } }, db: chain };
 });
 vi.mock('../lib/mobile', () => ({ dateText: () => '' }));
 vi.mock('../views/shared', () => ({ MultilineText: () => null }));
@@ -31,7 +31,7 @@ vi.mock('./AISharingControl', () => ({ default: function AISharingControl({ onAl
 } }));
 vi.mock('./coach-prompts', () => ({ coachPrompts: () => [], coachToolStatus: () => '' }));
 vi.mock('./gateway', () => ({
-  useCoachConfig: () => ({ coachWorkspaceEnabled: false }), capabilityEnabled: () => true,
+  useCoachConfig: () => harness.config, capabilityEnabled: () => true,
   validHandoff: () => false, streamCoach: harness.stream,
 }));
 import CoachChat from './CoachChat';
@@ -42,9 +42,9 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 const snapshot = (content: string) => ({ docs: [{ id: 'saved-message', data: () => ({ role: 'assistant', content }) }] });
-function render() {
+function render(overrides: Record<string, unknown> = {}) {
   harness.stateIndex = 0; harness.refIndex = 0;
-  return CoachChat({ playerId: 'synthetic-player', preview: false, initialText: 'Yes, build it.' });
+  return CoachChat({ playerId: 'synthetic-player', preview: false, initialText: 'Yes, build it.', ...overrides });
 }
 function text(node: any): string {
   if (Array.isArray(node)) return node.map(text).join('');
@@ -70,9 +70,10 @@ function history() {
 }
 
 describe('Coach chat history and AI sharing recovery', () => {
+  afterEach(() => vi.unstubAllGlobals());
   beforeEach(() => {
     harness.states.length = 0; harness.refs.length = 0; harness.get.mockReset(); harness.stream.mockReset();
-    harness.get.mockResolvedValue({ docs: [] }); harness.stream.mockResolvedValue(undefined);
+    harness.get.mockResolvedValue({ docs: [] }); harness.stream.mockResolvedValue(undefined); harness.config = { coachWorkspaceEnabled: false };
   });
 
   it('blocks the same-event send until history loads, then sends to the selected conversation', async () => {
@@ -152,4 +153,42 @@ describe('Coach chat history and AI sharing recovery', () => {
     expect(text(render())).toContain('The coach is temporarily unavailable.');
     expect(harness.stream).toHaveBeenCalledTimes(1);
   });
+
+  it('sends valid memory commands through the real transport without chat or workout context', async () => {
+    harness.config = { coachWorkspaceEnabled: true };
+    const props = { personalStore: { enabled: true }, context: { unrelated: 'conversation-context' } };
+    const { streamCoach } = await vi.importActual<typeof import('./gateway')>('./gateway');
+    harness.stream.mockImplementation(streamCoach);
+    const fetch = vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(init.body as string);
+      // Mirror chat ingress / coach_chat validation instead of accepting an invalid envelope.
+      if (typeof body.message !== 'string' || !body.message.trim() || body.message.length > 2000) {
+        return new Response(JSON.stringify({ code: 'invalid_request', message: 'message must contain 1..2000 characters' }), { status: 400 });
+      }
+      return new Response('event: memory\ndata: ' + JSON.stringify({ workspace: { revision: 3, enabled: true },
+        memories: [{ memoryId: 'm', status: 'active', text: 'Preference', category: 'preference' }] }) + '\n\nevent: done\ndata: {}\n\n');
+    });
+    vi.stubGlobal('fetch', fetch);
+    button(render(props), 'Coach memory').props.onClick();
+    await vi.waitFor(() => expect(render(props).props['aria-busy']).toBe(false));
+    expect(harness.stream.mock.calls[0][0]).toEqual({ capability: 'pose_chat', playerId: 'synthetic-player', message: 'Update coach memory',
+      context: { coachWorkspaceVersion: 1, memoryAction: { kind: 'list' } } });
+    button(render(props), 'Forget').props.onClick();
+    await vi.waitFor(() => expect(harness.stream).toHaveBeenCalledTimes(2));
+    expect(harness.stream.mock.calls[1][0]).toEqual({ capability: 'pose_chat', playerId: 'synthetic-player', message: 'Update coach memory',
+      context: { coachWorkspaceVersion: 1, memoryAction: { kind: 'forget', memoryId: 'm', expectedRevision: 3 } } });
+    await vi.waitFor(() => expect(render(props).props['aria-busy']).toBe(false));
+    expect(fetch).toHaveBeenCalledTimes(2);
+    for (let i = 0; i < 2; i++) {
+      const outgoing = JSON.parse(fetch.mock.calls[i][1].body as string);
+      expect(outgoing).toEqual({ ...harness.stream.mock.calls[i][0], schemaVersion: 1,
+        clientVersion: '1.1+4', requestId: expect.any(String) });
+      expect(outgoing.message).toBe('Update coach memory');
+      expect(outgoing).not.toHaveProperty('conversationId');
+    }
+    expect(harness.get).not.toHaveBeenCalled();
+    expect(text(render(props))).not.toContain('Update coach memory');
+    expect(text(render(props))).not.toContain('message must contain');
+  });
+
 });
