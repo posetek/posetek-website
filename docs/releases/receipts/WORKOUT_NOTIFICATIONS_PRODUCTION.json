@@ -6,9 +6,9 @@
   "branch": "codex/workout-email-alerts",
   "pullRequest": "https://github.com/posetek/posetek_website/pull/11",
   "checkpoints": {
-    "preview": "deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json",
-    "providerSetup": "deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json",
-    "providerVerified": "deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json",
+    "preview": "docs/releases/receipts/WORKOUT_NOTIFICATIONS_PREVIEW.json",
+    "providerSetup": "docs/releases/receipts/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json",
+    "providerVerified": "docs/releases/receipts/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json",
     "historicalReceiptsPreserved": true
   },
   "frontend": {
@@ -84,7 +84,7 @@
     "allActiveVersion1": true,
     "scopedSourceConfigurationAndIamVerified": true,
     "unrelatedFunctionsPreserved": true,
-    "receipt": "deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json",
+    "receipt": "docs/releases/receipts/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json",
     "scheduler": {
       "enabled": true,
       "schedule": "every 5 minutes"
@@ -101,7 +101,7 @@
     "openTracking": false,
     "clickTracking": false,
     "realSignedWebhookReconciliation": true,
-    "configurationReceipt": "deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json",
+    "configurationReceipt": "docs/releases/receipts/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json",
     "subdomainDmarc": {
       "name": "_dmarc.alerts.posetek.net",
       "value": "v=DMARC1; p=none;",

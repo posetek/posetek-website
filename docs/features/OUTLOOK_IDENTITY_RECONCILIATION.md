@@ -1,6 +1,6 @@
 # Outlook item identity and retained issue evidence
 
-The latest [verification checkpoint](../../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+The latest [verification checkpoint](../releases/receipts/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
 confirms cloud-only operation and removal of the former Codex updater. All five
 Power Automate flows were observed enabled, and the six tracker functions passed
 exact version-six source, configuration and IAM checks. The identity settings

@@ -49,7 +49,7 @@
     "reducedMotion": "Reviewed MotionConfig, shared BlurFade useReducedMotion behavior, media-query scroll handling, and animation/transition overrides in source",
     "limitations": "Physical iOS/Safari, OS reduced-motion browser emulation, and authenticated application workflows were not exercised; no enquiry email was sent"
   },
-  "designDecisions": "deployment/COACHES_PAGE_UPDATE.md",
+  "designDecisions": "docs/releases/receipts/COACHES_PAGE_UPDATE.md",
   "mediaProvenance": "app/src/pages/home/product/media/provenance.json",
   "rollback": {
     "deployId": "6aab2fc35884120dc73147f5",

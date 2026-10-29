@@ -6,7 +6,7 @@ the production receipt records deployment and live acceptance separately.
 Published as website deployment `6ab788d1c138322f8f9b9911` on September 26 at
 2:55:16 AM PDT, with gateway `agent-gateway-sha-dac82d119dc7`, canonical rules and
 catalog version `1.0.92`. Read the
-[production receipt](../../deployment/CONFIRMED_TRAINING_ACCESS_PRODUCTION.json).
+[production receipt](receipts/CONFIRMED_TRAINING_ACCESS_PRODUCTION.json).
 The exact artifact, primary-host routes, authenticated browser flow and ordinary
 preservation guard passed. Browser/API checks verified an unchanged saved
 prescription, one reported set and 39 active seconds across Community navigation

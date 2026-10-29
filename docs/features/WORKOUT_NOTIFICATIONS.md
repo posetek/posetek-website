@@ -12,10 +12,10 @@ claimed sends and delivery evidence remain intact.
 
 Use [the Microsoft delivery guide](../../deployments/microsoft-email/README.md),
 [current coverage handoff](../releases/NOTIFICATION_COVERAGE_CORRECTION.md) and
-[correction receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+[correction receipt](../releases/receipts/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
 for the latest operational checks. The
-[migration receipt](../../deployment/MICROSOFT_EMAIL_PRODUCTION.json) and
-[recipient/contact refinement receipt](../../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
+[migration receipt](../releases/receipts/MICROSOFT_EMAIL_PRODUCTION.json) and
+[recipient/contact refinement receipt](../releases/receipts/NOTIFICATION_REFINEMENT_PRODUCTION.json)
 retain their earlier dated acceptance. The current application release is
 `6ac06e0d420f2b6b34129fb5`; the September 28 release below is historical.
 
@@ -69,10 +69,10 @@ bounded observations, not evidence of real-athlete delivery or exhaustive
 historical coverage. Missing settings still disable collection and sending by
 design.
 
-Read the [production activation receipt](../../deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json).
-The [provider verification checkpoint](../../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json),
-[preview receipt](../../deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json), and
-[earlier provider setup receipt](../../deployment/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json)
+Read the [production activation receipt](../releases/receipts/WORKOUT_NOTIFICATIONS_PRODUCTION.json).
+The [provider verification checkpoint](../releases/receipts/WORKOUT_NOTIFICATIONS_PROVIDER_VERIFIED.json),
+[preview receipt](../releases/receipts/WORKOUT_NOTIFICATIONS_PREVIEW.json), and
+[earlier provider setup receipt](../releases/receipts/WORKOUT_NOTIFICATIONS_PROVIDER_SETUP.json)
 remain unchanged historical records; their pending DNS/access states are not the
 current setup instructions.
 
@@ -307,9 +307,9 @@ remained a single section after selection, Refresh, Back and Forward; the histor
 component now has a distinct sibling key from AI incidents. Initial transient
 account-access connection errors did not recur on this final preview. No
 auth-domain/security settings were changed. The
-[preview/intake receipt](../../deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json) for
+[preview/intake receipt](../releases/receipts/WORKOUT_NOTIFICATIONS_PREVIEW.json) for
 the earlier prepared state remains historical; the
-[production receipt](../../deployment/WORKOUT_NOTIFICATIONS_PRODUCTION.json) records
+[production receipt](../releases/receipts/WORKOUT_NOTIFICATIONS_PRODUCTION.json) records
 completed live acceptance and activation.
 
 At that rollout provider verification and the seven scoped deployments passed; the

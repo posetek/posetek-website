@@ -9,7 +9,7 @@ All 1,825 artifact files match 1,826 provider records; 1,809 predecessor provide
 
 Owned active accounts/documents, current and noncurrent storage objects and notification outboxes are absent after delayed independent cleanup; verification credentials were removed. Deleted run-owned synthetic JSON generations remain recoverable under the unchanged seven-day bucket soft-delete policy until automatic expiry; zero active/current/noncurrent objects is verified, not physical erasure of retained soft-deleted generations.
 
-Marketing, isolated feedback, stable P icons, real athlete evidence, active plans, coach assignments and private drafts/conversations are preserved. Rules, indexes, gateway, catalog and native were not deployed. The eighty held drills and their device/content acceptance hold, default-disabled gateway-first native voice, diagnostics, historical replay and other native release gates remain unchanged. Read [the coach handoff](COACH_RELEASE_READINESS.md), [menu handoff](ADMIN_SECTION_MENU.md), [production evidence](../../deployment/COACH_RELEASE_ALIGNMENT_PRODUCTION.json) and [PR #38](https://github.com/posetek/posetek_website/pull/38). The earlier admin hierarchy release and candidate receipts below remain historical checkpoints.
+Marketing, isolated feedback, stable P icons, real athlete evidence, active plans, coach assignments and private drafts/conversations are preserved. Rules, indexes, gateway, catalog and native were not deployed. The eighty held drills and their device/content acceptance hold, default-disabled gateway-first native voice, diagnostics, historical replay and other native release gates remain unchanged. Read [the coach handoff](COACH_RELEASE_READINESS.md), [menu handoff](ADMIN_SECTION_MENU.md), [production evidence](receipts/COACH_RELEASE_ALIGNMENT_PRODUCTION.json) and [PR #38](https://github.com/posetek/posetek_website/pull/38). The earlier admin hierarchy release and candidate receipts below remain historical checkpoints.
 <!-- coach-release-alignment-current:end -->
 
 
@@ -90,7 +90,7 @@ qualified result; the connecting line does not supply measurements for those
 weeks or demonstrate individual improvement.
 
 See [the coach Overview release handoff](COACH_OVERVIEW_RELEASE.md) for provenance,
-release boundaries and verification, and [the verified publication receipt](../../deployment/COACH_OVERVIEW_PRODUCTION.json).
+release boundaries and verification, and [the verified publication receipt](receipts/COACH_OVERVIEW_PRODUCTION.json).
 The roster-first Overview below records the original October 3 review.
 
 ## Purpose and expected outcome
@@ -238,7 +238,7 @@ Expected engineering handoff outputs are a prioritized issue list, a traceable d
 | Reporting and qualification | `functions/insights-v2.js`, `insights-v2-projection.js`, `insights-v2-qualification.js`, `effective-rep.js`, `processing-evidence.js`, `insights-axis-scoring.js` |
 | Scope and comparison contracts | `docs/insights/V2_CONTRACT.md`, `docs/insights/COACH_WORKSPACE_CONTRACT.md` |
 | Coach implementation | `docs/features/UNIFIED_COACH_WORKSPACE.md`, `docs/features/COACH_WORKFLOW.md` for plan/history semantics |
-| Current release and feedback | `deployment/APP_FEEDBACK_PRODUCTION.json`, `deployment/homepage-baseline.json`, `docs/features/APP_FEEDBACK.md` |
+| Current release and feedback | `docs/releases/receipts/APP_FEEDBACK_PRODUCTION.json`, `deployment/homepage-baseline.json`, `docs/features/APP_FEEDBACK.md` |
 
 Read `AGENTS.md`, `POSETEK_PROJECT_CONTEXT.md` and `README.md` first. Older coach navigation and release receipts are historical where superseded by current contracts. `AdminHome.tsx` is not the current admin entry.
 

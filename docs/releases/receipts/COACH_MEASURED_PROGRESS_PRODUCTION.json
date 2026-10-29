@@ -477,7 +477,7 @@
     "previousWebsiteDeploymentId": "6acfa10dafea94f1a0142d54",
     "backendSourceConfigurationIamBackupsCaptured": true,
     "scopedPublisher": "deployments/expanded-insights/README.md",
-    "websitePublisher": "deployments/account-recovery/web-release.cjs",
+    "websitePublisher": "ops/account-recovery/web-release.cjs",
     "instruction": "Use canonical guarded publishers and captured exact-version evidence. The immediate predecessor included held policy copy and is not an approved recovery target. Inspect current production and preserve the approved privacy/support source before any recovery mutation.",
     "lastApprovedPreFeatureDeploymentId": "6ace0ad29778ccacfb979dda"
   },

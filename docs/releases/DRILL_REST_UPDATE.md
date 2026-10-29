@@ -5,7 +5,7 @@ independently verified at 12:03:08 PM PDT. It contains 208 records: **74
 website-library published**, including **71 with approved primary demonstrations**,
 and 134 drafts. Three published records retain absent legacy status; these counts
 do not establish executable prescriptions or athlete eligibility. See
-[the production receipt](../../deployment/DRILL_REST_UPDATE_20261012.json).
+[the production receipt](receipts/DRILL_REST_UPDATE_20261012.json).
 
 ## Confirmed changes
 

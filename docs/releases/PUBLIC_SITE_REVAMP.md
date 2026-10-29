@@ -8,7 +8,7 @@ a review candidate, not a production-release receipt.
 The [first-interaction and pacing follow-up](PUBLIC_SITE_FIRST_INTERACTION.md)
 supersedes the independent columns and main-thread 3D described in this checkpoint.
 The verified candidate section below remains historical. Current immutable
-acceptance is recorded in [the candidate receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json);
+acceptance is recorded in [the candidate receipt](receipts/PUBLIC_SITE_REVAMP_CANDIDATE.json);
 this checkpoint does not verify the current source.
 
 ## Design and preserved behavior
@@ -131,7 +131,7 @@ The exact guarded [Players preview](https://6ad4222d16fa2fd9dbccae9f--posetek.ne
 and [Coaches preview](https://6ad4222d16fa2fd9dbccae9f--posetek.netlify.app/coaches)
 are ready for visual acceptance. [PR #85](https://github.com/posetek/posetek_website/pull/85)
 contains the source; its checks and advisory review identify the latest reviewed head.
-The [candidate receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json) identifies
+The [candidate receipt](receipts/PUBLIC_SITE_REVAMP_CANDIDATE.json) identifies
 runtime commit `8751f0528247db4d7606c4c52036ce83c7d58e09`, deploy
 `6ad4222d16fa2fd9dbccae9f`, and manifest SHA-256
 `8b37c6317bd7b1c3838af1387395523b3d9d5cf6b2c2f9c3baeb2cb89ca38b05`.

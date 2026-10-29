@@ -21,10 +21,10 @@ or roster disclosure. The earlier rules and production-drift limits still apply.
 
 Historical comparison presentation release: `6abb9f1e6c2c84772de67005`, source `684528b`,
 published September 29, 2026 at 4:25:34 AM PDT. See the
-[comparison polish receipt](../../deployment/COACH_COMPARISON_POLISH_PRODUCTION.json).
+[comparison polish receipt](../releases/receipts/COACH_COMPARISON_POLISH_PRODUCTION.json).
 The workspace foundation shipped as `6abb9834af8b9c320f64df04`, source `3e41c2a`,
 with nine scoped Insights functions. See the
-[production receipt](../../deployment/UNIFIED_COACH_WORKSPACE_PRODUCTION.json) for
+[production receipt](../releases/receipts/UNIFIED_COACH_WORKSPACE_PRODUCTION.json) for
 exact source, artifact, acceptance, cleanup and recovery records.
 
 ## Coach Overview follow-up (October 5, 2026)
@@ -57,7 +57,7 @@ segments add no measurements, and different players may set successive weekly
 bests.
 
 See [the coach Overview release handoff](../releases/COACH_OVERVIEW_RELEASE.md) for source
-provenance, validation and recovery, and [the verified publication receipt](../../deployment/COACH_OVERVIEW_PRODUCTION.json).
+provenance, validation and recovery, and [the verified publication receipt](../releases/receipts/COACH_OVERVIEW_PRODUCTION.json).
 The September 29 receipts
 above remain historical evidence of the workspace foundation and comparison
 presentation.

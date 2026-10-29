@@ -22,4 +22,4 @@ repository root.
 
 - [Player architecture and mobile parity](../docs/features/PLAYER_EXPERIENCE.md)
 - [Porting and routing conventions](PORTING.md)
-- [Latest homepage release receipt](../deployment/ANNOTATION_UPDATE_PRODUCTION.json)
+- [Latest homepage release receipt](../docs/releases/receipts/ANNOTATION_UPDATE_PRODUCTION.json)

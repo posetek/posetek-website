@@ -1,7 +1,7 @@
 # Coach release readiness
 
 Current coach presentation is governed by [Coach follow-up](COACH_FOLLOW_UP.md)
-and [its production receipt](../../deployment/COACH_FOLLOW_UP_PRODUCTION.json).
+and [its production receipt](receipts/COACH_FOLLOW_UP_PRODUCTION.json).
 D1 standing and profile-login follow-up below are historical presentation
 checkpoints. Their qualification, ownership and access boundaries remain in
 force; current coach follow-up uses saved completions and measured test changes.
@@ -15,7 +15,7 @@ All 1,825 artifact files match 1,826 provider records; 1,809 predecessor provide
 
 Owned active accounts/documents, current and noncurrent storage objects and notification outboxes are absent after delayed independent cleanup; verification credentials were removed. Deleted run-owned synthetic JSON generations remain recoverable under the unchanged seven-day bucket soft-delete policy until automatic expiry; zero active/current/noncurrent objects is verified, not physical erasure of retained soft-deleted generations.
 
-Marketing, isolated feedback, stable P icons, real athlete evidence, active plans, coach assignments and private drafts/conversations are preserved. Rules, indexes, gateway, catalog and native were not deployed. The eighty held drills and their device/content acceptance hold, default-disabled gateway-first native voice, diagnostics, historical replay and other native release gates remain unchanged. Read [the coach handoff](COACH_RELEASE_READINESS.md), [menu handoff](ADMIN_SECTION_MENU.md), [production evidence](../../deployment/COACH_RELEASE_ALIGNMENT_PRODUCTION.json) and [PR #38](https://github.com/posetek/posetek_website/pull/38). The earlier admin hierarchy release and candidate receipts below remain historical checkpoints.
+Marketing, isolated feedback, stable P icons, real athlete evidence, active plans, coach assignments and private drafts/conversations are preserved. Rules, indexes, gateway, catalog and native were not deployed. The eighty held drills and their device/content acceptance hold, default-disabled gateway-first native voice, diagnostics, historical replay and other native release gates remain unchanged. Read [the coach handoff](COACH_RELEASE_READINESS.md), [menu handoff](ADMIN_SECTION_MENU.md), [production evidence](receipts/COACH_RELEASE_ALIGNMENT_PRODUCTION.json) and [PR #38](https://github.com/posetek/posetek_website/pull/38). The earlier admin hierarchy release and candidate receipts below remain historical checkpoints.
 <!-- coach-release-alignment-current:end -->
 
 
@@ -23,7 +23,7 @@ Marketing, isolated feedback, stable P icons, real athlete evidence, active plan
 
 The current production website remains `6ac5ac30bb13dae95443c2b4`, the verified
 admin hierarchy release. Read [its handoff](ADMIN_HIERARCHY_REPORTING.md) and
-[production receipt](../../deployment/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json).
+[production receipt](receipts/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json).
 The integrated coach follow-up and current alignment work are source candidates;
 this document does not claim a new website or backend deployment.
 
@@ -31,7 +31,7 @@ The exact reviewed candidate is
 [`6ac689898fa88638f4bfc99f`](https://6ac689898fa88638f4bfc99f--posetek.netlify.app/insights),
 runtime source `9a9124abaf4f3faa61bbae695b83123d076aec93`, in
 [PR #38](https://github.com/posetek/posetek_website/pull/38). Read
-[the candidate evidence](../../deployment/COACH_RELEASE_READINESS_CANDIDATE.json).
+[the candidate evidence](receipts/COACH_RELEASE_READINESS_CANDIDATE.json).
 Its complete 1,825-file artifact matches 1,826 provider records; 1,809 unrelated
 predecessor provider records remain exact. Only the application document and
 generated provider metadata change among predecessor records, with fifteen

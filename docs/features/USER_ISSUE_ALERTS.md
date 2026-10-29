@@ -1,6 +1,6 @@
 # User issue alerts
 
-October 5 current issue-send update: [new-only delivery handoff](../releases/CURRENT_ISSUE_ALERT_DELIVERY.md) and [verified source/activation receipt](../../deployment/CURRENT_ISSUE_ALERT_DELIVERY_20261005.json). New issue sending is enabled with a send-only cutoff; historical queues stay untouched. The dated acceptance and holds below remain historical records.
+October 5 current issue-send update: [new-only delivery handoff](../releases/CURRENT_ISSUE_ALERT_DELIVERY.md) and [verified source/activation receipt](../releases/receipts/CURRENT_ISSUE_ALERT_DELIVERY_20261005.json). New issue sending is enabled with a send-only cutoff; historical queues stay untouched. The dated acceptance and holds below remain historical records.
 
 See [the current production validation handoff](../releases/NOTIFICATION_PRODUCTION_VALIDATION.md)
 for the preserved revision-266 hold, verified source releases for all 31 approved
@@ -20,7 +20,7 @@ Guarded identity activation completed at **15:28:02.319 UTC**. Native publicatio
 capture and recovery holds are restored. Final006 was refused at
 **17:15:41.837 UTC**, with no apply, intent or send. Sending and genuine Dylan-only
 delivery remain unaccepted; overall acceptance is false. See the
-[partial validation receipt](../../deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json).
+[partial validation receipt](../releases/receipts/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json).
 This automation branch does not establish the latest
 primary-site or native application release.
 
@@ -31,8 +31,8 @@ existing Power Automate connection. Both PoseTek Cloud Monitoring policies also
 target Dylan only. The prior three-recipient expansion and Resend deliveries are
 historical evidence; their original envelopes and partial outcomes stay intact.
 See [the current coverage correction](../releases/NOTIFICATION_COVERAGE_CORRECTION.md) and
-[its receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
-The [October 2 refinement receipt](../../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
+[its receipt](../releases/receipts/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
+The [October 2 refinement receipt](../releases/receipts/NOTIFICATION_REFINEMENT_PRODUCTION.json)
 and [outreach handoff](../releases/NOTIFICATION_OUTREACH_REFINEMENT.md) retain their dated
 contact, delivery and recovery evidence.
 
@@ -243,7 +243,7 @@ Disable intake and sending to stop the feature, or only sending to retain intake
 Never replay delivered jobs or blindly reset uncertain provider attempts.
 
 See [the scoped release guide](../../deployments/user-issues/README.md). The
-[original production receipt](../../deployment/USER_ISSUE_ALERTS_PRODUCTION.json)
+[original production receipt](../releases/receipts/USER_ISSUE_ALERTS_PRODUCTION.json)
 retains initial deployment/activation evidence; the
-[coverage correction receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+[coverage correction receipt](../releases/receipts/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
 records the later scoped releases and remaining gates.

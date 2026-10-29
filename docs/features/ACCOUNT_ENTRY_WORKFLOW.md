@@ -11,7 +11,7 @@ evidence that the new activation flow has been published.
 ## Historical September 26 account-entry release
 
 Updated September 26, 2026. Deployment and cleanup evidence are recorded in the
-[production receipt](../../deployment/CONFIRMED_TRAINING_ACCESS_PRODUCTION.json).
+[production receipt](../releases/receipts/CONFIRMED_TRAINING_ACCESS_PRODUCTION.json).
 
 ## Entry paths
 

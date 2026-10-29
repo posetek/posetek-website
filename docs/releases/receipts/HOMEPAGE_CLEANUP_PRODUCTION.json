@@ -52,7 +52,7 @@
     "ArUco markers exist only for Sprint, Dribbling and Shooting",
     "Professional technique overlays use saved Backswing and Contact phases with uniform scale and plant-foot anchoring; no invented follow-through reference"
   ],
-  "decisions": "deployment/HOMEPAGE_CLEANUP_2026-09-16.md",
+  "decisions": "docs/releases/receipts/HOMEPAGE_CLEANUP_2026-09-16.md",
   "rollback": {
     "deployId": "6aaa57d3fe77d22f67611c42",
     "url": "https://6aaa57d3fe77d22f67611c42--posetek.netlify.app"

@@ -102,7 +102,7 @@ The deployed archive, protected configuration and IAM were verified; all 142
 unrelated functions, rules release inventory and gateway remain unchanged.
 No rules, indexes, gateway, catalog or native release is included.
 
-Read [website evidence](../../deployment/PARENT_PLAYER_PRODUCTION.json) and
-[backend evidence](../../deployment/PARENT_PLAYER_BACKEND_PRODUCTION.json).
+Read [website evidence](receipts/PARENT_PLAYER_PRODUCTION.json) and
+[backend evidence](receipts/PARENT_PLAYER_BACKEND_PRODUCTION.json).
 Separately authorized athlete planning and account-claim evidence stays in private
 operator records. It is not embedded in this public receipt.

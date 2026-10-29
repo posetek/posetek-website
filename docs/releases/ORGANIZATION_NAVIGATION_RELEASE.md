@@ -4,7 +4,7 @@ Website `6ac6c5c6cebb1cb580004fae`, runtime source `0a7fe6d`, was published
 October 7, 2026 at 3:28:24 PM PDT. It includes Kai's
 [PR #39](https://github.com/posetek/posetek_website/pull/39), integrated with the
 preceding coach/admin release. Read the
-[production evidence](../../deployment/ORGANIZATION_NAVIGATION_PRODUCTION.json).
+[production evidence](receipts/ORGANIZATION_NAVIGATION_PRODUCTION.json).
 
 After manager sign-in, Organization, Insights, Planner and Community retain the
 organization header. Overview opens reporting; Coaching hub contains People &

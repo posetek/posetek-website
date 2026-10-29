@@ -2,7 +2,7 @@
 
 Live September 17, 2026 at 4:05:05 AM PDT, deployment
 `6aabc66e9bcc60cc5c2ee12c`. The
-[production receipt](../../deployment/EXPANDED_INSIGHTS_PRODUCTION.json) records
+[production receipt](../releases/receipts/EXPANDED_INSIGHTS_PRODUCTION.json) records
 the verified artifact, backend versions, live reconciliation and recovery state.
 
 The `/insights` application route expands Taiyo's dashboard into Overview,

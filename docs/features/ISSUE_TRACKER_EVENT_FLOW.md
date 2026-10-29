@@ -9,10 +9,10 @@ not establish the latest primary-site release. Storage activation is distinct
 from native publication.
 
 Current contract: **event-driven shared master; Dylan-only notifications**. The
-[preceding verification checkpoint](../../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+[preceding verification checkpoint](../releases/receipts/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
 records the earlier version-six tracker source and unfinished settings and
 publication gates. The [coverage correction](../releases/NOTIFICATION_COVERAGE_CORRECTION.md)
-and [its production receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+and [its production receipt](../releases/receipts/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
 retain the preceding release and source cutoffs. All six tracker source endpoints
 at version 7, all twelve reviewed Insights endpoints, ten user-issue endpoints and
 three Microsoft-email endpoints have passed exact deployed-source, configuration
@@ -61,7 +61,7 @@ New reporting account/target, severity escalation and recurrence after
 Fixed/Verified can justify an immediate change notice; recovery requires saved
 fix/retest evidence. Policy activation/readback passed, but issue sending is still
 held and genuine post-cutover Dylan-only delivery remains unverified. The
-[partial validation receipt](../../deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json)
+[partial validation receipt](../releases/receipts/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json)
 records that distinction. Historical Resend jobs, consumed claims, original
 envelopes and partial outcomes are retained without replay.
 
@@ -120,7 +120,7 @@ queue resumed **RUNNING**, verified at 23:36 UTC with unchanged configuration.
 This verifies catch-up through those checkpoints; later arrivals and the independent
 outstanding-delivery scan have separate completeness requirements. Read
 [the refinement handoff](../releases/NOTIFICATION_OUTREACH_REFINEMENT.md) and
-[the refinement receipt](../../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
+[the refinement receipt](../releases/receipts/NOTIFICATION_REFINEMENT_PRODUCTION.json)
 for current operational evidence and separate source/publication coverage.
 
 ## Historical initial activation and acceptance (October 2, 2026)
@@ -214,7 +214,7 @@ At the fixed `10:52:46.722Z` audit, 490 tickets were still pending. Outlook capt
 reached `10:46:03.715Z` and publication `10:21:03.004Z`; backend capture reached
 `10:46:03.664Z` while publication remained the imported `04:56:51.854Z` baseline.
 These are October 2 UTC checkpoints, not full catch-up. See
-[the production receipt](../../deployment/ISSUE_TRACKER_EVENT_PRODUCTION.json).
+[the production receipt](../releases/receipts/ISSUE_TRACKER_EVENT_PRODUCTION.json).
 
 The old A4 label was corrected once to identify cloud event updates and the
 static imported baseline. A guarded native script changed only Actions!A4;

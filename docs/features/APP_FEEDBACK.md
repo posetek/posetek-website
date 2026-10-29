@@ -1,9 +1,9 @@
 # Optional PoseTek app feedback
 
 Use this handoff for behavior and recovery, [the scoped release guide](../../deployments/app-feedback/README.md)
-for backend delivery, and [the attribution release receipt](../../deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json)
+for backend delivery, and [the attribution release receipt](../releases/receipts/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json)
 for publication and acceptance of the prospective account-attribution change.
-The [original anonymous release receipt](../../deployment/APP_FEEDBACK_PRODUCTION.json)
+The [original anonymous release receipt](../releases/receipts/APP_FEEDBACK_PRODUCTION.json)
 is historical evidence: `6ac17bc21377cbeaea114800` was published October 3, 2026
 at 3:12:14 PM PDT (`2026-10-03T22:12:14.725Z`). Its anonymity promises still apply
 to responses collected through that earlier form.
@@ -207,7 +207,7 @@ Use `netlify deploy --no-build --dir production-dist --site b1ccf990-286c-4367-b
 to prepare a draft for review. Release `6ac17bc21377cbeaea114800` promoted its
 exact reviewed candidate without rebuilding after final integrity checks passed.
 Follow that same draft-review workflow and record the actual result in
-[the attribution release receipt](../../deployment/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json).
+[the attribution release receipt](../releases/receipts/APP_FEEDBACK_ATTRIBUTION_PRODUCTION.json).
 Retain approved Players/Coaches bytes and all protected application/public files.
 Do not use a default site link or publish unrelated rules/functions. The release
 receipt records the actual candidate, production, hashes and verified limits.

@@ -5,7 +5,7 @@ training priorities, time allocations, eligible library exercises and progress
 checks. It covers the existing admin personalized planner and schema-3 mobile
 generation. The September 17 release is live; immutable deployment identifiers,
 validation and rollback are recorded in the
-[production receipt](../../deployment/EVIDENCE_PLANNER_PRODUCTION.json).
+[production receipt](../releases/receipts/EVIDENCE_PLANNER_PRODUCTION.json).
 
 ## Evidence and exercise selection
 
@@ -125,7 +125,7 @@ requires its documented Mac/iPhone validation.
 
 The backend-only follow-up was verified September 17 at 6:13 PM PDT
 (`2026-09-18T01:13:01.386Z`). Its immutable identifiers, checks and rollback are
-recorded in [the intent release receipt](../../deployment/PLANNER_INTENT_PRODUCTION.json).
+recorded in [the intent release receipt](../releases/receipts/PLANNER_INTENT_PRODUCTION.json).
 The prior methodology release receipt remains a historical record of that rollout.
 
 Session intent now lists every actual domain-minute total in descending order,

@@ -71,7 +71,7 @@
     "pngAndProjectionBytes": 99801,
     "source": "Same fitted anatomical mesh and recorded landmarks with depth-buffered CPU rendering; no Three.js geometry dependency in the initial fallback runtime"
   },
-  "designReferences": "deployment/VIEWER_DESIGN_REFERENCE.md",
+  "designReferences": "docs/releases/receipts/VIEWER_DESIGN_REFERENCE.md",
   "higgsfield": "User confirmed the installation prompt, but setup remained incomplete and the plugin was unavailable; no Higgsfield output used",
   "rollback": {
     "deployId": "6aaa4f0b04a11116d8495374",

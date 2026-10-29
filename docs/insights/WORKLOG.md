@@ -2,7 +2,7 @@
 
 The prototype below was integrated and released on September 17, 2026.
 See [INTEGRATION.md](INTEGRATION.md) and
-[the production receipt](../../deployment/TEAM_INSIGHTS_PRODUCTION.json)
+[the production receipt](../releases/receipts/TEAM_INSIGHTS_PRODUCTION.json)
 for the current access, reporting, navigation, deployment and recovery contract.
 The original worklog is retained below as historical evidence.
 
@@ -36,7 +36,7 @@ who is recording, how often, and whether each player's key drill metric is impro
 - [x] `app/src/pages/insights/` page, pure helpers + vitest
 - [x] `/insights` route in `App.tsx`
 - [x] verification: node tests, app lint/test/build
-- [ ] deploy the callable (not done; needs `deployments/club-organization/functions-release.py`)
+- [ ] deploy the callable (not done; needs `ops/club-organization/functions-release.py`)
 - [ ] try it against real club data (not done)
 
 Not in scope: deploy, rules changes, mobile changes, feature/screen tracking.

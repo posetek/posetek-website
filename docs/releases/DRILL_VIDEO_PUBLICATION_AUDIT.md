@@ -6,7 +6,7 @@ demos. See [the current handoff](DRILL_REST_UPDATE.md). The following records th
 October 11 metadata audit and publication; it did not verify playback.
 
 Verified October 11, 2026 against the live Firebase catalog and Storage objects.
-See [the production receipt](../../deployment/DRILL_VIDEO_PUBLICATION_20261011.json).
+See [the production receipt](receipts/DRILL_VIDEO_PUBLICATION_20261011.json).
 
 The website drill library now lists **75 published drills**, of **208 total
 catalog records**. **72 distinct drills have an approved uploaded primary

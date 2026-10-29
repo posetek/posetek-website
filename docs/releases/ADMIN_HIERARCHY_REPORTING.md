@@ -16,7 +16,7 @@ The later GitHub main commit `11cff549ec959487a9b3ff831976bc7be12af6a5` merged P
 Post-publication source reconciliation with PR #35/main `11cff54` passed 1,847 frontend tests in 157 files, 970 backend unit tests with three existing private-fixture skips, TypeScript and the ordinary 1,808-file preservation build. The teammate's coach/backend files remain byte-identical to that main commit. These source-integration checks do not publish the combined application/backend or clear the coach release requirements above. The production artifact's own 1,849 frontend checks and 43 candidate/43 production browser checks remain its acceptance evidence.
 <!-- admin-hierarchy-current:end -->
 
-Website `6ac5ac30bb13dae95443c2b4`, source `3f03565`, was published October 6, 2026 at 7:24:56 PM PDT from the exact reviewed candidate. This frontend follow-up starts from main `cf6674a` and predecessor website `6ac5a02e62dff64d89f511e0`. See [the confirmed receipt](../../deployment/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json) and [PR #36](https://github.com/posetek/posetek_website/pull/36).
+Website `6ac5ac30bb13dae95443c2b4`, source `3f03565`, was published October 6, 2026 at 7:24:56 PM PDT from the exact reviewed candidate. This frontend follow-up starts from main `cf6674a` and predecessor website `6ac5a02e62dff64d89f511e0`. See [the confirmed receipt](receipts/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json) and [PR #36](https://github.com/posetek/posetek_website/pull/36).
 
 ## Confirmed experience
 

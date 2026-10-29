@@ -50,7 +50,7 @@ the user's unspecified case. Case identities and raw records remain private.
 
 The exact candidate `6acbde38a912d2909dd0501a` was promoted to Posetek.net on
 October 11, 2026 at 12:15:40 PM PDT, with runtime source `a4e8da1e00cabb17b21ef60924d77e98f0038731`.
-[Production evidence](../../deployment/WORKOUT_REPORTING_CONSISTENCY_PRODUCTION.json)
+[Production evidence](receipts/WORKOUT_REPORTING_CONSISTENCY_PRODUCTION.json)
 records 17 candidate and 17 production checks, seven captures per environment,
 1,938 passing frontend tests, green hosted source CI, and the ordinary
 1,946-file preservation build. All 1,948 artifact files match

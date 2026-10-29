@@ -88,4 +88,4 @@ was signed out after verification. A supplemental 390px production screenshot
 uses `/feed?preview=1` sample data; it is not authenticated-account evidence.
 Cleanup completed and independent scoped readback found zero remaining synthetic
 accounts, documents or objects. See the
-[release receipt](../../deployment/CONVERSATIONAL_WORKOUTS_PRODUCTION.json).
+[release receipt](../releases/receipts/CONVERSATIONAL_WORKOUTS_PRODUCTION.json).

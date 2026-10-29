@@ -5,7 +5,7 @@ workspace, are live at [posetek.net](https://posetek.net). Source PRs
 [#97](https://github.com/posetek/posetek_website/pull/97),
 [#98](https://github.com/posetek/posetek_website/pull/98), and the acceptance companion
 [#99](https://github.com/posetek/posetek_website/pull/99) are merged into main.
-Read the [production receipt](../../deployment/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json)
+Read the [production receipt](receipts/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json)
 for exact hashes, source revisions, verification and recovery evidence.
 
 ## Published behavior

@@ -5,7 +5,7 @@ the actual deployed identities and completed acceptance; this document does not
 replace that receipt.
 
 The October 1 availability follow-up is recorded separately in
-[WORKOUT_AVAILABILITY_PRODUCTION.json](../../deployment/WORKOUT_AVAILABILITY_PRODUCTION.json).
+[WORKOUT_AVAILABILITY_PRODUCTION.json](../releases/receipts/WORKOUT_AVAILABILITY_PRODUCTION.json).
 Keep the initial guided-release receipt as a historical checkpoint.
 
 ## Player experience

@@ -15,7 +15,7 @@ Organization, Insights, Planner and Community, preserving current team scope.
 Planner selection changes update the header without resetting unsaved intake.
 Existing admin destinations and coach access are preserved. Read
 [the release handoff](ORGANIZATION_NAVIGATION_RELEASE.md) and
-[production evidence](../../deployment/ORGANIZATION_NAVIGATION_PRODUCTION.json).
+[production evidence](receipts/ORGANIZATION_NAVIGATION_PRODUCTION.json).
 
 <!-- coach-release-alignment-current:start -->
 ## Historical combined coach and admin-menu release
@@ -26,7 +26,7 @@ All 1,825 artifact files match 1,826 provider records; 1,809 predecessor provide
 
 Owned active accounts/documents, current and noncurrent storage objects and notification outboxes are absent after delayed independent cleanup; verification credentials were removed. Deleted run-owned synthetic JSON generations remain recoverable under the unchanged seven-day bucket soft-delete policy until automatic expiry; zero active/current/noncurrent objects is verified, not physical erasure of retained soft-deleted generations.
 
-Marketing, isolated feedback, stable P icons, real athlete evidence, active plans, coach assignments and private drafts/conversations are preserved. Rules, indexes, gateway, catalog and native were not deployed. The eighty held drills and their device/content acceptance hold, default-disabled gateway-first native voice, diagnostics, historical replay and other native release gates remain unchanged. Read [the coach handoff](COACH_RELEASE_READINESS.md), [menu handoff](ADMIN_SECTION_MENU.md), [production evidence](../../deployment/COACH_RELEASE_ALIGNMENT_PRODUCTION.json) and [PR #38](https://github.com/posetek/posetek_website/pull/38). The earlier admin hierarchy release and candidate receipts below remain historical checkpoints.
+Marketing, isolated feedback, stable P icons, real athlete evidence, active plans, coach assignments and private drafts/conversations are preserved. Rules, indexes, gateway, catalog and native were not deployed. The eighty held drills and their device/content acceptance hold, default-disabled gateway-first native voice, diagnostics, historical replay and other native release gates remain unchanged. Read [the coach handoff](COACH_RELEASE_READINESS.md), [menu handoff](ADMIN_SECTION_MENU.md), [production evidence](receipts/COACH_RELEASE_ALIGNMENT_PRODUCTION.json) and [PR #38](https://github.com/posetek/posetek_website/pull/38). The earlier admin hierarchy release and candidate receipts below remain historical checkpoints.
 <!-- coach-release-alignment-current:end -->
 
 

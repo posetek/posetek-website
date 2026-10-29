@@ -3,7 +3,7 @@
   "release": "Neutral workout time-allocation descriptions",
   "status": "backend-only-production-release-verified",
   "verifiedAt": "2026-09-18T01:13:01.386Z",
-  "previousReleaseReceipt": "deployment/EVIDENCE_PLANNER_PRODUCTION.json",
+  "previousReleaseReceipt": "docs/releases/receipts/EVIDENCE_PLANNER_PRODUCTION.json",
   "source": {
     "repository": "https://github.com/dk242/posetek_website",
     "branch": "codex/evidence-linked-planner",

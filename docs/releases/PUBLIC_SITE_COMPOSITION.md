@@ -84,7 +84,7 @@ The gallery introduces no automatic audience navigation or scrolling takeover.
 
 `scripts/marketing-composition.browser.mjs` checks composition and interaction
 boundaries in addition to the existing regression and detail harnesses. Use the
-current [candidate receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json) for
+current [candidate receipt](receipts/PUBLIC_SITE_REVAMP_CANDIDATE.json) for
 the exact source, guarded artifact, hosted acceptance and completed check counts.
 Historical pass counts do not establish acceptance of a newer runtime.
 

@@ -1,10 +1,10 @@
 # Admin directory and reporting
 
 <!-- admin-hierarchy-current:start -->
-The current [organization/team hierarchy and complete reporting workspace](ADMIN_HIERARCHY_REPORTING.md) is recorded in [its production receipt](../../deployment/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json). Organization selection now opens graphs and a team directory; people require a team, explicit All teams/Unassigned destination or supported review/lookup action. The experience below records the earlier release. Its metric, invitation and management contracts remain in force.
+The current [organization/team hierarchy and complete reporting workspace](ADMIN_HIERARCHY_REPORTING.md) is recorded in [its production receipt](receipts/ADMIN_HIERARCHY_REPORTING_PRODUCTION.json). Organization selection now opens graphs and a team directory; people require a team, explicit All teams/Unassigned destination or supported review/lookup action. The experience below records the earlier release. Its metric, invitation and management contracts remain in force.
 <!-- admin-hierarchy-current:end -->
 
-The preceding [metrics and roster workspace](ADMIN_WORKSPACE_METRICS.md) combines reporting and account management in People & organizations. Its [production receipt](../../deployment/ADMIN_WORKSPACE_METRICS_PRODUCTION.json) supersedes the separate Overview entry described in this historical introduction. Invitation and management contracts below remain in effect.
+The preceding [metrics and roster workspace](ADMIN_WORKSPACE_METRICS.md) combines reporting and account management in People & organizations. Its [production receipt](receipts/ADMIN_WORKSPACE_METRICS_PRODUCTION.json) supersedes the separate Overview entry described in this historical introduction. Invitation and management contracts below remain in effect.
 
 Historical introduction: this frontend pass addressed [Admin dashboard: fewer clicks, clear and concise #26](https://github.com/posetek/posetek_website/issues/26). At that release, Overview was the reporting home and **People & organizations** was the account-management home. Both had direct header destinations. Existing green surfaces, lime selections and readable tables are retained.
 
@@ -46,7 +46,7 @@ The deliberate Astro application release preserves freshly verified marketing an
 
 ## Confirmed publication
 
-Source `afb52a0` is published as `6ac5905069994ecfbad5e391` at [Posetek.net](https://posetek.net/admin/accounts), October 6, 2026 at 5:26:55 PM PDT. Read [the production receipt](../../deployment/ADMIN_DIRECTORY_PRODUCTION.json). Candidate and production each passed the same 23 real-auth checks using owned synthetic accounts, including staff access saves, invitation copying, planner preselection/return, read-only player preview and account-switch denial. No workout generation, training writes, activation emails or feedback submissions occurred. Local checks cover request counts, inactive panels, keyboard/history/focus behavior, legacy links, transfers and 360/390/430px/desktop layouts.
+Source `afb52a0` is published as `6ac5905069994ecfbad5e391` at [Posetek.net](https://posetek.net/admin/accounts), October 6, 2026 at 5:26:55 PM PDT. Read [the production receipt](receipts/ADMIN_DIRECTORY_PRODUCTION.json). Candidate and production each passed the same 23 real-auth checks using owned synthetic accounts, including staff access saves, invitation copying, planner preselection/return, read-only player preview and account-switch denial. No workout generation, training writes, activation emails or feedback submissions occurred. Local checks cover request counts, inactive panels, keyboard/history/focus behavior, legacy links, transfers and 360/390/430px/desktop layouts.
 
 All 1,743 reviewed artifact files match 1,744 provider records. The current baseline protects 1,741 files. The frontend suite passed 1,747 tests across 150 files; TypeScript, 54 release guards and 289 canonical admin/Insights rules assertions passed. Canonical rules were tested locally and were not published.
 

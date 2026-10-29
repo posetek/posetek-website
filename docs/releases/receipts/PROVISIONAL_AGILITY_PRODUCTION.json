@@ -151,7 +151,7 @@
   },
   "recovery": {
     "publicHandoff": "docs/releases/PROVISIONAL_AGILITY_RECOVERY.md",
-    "previousProductionReceipt": "deployment/PROVISIONAL_DRIBBLING_PRODUCTION.json",
+    "previousProductionReceipt": "docs/releases/receipts/PROVISIONAL_DRIBBLING_PRODUCTION.json",
     "privateReleaseEvidence": ".netlify/provisional-agility-release/",
     "privateRepairEvidence": ".netlify/vacaville-rep-investigation/",
     "preserveCanonicalResultsAndMediaServices": true,

@@ -2,7 +2,7 @@
 
 Published website: `6ac38fde67d690075984e58b`, source `7b1aa186`,
 October 5, 2026 at 4:55:11 AM PDT. See the
-[verified receipt](../../deployment/COACH_OVERVIEW_PRODUCTION.json).
+[verified receipt](receipts/COACH_OVERVIEW_PRODUCTION.json).
 
 Kai (`suzkai`) authored the dashboard changes on `Coach-Dashboard` in commits
 `0bad2029` and `7007871`. Dylan reviewed the synthetic preview and authorized
@@ -55,7 +55,7 @@ draft. Reconcile `deployment/homepage-baseline.json` only after production
 verification, then run the ordinary preservation build.
 
 The confirmed publication, source, validation counts and recovery deployment
-are recorded in `deployment/COACH_OVERVIEW_PRODUCTION.json`. Production contains
+are recorded in `docs/releases/receipts/COACH_OVERVIEW_PRODUCTION.json`. Production contains
 1,587 artifact files and 1,588 provider records; the reconciled baseline protects
 1,585 files and the ordinary TypeScript/Astro preservation build passed.
 Synthetic checks demonstrate UI behavior; they do not constitute a new audit

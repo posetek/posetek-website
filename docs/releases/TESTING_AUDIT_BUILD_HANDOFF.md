@@ -63,7 +63,7 @@ attempts without adequate evidence remain unavailable or require retesting.
 The final website is live as `6aac59bb9c49063e622aa65a`, published September 17,
 2026 at 2:22:42 PM PDT (`2026-09-17T21:22:42.725Z`), from application source
 [`053d322`](https://github.com/dk242/posetek_website/commit/053d322ba62e6ce3847a2171e4834ab1b75e78bb).
-The [production receipt](../../deployment/TESTING_AUDIT_PRODUCTION.json) records the
+The [production receipt](receipts/TESTING_AUDIT_PRODUCTION.json) records the
 verified Firebase scopes. All 445 local files match the 446-file published
 inventory; 413 application/public files are pinned by the baseline. Approved
 Players and Coaches pages and marketing assets are preserved byte-for-byte.
@@ -160,7 +160,7 @@ The later website release is `6aac666c61025a8e62e8c399`, published at
 `2026-09-17T22:22:58.156Z` (3:22:58 PM PDT), from source `e1c4101` on
 `codex/provisional-dribbling-recovery`. The release figures and verification
 above remain records of the earlier testing-audit checkpoint. The current
-[production receipt](../../deployment/PROVISIONAL_DRIBBLING_PRODUCTION.json) and
+[production receipt](receipts/PROVISIONAL_DRIBBLING_PRODUCTION.json) and
 [estimate handoff](PROVISIONAL_DRIBBLING_RECOVERY.md) record the follow-up.
 
 Two near-finish Dribbling clips support separately labeled conditional estimates
@@ -195,7 +195,7 @@ Taiyo's native candidate and outstanding Mac/iPhone/TestFlight work are unchange
 
 The current website is `6aac6cc0bfb1ddbe0a73e636`, published at
 `2026-09-17T22:47:35.951Z` (3:47:35 PM PDT), from source `64b1dca`.
-Read the [Agility production receipt](../../deployment/PROVISIONAL_AGILITY_PRODUCTION.json)
+Read the [Agility production receipt](receipts/PROVISIONAL_AGILITY_PRODUCTION.json)
 and [method and recovery handoff](PROVISIONAL_AGILITY_RECOVERY.md). Earlier
 release counts and receipts above remain historical checkpoints.
 

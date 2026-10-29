@@ -3,7 +3,7 @@
 This handoff describes the October 2–3 source contract and the checks required
 for each production acceptance claim. The website and scoped backend release
 results are recorded in [the coverage correction](NOTIFICATION_COVERAGE_CORRECTION.md)
-and [its receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
+and [its receipt](receipts/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
 A source test, successful Flow badge or
 empty error query does not establish that every user experience was captured.
 The existing shared tracker remains the master, and only Dylan receives alerts.
@@ -104,7 +104,7 @@ runtime, environment, limits and unrelated triggers. Deploy only reviewed
 endpoints, with a configuration readback. Client changes require the deliberate
 application-release workflow and a verified marketing snapshot; preserve the
 current marketing bytes, protected application guard and held training baseline.
-Use the [explicit Astro application-only procedure](../../deployment/ASTRO_APPLICATION_ONLY_RELEASE.md)
+Use the [explicit Astro application-only procedure](receipts/ASTRO_APPLICATION_ONLY_RELEASE.md)
 to preserve the two freshly verified marketing source documents.
 This document itself grants no deployment authorization.
 
@@ -152,7 +152,7 @@ candidate has not passed owning-Mac/iPhone/TestFlight acceptance.
 
 The October 2–3 console review confirms **Cloud Logging export On for that one
 registered iOS app**. The exact configuration evidence is retained in the
-[correction receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
+[correction receipt](receipts/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json).
 Firebase's documented setting is **Project settings → Integrations → Cloud Logging
 → Link/Manage**. Export is a project service configuration; neither its On state
 nor an empty bounded log query establishes genuine exported events. Preserve

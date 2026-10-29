@@ -3,7 +3,7 @@
 Status: published and byte-verified October 24, 2026 at 5:27:30 AM PDT. The exact
 reviewed candidate was promoted without rebuilding.
 
-[Production receipt](../../deployment/WEB_AI_SHARING_PRODUCTION.json) · [historical candidate receipt](../../deployment/WEB_AI_SHARING_CANDIDATE.json) · [merged source PR #102](https://github.com/posetek/posetek_website/pull/102).
+[Production receipt](receipts/WEB_AI_SHARING_PRODUCTION.json) · [historical candidate receipt](receipts/WEB_AI_SHARING_CANDIDATE.json) · [merged source PR #102](https://github.com/posetek/posetek_website/pull/102).
 
 All 2,292 guarded artifact files match the provider inventory, which includes
 2,293 records with generated routing metadata. Of the 2,268 protected files,

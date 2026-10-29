@@ -4,7 +4,7 @@ This implementation replaces compact live-demo cards with original 4:3 preview
 artwork and explicitly opened, full-size inline demonstrations. The accepted
 candidate was promoted unchanged on October 18, 2026 at 20:37:19 PDT. Read the
 [current production release](PUBLIC_SITE_SHOWCASE_RELEASE.md) and
-[production receipt](../../deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
+[production receipt](receipts/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
 
 The details and candidate checklist below retain the pre-publication evidence,
 including its timing qualifications. Their pending production items describe that

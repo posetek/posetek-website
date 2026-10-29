@@ -1,6 +1,6 @@
 # Notification production validation
 
-October 5 current issue-send update: [new-only delivery handoff](CURRENT_ISSUE_ALERT_DELIVERY.md) and [verified source/activation receipt](../../deployment/CURRENT_ISSUE_ALERT_DELIVERY_20261005.json). New issue sending is enabled with a send-only cutoff; historical queues stay untouched. The dated acceptance and holds below remain historical records.
+October 5 current issue-send update: [new-only delivery handoff](CURRENT_ISSUE_ALERT_DELIVERY.md) and [verified source/activation receipt](receipts/CURRENT_ISSUE_ALERT_DELIVERY_20261005.json). New issue sending is enabled with a send-only cutoff; historical queues stay untouched. The dated acceptance and holds below remain historical records.
 
 This is the handoff for the October 3–4 validation work on the
 `codex/user-issue-alerts` automation branch. All **31 approved source endpoints**
@@ -15,9 +15,9 @@ readback was reconciled without a second policy commit. Issue sending is still
 disabled; active policy configuration does not prove email delivery.
 Source verification and the storage setting do not prove rebuild convergence,
 email delivery or publication of queued records.
-The [preceding progress receipt](../../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+The [preceding progress receipt](receipts/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
 and dated production receipts remain historical evidence. The
-[partial validation receipt](../../deployment/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json)
+[partial validation receipt](receipts/NOTIFICATION_PRODUCTION_VALIDATION_20261003.json)
 preserves the source/storage/policy checkpoint, completed held email-job audit and
 first accepted storage-v2 workbook batch, and adds the later revision-365 physical
 and identity acceptance below. Sending and genuine delivery remain separate gates.

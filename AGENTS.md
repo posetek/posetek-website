@@ -16,12 +16,12 @@ branches separate and retain `[skip netlify]` on source and receipt integration.
 
 For consent behavior, release verification or the next application release, read
 [the handoff](docs/releases/WEB_AI_SHARING_RECOVERY.md) and
-[the production receipt](deployment/WEB_AI_SHARING_PRODUCTION.json).
+[the production receipt](docs/releases/receipts/WEB_AI_SHARING_PRODUCTION.json).
 No backend, rules, indexes, gateway, catalog or native release is included.
 Earlier sections remain historical checkpoints of preserved behavior.
 
 Earlier release-by-release notes (October 3–22, 2026 and before) live in
-[docs/releases/HISTORY.md](docs/releases/HISTORY.md); receipts are in `deployment/`
+[docs/releases/HISTORY.md](docs/releases/HISTORY.md); receipts are in `docs/releases/receipts/`
 and handoffs in `docs/releases/`. Use the latest applicable handoff, and treat
 older checkpoints as records of their releases.
 

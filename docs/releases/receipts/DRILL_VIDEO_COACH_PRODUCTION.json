@@ -46,7 +46,7 @@
     "limitations": "Physical iOS/Safari and authenticated application workflows were not exercised; video failure fallback was reviewed in source, not forced in the browser"
   },
   "mediaProvenance": "app/src/pages/home/product/media/provenance.json",
-  "designDecisions": "deployment/DRILL_VIDEO_COACH_UPDATE.md",
+  "designDecisions": "docs/releases/receipts/DRILL_VIDEO_COACH_UPDATE.md",
   "rollback": {
     "deployId": "6aab00ac8f7bad5e4a2afd2a",
     "url": "https://6aab00ac8f7bad5e4a2afd2a--posetek.netlify.app"

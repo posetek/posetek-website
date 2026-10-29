@@ -59,4 +59,4 @@ builds intentionally reject that replacement; do not edit baseline hashes ahead
 of publication or bypass its checks.
 
 No functions, rules, gateway, native release or training records are involved.
-The production receipt belongs in `deployment/SITE_ICONS_PRODUCTION.json`.
+The production receipt belongs in `docs/releases/receipts/SITE_ICONS_PRODUCTION.json`.

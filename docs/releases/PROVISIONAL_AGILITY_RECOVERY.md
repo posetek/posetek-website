@@ -10,7 +10,7 @@ The website is live as `6aac6cc0bfb1ddbe0a73e636`, published September 17, 2026
 at 3:47:35 PM PDT (`2026-09-17T22:47:35.951Z`), from source `64b1dca` on
 `codex/provisional-dribbling-recovery`. The authenticated reader is ACTIVE
 version 4 and the reviewed estimate append is verified. See the
-[sanitized production receipt](../../deployment/PROVISIONAL_AGILITY_PRODUCTION.json).
+[sanitized production receipt](receipts/PROVISIONAL_AGILITY_PRODUCTION.json).
 Athlete identities, private performance values, recordings and publication
 before-images remain outside Git.
 

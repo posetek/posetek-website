@@ -3,9 +3,9 @@
 Production handoff, October 8, 2026. Website `6ac73b9c8091f2ef117b22bf`, runtime
 source `293acca795c4baddf279a23e9792404f97336326`, was published at 12:03:50 AM PDT
 from the exact reviewed draft. Tracked help, scoped organization-manager recovery
-and fresh same-account sign-in confirmation are live. Read [production evidence](../../deployment/PLAYER_ACCOUNT_RECOVERY_PRODUCTION.json),
+and fresh same-account sign-in confirmation are live. Read [production evidence](receipts/PLAYER_ACCOUNT_RECOVERY_PRODUCTION.json),
 [PR #40](https://github.com/posetek/posetek_website/pull/40) and the
-[scoped operations procedure](../../deployments/account-recovery/README.md).
+[scoped operations procedure](../../ops/account-recovery/README.md).
 The existing [email-free account access](EMAIL_FREE_ACCOUNT_ACCESS.md) remains
 the foundation. This website-first release supports the same Firebase account's
 existing mobile password sign-in without changing or releasing native recovery UI.
@@ -129,7 +129,7 @@ teammate navigation and effective routing/headers. All 1,874 artifact files matc
 1,875 provider records, with only the prior application/generated metadata changed
 and 18 runtime assets added. That exact hosted draft was promoted, verified in
 production, and reconciled into the 1,872-file baseline; its ordinary preservation
-build passed. See [production evidence](../../deployment/PLAYER_ACCOUNT_RECOVERY_PRODUCTION.json).
+build passed. See [production evidence](receipts/PLAYER_ACCOUNT_RECOVERY_PRODUCTION.json).
 
 All seven owned synthetic accounts were removed. Delayed independent readback
 found zero known, descendant or scoped-query documents, including after removal
@@ -144,7 +144,7 @@ was published. The exact published rules were captured and tested locally withou
 production data writes; their unrelated testing/diagnostic differences from mobile
 main do not change the verified recovery default denials. Existing native/content
 acceptance gates remain unchanged. Future releases follow the
-[scoped operations procedure](../../deployments/account-recovery/README.md), including
+[scoped operations procedure](../../ops/account-recovery/README.md), including
 pushed source with `[skip netlify]`, backend verification before frontend exposure,
 immutable hosted acceptance, exact draft promotion, cleanup readback and baseline
 preservation.

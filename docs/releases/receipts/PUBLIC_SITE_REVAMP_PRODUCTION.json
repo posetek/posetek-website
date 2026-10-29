@@ -201,5 +201,5 @@
     "Same-provider Codex advisory review is not independent human or paid-provider approval."
   ],
   "evidenceDirectory": "artifacts/marketing-production",
-  "candidateReceipt": "deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json"
+  "candidateReceipt": "docs/releases/receipts/PUBLIC_SITE_REVAMP_CANDIDATE.json"
 }

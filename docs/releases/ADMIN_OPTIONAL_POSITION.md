@@ -1,7 +1,7 @@
 # Optional position in administrator player intake
 
 Published October 20, 2026 as `6ad7f9e34d086d5f74247912`, promoted from the exact
-accepted candidate. [Production receipt](../../deployment/ADMIN_OPTIONAL_POSITION_PRODUCTION.json).
+accepted candidate. [Production receipt](receipts/ADMIN_OPTIONAL_POSITION_PRODUCTION.json).
 
 
 Administrators can create a club player with **Position (optional) → Not recorded**.

@@ -4,7 +4,7 @@ Status (2026-10-03): the user approved callable reachability, the binding is act
 and genuine authenticated requests have returned HTTP 200. The local dashboard
 uses live Firebase data. The completeness/station-timing follow-up is deployed as callable v5 from `f996b83`;
 all 16 source files match and all 124 other functions are unchanged. See the
-[verification receipt](../../deployment/DEVICE_PROCESSING_COMPLETENESS.json). Older Netlify drafts are
+[verification receipt](../releases/receipts/DEVICE_PROCESSING_COMPLETENESS.json). Older Netlify drafts are
 superseded and must not be promoted over concurrent production changes.
 
 ## Admin workflow

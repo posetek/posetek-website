@@ -16,7 +16,7 @@ branches separate and retain `[skip netlify]` on source and receipt integration.
 
 For consent behavior, release verification or the next application release, read
 [the handoff](../releases/WEB_AI_SHARING_RECOVERY.md) and
-[the production receipt](../../deployment/WEB_AI_SHARING_PRODUCTION.json).
+[the production receipt](../releases/receipts/WEB_AI_SHARING_PRODUCTION.json).
 No backend, rules, indexes, gateway, catalog or native release is included.
 Earlier sections remain historical checkpoints of preserved behavior.
 
@@ -30,7 +30,7 @@ coach enrollment remain exact. PRs #97, #98 and #99 are merged with green CI and
 completed latest-revision advisory reviews.
 
 Read [the release handoff](../releases/HOMEPAGE_ADMIN_POLISH_RELEASE.md) and
-[the production receipt](../../deployment/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json).
+[the production receipt](../releases/receipts/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json).
 That release used approved runtime `499dc815` over `4c1ba8e`, not all of main.
 Held policy, session and Ball Striking candidates remain excluded. Keep runtime
 branches separate and retain `[skip netlify]` for source/receipt integration.
@@ -39,18 +39,18 @@ Earlier sections are historical release checkpoints; their behavior is preserved
 unless the current handoff explicitly records an intended change.
 
 Preserved application behavior: [player profile and team results](../releases/PARENT_PLAYER_EXPERIENCE.md)
-and [its historical receipt](../../deployment/PARENT_PLAYER_PRODUCTION.json).
+and [its historical receipt](../releases/receipts/PARENT_PLAYER_PRODUCTION.json).
 The October 21 checkpoint recorded 2,154 protected files; the current combined
 release above replaces that artifact baseline while retaining those player flows.
 
 Public showcase history: [showcase refinement release](../releases/PUBLIC_SITE_SHOWCASE_RELEASE.md)
-and [its historical receipt](../../deployment/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
+and [its historical receipt](../releases/receipts/PUBLIC_SITE_SHOWCASE_PRODUCTION.json).
 The current homepage polish builds on that accepted interaction language.
 
 Implementation and REA evidence: [showcase depth](../releases/PUBLIC_SITE_SHOWCASE_DEPTH.md).
-The [candidate receipt](../../deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json) remains
+The [candidate receipt](../releases/receipts/PUBLIC_SITE_SHOWCASE_CANDIDATE.json) remains
 a pre-publication checkpoint. The [preceding public-site release](../releases/PUBLIC_SITE_REVAMP_RELEASE.md)
-and [its receipt](../../deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json) are historical.
+and [its receipt](../releases/receipts/PUBLIC_SITE_REVAMP_PRODUCTION.json) are historical.
 
 Public-site implementation history: [interaction polish](../releases/PUBLIC_SITE_INTERACTION_POLISH.md),
 continuing [first interaction and editorial pacing](../releases/PUBLIC_SITE_FIRST_INTERACTION.md),
@@ -67,7 +67,7 @@ all three repositories; website authenticated-emulator support is also merged. U
 Neither a merged CI workflow nor a green local command proves that secrets,
 remote protections, paid review, staging, or a production release are active.
 
-Pre-publication marketing checkpoint: [artifact and acceptance receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json).
+Pre-publication marketing checkpoint: [artifact and acceptance receipt](../releases/receipts/PUBLIC_SITE_REVAMP_CANDIDATE.json).
 The [composition checkpoint](../releases/PUBLIC_SITE_COMPOSITION.md) is historical; its
 guarded preview has been superseded by the exact candidate promoted on October 18.
 For future work, keep source integration separate from exact-artifact promotion.

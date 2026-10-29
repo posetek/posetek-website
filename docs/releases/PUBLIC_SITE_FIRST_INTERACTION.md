@@ -192,7 +192,7 @@ The 2,003-file artifact has manifest SHA-256
 `994864c12e139439bd8ead527c29e43a671c9448a546c4a91d0fc52244a87e20`.
 Provider inventory matches every file, and all 1,985 protected files remain
 byte-identical. No production promotion occurred. See
-[the machine-readable receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json)
+[the machine-readable receipt](receipts/PUBLIC_SITE_REVAMP_CANDIDATE.json)
 for complete local/hosted results, performance, review and recovery evidence.
 
 The regression/detail/composition suites pass 79 checks locally and 79 hosted,

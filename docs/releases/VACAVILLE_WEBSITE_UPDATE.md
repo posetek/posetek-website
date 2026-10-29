@@ -12,7 +12,7 @@ This document and receipt retain the earlier workbook/planner rollout details.
 This is the approved follow-up to the completed [data repair](VACAVILLE_DATA_REPAIR.md).
 The gateway, Firestore rules and personalized configuration are also live; gateway
 revision `gatewayweb43b9da983c41` serves the updated backend. See
-[`deployment/VACAVILLE_WEBSITE_PRODUCTION.json`](../../deployment/VACAVILLE_WEBSITE_PRODUCTION.json)
+[`docs/releases/receipts/VACAVILLE_WEBSITE_PRODUCTION.json`](receipts/VACAVILLE_WEBSITE_PRODUCTION.json)
 for the complete deployment, verification and recovery receipts.
 
 The homepage, `/coaches` entry and 30 marketing assets retain the exact approved

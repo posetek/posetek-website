@@ -11,13 +11,13 @@ The live file inventory also contains repository internals (`.git`), tooling, an
 Run in the web feature checkout with its existing built output. The first command reads Firebase; the second is offline and writes a private plan:
 
 ```sh
-python3 deployments/club-organization/hosting_release.py snapshot \
+python3 ops/club-organization/hosting_release.py snapshot \
   --output /private/tmp/club-hosting-baseline.json
-python3 deployments/club-organization/hosting_release.py prepare \
+python3 ops/club-organization/hosting_release.py prepare \
   --dist dist --firebase firebase.json \
   --baseline /private/tmp/club-hosting-baseline.json \
   --output /private/tmp/club-hosting-plan.json
-python3 -m unittest discover -s deployments/club-organization -p test_hosting_release.py
+python3 -m unittest discover -s ops/club-organization -p test_hosting_release.py
 ```
 
 Inspect the plan's complete config, file hashes, removed paths, byte counts and `planHash`. Root must verify that this exact artifact is the tested build and that required rules/functions/gateway work is ready before choosing the production release. The script cannot prove a browser check or application behavior from a hash; record those checks separately. If source or dist changes, rebuild through the authorized primary workflow and prepare a new plan. Moving the worktree requires preparing again because the plan binds absolute paths.
@@ -25,7 +25,7 @@ Inspect the plan's complete config, file hashes, removed paths, byte counts and 
 The following command creates a draft version, uploads only required gzip hashes, verifies the full remote file/config map, finalizes it, and explicitly publishes it:
 
 ```sh
-python3 deployments/club-organization/hosting_release.py publish \
+python3 ops/club-organization/hosting_release.py publish \
   --plan /private/tmp/club-hosting-plan.json \
   --journal /private/tmp/club-hosting-journal.json
 ```

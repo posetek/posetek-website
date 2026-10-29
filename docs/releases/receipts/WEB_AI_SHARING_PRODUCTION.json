@@ -9,7 +9,7 @@
   "publishedAt": "2026-10-24T12:27:30.237Z",
   "authorization": "User explicitly approved merging PR #102 and publishing this exact verified candidate in the current chat.",
   "promotion": "Exact reviewed immutable candidate promoted without rebuilding.",
-  "historicalCandidateReceipt": "deployment/WEB_AI_SHARING_CANDIDATE.json",
+  "historicalCandidateReceipt": "docs/releases/receipts/WEB_AI_SHARING_CANDIDATE.json",
   "sourceIntegration": {
     "number": 102,
     "url": "https://github.com/posetek/posetek_website/pull/102",
@@ -17,8 +17,8 @@
     "mergeCommit": "a9dc512db49d3c753270f0cb0b05ca2f021161e7"
   },
   "sourceProvenance": {
-    "receipt": "deployment/WEB_AI_SHARING_PRODUCTION.json",
-    "previousReceipt": "deployment/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json",
+    "receipt": "docs/releases/receipts/WEB_AI_SHARING_PRODUCTION.json",
+    "previousReceipt": "docs/releases/receipts/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json",
     "homepageCompiledSource": "b66a7306d6ece6358bd22e45aa9f0371ff86aede",
     "homepageReviewedSource": "4ab4bc9105d0ee73d2f3294153655c9ab295a8c9",
     "applicationRuntime": "bb3274c72be6baab301eab08da3a1c2766493232",

@@ -71,7 +71,7 @@
     "installedDeviceLoginTested": false,
     "limitation": "Saved data and reader/claim contracts were verified. Athlete access depends on claiming the existing invited profile; installed-device execution was not performed."
   },
-  "relatedRelease": "deployment/PLANNER_INTENT_PRODUCTION.json",
+  "relatedRelease": "docs/releases/receipts/PLANNER_INTENT_PRODUCTION.json",
   "recovery": "Keep the exact private before-images and reviewed draft/activation receipts. A gateway rollback does not undo these data activations. Do not delete athlete profiles, recordings, estimates, historical drafts or workout logs when changing an active plan.",
   "privateEvidenceDirectory": ".netlify/sep16-plan-rollout",
   "privateVerificationFiles": ["active-all12-verified.json", "final-preservation-verified.json", "activation-selections-all12.json", "review-seven-final/approved-age-supplement.json"],

@@ -8,7 +8,7 @@
   "existingRelease": {
     "websiteDeploymentId": "6aac6cc0bfb1ddbe0a73e636",
     "applicationSourceCommit": "64b1dca569b43bad319fbc7c116d22717be9ad5b",
-    "productionReceipt": "deployment/PROVISIONAL_AGILITY_PRODUCTION.json",
+    "productionReceipt": "docs/releases/receipts/PROVISIONAL_AGILITY_PRODUCTION.json",
     "authenticatedReaderVersion": "4",
     "protectedBaselineFiles": 510,
     "videoProcessorRevision": "onvideoupload-00027-guw",

@@ -192,4 +192,4 @@ Evidence lives in `artifacts/marketing-polish/`: `acceptance-summary.json`,
 `visual-review.md`, `local-detail-release/`, `hosted-detail-release/`, the matching
 regression/composition directories, `local-cold-release/`,
 `hosted-cold-verified/` and both WebKit directories. The source and artifact
-identities are in `deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json`.
+identities are in `docs/releases/receipts/PUBLIC_SITE_REVAMP_CANDIDATE.json`.

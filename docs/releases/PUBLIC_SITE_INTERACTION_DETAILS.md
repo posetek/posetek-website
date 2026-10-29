@@ -5,7 +5,7 @@ supersedes this checkpoint's entrance timings, independent-column drift,
 main-thread rendering and navigation ownership. The reference evidence and
 acceptance descriptions below record the earlier implementation; they do not
 verify the current source. Current exact-candidate results belong in the
-[release receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json).
+[release receipt](receipts/PUBLIC_SITE_REVAMP_CANDIDATE.json).
 
 This supplements [the revamp handoff](PUBLIC_SITE_REVAMP.md). The October 17,
 2026 pass follows the user's request to examine hover, scroll entry/exit and
@@ -77,4 +77,4 @@ Ignored `artifacts/marketing-detail/` holds `source-findings.md`, the exported R
 bundle, reference hover/scroll/menu captures, local/hosted detail reports, motion
 captures, footer fit measurements and the updated performance comparison. The
 current exact candidate identity and pass counts belong in the main handoff and
-[release receipt](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json).
+[release receipt](receipts/PUBLIC_SITE_REVAMP_CANDIDATE.json).

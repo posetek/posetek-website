@@ -110,7 +110,7 @@
     "oneTimeBootstrapMustNotRepeat": true,
     "validMicrosoftConnectionsAndLicensedOwnerRequired": true
   },
-  "emailMigrationReceipt": "deployment/MICROSOFT_EMAIL_PRODUCTION.json",
+  "emailMigrationReceipt": "docs/releases/receipts/MICROSOFT_EMAIL_PRODUCTION.json",
   "emailDeliveryVerifiedSeparately": true,
   "teamGuide": {
     "cloudPublicationVerified": true,

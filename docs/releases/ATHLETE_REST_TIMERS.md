@@ -60,7 +60,7 @@ against the existing player. Device lock-screen behavior remains unchanged.
 Website `6acd37e9e903ac054286f910` was published October 12, 2026 at 12:48:08 PM
 PDT from the exact verified draft and pushed runtime source
 `4fc717eaecf7ae71de823900aed47134821cf186`. See
-[the production receipt](../../deployment/ATHLETE_REST_TIMERS_PRODUCTION.json).
+[the production receipt](receipts/ATHLETE_REST_TIMERS_PRODUCTION.json).
 All 1,952 artifacts match 1,953 provider records. All 1,947 prior records outside
 the application entry and generated provider metadata remain exact; four runtime
 assets are added. The exact live feedback document was retained after the initial

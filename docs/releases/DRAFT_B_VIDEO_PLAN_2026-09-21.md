@@ -178,7 +178,7 @@ build or older experiment page.
 | `app/src/pages/home/technique/TechniqueDemo.jsx`, `technique/PROVENANCE.md` | Optional focused technique shot; preserve relevant phase and comparison alignment. |
 | `app/src/pages/coaches/ClubExplorer.tsx`, `PlayerEvidence.tsx`, `coach-samples.ts` | Club-to-player sequence and one coherent fictional sample. |
 | `app/src/pages/coaches/DevelopmentJourney.tsx` | Plan/Train/Retest story, phone illustration, comparison scale and sample labels. |
-| `app/src/pages/home/product/media/` and `deployment/DRILL_VIDEO_COACH_UPDATE.md` | Existing Figure-8 and Wall pass footage and provenance. |
+| `app/src/pages/home/product/media/` and `docs/releases/receipts/DRILL_VIDEO_COACH_UPDATE.md` | Existing Figure-8 and Wall pass footage and provenance. |
 | `app/src/pages/coaches/CoachesPage.tsx` | Audience positioning and “Talk about your team” destination. |
 
 The public drill encodes are 406 × 720. Locate higher-resolution versions of the
@@ -218,7 +218,7 @@ The live home and Coaches routes returned HTTP 200. All eight unique directly
 referenced marketing assets inspected matched the local production distribution
 by SHA-256; relevant marketing source is unchanged from the preserved marketing
 commit `38a817e`. The recorded current production receipt is
-`deployment/PLAYER_INVITATION_LINKS_PRODUCTION.json`, deployment
+`docs/releases/receipts/PLAYER_INVITATION_LINKS_PRODUCTION.json`, deployment
 `6aac924a597bd46f15cf468a`. This is a scoped marketing/source verification, not a new
 full application or backend audit. This planning work did not deploy the website,
 generate video, spend generation credits or change athlete data.

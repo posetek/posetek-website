@@ -104,11 +104,11 @@ Neither suite contacts production athletes or model providers.
 
 ## Historical receipts
 
-- [`../deployment/EVIDENCE_PLANNER_PRODUCTION.json`](../../deployment/EVIDENCE_PLANNER_PRODUCTION.json)
+- [`../docs/releases/receipts/EVIDENCE_PLANNER_PRODUCTION.json`](../releases/receipts/EVIDENCE_PLANNER_PRODUCTION.json)
   — final sanitized receipt for the evidence-methodology release, including the
   website promotion result. Do not infer container test counts from narrative
   checkpoints; use this receipt and the immutable build logs.
-- [`../deployment/PLANNER_INTENT_PRODUCTION.json`](../../deployment/PLANNER_INTENT_PRODUCTION.json)
-  and [`../deployment/VACAVILLE_WEBSITE_PRODUCTION.json`](../../deployment/VACAVILLE_WEBSITE_PRODUCTION.json)
+- [`../docs/releases/receipts/PLANNER_INTENT_PRODUCTION.json`](../releases/receipts/PLANNER_INTENT_PRODUCTION.json)
+  and [`../docs/releases/receipts/VACAVILLE_WEBSITE_PRODUCTION.json`](../releases/receipts/VACAVILLE_WEBSITE_PRODUCTION.json)
   — earlier receipts. Their `services/agent-gateway/...` paths are preserved as
   records of the tree that was deployed at the time; that path no longer exists.

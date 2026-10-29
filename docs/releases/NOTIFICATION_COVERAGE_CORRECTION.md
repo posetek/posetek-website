@@ -1,7 +1,7 @@
 # Notification coverage correction — October 2–3, 2026
 
 This document records the preceding correction release. The later
-[cloud automation checkpoint](../../deployment/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
+[cloud automation checkpoint](receipts/OUTLOOK_IDENTITY_AUTOMATION_PROGRESS.json)
 confirms version-six tracker source and read-only identity-flow acceptance,
 while identifying the remaining capacity repair, settings cutover and physical
 workbook publication gates. The former Codex updater has been removed; ongoing
@@ -24,7 +24,7 @@ the release candidate digest is
 The actual draft passed desktop and phone sign-in and inert support-page review
 before promotion. Baseline adoption also passed, protecting 1,482 application and
 public files from the verified production inventory. Consult
-[the correction receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+[the correction receipt](receipts/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
 for exact release times and final operational acceptance. The obsolete
 source-001 draft was not promoted; its private evidence is retained.
 

@@ -10,13 +10,13 @@ ignored private evidence, outside Git.
 This release was published as `6aac666c61025a8e62e8c399` on September 17, 2026
 at 3:22:58 PM PDT (`2026-09-17T22:22:58.156Z`), from source `e1c4101` on
 `codex/provisional-dribbling-recovery`. The authenticated reader was verified at
-version 3. See the [sanitized production receipt](../../deployment/PROVISIONAL_DRIBBLING_PRODUCTION.json)
+version 3. See the [sanitized production receipt](receipts/PROVISIONAL_DRIBBLING_PRODUCTION.json)
 for the scoped backend source verification, website inventory, test results and
 preservation checks. Production review confirmed the two labeled estimates and
 planner option without generating or activating a workout plan.
 
 The later [Agility follow-up](PROVISIONAL_AGILITY_RECOVERY.md) and its
-[production receipt](../../deployment/PROVISIONAL_AGILITY_PRODUCTION.json) extend
+[production receipt](receipts/PROVISIONAL_AGILITY_PRODUCTION.json) extend
 the reader to version 4 and preserve both existing Dribbling estimates. They add
 one independently reviewed Agility estimate after a separate classification
 correction. The current website is `6aac6cc0bfb1ddbe0a73e636`; preserve the full
@@ -137,7 +137,7 @@ contains four estimates across three players: three Dribbling and one Agility.
 This follow-up required no new website/backend deployment or code, rules,
 configuration or video-guard changes. Website `6aac6cc0bfb1ddbe0a73e636`, reader
 version 4, the 510-file protected baseline and all 32 guards remain current.
-The separate [data publication receipt](../../deployment/PROVISIONAL_DRIBBLING_DATA_FOLLOWUP.json)
+The separate [data publication receipt](receipts/PROVISIONAL_DRIBBLING_DATA_FOLLOWUP.json)
 records this checkpoint without changing earlier release receipts. Athlete
 identities, performance values and evidence remain private.
 

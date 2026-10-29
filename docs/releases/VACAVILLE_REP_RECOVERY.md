@@ -226,7 +226,7 @@ The archive guard now has 30 entries in `onvideoupload-00026-bup`, retaining all
 26 earlier entries and the same processor source. The authenticated reader's
 separate source-only release is ACTIVE version 3. The website follow-up is
 `6aac666c61025a8e62e8c399`, published at `2026-09-17T22:22:58.156Z` (3:22:58 PM PDT).
-See the [production receipt](../../deployment/PROVISIONAL_DRIBBLING_PRODUCTION.json)
+See the [production receipt](receipts/PROVISIONAL_DRIBBLING_PRODUCTION.json)
 and [estimate method, limits and recovery contract](PROVISIONAL_DRIBBLING_RECOVERY.md).
 Earlier counts above remain checkpoint records; classification-only transfers
 and conditional estimates add no qualified results. No workout plan was generated
@@ -262,7 +262,7 @@ The website release is `6aac6cc0bfb1ddbe0a73e636`, published at
 `2026-09-17T22:47:35.951Z` (3:47:35 PM PDT), and the authenticated reader is
 ACTIVE version 4. The archive guard now contains 32 entries in
 `onvideoupload-00027-guw`, with previous guards and processor source preserved.
-See the [sanitized receipt](../../deployment/PROVISIONAL_AGILITY_PRODUCTION.json)
+See the [sanitized receipt](receipts/PROVISIONAL_AGILITY_PRODUCTION.json)
 and [Agility method, limits and recovery handoff](PROVISIONAL_AGILITY_RECOVERY.md).
 Private evidence remains in the ignored repair and
 `.netlify/provisional-agility-release/` directories. Estimate rollback and

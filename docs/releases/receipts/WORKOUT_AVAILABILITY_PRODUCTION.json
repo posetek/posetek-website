@@ -343,6 +343,6 @@
     "website": "Restore reviewed predecessor 6abe3e6fd97e6a691aa603fe if required; reconcile its application baseline before another guarded release.",
     "gateway": "Use the canonical release script from clean pushed main to shift-only to agent-gateway-sha-cb575df84000 if required.",
     "athleteData": "Do not rewind real athlete data or delete legitimate workouts/conversations.",
-    "historicalReceiptPreserved": "deployment/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json"
+    "historicalReceiptPreserved": "docs/releases/receipts/RELIABLE_PLAYER_WORKOUTS_PRODUCTION.json"
   }
 }

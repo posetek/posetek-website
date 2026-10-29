@@ -12,7 +12,7 @@
   "runtimeSourceCommit": "785da39a9e65927016066254a611906b0bf0b4fb",
   "acceptedReviewHead": "1e449a5eebd309e21d7e960bead365797d652901",
   "pullRequest": "https://github.com/posetek/posetek_website/pull/86",
-  "candidateReceipt": "deployment/PUBLIC_SITE_SHOWCASE_CANDIDATE.json",
+  "candidateReceipt": "docs/releases/receipts/PUBLIC_SITE_SHOWCASE_CANDIDATE.json",
   "method": "Promote existing immutable accepted draft with Netlify restoreSiteDeploy; no rebuild or upload",
   "artifact": {
     "files": 2108,

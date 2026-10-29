@@ -53,7 +53,7 @@ activation: the assigned coach saw only its team, then inspected the athlete's
 published personal-workout revision, one reported set and truthful early ending.
 The manager retained organization and staff controls. Private workout conversations
 were not exposed. This follow-up used disposable verification accounts; see the
-[release receipt](../../deployment/CONFIRMED_TRAINING_ACCESS_PRODUCTION.json) for their
+[release receipt](../releases/receipts/CONFIRMED_TRAINING_ACCESS_PRODUCTION.json) for their
 scoped cleanup and the live website/backend versions.
 
 The website does not own the gateway or Firebase rules. Their current canonical
@@ -126,4 +126,4 @@ coach, revoked membership and a player transfer without claiming real invitation
 or generating production plans as test data.
 
 Website publication must use the guarded application release and verified
-preview workflow. The web workflow is live; see [the production receipt](../../deployment/PLAYER_COACH_EXPERIENCE_PRODUCTION.json). Authenticated temporary-account checks verified team scope, revoked membership, personal history and planner selection. Native build, physical-phone acceptance and the unpublished training-content gate remain outstanding.
+preview workflow. The web workflow is live; see [the production receipt](../releases/receipts/PLAYER_COACH_EXPERIENCE_PRODUCTION.json). Authenticated temporary-account checks verified team scope, revoked membership, personal history and planner selection. Native build, physical-phone acceptance and the unpublished training-content gate remain outstanding.

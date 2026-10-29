@@ -97,5 +97,5 @@ independently implemented readback. Temporary credentials are removed. Four
 deleted synthetic JSON generations remain recoverable until October 19 under
 the unchanged seven-day soft-delete policy; no retained-generation physical
 erasure is claimed. No real athlete records or notification controls changed.
-Read [the production evidence](../../deployment/COACH_FOLLOW_UP_PRODUCTION.json)
+Read [the production evidence](receipts/COACH_FOLLOW_UP_PRODUCTION.json)
 and [PR #55](https://github.com/posetek/posetek_website/pull/55).

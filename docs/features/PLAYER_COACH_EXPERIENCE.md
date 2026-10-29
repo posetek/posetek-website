@@ -1,6 +1,6 @@
 # Player and coach experience
 
-Published September 25, 2026. Manual/AI personal creation, tracking, coach history and scoped reporting are live. See [the verified production receipt](../../deployment/PLAYER_COACH_EXPERIENCE_PRODUCTION.json). Temporary synthetic verification accounts and records were removed. No real athlete plans, invitations or content approvals were changed.
+Published September 25, 2026. Manual/AI personal creation, tracking, coach history and scoped reporting are live. See [the verified production receipt](../releases/receipts/PLAYER_COACH_EXPERIENCE_PRODUCTION.json). Temporary synthetic verification accounts and records were removed. No real athlete plans, invitations or content approvals were changed.
 
 The user explicitly requested personal creation live and authorized deployment independently of native UI acceptance. Native candidate `bc492aa` remains uncompiled/unreleased; the submitted App Store build is unchanged. The separate whole-body mobile acceptance gate remains false.
 

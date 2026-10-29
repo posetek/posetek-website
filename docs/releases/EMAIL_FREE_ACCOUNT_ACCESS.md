@@ -2,7 +2,7 @@
 
 Production handoff, September 26, 2026. Published as website deployment
 `6ab8679ccbfca079f8997124` at 5:50:52 PM PDT. The
-[release receipt](../../deployment/EMAIL_FREE_ACCOUNT_ACCESS_PRODUCTION.json) records
+[release receipt](receipts/EMAIL_FREE_ACCOUNT_ACCESS_PRODUCTION.json) records
 scoped backend deployment, browser acceptance, artifact verification and cleanup.
 
 The [player recovery extension](PLAYER_ACCOUNT_RECOVERY.md) adds player-specific

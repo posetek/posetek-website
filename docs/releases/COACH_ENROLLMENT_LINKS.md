@@ -1,7 +1,7 @@
 # Coach links with recipient-entered details
 
 Live October 13, 2026, website `6ace0ad29778ccacfb979dda`, with five additive
-version-1 callables. See [confirmed production evidence](../../deployment/COACH_ENROLLMENT_PRODUCTION.json)
+version-1 callables. See [confirmed production evidence](receipts/COACH_ENROLLMENT_PRODUCTION.json)
 and [PR #57](https://github.com/posetek/posetek_website/pull/57). The previous main
 application remains byte-identical. No real coach redemption is claimed.
 

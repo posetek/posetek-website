@@ -109,6 +109,6 @@ entries and their retained assets while preserving the then-current protected
 application. Verify its full inventory and hosted behavior before publication;
 do not rewind application data, rules or unrelated later releases.
 
-See [production receipt](../../deployment/PUBLIC_SITE_REVAMP_PRODUCTION.json),
-[accepted candidate](../../deployment/PUBLIC_SITE_REVAMP_CANDIDATE.json), and
+See [production receipt](receipts/PUBLIC_SITE_REVAMP_PRODUCTION.json),
+[accepted candidate](receipts/PUBLIC_SITE_REVAMP_CANDIDATE.json), and
 [interaction polish evidence](PUBLIC_SITE_INTERACTION_POLISH.md).

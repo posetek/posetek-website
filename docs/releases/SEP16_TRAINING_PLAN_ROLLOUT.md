@@ -4,7 +4,7 @@ All twelve canonical Vacaville participants who tested on September 16 now have
 one reviewed active personalized plan each. Final readback was
 `2026-09-18T01:24:20.280434Z` (September 17, 6:24 PM PDT). The user explicitly
 authorized both generation and activation. See the
-[sanitized activation receipt](../../deployment/SEP16_TRAINING_PLANS_ACTIVATED.json).
+[sanitized activation receipt](receipts/SEP16_TRAINING_PLANS_ACTIVATED.json).
 
 The cohort was reconciled against the workbook’s September 16 coverage, original
 local recording dates and current membership: six players on each of two teams.

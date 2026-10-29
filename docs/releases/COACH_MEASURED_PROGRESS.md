@@ -2,7 +2,7 @@
 
 Published October 14, 2026 at 8:54:55 AM PDT as
 `6acfa49a07f33b1d9fb64abf`, from the exact accepted hosted candidate.
-[Production evidence](../../deployment/COACH_MEASURED_PROGRESS_PRODUCTION.json)
+[Production evidence](receipts/COACH_MEASURED_PROGRESS_PRODUCTION.json)
 records website and scoped backend verification. This extends the
 [coach follow-up contract](COACH_FOLLOW_UP.md). Runtime source:
 `57e9e03e139a287accfad7889d96747b3ad6ecc3` on `codex/coach-overview-runtime`.

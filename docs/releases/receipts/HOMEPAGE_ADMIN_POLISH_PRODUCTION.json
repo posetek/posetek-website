@@ -77,7 +77,7 @@
     }
   ],
   "sourceProvenance": {
-    "receipt": "deployment/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json",
+    "receipt": "docs/releases/receipts/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json",
     "homepageCompiledSource": "b66a7306d6ece6358bd22e45aa9f0371ff86aede",
     "homepageReviewedSource": "4ab4bc9105d0ee73d2f3294153655c9ab295a8c9",
     "applicationRuntime": "499dc81502a56d8b7b01c36e5ee780af55b87244",

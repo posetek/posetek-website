@@ -6,9 +6,9 @@ was promoted without rebuilding; all 1,048 artifact files match and the baseline
 protects 1,016 application/public files. The final gateway and canonical private-
 conversation rules are live. Production browser verification and the ordinary
 preservation guard passed, and synthetic verification cleanup is complete in the
-[release receipt](../../deployment/CONVERSATIONAL_WORKOUTS_PRODUCTION.json).
+[release receipt](../releases/receipts/CONVERSATIONAL_WORKOUTS_PRODUCTION.json).
 
-The subsequent [confirmed training access release](../../deployment/CONFIRMED_TRAINING_ACCESS_PRODUCTION.json)
+The subsequent [confirmed training access release](../releases/receipts/CONFIRMED_TRAINING_ACCESS_PRODUCTION.json)
 adds five visible setup tabs before generation and checks today's resources at
 personal Start/Resume. Explicit resource changes revise unavailable drills while
 preserving suitable prescription details; they cannot publish an old draft under

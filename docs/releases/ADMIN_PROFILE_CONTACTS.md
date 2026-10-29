@@ -32,7 +32,7 @@ publication and preservation-baseline evidence are recorded below.
 
 The exact hosted candidate `6ac95bd8769320160da44176` was promoted to
 Posetek.net on October 9, 2026 at 2:28:04 PM PDT, with runtime source
-`4b5cc6804732588dd0284d85634237b27b1d2107`. [Production evidence](../../deployment/ADMIN_PROFILE_CONTACTS_PRODUCTION.json)
+`4b5cc6804732588dd0284d85634237b27b1d2107`. [Production evidence](receipts/ADMIN_PROFILE_CONTACTS_PRODUCTION.json)
 records full inventory and serving verification, 1,904 passing frontend tests,
 green hosted source CI, ten candidate and ten production live checks and five
 captures per environment. Visual review covered mobile and desktop; saved contact

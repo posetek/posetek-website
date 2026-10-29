@@ -6,7 +6,7 @@
   "branch": "codex/workout-email-alerts",
   "pullRequest": "https://github.com/posetek/posetek_website/pull/11",
   "sourceCommit": "de886aa02881a84afa99c31bdec231847c9146fb",
-  "previousCheckpoint": "deployment/WORKOUT_NOTIFICATIONS_PREVIEW.json",
+  "previousCheckpoint": "docs/releases/receipts/WORKOUT_NOTIFICATIONS_PREVIEW.json",
   "provider": {
     "name": "Resend",
     "recipient": "dylank@posetek.net",

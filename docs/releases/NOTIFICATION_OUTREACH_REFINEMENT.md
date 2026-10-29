@@ -2,7 +2,7 @@
 
 The following dated October 2 results are historical checkpoints. The later
 [coverage correction](NOTIFICATION_COVERAGE_CORRECTION.md) and
-[its production receipt](../../deployment/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
+[its production receipt](receipts/USER_ISSUE_COVERAGE_CORRECTION_PRODUCTION.json)
 record the current application release, user-issue version 8, tracker version 5,
 scoped social observation wrappers and current cloud-workbook verification status. Preserve
 the original revision-121 receipt and its source intervals. Current unknown
@@ -15,7 +15,7 @@ policies. Nolan and Taiyo retain editing access to the existing shared workbook:
 **PoseTek > Technology > Website > User Issue Tracker > PoseTek Issue Tracker.xlsx**.
 Dylan handles user outreach manually. No automatic outreach, subscription purchase,
 website/native release or historical Resend replay is part of this change.
-Use [the production receipt](../../deployment/NOTIFICATION_REFINEMENT_PRODUCTION.json)
+Use [the production receipt](receipts/NOTIFICATION_REFINEMENT_PRODUCTION.json)
 for actual deployment, publication, delivery and coverage results.
 
 ## Recorded identity and current contact
