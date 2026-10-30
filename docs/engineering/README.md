@@ -1,5 +1,8 @@
 # PoseTek engineering handbook
 
+Parent reviewed-result source candidate: [display contract and validation](../features/PARENT_REVIEWED_RESULTS.md).
+This candidate is separate from the current published release below.
+
 ## Current admin jump recovery release — October 30, 2026
 
 Exact deployment `6ae4fc4e990d28e8d584e696` is published and byte-verified. Admin
