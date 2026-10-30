@@ -1,8 +1,11 @@
 # Admin jump recovery review
 
-Source candidate, October 30, 2026. This implements the browser review workflow;
-it does not publish a website, backend, rules or native release, change an athlete
-record, or send a message by itself.
+Published admin workflow, October 30, 2026. Read the
+[release handoff](../releases/ADMIN_JUMP_RECOVERY.md) and
+[production receipt](../releases/receipts/ADMIN_JUMP_RECOVERY_PRODUCTION.json)
+for exact source/runtime identities and verification. No real athlete result was
+changed during release acceptance. Phone recording capture remains a separate
+native rollout, and this workflow sends no messages.
 
 ## Workflow
 
@@ -100,8 +103,10 @@ are tested in the private backend repository.
 
 A local synthetic preview does not prove production callable availability,
 real-account authorization, all browser codecs, native failed-recording upload,
-or physical measurement accuracy. Those acceptance and release steps remain
-separate from this source candidate.
+or physical measurement accuracy. The coordinated release separately passed
+real-callable authorization, exact-source playback, synthetic save/readback,
+idempotent retry and undo; those receipts do not establish physical measurement
+accuracy or native phone rollout.
 
 ## Release dependency qualification
 
