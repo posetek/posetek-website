@@ -9,6 +9,10 @@ Tests without a usable measurement say **Retest needed**, never zero. Results
 lists and the linked review detail show the same value and status even when
 the original failed attempt is excluded from ordinary result lists or no
 playable media exists. A valid left-side result does not hide a right-side review.
+Authorized coach, manager and admin read-only athlete views also show this
+section on Athlete Home and pass it through Results lists and review details.
+They use the same effective-results authorization and display contract; shared
+bearer-link views remain excluded.
 
 ## Display-only contract
 
