@@ -14,6 +14,11 @@ section on Athlete Home and pass it through Results lists and review details.
 They use the same effective-results authorization and display contract; shared
 bearer-link views remain excluded.
 
+Ordinary qualifying tests are labeled **Recorded result**, not physically
+verified. A review of stored data establishes consistency with the saved app
+output; it does not establish an independently measured course or lab-grade
+accuracy. This wording does not change result eligibility or scoring.
+
 ## Display-only contract
 
 The authorized `getAthleteEffectiveResults` response may add `reviewedResult`
