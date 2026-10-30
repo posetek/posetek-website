@@ -1,6 +1,27 @@
 # PoseTek website context
 
-## Current web AI-sharing recovery release — October 24, 2026
+## Current admin jump recovery release — October 30, 2026
+
+Exact deployment `6ae4fc4e990d28e8d584e696` is published and byte-verified. Admin
+Rep Tools reviews original jump recordings using manual marker selection or
+flight-time brackets. Recovered values remain labeled ESTIMATE, stored apart
+from legacy height fields, excluded from verified rankings and restorable.
+
+The 2,383-file artifact preserves public pages, enrollment, feedback and prior
+assets. The reconciled baseline protects 2,381 files. Runtime `63bae636` contains
+only approved `bb3274c` plus this feature and the re2js 2.8.7 patch; held policy,
+session, Ball Striking and shared AI transport candidates remain excluded. Five
+scoped Backend callables were coordinated; no native release or real athlete
+result change is included. Source PR #109 remains unmerged while coordinated
+Backend hosted CI is billing-blocked. Keep `[skip netlify]` on integration.
+
+Read [the release handoff](docs/releases/ADMIN_JUMP_RECOVERY.md),
+[production receipt](docs/releases/receipts/ADMIN_JUMP_RECOVERY_PRODUCTION.json)
+and [review workflow](docs/features/ADMIN_JUMP_REVIEW.md). Earlier release
+sections are historical checkpoints. Do not publish the full current main
+application or merge the separate runtime branch.
+
+## Preceding web AI-sharing recovery release — October 24, 2026
 
 Exact reviewed deployment `6adc6d7bf370755a2aabc65b` is live. Players can review
 AI sharing from Coach, personal Workouts and their own Profile, explicitly allow

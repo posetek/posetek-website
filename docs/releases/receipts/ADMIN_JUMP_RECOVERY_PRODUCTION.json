@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "accepted": true,
+  "status": "published_verified",
+  "checkedAt": "2026-10-30T20:37:46.443381+00:00",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "deploymentId": "6ae4fc4e990d28e8d584e696",
+  "previousDeploymentId": "6ae3b61b65d402dd68565eb9",
+  "publishedAt": "2026-10-30T20:34:25.811Z",
+  "sourceIntegration": {
+    "pr": 109,
+    "url": "https://github.com/posetek/posetek-website/pull/109",
+    "featureHead": "7a5bd4b5ca2986764a2535fa1f1fba086ae1111f",
+    "merged": false,
+    "hold": "Backend hosted CI billing hold; no merge or billing override."
+  },
+  "sourceProvenance": {
+    "runtimeCommit": "63bae63653b86ea7b1725e90f0e7d516e5e35d7a",
+    "approvedApplicationBase": "bb3274c72be6baab301eab08da3a1c2766493232",
+    "livePreservationSource": "6ae3b61b65d402dd68565eb9",
+    "heldFeaturesExcluded": [
+      "policy",
+      "session",
+      "Ball Striking",
+      "shared AI chat transport"
+    ]
+  },
+  "artifact": {
+    "files": 2383,
+    "bytes": 175257552,
+    "providerRecords": 2384,
+    "artifactDigest": "76984707abd0d955913ba3eeafceab5f4025c3d15018886b4342c527b7e24ebe",
+    "manifestSha256": "30e4e4c9df56cefb2eaf90ce549419e6b4b33e846fbf58e856c7249b8c7b1839",
+    "hostedVerificationSha256": "b06c3e15052952871b4e2b466416245aaa8e83c6fef806e5a5e695475ea49079",
+    "productionInventorySha256": "f157b5371862246cf94726bf7470a15d6e4f04cb51eeaf4e74d63e69924271ee",
+    "productionVerificationSha256": "fb17660d4f8bcf87326f172bd6e4d3cc619ec1aada59467fbf63c57a25fdff3f",
+    "promotionSha256": "fd8ee750d381ba80b314977a4c4f57516b2e03cf3e4ec919e4629c9a4b3a1b68"
+  },
+  "preservation": {
+    "previousProtectedFiles": 2325,
+    "unchangedProtectedFiles": 2324,
+    "changedProviderPaths": [
+      "/application.html",
+      "/netlify.toml"
+    ],
+    "addedAssets": 56,
+    "removedFiles": 0,
+    "marketingPreserved": true,
+    "feedbackPreserved": true,
+    "coachEnrollmentPreserved": true,
+    "sourceConfigurationUnchanged": true,
+    "providerMetadata": "Netlify regenerates deployment metadata; source routing configuration is unchanged. Effective protected routes and headers were verified.",
+    "protectedBaselineFiles": 2381,
+    "preservedLocalPathRecords": 37,
+    "baselineSha256": "31c37f5aed54c3473e9866e132d2735ce14e26597f31ec3afc28be51e9ad8404"
+  },
+  "backend": {
+    "repository": "posetek/posetek-backend",
+    "runtimeCommit": "f1fc955408f13b5c13f8d4ccee57a0b90e719eaa",
+    "archiveSha256": "6265ae6d1c73da88a150a4f2eda451bfbdbabc62dcb0d77c9d80bcc27eb7cc1c",
+    "functionVersions": {
+      "adminGetJumpReview": "1",
+      "adminGetRepRevisions": "2",
+      "adminPreviewJumpRecovery": "1",
+      "adminRestoreRepRevision": "5",
+      "adminReviseRep": "6"
+    },
+    "finalChecks": {
+      "noRealAthleteWrites": true,
+      "syntheticCleanup": true,
+      "syntheticEstimateOnly": true,
+      "syntheticRetryIdempotent": true,
+      "syntheticSaveReadback": true,
+      "syntheticUndoReadback": true
+    },
+    "finalAcceptanceSha256": "9fab2a5fee0f666dda38dcb18e6f30e36c95cc096c8e71e66f039eaeeaf84603",
+    "unrelatedFunctionsChanged": false,
+    "rulesChanged": false,
+    "indexesChanged": false,
+    "serviceAccountIamChanged": false,
+    "existingFunctionIamChanged": false,
+    "newReaderPublicCallableTransport": true,
+    "applicationAdminAuthorizationRequired": true
+  },
+  "validation": {
+    "sourceCI": {
+      "head": "7a5bd4b5ca2986764a2535fa1f1fba086ae1111f",
+      "url": "https://github.com/posetek/posetek-website/actions/runs/41121198721",
+      "result": "success",
+      "lanes": 6
+    },
+    "sourceAdvisoryReview": "Independent root coordinating-agent latest-head review completed with no actionable source findings; source review is separate from browser/runtime acceptance.",
+    "sourceFrontendTests": 2220,
+    "runtimeFrontendTests": 2047,
+    "focusedRecoveryTests": 20,
+    "webScriptTests": 82,
+    "policyChecks": 32,
+    "guestBrowserChecks": 7,
+    "dependencyBlockingPaths": 0,
+    "hostedBrowserChecks": {
+      "guestAdminSignInRequired": true,
+      "adminSignIn": true,
+      "manualMarkerSelectionAndKnownEstimate": true,
+      "methodChangeInvalidatesPreview": true,
+      "flightTimeKnownEstimate": true,
+      "presentedFrameSeek": true,
+      "syntheticBrowserSaveReadbackAccepted": true,
+      "syntheticUndoExact": true,
+      "legacyEstimateLabelVisible": true,
+      "legacyMovieSeekVerified": true,
+      "noRealAthleteWrites": true,
+      "noNotificationsSent": true
+    },
+    "hostedUiReceiptSha256": "034a496a3b340c929d854be99bd1c30f51ffca3333a3dee81891472ced893a3a",
+    "liveProductionVerified": true,
+    "productionRouteChecks": 14,
+    "liveAdminBrowser": {
+      "reviewPanelVisible": true,
+      "estimateOnlyLabelVisible": true,
+      "archivedOriginalFrameSeekVerified": true,
+      "realAthleteWrite": false,
+      "recordedBy": "Independent root coordinating agent; private capture excluded from repository.",
+      "privateCaptureSha256": "96554829b6866a71323e8815b53289b7437abe257dddebb34820eb6d1d08c44f",
+      "existingEstimateVisible": true,
+      "legacyEstimateStorage": "Legacy annotated estimate; nested-only storage was separately verified through synthetic new saves."
+    },
+    "cleanupStability": {
+      "documentsAbsent": 28,
+      "objectsAbsent": 10,
+      "temporaryAuthIdentityRemoved": true,
+      "realRecordHashUnchanged": true,
+      "receiptSha256": "434bed77d6893ee2a691f0d31d6b5dd08547b71fe2870f3d72c3fc6a178d9778"
+    }
+  },
+  "behavior": {
+    "manualMarkerReview": true,
+    "flightTimeFallback": true,
+    "exactPresentedFrameRequired": true,
+    "serverAuthoritativeCalculation": true,
+    "estimateStoredOnlyAt": "jumpRecovery.heightMetres",
+    "legacyRootAndMetadataHeights": null,
+    "verifiedRankingCredit": false,
+    "restorableRevisions": true,
+    "genericJumpNumberEditorReplaced": true,
+    "existingTechniqueEditorPreserved": true
+  },
+  "boundaries": {
+    "nativeReleased": false,
+    "failedRecordingCaptureOnExistingPhonesChanged": false,
+    "realAthleteResultsChanged": false,
+    "notificationsSent": false,
+    "automationsChanged": false,
+    "physicalMeasurementAccuracyEstablished": false,
+    "supportedBrowserRequirement": "requestVideoFrameCallback and a verified source-to-browser timing/geometry mapping; ambiguous or unsupported recordings fail closed.",
+    "syntheticFixturesCleaned": true,
+    "privateEvidenceIncluded": false
+  },
+  "recovery": {
+    "executed": false,
+    "instruction": "Prepare a reviewed fix-forward candidate against the live inventory, preserving unrelated accepted assets. A web release does not undo saved repetition revisions."
+  },
+  "authorization": "User requested completing checks and making jump review live in admin; the coordinating agent published the exact accepted candidate after staged backend and hosted acceptance.",
+  "promotion": "Exact accepted draft promoted without rebuilding.",
+  "ordinaryPreservationBuild": {
+    "passed": true,
+    "command": "node scripts/build-production.mjs",
+    "checkOnlyNotPublished": true,
+    "protectedFiles": 2381,
+    "localPathRecords": 37,
+    "baselineDeploymentId": "6ae4fc4e990d28e8d584e696",
+    "logSha256": "00373ff08abc1646caffa5c3b2487f571efeaad103cb1e79d13bc2939369977b",
+    "sourceTree": "Source integration plus release documentation; frozen accepted runtime unchanged."
+  }
+}
