@@ -28,8 +28,10 @@ part of this release.
 
 Only `getClubInsightsV2` needs a runtime change. Fresh deployed source must be the
 runtime base: current Backend main contains unrelated held differences. Overlay
-only the reviewed reporting module and its three modified dependencies. Preserve
-the existing package lock, helper files, function configuration and IAM.
+only the reviewed reporting module and its three modified dependencies. Retain
+the live helper files, function configuration and IAM. Dependency qualification
+may apply only the reviewed patch-level lock entries needed to clear current
+security findings; preserve every other deployed dependency entry.
 
 The existing Expanded Insights preparer discovers nine exports because earlier
 releases required a coordinated update. That does not authorize publishing all
@@ -64,18 +66,20 @@ production promotion or business-data change is claimed by this handoff.
   warnings), lint, Astro build and static Firestore transport checks passed.
   The 82 website release/tooling tests passed.
 - Browser-local synthetic acceptance: 30 matrix cases passed, plus four summary
-  focus cases passed after a real focus-restoration defect was fixed. Chromium
-  and WebKit cover all six widths. This is 34 distinct passing scenarios, not
-  physical-phone or deployed-backend acceptance.
+  focus cases, four empty-state cases and four keyboard cases. Real keyboard
+  input found a collapsed-date-field focus trap, which is fixed and verified.
+  Chromium and WebKit cover all six widths: 42 distinct passing scenarios, not
+  physical-phone or deployed-backend acceptance. macOS WebKit traversal uses
+  Option+Tab according to its native keyboard-navigation policy.
 - Canonical Backend: 1,265 tests passed; three existing private historical-data
   tests skipped; no failures. Immutable packaging has 24 passing checks.
-- Exact live server overlay: three changed dependencies and one added module;
-  15 deployed files retained exactly, including the deployed dependency lock and
-  held helper behavior. ZIP SHA-256:
-  `149bd3034778aee5262ca2ace688a3b65634c8bd8b51cef6be086b79f1f36022`.
+- The server candidate overlays three changed source dependencies and one added
+  module onto the live archive, retaining held helper behavior. Its lock receives
+  only required dependency-security patches. The canonical Backend PR records
+  the exact dependency delta, bundle digest, audit and runtime qualification.
 - Local application candidate: 2,466 files; all 2,436 prior served artifacts
   retained, 2,435 exact, only `/application.html` changed; 30 assets added.
-  SHA-256 `0fe873906cfa6f75a67fa6b836e1c36055fb47295955b947f1bb89d6cf397a39`.
+  SHA-256 `698ef85edd4ac5f0517b02a37dc7c3f9eaf6c50a15e8ca30c0edaea517896e60`.
   Runtime checks passed 2,099 frontend tests and 41 release guards. The ordinary
   build verified all 2,434 protected baseline files.
 

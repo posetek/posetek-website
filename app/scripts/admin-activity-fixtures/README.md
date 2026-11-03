@@ -16,7 +16,17 @@ The driver leaves existing admin browser suites unchanged. It covers six widths
 (360, 390, 430, 768, 1440, 1920), three activity views, scope/history, complete-cohort
 rankings, distinct follow-up groups, pagination/search, explicitly expanded
 workout history, exact-session observation reads, failures/retry, missing additive
-data, and delayed old-account/old-scope responses.
+data, empty reports, and delayed old-account/old-scope responses. Explicit keyboard
+cases use actual Tab, Shift-Tab, arrow, Home/End, Enter and Escape input to reach
+report tabs, change a native select, contain/restore dialog focus, and activate
+summary navigation. They do not substitute programmatic focus or clicks.
+On macOS, WebKit's default Tab policy skips native buttons and links; the driver
+uses real Option+Tab input for that engine's page traversal. Dialog trap checks
+still use Tab/Shift-Tab, and all selection/activation uses arrow/Enter/Escape keys.
+Native Division selection uses the select's keyboard type-ahead (`b` for Boys).
+An unfiltered run has 42 cases across the two engines; use a fresh evidence
+directory for each run, and keep focused correction receipts distinct from the
+earlier failed attempts.
 
 `install.mjs` substitutes only the Firebase browser module and the local fixture
 document. The actual admin workspace, directory, report transport/validation,

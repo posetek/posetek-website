@@ -16,6 +16,7 @@ const artifacts = resolve(root, process.env.ADMIN_ACTIVITY_ARTIFACTS || 'artifac
 const only = process.env.ADMIN_ACTIVITY_ONLY ? new RegExp(process.env.ADMIN_ACTIVITY_ONLY, 'i') : null;
 const engineFilter = process.env.ADMIN_ACTIVITY_ENGINE;
 const evidence = { origin, methodology: 'Real admin UI and reporting hooks with browser-local invented transport responses; no real Auth or persisted data.',
+  keyboardPolicy: 'Real keyboard events; macOS WebKit uses Option+Tab to include native buttons/links under its default keyboard-navigation policy. Chromium uses Tab. Dialog wrapping uses Tab and Shift-Tab.',
   limitations: ['No deployed backend, actual authentication/authorization, or production acceptance is established.', 'Headless desktop Chromium/WebKit with viewport/touch emulation; no physical-phone or native-zoom claim.', 'Directory navigation to other tools is URL-only; independent tools retain their own acceptance.'], results: [], screenshots: [] };
 await mkdir(artifacts, { recursive: true });
 const initialPath = '/admin/accounts?orgId=northfield&directoryLevel=teams&directoryPane=report&reportView=overview&reportStart=2026-10-07&reportEnd=2026-11-03&reportTimezone=America%2FLos_Angeles';
@@ -32,6 +33,18 @@ async function ready(page) { await report(page).waitFor(); await page.waitForFun
 async function view(page, name) { await tabs(page).getByRole('tab', { name, exact: true }).click(); await ready(page); }
 async function query(page, key, value) { await page.waitForFunction(([key, value]) => new URLSearchParams(location.search).get(key) === value, [key, value]); await frames(page); }
 async function requestLog(page) { return page.evaluate(() => window.__adminActivity.requests.map(({ sequence, kind, input, uid, state, code }) => ({ sequence, kind, input, uid, state, code }))); }
+async function keyboardTo(page, target, limit = 160) {
+  const route = [];
+  const tabKey = process.platform === 'darwin' && page.context().browser()?.browserType().name() === 'webkit' ? 'Alt+Tab' : 'Tab';
+  for (let step = 0; step < limit; step++) {
+    if (await target.evaluate(node => node === document.activeElement)) return;
+    if (step < 24 || step >= limit - 4) route.push(await page.evaluate(() => ({ tag: document.activeElement?.tagName, label: document.activeElement?.getAttribute('aria-label') || document.activeElement?.textContent?.trim().slice(0, 90) })));
+    await page.keyboard.press(tabKey);
+  }
+  const controls = await page.locator('dialog[open] :is(button,input,select,summary)').evaluateAll(nodes => nodes.map(node => ({ tag: node.tagName, label: node.getAttribute('aria-label') || node.textContent?.trim().slice(0, 70), rects: node.getClientRects().length, visible: node.checkVisibility(), closedDetail: !!node.closest('details:not([open])') })));
+  assert.fail(`Keyboard Tab did not reach ${await target.getAttribute('aria-label') || await target.textContent()} within ${limit} steps. ${JSON.stringify({ route, controls })}`);
+}
+async function focused(target) { assert.equal(await target.evaluate(node => node === document.activeElement), true, 'Keyboard focus remains on the expected control.'); }
 async function capture(page, name, target) {
   await frames(page);
   const path = resolve(artifacts, `${slug(name)}.png`);
@@ -109,6 +122,74 @@ for (const [engine, driver] of [['chromium', chromium], ['webkit', webkit]]) {
       });
     }
     for (const width of [390, 1440]) {
+      await check(browser, engine, width, 'empty report remains explicit and refresh restores current scope', async (page, title) => {
+        await page.goto(url(initialPath)); await ready(page);
+        for (const name of ['Overview', 'Workouts', 'Usage']) {
+          if (name !== 'Overview') await view(page, name);
+          await assertHeader(page, 'Northfield FC'); await noOverflow(page);
+          await report(page).getByText('No players match this selection.', { exact: false }).waitFor();
+          assert.equal(await table(page).count(), 0, 'Empty data never leaves previous player rows visible.');
+          assert.equal(await page.getByRole('table', { name: 'Team activity in this reporting scope' }).count(), 0);
+          assert.equal(await pagination(page).getByRole('button', { name: 'First page', exact: true }).isDisabled(), true);
+          assert.equal(await pagination(page).getByRole('button', { name: 'Next', exact: true }).isDisabled(), true);
+          assert.match(await pagination(page).innerText(), /0 matching players/);
+          const counts = await report(page).locator('.activity-followup strong').allTextContents();
+          assert.deepEqual(counts, ['0', '0', '0', '0']);
+          if (name === 'Overview') {
+            await page.getByText('No positive recorded workout timer time in this selection.', { exact: true }).waitFor();
+            await page.getByText('No positive measured app use in this selection.', { exact: true }).waitFor();
+            assert.deepEqual(await report(page).locator('.activity-summary .activity-stat > dd:first-of-type').allTextContents(), ['0', 'Not collected', 'Not collected']);
+          }
+          await report(page).locator('.activity-empty').scrollIntoViewIfNeeded();
+          await capture(page, `${title}-${name}`);
+        }
+        assert.equal((await requestLog(page)).filter(entry => ['history', 'getWorkoutNotificationStatus'].includes(entry.kind)).length, 0);
+        await page.evaluate(() => window.__adminActivity.setReportMode('normal'));
+        await page.getByRole('button', { name: 'Refresh reporting', exact: true }).click(); await ready(page);
+        await assertHeader(page, 'Northfield FC'); assert.ok(await playerRows(page).count() > 0);
+        await query(page, 'reportView', 'usage');
+      }, { reportMode: 'empty' });
+
+      await check(browser, engine, width, 'keyboard tabs filters Escape and summary activation', async (page, title) => {
+        await page.goto(url(initialPath)); await ready(page);
+        const overview = tabs(page).getByRole('tab', { name: 'Overview', exact: true });
+        await keyboardTo(page, overview); await focused(overview);
+        await page.keyboard.press('ArrowRight');
+        await focused(tabs(page).getByRole('tab', { name: 'Testing', exact: true }));
+        await query(page, 'reportView', 'overview');
+        await page.keyboard.press('ArrowRight');
+        await focused(tabs(page).getByRole('tab', { name: 'Workouts', exact: true }));
+        await page.keyboard.press('Enter'); await ready(page); await query(page, 'reportView', 'workouts');
+        await page.keyboard.press('End'); await focused(tabs(page).getByRole('tab', { name: 'Usage', exact: true }));
+        await page.keyboard.press('Enter'); await ready(page); await query(page, 'reportView', 'usage');
+        await page.keyboard.press('Home'); await page.keyboard.press('ArrowRight'); await focused(overview);
+        await page.keyboard.press('Enter'); await ready(page); await query(page, 'reportView', 'overview');
+
+        const opener = page.getByRole('button', { name: 'Filters & period', exact: true });
+        await keyboardTo(page, opener); await page.keyboard.press('Enter');
+        const dialog = page.getByRole('dialog', { name: 'Filters & period', exact: true }); await dialog.waitFor();
+        const close = dialog.getByRole('button', { name: 'Close filters', exact: true });
+        await focused(close); await page.keyboard.press('Shift+Tab');
+        await focused(dialog.getByRole('button', { name: 'Done', exact: true }));
+        await page.keyboard.press('Tab'); await focused(close);
+        const division = dialog.getByRole('combobox', { name: 'Division', exact: true });
+        // Native select type-ahead selects Boys without a platform-specific
+        // popup-open ArrowDown convention. This is real keyboard input.
+        await keyboardTo(page, division); await page.keyboard.press('b');
+        await query(page, 'reportDivision', 'boys'); await ready(page);
+        assert.equal(await dialog.isVisible(), true, 'Applying a filter keeps the dialog available.');
+        assert.equal(await division.inputValue(), 'boys');
+        assert.equal((await requestLog(page)).filter(entry => entry.kind === 'getClubInsightsV2').at(-1).input.filters.division, 'boys');
+        await capture(page, `${title}-filter`);
+        await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' }); await focused(opener);
+        const active = page.getByRole('button', { name: 'Show players: Active players', exact: true });
+        await keyboardTo(page, active); await page.keyboard.press('Enter'); await ready(page);
+        await query(page, 'reportAdminFollowUp', 'active'); await query(page, 'reportDivision', 'boys');
+        await focused(page.locator('#activity-people-title'));
+        assert.ok(await playerRows(page).count() > 0); await noOverflow(page);
+        await capture(page, `${title}-summary`);
+      });
+
       await check(browser, engine, width, 'summary actions select all positive activity including returning players', async (page, title) => {
         await page.goto(url(initialPath)); await ready(page);
         for (const name of ['Overview', 'Usage']) {
