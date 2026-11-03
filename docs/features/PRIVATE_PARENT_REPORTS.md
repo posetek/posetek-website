@@ -69,6 +69,31 @@ plan or native release is part of this release.
 Technical references: [Web Crypto decryption](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/decrypt),
 [URI fragments](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Fragment).
 
-The initial additive builder refuses an existing `/report/` namespace. A future
-batch needs a separately reviewed extension that preserves current report files.
-Do not bypass that guard or reuse an obsolete predecessor inventory.
+### Additional report batches
+
+The default builder still refuses an existing `/report/` namespace. After a fresh
+capture of the current accepted deployment, use the explicit append mode:
+
+```sh
+node scripts/build-private-parent-report.mjs <evidence-dir> --sealed-dir <binary-only-dir> --append
+```
+
+Append preserves every current file, including the report viewer and previously
+published encrypted snapshots, and adds only new encrypted envelopes. All five
+viewer files must match the committed source exactly. Existing or new report IDs
+that collide under the provider's normalized, case-insensitive paths are rejected
+before the preservation build. Empty batches, plaintext/key files and reader drift
+are rejected. Do not reuse an obsolete predecessor inventory.
+
+For the one-time transition from the initial unsent-preview label to the neutral
+“Private player report” label, append `--update-entry-label` after `--append`.
+This permits only the pinned original and replacement `/report/index.html` bytes;
+it is not a general viewer overwrite. The receipt separately counts that changed
+entry, unchanged predecessor files and new encrypted snapshots. The other reader
+files, existing snapshots, application and marketing remain exact. After that
+transition, subsequent batches use plain `--append`.
+
+Each child's measurements, cohort, missing-data handling, PDF and exact workout
+target must be reviewed before sealing. Keep recipient identity and tone evidence
+with a private batch ledger. Preparing or publishing private links does not send
+texts; each proposed group of ten messages awaits the user's explicit go.

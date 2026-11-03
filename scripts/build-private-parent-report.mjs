@@ -9,6 +9,12 @@ import { spawnSync } from 'node:child_process';
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const REPORT_FILES = ['index.html', 'report.css', 'render.mjs', 'crypto.mjs', 'loader.mjs'];
 const METADATA = '/netlify.toml';
+// One reviewed text-only transition from the initial unsent sample label.
+// This is not a general viewer replacement or guard override.
+const ENTRY_LABEL_UPDATE = {
+  before: { sha: '23b667dda974035fc22bc0d59a15efda25c02f82', size: 829 },
+  after: { sha: '52284a92871e0e2f795cfbc060e2f80746a90230', size: 816 },
+};
 const hash = bytes => createHash('sha1').update(bytes).digest('hex');
 const collisionKey = name => name.normalize('NFC').toLowerCase();
 const fail = message => { throw new Error(message); };
@@ -65,7 +71,7 @@ async function listFiles(directory, allowMissing = false) {
   return files.sort();
 }
 
-function validateRows(rows, directory, deploymentId) {
+function validateRows(rows, directory, deploymentId, append) {
   if (!Array.isArray(rows) || !rows.length) fail('Empty or invalid predecessor inventory');
   const byPath = new Map(), folded = new Map();
   for (const row of rows) {
@@ -83,7 +89,7 @@ function validateRows(rows, directory, deploymentId) {
       if (folded.has(parent)) fail('Predecessor file/directory collision: ' + key);
       parent = parent.slice(0, parent.lastIndexOf('/'));
     }
-    if (key === '/report' || key.startsWith('/report/')) fail('Report namespace already exists; this builder is additive only');
+    if (!append && (key === '/report' || key.startsWith('/report/'))) fail('Report namespace already exists; use explicit append mode for new encrypted snapshots');
   }
   return byPath;
 }
@@ -96,8 +102,11 @@ function overlaps(a, b) {
 
 // root is injectable only through this module API for filesystem fixture tests.
 // The CLI always uses this repository and has no guard-skip option.
-export async function buildPrivateParentReport({ root = repository, evidenceDirectory, sealedDirectory }) {
+export async function buildPrivateParentReport({ root = repository, evidenceDirectory, sealedDirectory, append = false, updateEntryLabel = false }) {
   root = resolve(root);
+  if (typeof append !== 'boolean') fail('Append mode must be boolean');
+  if (typeof updateEntryLabel !== 'boolean' || (updateEntryLabel && !append)) fail('Entry label transition requires explicit append mode');
+  if (append && !sealedDirectory) fail('Append mode requires new sealed reports');
   if (!evidenceDirectory) fail('An evidence directory is required');
   const evidence = resolve(root, evidenceDirectory), output = join(root, 'production-dist');
   const predecessor = join(evidence, 'previous-artifact'), source = join(root, 'app/private-report');
@@ -119,7 +128,7 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
   if (typeof baseline.deploymentId !== 'string' || !baseline.deploymentId || !Array.isArray(baseline.files) || !baseline.files.length) {
     fail('Invalid preservation baseline');
   }
-  const prior = validateRows(before, predecessor, baseline.deploymentId);
+  const prior = validateRows(before, predecessor, baseline.deploymentId, append);
   for (const row of [...baseline.files, ...(baseline.platformConfig ? [baseline.platformConfig] : [])]) {
     const expected = prior.get(row.path);
     if (!expected || expected.sha !== row.sha || expected.size !== row.size) fail('Baseline differs from predecessor inventory: ' + row.path);
@@ -136,8 +145,20 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
     if (name !== METADATA && !actualPrior.has(name)) fail('Missing predecessor artifact: ' + name);
   }
   await listFiles(source); // Reject links, but never copy unallowlisted source files.
-  const additions = new Map();
-  for (const name of REPORT_FILES) additions.set('/report/' + name, await regularFile(join(source, name)));
+  const additions = new Map(), replacements = new Map();
+  for (const name of REPORT_FILES) {
+    const path = '/report/' + name, bytes = await regularFile(join(source, name));
+    if (append) {
+      // Batch publication cannot replace a viewer or silently introduce a new
+      // schema. Reader changes require their own reviewed release.
+      const previous = prior.get(path);
+      if (name === 'index.html' && updateEntryLabel) {
+        if (!previous || previous.sha !== ENTRY_LABEL_UPDATE.before.sha || previous.size !== ENTRY_LABEL_UPDATE.before.size ||
+            !matches(bytes, ENTRY_LABEL_UPDATE.after)) fail('Entry label transition must match the pinned original and reviewed replacement');
+        replacements.set(path, bytes);
+      } else if (!previous || !matches(bytes, previous)) fail('Append requires the existing unchanged report reader: ' + path);
+    } else additions.set(path, bytes);
+  }
   if (sealedDirectory) {
     const sealed = resolve(root, sealedDirectory);
     if (overlaps(output, sealed) || overlaps(stage, sealed) || overlaps(source, sealed)) fail('Sealed input must be outside output and report source');
@@ -151,11 +172,15 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
     }
   }
   const additionKeys = new Set();
+  const priorKeys = new Set([...prior.keys()].map(collisionKey));
   for (const name of additions.keys()) {
     const key = collisionKey(name);
-    if (additionKeys.has(key)) fail('Report path collision: ' + name);
+    if (additionKeys.has(key) || priorKeys.has(key) || [...priorKeys].some(path => key.startsWith(path + '/') || path.startsWith(key + '/'))) {
+      fail('Report path collision: ' + name);
+    }
     additionKeys.add(key);
   }
+  if (append && additions.size === 0) fail('Append mode requires new sealed reports');
 
   const guard = join(root, 'scripts/build-production.mjs');
   const guardBytes = await regularFile(guard);
@@ -178,7 +203,7 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
       if (!matches(bytes, row)) fail('Predecessor changed during build: ' + row.path);
       const target = artifactPath(stage, row.path);
       await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, bytes, { flag: 'wx' });
+      await writeFile(target, replacements.get(row.path) || bytes, { flag: 'wx' });
     }
     for (const [name, bytes] of additions) {
       const target = artifactPath(stage, name);
@@ -188,23 +213,28 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
     const manifest = [];
     for (const name of await listFiles(stage)) {
       const bytes = await regularFile(artifactPath(stage, name)), expected = prior.get(name);
-      if (expected ? !matches(bytes, expected) : !additions.has(name)) fail('Unexpected assembled file: ' + name);
+      const replacement = replacements.get(name);
+      if (replacement ? !bytes.equals(replacement) : expected ? !matches(bytes, expected) : !additions.has(name)) fail('Unexpected assembled file: ' + name);
       manifest.push({ path: name, sha: hash(bytes), size: bytes.length });
     }
     if (manifest.length !== preserved.length + additions.size) fail('Assembled file count differs');
     const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
     const receipt = {
+      mode: append ? 'append-encrypted-reports' : 'initial-reader',
       previousDeploymentId: baseline.deploymentId,
       inventorySha256: createHash('sha256').update(inventoryBytes).digest('hex'),
       baselineSha256: createHash('sha256').update(baselineBytes).digest('hex'),
       guardSha256: createHash('sha256').update(guardBytes).digest('hex'),
       artifactManifestSha256: createHash('sha256').update(manifestBytes).digest('hex'),
-      preservedFiles: preserved.length, artifactFiles: manifest.length,
+      predecessorFiles: preserved.length,
+      preservedFiles: preserved.length - replacements.size, artifactFiles: manifest.length,
       addedFiles: [...additions.keys()].sort(),
+      changedFiles: [...replacements.keys()].sort(),
       removedGuardGeneratedFiles: generated.filter(name => !prior.has(name)).sort(),
       excludedProviderMetadata: prior.has(METADATA) ? [METADATA] : [],
-      allPredecessorFilesUnchanged: true, publicDocumentsUnchanged: true,
+      allPredecessorFilesUnchanged: replacements.size === 0, publicDocumentsUnchanged: true,
       applicationUnchanged: true, plaintextOrKeysPackaged: false,
+      existingEncryptedReportsUnchanged: true,
       sealedValidation: 'v1 envelope shape; recipient verifies AES-GCM authenticity',
     };
     await listFiles(output); // No links introduced after the guard.
@@ -219,10 +249,14 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const [evidenceDirectory, flag, sealedDirectory, ...extra] = process.argv.slice(2);
+  const args = process.argv.slice(2), updateEntryLabel = args.at(-1) === '--update-entry-label';
+  if (updateEntryLabel) args.pop();
+  const append = args.at(-1) === '--append';
+  if (append) args.pop();
+  const [evidenceDirectory, flag, sealedDirectory, ...extra] = args;
   if (!evidenceDirectory || (flag && (flag !== '--sealed-dir' || !sealedDirectory)) || extra.length) {
-    fail('Use: build-private-parent-report.mjs <evidence-directory> [--sealed-dir <binary-only-directory>]');
+    fail('Use: build-private-parent-report.mjs <evidence-directory> [--sealed-dir <binary-only-directory>] [--append] [--update-entry-label]');
   }
-  const receipt = await buildPrivateParentReport({ evidenceDirectory, sealedDirectory });
+  const receipt = await buildPrivateParentReport({ evidenceDirectory, sealedDirectory, append, updateEntryLabel });
   console.log(`[private-report] Preserved ${receipt.preservedFiles} predecessor files; added ${receipt.addedFiles.length} report files. No upload performed.`);
 }

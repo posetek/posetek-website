@@ -56,6 +56,92 @@ async function names(root, prefix = '') {
   return result.sort();
 }
 
+async function addExistingReports(f) {
+  const existing = {};
+  for (const name of ['index.html', 'report.css', 'render.mjs', 'crypto.mjs', 'loader.mjs']) {
+    existing['/report/' + name] = await readFile(join(f.root, 'app/private-report', name));
+  }
+  existing['/report/data/' + 'b'.repeat(32) + '.bin'] = Buffer.concat([Buffer.from([1]), Buffer.alloc(50, 87)]);
+  for (const [path, bytes] of Object.entries(existing)) {
+    const row = { path, deploy_id: 'prior-deploy', sha: sha(bytes), size: bytes.length };
+    f.rows.push(row); f.baseline.files.push(row);
+    await put(f.predecessor, path, bytes);
+  }
+  await f.saveRows();
+  await put(f.root, 'deployment/homepage-baseline.json', JSON.stringify(f.baseline));
+  return existing;
+}
+
+test('explicit append preserves the complete reader and old reports; adds only new encrypted snapshots', async t => {
+  const f = await fixture(t), existing = await addExistingReports(f);
+  const sealedDirectory = join(f.root, '.netlify/sealed');
+  const envelope = Buffer.concat([Buffer.from([1]), Buffer.alloc(45, 23)]);
+  for (const id of ['c'.repeat(32), 'd'.repeat(32)]) await put(sealedDirectory, id + '.bin', envelope);
+  const receipt = await f.run({ sealedDirectory, append: true });
+  assert.equal(receipt.mode, 'append-encrypted-reports');
+  assert.equal(receipt.addedFiles.length, 2);
+  assert(receipt.addedFiles.every(path => path.endsWith('.bin')));
+  assert.equal(receipt.preservedFiles, Object.keys(files).length + Object.keys(existing).length);
+  for (const [name, bytes] of Object.entries(existing)) assert.deepEqual(await readFile(join(f.root, 'production-dist', name)), bytes);
+  for (const [name, text] of Object.entries(files)) assert.equal(await readFile(join(f.root, 'production-dist', name), 'utf8'), text);
+  await assert.rejects(readFile(join(f.root, 'production-dist/report/raw.json')), { code: 'ENOENT' });
+});
+
+test('append rejects prior encrypted ID collisions including provider case folding before the guard', async t => {
+  for (const id of ['b'.repeat(32), 'B'.repeat(32)]) {
+    const f = await fixture(t); await addExistingReports(f);
+    const sealedDirectory = join(f.root, '.netlify/sealed');
+    await put(sealedDirectory, id + '.bin', Buffer.concat([Buffer.from([1]), Buffer.alloc(40)]));
+    await assert.rejects(f.run({ sealedDirectory, append: true }), /Report path collision/);
+    await assert.rejects(readFile(join(f.evidenceDirectory, 'guard-ran')), { code: 'ENOENT' });
+  }
+});
+
+test('append requires an existing byte-identical reader and at least one new sealed report', async t => {
+  for (const variant of ['missing-reader', 'changed-reader', 'empty-batch', 'missing-batch']) {
+    const f = await fixture(t);
+    if (variant !== 'missing-reader') await addExistingReports(f);
+    const sealedDirectory = join(f.root, '.netlify/sealed');
+    await mkdir(sealedDirectory, { recursive: true });
+    if (variant === 'changed-reader') await put(f.root, 'app/private-report/loader.mjs', 'new unreviewed reader');
+    if (variant !== 'empty-batch') await put(sealedDirectory, 'c'.repeat(32) + '.bin', Buffer.concat([Buffer.from([1]), Buffer.alloc(40)]));
+    await assert.rejects(f.run({ sealedDirectory: variant === 'missing-batch' ? undefined : sealedDirectory, append: true }), /existing unchanged report reader|requires new sealed reports/);
+    await assert.rejects(readFile(join(f.evidenceDirectory, 'guard-ran')), { code: 'ENOENT' });
+  }
+});
+
+test('explicit pinned label transition changes only the known report entry and accounts for the changed file', async t => {
+  const f = await fixture(t), existing = await addExistingReports(f);
+  const newEntry = await readFile(new URL('../app/private-report/index.html', import.meta.url));
+  const oldEntry = Buffer.from(newEntry.toString().replace('Private player report', 'Private review preview · not sent'));
+  assert.equal(sha(oldEntry), '23b667dda974035fc22bc0d59a15efda25c02f82');
+  const entryRow = f.rows.find(row => row.path === '/report/index.html');
+  Object.assign(entryRow, { sha: sha(oldEntry), size: oldEntry.length });
+  await put(f.predecessor, '/report/index.html', oldEntry);
+  await put(f.root, 'app/private-report/index.html', newEntry);
+  await f.saveRows(); await put(f.root, 'deployment/homepage-baseline.json', JSON.stringify(f.baseline));
+  const sealedDirectory = join(f.root, '.netlify/sealed');
+  await put(sealedDirectory, 'c'.repeat(32) + '.bin', Buffer.concat([Buffer.from([1]), Buffer.alloc(40)]));
+  await assert.rejects(f.run({ sealedDirectory, append: true }), /existing unchanged report reader/);
+  const receipt = await f.run({ sealedDirectory, append: true, updateEntryLabel: true });
+  assert.deepEqual(receipt.changedFiles, ['/report/index.html']);
+  assert.equal(receipt.allPredecessorFilesUnchanged, false);
+  assert.equal(receipt.preservedFiles, Object.keys(files).length + Object.keys(existing).length - 1);
+  assert.deepEqual(await readFile(join(f.root, 'production-dist/report/index.html')), newEntry);
+  for (const [path, bytes] of Object.entries(existing)) if (path !== '/report/index.html') assert.deepEqual(await readFile(join(f.root, 'production-dist', path)), bytes);
+  await put(f.root, 'app/private-report/index.html', Buffer.concat([newEntry, Buffer.from('unreviewed')]));
+  await assert.rejects(f.run({ sealedDirectory, append: true, updateEntryLabel: true }), /pinned original and reviewed replacement/);
+});
+
+test('entry label switch cannot update an arbitrary predecessor or be used without append', async t => {
+  const f = await fixture(t); await addExistingReports(f);
+  const sealedDirectory = join(f.root, '.netlify/sealed');
+  await put(sealedDirectory, 'c'.repeat(32) + '.bin', Buffer.concat([Buffer.from([1]), Buffer.alloc(40)]));
+  await assert.rejects(f.run({ sealedDirectory, updateEntryLabel: true }), /requires explicit append/);
+  await assert.rejects(f.run({ sealedDirectory, append: true, updateEntryLabel: true }), /pinned original and reviewed replacement/);
+  await assert.rejects(readFile(join(f.evidenceDirectory, 'guard-ran')), { code: 'ENOENT' });
+});
+
 test('preserves every predecessor document and asset; discards generated changes; adds only shell and sealed data', async t => {
   const f = await fixture(t), sealedDirectory = join(f.root, '.netlify/sealed');
   const id = 'A'.repeat(32), envelope = Buffer.concat([Buffer.from([1]), Buffer.alloc(60, 153)]);
