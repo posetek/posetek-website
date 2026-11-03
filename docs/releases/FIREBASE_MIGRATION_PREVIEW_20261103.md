@@ -87,3 +87,31 @@ Local evidence is outside Git at
 artifact/provider inventories, deployment log, config, preview and live API records,
 HTTP probes, backend preflights, screenshot, and final preservation readback.
 Raw debug logs are private and must be reviewed/redacted before external sharing.
+
+## Minimal reproduction and support follow-up
+
+On November 3 at 19:38:48 UTC, a second seven-day preview deployed successfully
+using CLI 15.34.2 with one plain HTML file and no third-party code, rewrites,
+Functions or Cloud Run. Reproducible files are in `deployment/firebase-diagnostic/`.
+From that directory, the command was:
+
+```sh
+npx -y firebase-tools@latest hosting:channel:deploy diagnostic-20261103 \
+  --project kickai-69dd0 --config firebase.json --expires 7d \
+  --no-authorized-domains --non-interactive --debug
+```
+
+URL: https://kickai-69dd0--diagnostic-20261103-nktpcp4w.web.app
+Version: `efecb9128e261d51` (FINALIZED).
+The uploaded `/index.html` and two Firebase-generated init files are ACTIVE.
+Both `/` and `/index.html` still return the same 21,265-byte platform 404.
+Browser confirmation and screenshot agree. No Auth domains were added by this
+minimal test. This isolates the serving failure from application code and routing.
+
+A reply to Noel's October 31 unblock notice was submitted for case 10434780,
+requesting Hosting engineering investigate, keep/reopen the case, and confirm an
+investigation reference. The message includes a reviewed/redacted debug log,
+minimal source/config, ACTIVE file manifest, HTTP reproduction and screenshot.
+Gmail message `1a1a2ecece5bbc9d`, thread `1a187589a362f106`; Gmail accepted it as
+SENT. Recipient delivery/engineering acceptance is not established by Sent status.
+The prior monitoring automation remains off.
