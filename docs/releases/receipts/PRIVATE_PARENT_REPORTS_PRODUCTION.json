@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "status": "published_verified",
+  "accepted": true,
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "deploymentId": "6aea5e0ceb047cc53ae49efc",
+  "previousDeploymentId": "6aea3d1459da561c7113e606",
+  "publishedAt": "2026-11-03T22:26:55.811Z",
+  "authorization": "Dylan requested the private live parent-report review and merge/deployment; all report outreach remains held until fresh explicit send authorization.",
+  "promotion": "Exact accepted new draft promoted once without rebuilding, after the Revamp chat completed.",
+  "sourceIntegration": {
+    "repository": "posetek/posetek-website",
+    "pullRequest": 116,
+    "sourceCommit": "efc385a9b0f868e48016d71ff772927f50cefb93",
+    "mergeCommit": "deee41041ab8f0d86946b01cabdae5092bf0e3db",
+    "ci": "https://github.com/posetek/posetek-website/actions/runs/41729330019",
+    "checksPassed": 6,
+    "review": "completed latest-revision advisory; no actionable findings",
+    "skipNetlify": true
+  },
+  "sourceProvenance": {
+    "preservedApplicationRuntime": "c33a9c80187a604659ee4c3c851b701c74dacd9c",
+    "unchangedBackendReleasedSource": "4ef6e77e8e563ca9682c5229624dd66a944b92a1",
+    "mobileAuditReferenceOnly": "a81fb3e95eb3d44d7d29d5587492f9d5e7b073b2",
+    "documentedPreviousMobileUploadSource": "45ed930cfb3848a8edc8e7ddce74699de3383029",
+    "nativeReleasePerformed": false,
+    "heldMainCandidatesExcluded": [
+      "policy",
+      "session",
+      "Ball Striking"
+    ]
+  },
+  "artifact": {
+    "files": 2472,
+    "bytes": 179362377,
+    "providerRecords": 2473,
+    "sha256": "a7477e5a307e6dd3043c9e0150fa9e7f67603c4f47c2c229b8dac8c433ee7d25",
+    "digestDefinition": "SHA-256 over sorted path, tab, decimal byte length, tab, SHA-256 file hash, newline",
+    "manifestSha256": "a67899bd143d4ab364a53048f3b0d1f369855208ad652f034615e3a6cdcff658",
+    "providerInventorySha256": "0b0ff0d8b5d5e7acb09a8c25c22979bcabc63011a2a240eb60b6ab8bc959f85f",
+    "configurationSha256": "ecf037fc5b9c2d8b1bbda34b0e1bd86ef2082660f289ef838a1abbb26cae4f69",
+    "productionVerificationSha256": "0929c8e70adb48e1ecc3c76ca92acb913ffd0fbcb2eb9707eff5d7b9be13c92a",
+    "promotionIntentSha256": "1b7ca01e63d9472f4a01778b3e16cc87cb419886fbb431b960e9b5d13570efa9",
+    "reviewedOperatorSha256": "c07f030698d0f49cda94d77644298639333921a136462e76d05cd602f09aaa18"
+  },
+  "preservation": {
+    "previousServedFiles": 2466,
+    "unchangedServedFiles": 2466,
+    "addedFiles": 6,
+    "removedFiles": 0,
+    "changedServedPaths": [],
+    "newReportFiles": 5,
+    "encryptedSnapshots": 1,
+    "providerMetadata": "Netlify-generated configuration changed; effective existing routes and isolated report privacy headers verified separately. Provider inventory lowercases paths; hashes and sizes remain exact.",
+    "protectedBaselineFiles": 2470,
+    "preservedLocalPathRecords": 37,
+    "baselineSha256": "2efcb62006e03acf13e2e77604b6893972d77de71ef7836364f5791e518e790a"
+  },
+  "validation": {
+    "focusedLocalTestsPassed": 43,
+    "latestRevisionArtifactAndOperatorReviews": "complete; no actionable findings",
+    "candidateBrowser": {
+      "passed": true,
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "widths": [
+        320,
+        390,
+        430
+      ],
+      "receiptSha256": "2f274583eb29444ebc069610eaa92d8cde16a929d632fa96f7d836d74ee0bebc"
+    },
+    "productionBrowser": {
+      "passed": true,
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "widths": [
+        320,
+        390,
+        430
+      ],
+      "receiptSha256": "f87c94fc828f06cbb345f1ba2ae48910b143a1240f42cf52ae3dbc19acb78f37"
+    },
+    "browserAssertions": [
+      "actual report decryption",
+      "reviewed PDF byte equality",
+      "exact athlete HTTPS workout href",
+      "refresh and reopen",
+      "no-key and wrong-key privacy",
+      "previous child content removed",
+      "no horizontal overflow",
+      "no report third-party requests, browser storage, cookies, or errors"
+    ],
+    "guestWorkoutRedirect": {
+      "passed": true,
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "exactAthleteAndTrainingReturnTo": true,
+      "authenticatedAcceptanceClaimed": false,
+      "externalResourcesBlocked": "Guest application font requests in both engines and Google script in WebKit; redirect checks passed. Report itself made no external requests.",
+      "receiptSha256": "887988f78ba1a8d7fd6ceb3badc8ba3c957f63989768ba7329e778f307021bcf"
+    },
+    "existingRoutesVerified": 8,
+    "reportRoutesAndHeadersVerified": 5,
+    "physicalPhoneAcceptance": false
+  },
+  "accessAndDelivery": {
+    "model": "read-only bearer report; complete link grants report access, without verifying guardian identity",
+    "encryptedPayloadOnly": true,
+    "keysPlaintextAndRecipientsInGit": false,
+    "workouts": "Existing account authorization; exact athlete browser route. No invitation/recovery token in report.",
+    "unclaimedAccountLimit": "Requires original private invitation; first signup currently opens Profile.",
+    "nativeOpening": "pending separate native routing, association/signing and physical-device acceptance",
+    "automaticExpiryOrRecallPromised": false,
+    "reportTexts": "held; merge, deployment and review do not authorize sending",
+    "coachDelivery": "held",
+    "sendingAutomationsResumed": false
+  },
+  "releaseScope": {
+    "website": true,
+    "backend": false,
+    "rules": false,
+    "indexes": false,
+    "gateway": false,
+    "catalog": false,
+    "native": false,
+    "realAccountOrWorkoutWrites": false
+  },
+  "recovery": {
+    "previousArtifactRetained": true,
+    "previousConfigurationRetained": true,
+    "rollbackPerformed": false,
+    "futureRecovery": "Inspect current serving state and use a reviewed forward correction preserving unrelated accepted files; cannot revoke report copies."
+  },
+  "attempts": {
+    "uploadPreflight": "Unsupported CLI context flag rejected before upload; corrected invocation uploaded the accepted artifact.",
+    "firstPromotionPreflight": "Case normalization mismatch stopped before intent/POST. Reviewed provider-only comparison correction passed all hosted rows; one publication POST followed."
+  },
+  "checkedAt": "2026-11-03T22:31:06.335Z",
+  "ordinaryPreservationBuild": {
+    "passed": true,
+    "command": "node scripts/build-production.mjs",
+    "protectedFiles": 2470,
+    "ordinaryArtifactFiles": 2534,
+    "checkOnlyNotPublished": true,
+    "logSha256": "934cc21270e25e836f2ea61236aa99797756c906d149ac1a762bbf33d0323bed",
+    "preservationTestsPassed": 39,
+    "preservationTestLogSha256": "08e70ae2da655fb047cf3f78954be4019c056e1f874912c83ae413ea249ac31d",
+    "entryVerification": {
+      "homepageRoutes": 2,
+      "coachesRoutes": 3,
+      "applicationRoutes": 25,
+      "assets": 2335,
+      "preservedFiles": 2470,
+      "browserChecks": false,
+      "authenticatedWorkflows": false
+    },
+    "entryVerificationLogSha256": "a1883f47dbae28551cb88d979180dd3b034402e1ee537fcbce9593e29062d5f7",
+    "baselineVerificationSha256": "55c0128cfeba990f917ceeb4f3bc84511ace3533bc8068140aeddb81bfdf8992"
+  }
+}

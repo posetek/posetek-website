@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6aea3d1459da561c7113e606",
+  "deploymentId": "6aea5e0ceb047cc53ae49efc",
   "sourceCommit": null,
-  "url": "https://6aea3d1459da561c7113e606--posetek.netlify.app",
+  "url": "https://6aea5e0ceb047cc53ae49efc--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "f72e9b844d16787833b59c3962ee2017d8baee27",
-    "size": 3957,
+    "sha": "5d21117043a7f616fb38312f665e9080023d4a74",
+    "size": 4890,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -12268,6 +12268,36 @@
       "sha": "7383f90738a281e403ad6ac397a9481e1877771c",
       "size": 338578,
       "localPath": "legacy/questViewBiomechanics.html"
+    },
+    {
+      "path": "/report/crypto.mjs",
+      "sha": "ccedaf024ead79d96f8f28e705606c537a3f4244",
+      "size": 1588
+    },
+    {
+      "path": "/report/data/94youb1h8ydlbimkem6eecy7zyhx72b-.bin",
+      "sha": "470675f1610c923678d9c15b4163e5825ca53fb2",
+      "size": 49661
+    },
+    {
+      "path": "/report/index.html",
+      "sha": "23b667dda974035fc22bc0d59a15efda25c02f82",
+      "size": 829
+    },
+    {
+      "path": "/report/loader.mjs",
+      "sha": "eff1df4bb13dccc0f52017e8c83005612f82444e",
+      "size": 1877
+    },
+    {
+      "path": "/report/render.mjs",
+      "sha": "e9e2bf1dad26d359ff7348add11d39fc109976fb",
+      "size": 9742
+    },
+    {
+      "path": "/report/report.css",
+      "sha": "fedb70b7ab63577b7a8713b63273b539f84e33e3",
+      "size": 6793
     },
     {
       "path": "/sessions 2.html",
