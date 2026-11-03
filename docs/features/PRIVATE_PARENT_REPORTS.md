@@ -1,14 +1,15 @@
-# Private parent report review candidate
+# Private parent reports
 
 A family opens a phone-friendly report with a private link. The report keeps the
 approved three-band team chart, plain-language summary, two starter exercises,
 one athlete-specific Workouts button, and an optional PDF download.
 
-This is an **unpublished source candidate**. No parent or coach outreach is
-included. The October 26 parent-results chat owns recipient history, message tone
-and future sending, after Dylan reviews the hosted report. Coach delivery is held.
-The active website Revamp release takes precedence; capture its completed live
-artifact before assembling or uploading this review candidate.
+The private review sample is live in deployment `6aea5e0ceb047cc53ae49efc`;
+see [release evidence](../releases/PRIVATE_PARENT_REPORTS.md). All parent and coach
+report texts remain held after merge, deployment and review. Fresh explicit send
+authorization is required. The October 26 parent-results chat owns recipient
+history, message tone and future sending; wait until it finishes before coordination.
+The Revamp release completed before this artifact was assembled and published.
 
 ## Access model
 
@@ -63,7 +64,11 @@ explicit encrypted binaries. It must not publish source-main application candida
 Every predecessor file stays identical (provider-generated routing metadata is
 compared separately). A draft is reviewed before any production promotion; all
 parent sends remain a separate held operation. No backend, rules, catalog, saved
-plan or native release is part of this candidate.
+plan or native release is part of this release.
 
 Technical references: [Web Crypto decryption](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/decrypt),
 [URI fragments](https://developer.mozilla.org/en-US/docs/Web/URI/Reference/Fragment).
+
+The initial additive builder refuses an existing `/report/` namespace. A future
+batch needs a separately reviewed extension that preserves current report files.
+Do not bypass that guard or reuse an obsolete predecessor inventory.

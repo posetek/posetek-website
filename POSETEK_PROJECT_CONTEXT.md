@@ -1,5 +1,21 @@
 # PoseTek website project context
 
+## Private parent report review release — November 3, 2026
+
+Exact deployment `6aea5e0ceb047cc53ae49efc` is live for private review. One encrypted
+phone report adds a team chart, sample practice, PDF download and an exact-athlete
+HTTPS Workouts button. The prior Revamp application and all 2,466 served files
+remain exact; only six report files and dedicated routing/privacy headers were added.
+The reconciled baseline protects 2,470 files.
+
+All parent/coach report texts stay held after merge, deployment and review; fresh
+explicit send authorization is required. Native app opening remains pending.
+Keep `[skip netlify]` on source/receipt integration and preserve approved runtime
+`c33a9c8`; held main candidates remain excluded. Read [the release handoff](docs/releases/PRIVATE_PARENT_REPORTS.md)
+and [production receipt](docs/releases/receipts/PRIVATE_PARENT_REPORTS_PRODUCTION.json)
+for access limits and verification. Earlier release sections are historical.
+
+
 ## Admin activity reporting release — November 3, 2026
 
 Exact deployment `6aea3d1459da561c7113e606` is live. Admin organization/team
