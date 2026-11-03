@@ -1,5 +1,14 @@
 # PoseTek website
 
+## Admin activity reporting source candidate — November 3, 2026
+
+The admin workspace now has persistent scope identity and tab-specific people,
+team, workout and usage reporting. Whole-roster rankings and follow-up groups
+use an optional administrator-only Backend extension; missing account or usage
+evidence stays unavailable. This is prepared source, not a production release.
+Read [the reporting definitions and verification notes](docs/features/ADMIN_ACTIVITY_REPORTING.md).
+The accepted runtime and public-site preservation boundary below remain in force.
+
 ## Current planner preview context guard release — November 1, 2026
 
 Exact deployment `6ae7cb8d2a05c4dbbbd9b7e5` is live. **Preview priorities** now

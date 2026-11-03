@@ -42,7 +42,12 @@ export function DirectoryFilters({ children, summary }: { children: ReactNode; s
     </button>
     <dialog ref={dialog} className="directory-filter-dialog" aria-modal="true" aria-labelledby="directory-filter-title" onClose={() => opener.current?.focus({ preventScroll: true })} onKeyDown={event => {
       if (event.key !== "Tab") return;
-      const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, a[href], [tabindex="0"]')].filter(node => node.getClientRects().length);
+      const collapsed = [...event.currentTarget.querySelectorAll('details:not([open])')];
+      // Closed disclosures can still report layout rectangles. Their hidden
+      // fields reject focus, so including one would strand Tab on the summary.
+      const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, a[href], [tabindex="0"]')].filter(node => node.getClientRects().length
+        && node.checkVisibility?.() !== false && getComputedStyle(node).visibility === "visible"
+        && collapsed.every(detail => !detail.contains(node) || detail.querySelector(':scope > summary')?.contains(node)));
       if (!controls.length) return;
       const index = controls.indexOf(document.activeElement as HTMLElement);
       event.preventDefault();
