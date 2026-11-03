@@ -55,7 +55,8 @@ describe("admin directory presentation", () => {
   });
   it("retains the known unassigned identity count while an attention queue loads", () => {
     const html = renderToStaticMarkup(<MemoryRouter><PlayerReporting state={{ ...state, teamId: undefined, directoryLookup: "unassigned", reportTeamAssignment: "unassigned", reportMode: "attention" }} choose={() => {}} scope={{ kind: "organization", organizationId: "club" }} accountCount={2} scopeLabel="Unassigned / unavailable team · Club" accountRows={[]} enabled showPeople toolbar={null} /></MemoryRouter>);
-    expect(html).toContain('class="workspace-scope-accounts"><strong>2</strong> player accounts');
+    expect(html).toContain('class="workspace-scope-count">2 loaded players');
+    expect(html).toContain('aria-label="Selected organization and team"');
     expect(html).toContain("Unassigned / unavailable team · Club");
   });
 });

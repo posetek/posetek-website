@@ -2,6 +2,7 @@ import { accountContext, accountQuery } from "./accountHierarchy";
 import type { AccountContext } from "./accountHierarchy";
 import { expandedRequest } from "../../insights/lib/expandedQuery";
 import type { ExpandedRequest } from "../../insights/lib/expandedQuery";
+import type { AdminActivityFollowUp, AdminActivitySort } from "./adminActivity";
 
 export const DIRECTORY_TABS = ["players", "staff", "teams", "settings"] as const;
 export type DirectoryTab = typeof DIRECTORY_TABS[number];
@@ -9,6 +10,7 @@ export type DirectoryLevel = "organizations" | "teams" | "people";
 export type PlayerPanel = "results" | "workouts" | "profile" | "ai-incidents";
 export type WorkspaceReportView = "overview" | "testing" | "workouts" | "usage";
 export interface WorkspaceReportState {
+  reportAdminFollowUp?: AdminActivityFollowUp; reportAdminSort?: AdminActivitySort;
   reportView?: WorkspaceReportView; reportMode?: "directory" | "attention";
   reportStart?: string; reportEnd?: string; reportWeeks?: number; reportTimezone?: string;
   reportTestingWindow?: "cumulative" | "period"; reportSearch?: string; reportCursor?: string; reportPage?: number;
@@ -24,6 +26,7 @@ export interface AdminDirectoryState extends WorkspaceReportState {
 }
 const queryOf = (search: string | URLSearchParams) => typeof search === "string" ? new URLSearchParams(search) : search;
 const REPORT_FIELDS = {
+  reportAdminFollowUp: "adminFollowUp", reportAdminSort: "adminSort",
   reportView: "view", reportStart: "start", reportEnd: "end", reportWeeks: "weeks", reportTimezone: "timezone",
   reportTestingWindow: "testingWindow", reportSearch: "rosterSearch", reportCursor: "cursor", reportPage: "page",
   reportDivision: "division", reportAgeBand: "ageBand", reportTestingStatus: "testingStatus", reportWorkoutStatus: "workoutStatus",
@@ -89,7 +92,7 @@ export function directoryWorkspacePaneOf(state: Partial<AdminDirectoryState>): "
   return state.directoryPane || (state.reportView && state.reportMode !== "attention" ? "report" : "list");
 }
 
-const COHORT_FIELDS = ["reportSearch", "reportCursor", "reportPage", "reportDivision", "reportAgeBand", "reportTestingStatus", "reportWorkoutStatus", "reportUsageStatus", "reportUsagePlatform", "reportUsageFeature", "reportTeamAssignment"] as const;
+const COHORT_FIELDS = ["reportAdminFollowUp", "reportAdminSort", "reportSearch", "reportCursor", "reportPage", "reportDivision", "reportAgeBand", "reportTestingStatus", "reportWorkoutStatus", "reportUsageStatus", "reportUsagePlatform", "reportUsageFeature", "reportTeamAssignment"] as const;
 export type DirectoryScopePatch = Pick<Partial<AdminDirectoryState>, "orgId" | "teamId" | "coachId" | "directoryLevel" | "directoryLookup">;
 /** A new hierarchy selection keeps the reporting period/view, but starts with its complete roster. */
 export function selectDirectoryScope(state: AdminDirectoryState, patch: DirectoryScopePatch): AdminDirectoryState {

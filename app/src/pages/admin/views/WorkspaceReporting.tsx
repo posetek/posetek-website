@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import ExpandedReport from "../../insights/ExpandedReport";
 import { minuteText, shortDate, TESTING_LABELS, WORKOUT_LABELS } from "../../insights/lib/expanded";
@@ -11,9 +12,23 @@ import "./workspace-report.scss";
 
 export type WorkspacePlayerMetric = { playerId: string; status: "included"; player: ExpandedPlayer } | { playerId: string; status: "excluded" };
 export type WorkspaceReport = ExpandedInsights & { rosterMetrics?: WorkspacePlayerMetric[] };
-export interface WorkspaceMetricState { data: WorkspaceReport | null; loading: boolean; error: string; rebuilding?: boolean; legacy?: boolean }
+export interface WorkspaceMetricState { data: WorkspaceReport | null; loading: boolean; error: string; rebuilding?: boolean; legacy?: boolean; refresh?: () => void }
 export type WorkspaceSummaryProps = WorkspaceMetricState & { accountCount?: number; scopeLabel: string; request: ExpandedRequest };
 const views: [WorkspaceReportView, string][] = [["overview", "Overview"], ["testing", "Testing"], ["workouts", "Workouts"], ["usage", "Usage"]];
+
+/** Scope identity stays above the tabs; only evidence, never identity, waits for reporting. */
+export function WorkspaceScopeHeader({ data, accountCount, scopeLabel, request, breadcrumb, children, accountScopeIsSubset = false }: WorkspaceSummaryProps & { breadcrumb?: ReactNode; children: ReactNode; accountScopeIsSubset?: boolean }) {
+  const completeScope = Boolean(data) && !accountScopeIsSubset;
+  const count = completeScope ? data!.roster.total : accountCount;
+  return <header className="workspace-scope-header" aria-label="Selected organization and team">
+    {breadcrumb && <nav className="workspace-scope-breadcrumb" aria-label="Selected scope">{breadcrumb}</nav>}
+    <div className="workspace-scope-heading"><div><p className="eyebrow">Current selection</p><h2>{scopeLabel}</h2></div>
+      {count !== undefined && <span className="workspace-scope-count">{count.toLocaleString()} {!completeScope && "loaded "}{count === 1 ? "player" : "players"}</span>}</div>
+    <p className="workspace-scope-period">{request.startDate} – {request.endDate}<span> · {request.timezone.replaceAll("_", " ")}</span></p>
+    {data && <p className="workspace-scope-coverage">{accountScopeIsSubset && <>Across {data.scope.label}: </>}{data.roster.included} included in reporting · {data.roster.excluded} excluded · usage collected for {data.usage.collectedPlayers}/{data.roster.filtered} reporting players</p>}
+    {children}
+  </header>;
+}
 
 /** Report views share one roster; tabs move focus before activating a reader. */
 export function WorkspaceReportTabs({ active, onChange }: { active: WorkspaceReportView; onChange(view: WorkspaceReportView): void }) {
@@ -85,6 +100,9 @@ export function WorkspaceMetricCells({ metric, loading, error, legacy }: Workspa
 }
 
 /** Every graph, metric card and explanation is visible without an extra disclosure. */
-export function WorkspaceReportDetails({ data, request, onChange }: { data: ExpandedInsights; request: ExpandedRequest; onChange(patch: Partial<ExpandedRequest>): void }) {
-  return <div className="workspace-report-details pt-insights"><ExpandedReport data={data} request={request} onChange={onChange} hidePlayerTable hidePlayerFilters onPrevious={() => {}} onNext={() => {}} playerLink={() => "#workspace-roster"} /></div>;
+export function WorkspaceReportDetails({ data, request, onChange, showPlayers = false, hideSummary = false, onFirstPage = () => {}, onNextPage = () => {}, playerLink = () => "#workspace-roster" }: {
+  data: ExpandedInsights; request: ExpandedRequest; onChange(patch: Partial<ExpandedRequest>): void;
+  showPlayers?: boolean; hideSummary?: boolean; onFirstPage?: () => void; onNextPage?: () => void; playerLink?: (player: ExpandedPlayer) => string;
+}) {
+  return <div className="workspace-report-details pt-insights"><ExpandedReport data={data} request={request} onChange={onChange} hidePlayerTable={!showPlayers} hideSummary={hideSummary} hidePlayerFilters page={request.page} previousLabel="First page" onPrevious={onFirstPage} onNext={onNextPage} playerLink={playerLink} /></div>;
 }

@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import type { ClubContext } from "../../../lib/organization-data";
 import type { OrganizationRow, PlayerRow } from "../lib/accounts";
 import type { AdminDirectoryState } from "../lib/adminNavigation";
-import { directoryLevelOf } from "../lib/adminNavigation";
+import { adminDirectoryPath, directoryLevelOf, parseAdminDirectoryState, selectDirectoryScope } from "../lib/adminNavigation";
 import { staffName } from "../lib/accountHierarchy";
 import "./directory-navigator.scss";
 import Icon from "./AdminWorkspaceIcon";
+import { TeamComparison } from "./AdminActivityReport";
+import type { WorkspaceMetricState } from "./WorkspaceReporting";
 
 type Choose = (patch: Partial<AdminDirectoryState>) => void;
 
@@ -48,10 +50,13 @@ export default function DirectoryNavigator({ organizations, state, choose, conte
 }
 
 /** Teams are a navigation destination, separate from membership-management forms. */
-export function TeamDirectory({ organization, context, players, choose }: { organization: OrganizationRow; context: ClubContext | null; players: PlayerRow[]; choose: Choose }) {
+export function TeamDirectory({ organization, context, players, choose, metrics, state }: { organization: OrganizationRow; context: ClubContext | null; players: PlayerRow[]; choose: Choose; metrics?: WorkspaceMetricState; state?: AdminDirectoryState }) {
   const teams = context?.teams.filter(team => team.organizationId === organization.id) || [];
+  const coachNames = Object.fromEntries(teams.map(team => [`${organization.id}/${team.id}`, context!.staff.filter(member => member.role === "coach" && member.status === "active" && member.teamIds.includes(team.id)).map(staffName).join(", ") || "No active coach assigned"]));
   return <section className="directory-team-directory" aria-labelledby="directory-teams-heading"><div className="directory-team-directory-heading"><div><h3 id="directory-teams-heading">Teams in {organization.name}</h3><p className="admin-note">Choose a team to view its reporting and people.</p></div><div className="directory-row-actions"><button type="button" className="quiet-button" onClick={() => choose({ teamId: undefined, coachId: undefined, directoryLevel: "people", directoryTab: "players" })}>{organization.schemaVersion === 2 ? "All teams" : "View legacy roster"}</button>{organization.schemaVersion === 2 && <button type="button" className="quiet-button" onClick={() => choose({ teamId: undefined, coachId: undefined, directoryLevel: "people", directoryLookup: "unassigned", directoryTab: "players" })}>Unassigned / unavailable team</button>}</div></div>
-    {organization.schemaVersion !== 2 ? <p className="admin-note">This legacy organization has no canonical team directory. Its existing player and coach relationships remain available in the legacy roster.</p> : teams.length ? <div className="directory-team-cards">{teams.map(team => {
+    {organization.schemaVersion === 2 && metrics && !metrics.data?.adminReporting && <p className="admin-note" role="status">{metrics.loading ? "Loading team activity…" : "Detailed team activity is unavailable. Team navigation remains available below."}{!metrics.loading && metrics.refresh && <> <button type="button" className="directory-text-button" onClick={metrics.refresh}>Refresh team activity</button></>}</p>}
+    {organization.schemaVersion !== 2 ? <p className="admin-note">This legacy organization has no canonical team directory. Its existing player and coach relationships remain available in the legacy roster.</p> : metrics?.data?.adminReporting ? <><div className="admin-activity-report"><TeamComparison data={metrics.data} coachNames={coachNames} teamLink={(orgId, teamId) => adminDirectoryPath(selectDirectoryScope(state || parseAdminDirectoryState(""), { orgId, teamId: teamId || undefined, directoryLevel: "people", directoryLookup: teamId ? undefined : "unassigned" }))} /></div>
+      {teams.filter(team => !metrics.data!.adminReporting!.teams.some(row => row.teamId === team.id && row.organizationId === organization.id)).map(team => <div className="admin-note" key={team.id}><button type="button" className="directory-text-button" onClick={() => choose({ teamId: team.id, coachId: undefined, directoryLevel: "people", directoryTab: "players" })}>{team.name}</button> · No included players match the reporting filters · {coachNames[`${organization.id}/${team.id}`]}</div>)}</> : teams.length ? <div className="directory-team-cards">{teams.map(team => {
       const count = players.filter(player => player.organizationId === organization.id && player.teamId === team.id).length;
       return <button type="button" key={team.id} className="directory-team-card" onClick={() => choose({ teamId: team.id, coachId: undefined, directoryLevel: "people", directoryTab: "players" })}><span className="directory-team-card-heading"><strong>{team.name}</strong><Icon name="arrow_forward" /></span><span>{count} {count === 1 ? "player" : "players"}</span><small>{context!.staff.filter(member => member.role === "coach" && member.status === "active" && member.teamIds.includes(team.id)).map(staffName).join(", ") || "No active coach assigned"}</small></button>;
     })}</div> : <p className="admin-empty">No teams yet. Add one in Manage teams, or choose All teams to review unassigned players.</p>}
