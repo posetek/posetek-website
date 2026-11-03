@@ -1,5 +1,21 @@
 # PoseTek website context
 
+## Admin activity reporting release — November 3, 2026
+
+Exact deployment `6aea3d1459da561c7113e606` is live. Admin organization/team
+reporting now keeps the selected scope visible and provides distinct Overview,
+Teams, Workouts, Usage and Testing evidence. Only Backend `getClubInsightsV2`
+was updated (version 10); existing admin/manager/coach reporting remains compatible.
+
+All 2,466 artifact files match 2,467 provider records. The reconciled baseline
+protects 2,464 files. Players, Coaches, feedback, coach enrollment and prior assets
+remain exact. Runtime `c33a9c8` extends approved `f4ce1a8`; it is separate from
+source main. Held policy, session and Ball Striking candidates remain excluded.
+Keep `[skip netlify]` on source and receipt integration.
+
+Read [the release handoff](docs/releases/ADMIN_ACTIVITY_REPORTING.md) and [the production receipt](docs/releases/receipts/ADMIN_ACTIVITY_REPORTING_PRODUCTION.json) for exact artifacts, verification,
+measurement limits and cleanup. Earlier release sections are historical.
+
 ## Current planner preview context guard release — November 1, 2026
 
 Exact deployment `6ae7cb8d2a05c4dbbbd9b7e5` is live. **Preview priorities** now

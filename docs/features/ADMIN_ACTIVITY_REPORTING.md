@@ -1,8 +1,8 @@
 # Administrator activity and workout reporting
 
-Source candidate, November 3, 2026. This extends the existing administrator
-workspace; it is not a production release receipt. The canonical server work
-belongs to `posetek/posetek-backend`, in `functions/insights-admin-reporting.js`
+Released November 3, 2026. This extends the existing administrator workspace.
+See [the production handoff](../releases/ADMIN_ACTIVITY_REPORTING.md) for exact
+artifacts, deployed acceptance and measurement limits. The canonical server work belongs to `posetek/posetek-backend`, in `functions/insights-admin-reporting.js`
 and `docs/ADMIN_ACTIVITY_REPORTING.md`.
 
 ## Experience
@@ -101,6 +101,6 @@ permissions and mid-read changes. Immutable scoped packaging tests inspect the
 runtime dependency closure. Private historical fixture skips must remain
 explicit; they are not passing tests.
 
-See [release preparation](../releases/ADMIN_ACTIVITY_REPORTING.md) for the exact
-candidate, CI and acceptance status. No fixture or screenshot contains real
+See [release handoff](../releases/ADMIN_ACTIVITY_REPORTING.md) for the exact
+published artifact, CI and acceptance evidence. No fixture or screenshot contains real
 player data; generated evidence stays outside Git.
