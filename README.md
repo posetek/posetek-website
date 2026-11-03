@@ -686,6 +686,11 @@ for the real read-only admin view, share links and outstanding player pilot.
 
 ## Validate homepage changes
 
+For the text-centered Safari navigation regression, run
+`node --test scripts/marketing-link-activation.browser.mjs` after building marketing.
+It uses the installed Playwright Chromium and WebKit engines. See
+[the link-activation handoff](docs/releases/HOMEPAGE_LINK_ACTIVATION.md).
+
 ```powershell
 npm --prefix app test -- src/pages/home src/pages/coaches
 node --test scripts/home-navigation.test.mjs scripts/production-baseline.test.mjs scripts/homepage-preview.test.mjs
