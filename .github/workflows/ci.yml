@@ -87,8 +87,9 @@ jobs:
       - run: npm --prefix app run build:marketing
       - run: node --test ci/check-static-firestore-transport.test.mjs
       - run: node scripts/check-static-firestore-transport.mjs
-      - run: node app/node_modules/playwright/cli.js install --with-deps chromium
+      - run: node app/node_modules/playwright/cli.js install --with-deps chromium webkit
       - run: node --test scripts/browser-smoke.mjs
+      - run: node --test scripts/marketing-link-activation.browser.mjs
       # Production assembly still requires the reviewed live preservation baseline.
       # These are compile checks, not a production artifact or a deployment.
   ci:

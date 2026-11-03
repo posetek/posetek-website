@@ -43,7 +43,9 @@
   .pd-question-chips button { min-height: 44px; }
   .skip-link { z-index: 501; }
 
-  .interaction-text { display: inline-grid; position: relative; vertical-align: baseline; }
+  /* Keep native clicks on the control: Safari can lose them when a hit text node
+     is replaced by the decorative scramble's pointerdown/focus reset. */
+  .interaction-text { display: inline-grid; position: relative; vertical-align: baseline; pointer-events: none; }
   .interaction-text-source { opacity: 0; pointer-events: none; }
   .interaction-text-visual { position: absolute; inset: 0; min-width: 0; }
   .interaction-text[data-scrambling="true"] .interaction-text-visual { overflow: clip; white-space: nowrap; }

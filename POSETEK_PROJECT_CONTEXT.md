@@ -1,5 +1,12 @@
 # PoseTek website project context
 
+## Safari homepage links — source follow-up
+
+Desktop Safari can lose clicks directly on the animated Sign in label when its
+text node is replaced during pointer activation. The focused public-label fix and
+WebKit regression are documented in [the handoff](docs/releases/HOMEPAGE_LINK_ACTIVATION.md).
+This is source preparation; the accepted production deployment below is unchanged.
+
 ## Private parent report review release — November 3, 2026
 
 Exact deployment `6aea5e0ceb047cc53ae49efc` is live for private review. One encrypted
