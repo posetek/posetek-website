@@ -23,7 +23,7 @@ name searches narrow rows without changing those totals. Unknown sign-in,
 unclaimed accounts, unavailable collection and genuine zero activity remain
 separate. Personal workouts do not fulfill assigned slots, and a recorded ending
 retires a slot without being relabeled a completed workout. No new tracking,
-reminder, authentication policy, backend schema or native change was released.
+reminder, authentication policy, persisted data schema or native change was released.
 
 ## Deployed acceptance
 
