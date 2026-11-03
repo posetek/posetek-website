@@ -8,10 +8,10 @@ import { createWorkspaceMetricsTransport, workspaceMetricsPayload, workspacePayl
 import type { WorkspaceReportPayload } from "./workspaceMetricsData";
 
 const transport = createWorkspaceMetricsTransport(payload => clubCall<ExpandedInsights>("getClubInsightsV2", payload));
-export interface WorkspaceMetricsInput { scope: InsightScope | null; search: string; playerIds?: string[]; enabled?: boolean; refreshKey?: number; foreground?: boolean; validate?: (data: ExpandedInsights) => void }
+export interface WorkspaceMetricsInput { scope: InsightScope | null; search: string; playerIds?: string[]; enabled?: boolean; refreshKey?: number; foreground?: boolean; adminReporting?: boolean; validate?: (data: ExpandedInsights) => void }
 
-export function useWorkspaceMetrics({ scope, search, playerIds, enabled = true, refreshKey = 0, foreground = true, validate }: WorkspaceMetricsInput) {
-  const key = workspacePayloadKey(enabled && scope ? workspaceMetricsPayload(search, scope, playerIds) : null);
+export function useWorkspaceMetrics({ scope, search, playerIds, enabled = true, refreshKey = 0, foreground = true, adminReporting = false, validate }: WorkspaceMetricsInput) {
+  const key = workspacePayloadKey(enabled && scope ? workspaceMetricsPayload(search, scope, playerIds, new Date(), adminReporting) : null);
   const payload = useMemo(() => key ? JSON.parse(key) as WorkspaceReportPayload : null, [key]);
   const [revision, setRevision] = useState(0);
   const refresh = useCallback(() => setRevision(value => value + 1), []);

@@ -1,5 +1,7 @@
 import { accountContext } from "../../admin/lib/accountHierarchy";
 import type { InsightsOrigin } from "./navigation";
+import { ADMIN_ACTIVITY_FOLLOW_UPS, ADMIN_ACTIVITY_SORTS } from "../../admin/lib/adminActivity";
+import type { AdminActivityFollowUp, AdminActivitySort } from "../../admin/lib/adminActivity";
 
 export const INSIGHT_VIEWS = ["overview", "testing", "workouts", "usage"] as const;
 export const COACH_VIEWS = [...INSIGHT_VIEWS, "community", "player"] as const;
@@ -41,13 +43,19 @@ export function expandedRequest(search: string, now = new Date()) {
     usageStatus: choice(params.get("usageStatus"), ["returning", "active", "inactive", "notCollected"]),
     usagePlatform: choice(params.get("usagePlatform"), ["web", "ios", "both"]), usageFeature: choice(params.get("usageFeature"), USAGE_FEATURES),
     teamAssignment: choice(params.get("teamAssignment"), ["assigned", "unassigned"]),
+    adminFollowUp: (choice(params.get("adminFollowUp"), ADMIN_ACTIVITY_FOLLOW_UPS) || undefined) as AdminActivityFollowUp | undefined,
+    adminSort: (choice(params.get("adminSort"), ADMIN_ACTIVITY_SORTS) || undefined) as AdminActivitySort | undefined,
   };
 }
-export type ExpandedRequest = ReturnType<typeof expandedRequest>;
+export type ExpandedRequest = Omit<ReturnType<typeof expandedRequest>, "adminFollowUp" | "adminSort"> & {
+  adminFollowUp?: AdminActivityFollowUp; adminSort?: AdminActivitySort;
+};
 export function expandedQuery(request: ExpandedRequest, patch: Partial<ExpandedRequest> = {}) {
   const next = { ...request, ...patch }, query = new URLSearchParams(next.extra);
   for (const key of ["orgId", "teamId", "coachId", "from", "view", "playerId", "rosterSearch", "cursor", "timezone", "testingWindow", "division", "ageBand", "testingStatus", "workoutStatus", "usageStatus", "usagePlatform", "usageFeature", "teamAssignment"] as const) if (next[key]) query.set(key, next[key]);
   if (next.page) query.set("page", String(next.page));
+  if (next.adminFollowUp) query.set("adminFollowUp", next.adminFollowUp);
+  if (next.adminSort) query.set("adminSort", next.adminSort);
   query.set("weeks", String(next.weeks)); query.set("start", next.startDate); query.set("end", next.endDate);
   return query;
 }
