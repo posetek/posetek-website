@@ -1,88 +1,115 @@
-# Admin activity reporting release preparation
+# Administrator activity reporting release
 
-This change is prepared separately from the accepted production runtime. It is
-not a production receipt and does not authorize publishing unrelated source.
+Published November 3, 2026 at 21:42:40 UTC. Exact accepted deployment
+`6aea3d1459da561c7113e606` was promoted without rebuilding.
 
-## Source and application boundary
+[Production receipt](receipts/ADMIN_ACTIVITY_REPORTING_PRODUCTION.json) ·
+[reporting definitions](../features/ADMIN_ACTIVITY_REPORTING.md) ·
+[Website PR #114](https://github.com/posetek/posetek-website/pull/114) ·
+[Backend PR #79](https://github.com/posetek/posetek-backend/pull/79).
 
-Website source starts at `caaa5f75e5366e2a9d6403f2638efface0db0d0d`.
-Canonical Backend source starts at `3441fb0f17b5a60fd145dc9346abc50cc5530bbe`.
-The application candidate applies only the reviewed reporting feature to approved
-runtime `f4ce1a8bd6b10a967bfb76dd5d98d2689124ae05`. Held policy, session and Ball
-Striking changes remain excluded. Preserve the accepted result, consent,
-planner and recovery behavior; do not merge the runtime branch into main.
+## Behavior
 
-Fresh provider inspection on November 3 confirms production deployment
-`6ae7cb8d2a05c4dbbbd9b7e5` remains current. Its 2,437 provider records match the
-accepted inventory. Git publishing remains enabled for main: source, runtime,
-PR titles and receipt integration must retain `[skip netlify]`, with CI enabled.
+The selected organization or team stays above the reporting tabs, with the
+reporting period, roster count and collection coverage. Overview separates
+recorded workout time from estimated app engagement and opens named follow-up
+lists. Teams uses comparable counts and denominators. Workouts shows each
+player's saved outcomes and current-week assignments, with recent sessions and
+exact observations loaded on demand. Usage keeps platform coverage and retained
+activity-window precision explicit. Testing retains its detailed evidence table.
 
-The candidate uses the unchanged guarded production and application builders.
-Both marketing documents are freshly verified; feedback and coach enrollment
-retain their exact accepted documents and historical assets. Independent artifact
-verification permits only `/application.html` to change among protected files.
-Any new runtime assets are additive. No routing, icon or public-site change is
-part of this release.
+Rankings and follow-up totals use the complete authorized cohort before paging;
+name searches narrow rows without changing those totals. Unknown sign-in,
+unclaimed accounts, unavailable collection and genuine zero activity remain
+separate. Personal workouts do not fulfill assigned slots, and a recorded ending
+retires a slot without being relabeled a completed workout. No new tracking,
+reminder, authentication policy, backend schema or native change was released.
 
-## Server boundary
+## Deployed acceptance
 
-Only `getClubInsightsV2` needs a runtime change. Fresh deployed source must be the
-runtime base: current Backend main contains unrelated held differences. Overlay
-only the reviewed reporting module and its three modified dependencies. Retain
-the live helper files, function configuration and IAM. Dependency qualification
-may apply only the reviewed patch-level lock entries needed to clear current
-security findings; preserve every other deployed dependency entry.
+The deployed reporting callable passed 81 assertions using 26 owned synthetic
+players. This covers verified Auth bindings, ambiguity, collection gaps, complete
+roster paging, rankings, team denominators, workout outcomes, current-week
+assignment rules and role isolation. Existing admin, manager and coach business
+responses matched their pre-deployment responses exactly, excluding only the
+response generation timestamp. A valid synthetic prescription correction was
+followed by 14 additional checks confirming unchanged reporting evidence.
 
-The existing Expanded Insights preparer discovers nine exports because earlier
-releases required a coordinated update. That does not authorize publishing all
-nine for this feature. Qualify the narrow callable source update against the
-fresh live archive and preserve the unrelated function inventory. Do not enable
-the held migration publisher, deploy rules/indexes, or publish Backend main
-wholesale.
+The unchanged hosted candidate passed 97 recorded assertions across Chromium and
+WebKit at 390 and 1440px, staff compatibility and focused corrections. The prior
+local matrix covers 42 scenarios at 360, 390, 430, 768, 1440 and 1920px. Production
+acceptance passed 19 focused desktop/mobile checkpoints with real sign-in and
+owned scoped reads. The live scope, workout details, Usage cards, history and
+focus behavior were visually and functionally checked. Physical-phone acceptance
+is not claimed.
 
-Metadata inspection of existing Auth permissions and query indexes is separate
-from execution evidence. Owned synthetic role/behavior/latency acceptance remains
-a release prerequisite; no real player or Auth account was queried for preparation.
-The website retains an explicit unavailable state while the optional server
-extension has not been released.
+Raw failed harness attempts remain retained. Corrections addressed navigation
+assumptions, allowed read-only Firebase/media requests, a form-autofocus race and
+missing required fields in a manually seeded prescription. No application bytes
+changed during these corrections. WebKit cancellation diagnostics are correlated
+with cancelled Firestore requests. During one live sign-in navigation,
+`getClubContext` was cancelled and the client attempted an automatic diagnostic
+write; the read-only harness blocked it. Focused confirmation runs had no
+unresolved errors. This does not claim that no traffic was ever blocked.
 
-## Acceptance and recovery
+Only owned synthetic player records were queried for acceptance. The real admin
+directory also requires ordinary read-only organization metadata and branding.
+No real player profile, workout, consent or account choice changed. Test identity,
+raw capture and operational evidence remain outside Git. The production receipt
+records completed owned fixture cleanup and its independent absence verification:
+six Auth accounts, 180 known paths, 40 generated invitation/code references and
+26 delayed projection markers were covered. No owned accounts, documents,
+descendants or invitation references remain; shared quota counters retain their
+normal expiry.
 
-Source CI and independent latest-revision review precede source integration.
-Keep candidate artifact hashes, provider inventory, browser evidence, exact
-source/runtime SHAs and scoped server qualification together. A hosted preview
-alone is not an isolated data environment.
+Latency qualification covers the 26-player fixture: first full-roster read
+8.784 seconds, warm median 6.807 seconds and warm maximum 10.513 seconds. A
+post-correction projection refresh/read took 14.636 seconds. These measurements
+do not establish latency at the maximum roster size. No notification email or
+reminder was generated by the synthetic workout evidence.
 
-Promote only the exact accepted hosted candidate through the guarded workflow,
-after the paired server scope is qualified. Recheck current production immediately
-before promotion; do not rebuild the accepted artifact. Preserve the preceding
-accepted artifact and exact server source/configuration/IAM as recovery evidence.
-Reconcile the protected-file baseline only after verified publication. No
-production promotion or business-data change is claimed by this handoff.
+## Exact artifacts and source
 
-## Local preparation evidence
+All 2,466 artifact files match 2,467 provider records, including generated
+Netlify metadata. SHA-256:
+`698ef85edd4ac5f0517b02a37dc7c3f9eaf6c50a15e8ca30c0edaea517896e60`.
+All 2,436 prior served files remain present; 2,435 are byte-identical. Only
+`/application.html` changed, and 30 hashed assets were added. Players, Coaches,
+feedback, coach enrollment, icons and historical assets remain exact. Effective
+routing and headers were checked separately from provider-generated metadata.
+All 14 live route checks passed, and every application route serves the accepted
+application document SHA-256.
 
-- Website source: 2,234 frontend tests passed; TypeScript, Svelte (zero errors and
-  warnings), lint, Astro build and static Firestore transport checks passed.
-  The 82 website release/tooling tests passed.
-- Browser-local synthetic acceptance: 30 matrix cases passed, plus four summary
-  focus cases, four empty-state cases and four keyboard cases. Real keyboard
-  input found a collapsed-date-field focus trap, which is fixed and verified.
-  Chromium and WebKit cover all six widths: 42 distinct passing scenarios, not
-  physical-phone or deployed-backend acceptance. macOS WebKit traversal uses
-  Option+Tab according to its native keyboard-navigation policy.
-- Canonical Backend: 1,265 tests passed; three existing private historical-data
-  tests skipped; no failures. Immutable packaging has 24 passing checks.
-- The server candidate overlays three changed source dependencies and one added
-  module onto the live archive, retaining held helper behavior. Its lock receives
-  only required dependency-security patches. The canonical Backend PR records
-  the exact dependency delta, bundle digest, audit and runtime qualification.
-- Local application candidate: 2,466 files; all 2,436 prior served artifacts
-  retained, 2,435 exact, only `/application.html` changed; 30 assets added.
-  SHA-256 `698ef85edd4ac5f0517b02a37dc7c3f9eaf6c50a15e8ca30c0edaea517896e60`.
-  Runtime checks passed 2,099 frontend tests and 41 release guards. The ordinary
-  build verified all 2,434 protected baseline files.
+The reconciled baseline protects 2,464 files and retains all 37 historical
+`localPath` recovery records. `node scripts/build-production.mjs` passed against
+every protected file, and all 27 preservation/application release guards passed.
+That build was a check only; its output was not uploaded.
 
-Hosted CI, latest-revision review and a frozen hosted candidate are recorded in
-the companion PRs after publication. These local results do not substitute for
-paired hosted acceptance or authorize production promotion.
+Website source `d29b06d` merged as `dda7392`; Backend source `4ef6e77` merged as
+`e4de4c2`. The Backend branch preserved the recovery change that reached main
+while this release was being prepared. Source, runtime and reconciled Backend CI
+passed, and latest-revision advisory reviews had no actionable findings.
+
+The published application is runtime `c33a9c8`, composed on approved `f4ce1a8`.
+Do not merge its runtime branch into main or substitute a full main application
+build. Held policy, session and Ball Striking candidates remain excluded. Keep
+`[skip netlify]` on source and receipt integration; ordinary Git publishing remains
+enabled for main.
+
+## Server scope and recovery
+
+Only `getClubInsightsV2` was updated, from version 9 to version 10, using a
+source-only update. Downloaded deployed source matches the qualified archive:
+`9b61266b5c6dc01de52369c078f97537f202b630468e9a34ea9f566ec7c161ab`.
+All 19 source files were verified. Runtime configuration, IAM and 145 unrelated
+functions were unchanged. No rules, indexes, gateway, catalog or native release
+was performed. Shared source ownership remains in the canonical Backend repository;
+its held migration publisher was not enabled.
+
+The preceding website deployment `6ae7cb8d2a05c4dbbbd9b7e5`, its complete artifact
+and the version 9 callable source/configuration/IAM are retained as recovery
+evidence. No rollback was performed. The first website promotion attempt stopped
+at a read-only network preflight before any publication request; the guarded
+retry promoted the accepted candidate successfully. Future recovery must inspect
+current serving state, preserve unrelated accepted surfaces and follow the scoped
+release workflow. Website or function recovery does not reverse business data.

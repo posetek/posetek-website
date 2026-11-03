@@ -1,0 +1,351 @@
+{
+  "schemaVersion": 1,
+  "accepted": true,
+  "status": "published_verified",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "deploymentId": "6aea3d1459da561c7113e606",
+  "previousDeploymentId": "6ae7cb8d2a05c4dbbbd9b7e5",
+  "publishedAt": "2026-11-03T21:42:40.191Z",
+  "authorization": "User explicitly requested completion of Backend and hosted acceptance, both source PR merges, and guarded production deployment.",
+  "promotion": "Exact accepted hosted artifact promoted without rebuilding.",
+  "sourceIntegration": [
+    {
+      "repository": "posetek/posetek-backend",
+      "number": 79,
+      "head": "4ef6e77e8e563ca9682c5229624dd66a944b92a1",
+      "mergeCommit": "e4de4c296d82dd4be8f2045405927a777fecf035"
+    },
+    {
+      "repository": "posetek/posetek-website",
+      "number": 114,
+      "head": "d29b06d9a1ec030b3437b5da0ddc0c79b21ab4be",
+      "mergeCommit": "dda7392398da99bbef5dd03d341e75cd23c90d3b"
+    }
+  ],
+  "sourceProvenance": {
+    "approvedApplicationBase": "f4ce1a8bd6b10a967bfb76dd5d98d2689124ae05",
+    "releasedRuntime": "c33a9c80187a604659ee4c3c851b701c74dacd9c",
+    "websiteSource": "d29b06d9a1ec030b3437b5da0ddc0c79b21ab4be",
+    "backendSource": "4ef6e77e8e563ca9682c5229624dd66a944b92a1",
+    "heldCandidatesExcluded": [
+      "policy",
+      "session",
+      "Ball Striking"
+    ]
+  },
+  "artifact": {
+    "files": 2466,
+    "bytes": 179291887,
+    "providerRecords": 2467,
+    "sha256": "698ef85edd4ac5f0517b02a37dc7c3f9eaf6c50a15e8ca30c0edaea517896e60",
+    "inventorySha256": "b24edfe8ded416c770f01b6e940060feeb99e371f6e13d515539b2a50f0db87c",
+    "providerInventorySha256": "8e60de043c7d86b2e6eae8866297dd04fd25a7c0fdd3899356abfdc6a90802a7",
+    "verificationSha256": "9015a396cb0bcd55baa4bb5b028816ba890cbc77807794b31c9b1dfe1fc8bd5c",
+    "promotionIntentSha256": "80d8c2bf33c7fdc9101e9ab6d780f27b74676ceca47ce10b23ae5a6583f11d86"
+  },
+  "preservation": {
+    "previousServedFiles": 2436,
+    "unchangedServedFiles": 2435,
+    "addedAssets": 30,
+    "removedFiles": 0,
+    "changedServedPaths": [
+      "/application.html"
+    ],
+    "providerMetadata": "Netlify-generated /netlify.toml metadata differs; effective routing and headers verified.",
+    "exactPublicSurfaces": [
+      "Players homepage",
+      "Coaches",
+      "feedback",
+      "coach enrollment",
+      "icons",
+      "historical assets"
+    ],
+    "protectedBaselineFiles": 2464,
+    "preservedLocalPathRecords": 37,
+    "baselineSha256": "8efd0688a81292bf15b652884a3e3f55ef3fc8f89aea2abbd3d965bbf46aa6a5"
+  },
+  "ordinaryPreservationBuild": {
+    "passed": true,
+    "command": "node scripts/build-production.mjs",
+    "protectedFiles": 2464,
+    "checkOnlyNotPublished": true,
+    "logSha256": "3c2c2b36979dc6e14594d68a38ed41c5c9b400e0d979d97968641aed9747504a",
+    "releaseGuardTestsPassed": 27,
+    "releaseGuardLogSha256": "467796737a081f86b3d9ab7dcc711874337ed522dcbcb89c1312b42d7c410e00"
+  },
+  "validation": {
+    "sourceCI": "https://github.com/posetek/posetek-website/actions/runs/41708026271",
+    "runtimeCI": "https://github.com/posetek/posetek-website/actions/runs/41708122999",
+    "backendCI": "https://github.com/posetek/posetek-backend/actions/runs/41717851522",
+    "ciConclusions": "success",
+    "latestRevisionReview": "complete; no actionable findings",
+    "localBrowserScenarios": 42,
+    "hostedCandidate": {
+      "passed": true,
+      "recordedAssertions": 97,
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "viewports": [
+        390,
+        1440
+      ],
+      "staffCompatibility": [
+        "manager",
+        "coach"
+      ],
+      "receiptSha256": "bbf09e430e19c97b0a92608e2500ad6adf9f085a0977594e23d1d428801bbb9c",
+      "correlatedTransportDiagnostics": 28,
+      "evidenceQualification": "Earlier harness navigation/allowlist failures are retained, corrected, and separately verified. Expected cancelled Firestore-channel diagnostics are correlated with request cancellation; no unresolved application failures. An invalid synthetic dose was corrected without changing application bytes."
+    },
+    "productionRoutes": [
+      {
+        "route": "/",
+        "status": 200,
+        "sha256": "4ef9217f61564b6420e4c0e50a543be5d03b0e8cb3638cf2a0213993e9203c89",
+        "preserved": true
+      },
+      {
+        "route": "/coaches",
+        "status": 200,
+        "sha256": "4ca25e3fb0c1ee9d3c514d44a93d2bdf0f37c2b158fe4310ffd09bd83cd33830",
+        "preserved": true
+      },
+      {
+        "route": "/coaches/",
+        "status": 200,
+        "sha256": "4ca25e3fb0c1ee9d3c514d44a93d2bdf0f37c2b158fe4310ffd09bd83cd33830",
+        "preserved": true
+      },
+      {
+        "route": "/feedback",
+        "status": 200,
+        "sha256": "94cc8aa828223bd26c441e2aff478013721f6c92010c43ac660288dbe503af89",
+        "preserved": true
+      },
+      {
+        "route": "/feedback/",
+        "status": 200,
+        "sha256": "94cc8aa828223bd26c441e2aff478013721f6c92010c43ac660288dbe503af89",
+        "preserved": true
+      },
+      {
+        "route": "/coach-join",
+        "status": 200,
+        "sha256": "c9ecb571e935db674e3462058b9b207144e5b5717ae584688492ab09ffcd27cb",
+        "preserved": true
+      },
+      {
+        "route": "/coach-join/",
+        "status": 200,
+        "sha256": "c9ecb571e935db674e3462058b9b207144e5b5717ae584688492ab09ffcd27cb",
+        "preserved": true
+      },
+      {
+        "route": "/admin/accounts",
+        "status": 200,
+        "sha256": "14019c30b0d6c281d25f3b640a2dfc50fdfec098c8ad6e1378c85cb7bf5f4b25"
+      },
+      {
+        "route": "/admin/access",
+        "status": 200,
+        "sha256": "14019c30b0d6c281d25f3b640a2dfc50fdfec098c8ad6e1378c85cb7bf5f4b25"
+      },
+      {
+        "route": "/admin/rep-tools",
+        "status": 200,
+        "sha256": "14019c30b0d6c281d25f3b640a2dfc50fdfec098c8ad6e1378c85cb7bf5f4b25"
+      },
+      {
+        "route": "/insights",
+        "status": 200,
+        "sha256": "14019c30b0d6c281d25f3b640a2dfc50fdfec098c8ad6e1378c85cb7bf5f4b25"
+      },
+      {
+        "route": "/signin",
+        "status": 200,
+        "sha256": "14019c30b0d6c281d25f3b640a2dfc50fdfec098c8ad6e1378c85cb7bf5f4b25"
+      },
+      {
+        "route": "/kickai.html",
+        "status": 200,
+        "sha256": "14019c30b0d6c281d25f3b640a2dfc50fdfec098c8ad6e1378c85cb7bf5f4b25"
+      },
+      {
+        "route": "/privacy",
+        "status": 200,
+        "sha256": "14019c30b0d6c281d25f3b640a2dfc50fdfec098c8ad6e1378c85cb7bf5f4b25"
+      }
+    ],
+    "physicalPhoneTested": false
+  },
+  "backend": {
+    "schemaVersion": 1,
+    "feature": "admin-activity-reporting-v1",
+    "status": "released-and-verified",
+    "endpoint": "getClubInsightsV2",
+    "region": "us-central1",
+    "versionId": "10",
+    "sourceCommit": "4ef6e77e8e563ca9682c5229624dd66a944b92a1",
+    "sourceMergeCommit": "e4de4c296d82dd4be8f2045405927a777fecf035",
+    "sourceArchiveSha256": "9b61266b5c6dc01de52369c078f97537f202b630468e9a34ea9f566ec7c161ab",
+    "updateMask": "sourceUploadUrl",
+    "runtime": "nodejs22",
+    "configurationUnchanged": true,
+    "iamUnchanged": true,
+    "unrelatedFunctionsUnchanged": 145,
+    "candidateFiles": 19,
+    "rollback": {
+      "priorVersionId": "9",
+      "sourceArchiveSha256": "2f187d2bad785d57880a11eec332e056f140f39e3ac9d30f95b2dfc5a3c85974",
+      "sourceAndConfigurationPreserved": true,
+      "invokerPolicyPreserved": true,
+      "restorationNotExercised": true
+    },
+    "acceptance": {
+      "passed": true,
+      "assertions": 81,
+      "passedAssertions": 81,
+      "syntheticPlayers": 26,
+      "syntheticAuthAccounts": 6,
+      "completeRosterPagination": true,
+      "realAuthBindingAndIndexQueries": true,
+      "legacyAdminManagerCoachBusinessResponsesExact": true,
+      "comparisonExcludedFields": [
+        "generatedAtMillis"
+      ],
+      "noFixtureNotificationOutbox": true,
+      "realPlayerWrites": 0,
+      "latency": {
+        "roster": 26,
+        "firstFullRosterMillis": 8784,
+        "projectionWarmup": [
+          {
+            "players": 8,
+            "elapsedMillis": 5490
+          },
+          {
+            "players": 18,
+            "elapsedMillis": 4338
+          }
+        ],
+        "warmMedianMillis": 6806.5,
+        "warmMaxMillis": 10513,
+        "maximumRosterNotBenchmarked": true
+      },
+      "checkedAt": "2026-11-03T21:17:00.765171+00:00",
+      "fixtureDoseCorrection": {
+        "documents": 12,
+        "prescriptionBlocks": 24,
+        "onlyAddedFields": [
+          "reps",
+          "repUnit"
+        ],
+        "allOtherFieldsPreserved": true,
+        "authChanges": 0,
+        "passedAssertions": 14,
+        "singleFullRosterRequest": true,
+        "elapsedMillis": 14636,
+        "businessRowsAndAggregatesUnchanged": true,
+        "outboxDocuments": 0,
+        "checkedAt": "2026-11-03T21:36:33.676734+00:00"
+      }
+    },
+    "cleanup": {
+      "status": "complete",
+      "verified": true,
+      "knownDocumentPathsCovered": 180,
+      "syntheticAuthAccountsRemoved": 6,
+      "authDeletionReadbackBeforeCredentialRemoval": true,
+      "generatedInvitationReferencesRemoved": 40,
+      "delayedProjectionMarkersRemoved": 26,
+      "independentReadOnlyVerification": true,
+      "remainingAuthAccounts": 0,
+      "remainingKnownDocuments": 0,
+      "remainingDescendants": 0,
+      "remainingInvitationReferences": 0,
+      "credentialsAbsent": true,
+      "sharedQuotaCounters": "untouched; normal expiry retained",
+      "verifiedAt": "2026-11-03T21:58:25.557167+00:00"
+    },
+    "limits": [
+      "Latency evidence covers 26 synthetic players; maximum roster size was not benchmarked.",
+      "Current-week assignment retirement uses saved earlier endings of current assigned slots; no new terminal event or notification was generated.",
+      "No rules, index, gateway, native or other endpoint was deployed."
+    ],
+    "verifiedAt": "2026-11-03T21:38:17.445043+00:00",
+    "website": {
+      "sourceCommit": "d29b06d9a1ec030b3437b5da0ddc0c79b21ab4be",
+      "mergeCommit": "dda7392398da99bbef5dd03d341e75cd23c90d3b",
+      "runtimeCommit": "c33a9c80187a604659ee4c3c851b701c74dacd9c",
+      "deployId": "6aea3d1459da561c7113e606",
+      "priorDeployId": "6ae7cb8d2a05c4dbbbd9b7e5",
+      "artifactSha256": "698ef85edd4ac5f0517b02a37dc7c3f9eaf6c50a15e8ca30c0edaea517896e60",
+      "publishedAt": "2026-11-03T21:42:40.191Z",
+      "artifactFiles": 2466,
+      "providerRecords": 2467,
+      "routeChecks": 14,
+      "hostedCandidateAssertions": 97,
+      "productionBrowserAcceptance": {
+        "passed": true,
+        "chromiumDesktopAssertions": 9,
+        "webkitMobileAssertions": 7,
+        "allContextsClosed": true,
+        "physicalPhoneAcceptance": false
+      },
+      "homepageCoachesFeedbackEnrollmentPreserved": true
+    },
+    "completedAt": "2026-11-03T21:58:25.557167+00:00"
+  },
+  "productionBrowser": {
+    "passed": true,
+    "recordedCheckpoints": 19,
+    "captures": 8,
+    "engines": [
+      "Chromium",
+      "WebKit"
+    ],
+    "viewports": [
+      1440,
+      390
+    ],
+    "contextsClosed": true,
+    "receiptSha256": "b9fd79f8c20faa4a46e54c5bd3c9e882517c08a91e9950ac59513a44392f4dd0",
+    "applicationSha256": "14019c30b0d6c281d25f3b640a2dfc50fdfec098c8ad6e1378c85cb7bf5f4b25",
+    "historicalBlockedTrafficCount": 1,
+    "automaticDiagnosticWritesSuppressed": 1,
+    "evidenceQualification": "An initial automated form fill raced existing delayed autofocus and was corrected. An existing sign-in navigation cancellation attempted one automatic diagnostic write; the read-only harness blocked it. Both original attempts are retained, and focused confirmation runs passed with no unresolved errors.",
+    "checkedAt": "2026-11-03T21:49:31.326Z"
+  },
+  "syntheticCleanup": {
+    "status": "complete",
+    "verified": true,
+    "knownDocumentPathsCovered": 180,
+    "syntheticAuthAccountsRemoved": 6,
+    "authDeletionReadbackBeforeCredentialRemoval": true,
+    "generatedInvitationReferencesRemoved": 40,
+    "delayedProjectionMarkersRemoved": 26,
+    "independentReadOnlyVerification": true,
+    "remainingAuthAccounts": 0,
+    "remainingKnownDocuments": 0,
+    "remainingDescendants": 0,
+    "remainingInvitationReferences": 0,
+    "credentialsAbsent": true,
+    "sharedQuotaCounters": "untouched; normal expiry retained",
+    "verifiedAt": "2026-11-03T21:58:25.557167+00:00"
+  },
+  "recovery": {
+    "previousWebsiteDeploymentId": "6ae7cb8d2a05c4dbbbd9b7e5",
+    "previousArtifactRetained": true,
+    "backendPriorVersion": "9",
+    "backendSourceAndConfigurationRetained": true,
+    "rollbackPerformed": false
+  },
+  "limits": [
+    "Browser viewport/touch emulation does not establish physical-phone acceptance.",
+    "Backend latency evidence covers 26 synthetic players, not the maximum roster size."
+  ],
+  "checkedAt": "2026-11-03T21:58:25.557167+00:00",
+  "backendReceiptSha256": "b1a4556664ca4e536cc72fbaa7c3506724cd36792ecc157587205053f3f00b4c"
+}
