@@ -102,7 +102,7 @@ function report(payload, uid) {
       signInUnlinkedPlayers: group.filter(row => row.adminReporting.signIn.status === 'unlinked').length, signInUnknownPlayers: group.filter(row => row.adminReporting.signIn.status === 'unknown').length,
       timerMinutes: total(group, row => row.workouts.timerMinutes), estimatedMinutes: total(group, row => row.workouts.estimatedMinutes), timerRecords: total(group, row => row.workouts.timerRecords), estimatedRecords: total(group, row => row.workouts.estimatedRecords) };
   });
-  return { ...original, generatedAtMillis: AS_OF,
+  return { ...original, filters: { ...payload.filters }, generatedAtMillis: AS_OF,
     players: rows.slice(offset, offset + pageSize), pagination: { total: rows.length, pageSize, nextCursor: offset + pageSize < rows.length ? `fixture-page-${offset + pageSize}` : null },
     ...(payload.rosterPlayerIds ? { rosterMetrics: payload.rosterPlayerIds.map(playerId => { const player = population.find(row => row.id === playerId); return player ? { playerId, status: 'included', player } : { playerId, status: 'excluded' }; }) } : {}),
     ...(payload.adminReporting && reportMode !== 'missing-extension' ? { adminReporting: { version: 1, followUp, sort, asOfMillis: AS_OF, population: population.length,
