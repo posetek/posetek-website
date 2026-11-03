@@ -1,5 +1,22 @@
 # PoseTek engineering handbook
 
+## Safari marketing link activation release — November 3, 2026
+
+Exact deployment `6aea6ecaca4a6743660ac238` is live. Animated public labels now
+leave pointer activation to their enclosing controls, restoring first-click Sign in
+navigation in WebKit while preserving native destinations and keyboard behavior.
+PR #118 is merged as `f9cf233`; source integration used `[skip netlify]`.
+
+All 2,544 artifact files match 2,545 provider records. Every prior protected file
+remains exact; the reconciled baseline protects 2,542 files and retains all 37
+local recovery mappings. Application runtime `c33a9c8`, feedback, coach enrollment
+and private reports remain unchanged. Held application candidates and report
+outreach remain held. Keep `[skip netlify]` on source/receipt integration.
+
+Read [the release handoff](../releases/HOMEPAGE_LINK_ACTIVATION.md) and
+[production receipt](../releases/receipts/HOMEPAGE_LINK_ACTIVATION_PRODUCTION.json) for exact-artifact, browser and recovery evidence.
+Earlier release sections are historical.
+
 ## Private parent report review release — November 3, 2026
 
 Exact deployment `6aea5e0ceb047cc53ae49efc` is live for private review. One encrypted
