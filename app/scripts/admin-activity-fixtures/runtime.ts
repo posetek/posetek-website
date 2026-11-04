@@ -52,8 +52,20 @@ export const directorySource = {
   lookup: () => read('lookup', {}, () => ({ players: people(), limited: false })),
 };
 
-function extended(row, cutoff, uid) {
+const observedFeatures = [
+  { features: ['results'], basis: 'latestInterval' },
+  { features: ['training', 'results'], basis: 'latestInterval' },
+  { features: ['overview'], basis: 'window' },
+  { features: ['training', 'overview'], basis: 'window' },
+];
+
+function extended(row, cutoff, uid, includeLastFeatureEvidence) {
   const index = Number(row.id.replace('synthetic-', ''));
+  const windowEnd = cutoff - (index % 8) * 900_000;
+  const lastActivityWindow = row.usage.collected && row.usage.activeMinutes > 0
+    ? { startMillis: windowEnd - 900_000, endMillis: windowEnd,
+      ...(includeLastFeatureEvidence ? { featureEvidence: observedFeatures[index % observedFeatures.length] } : {}) }
+    : null;
   const signInStatus = ['unknown', 'none', 'recorded', 'unlinked'][index % 4];
   const latest = row.workouts.started ? { source: index % 2 ? 'personalWorkoutLogs' : 'workoutLogs', logId: `fixture-${index}-first`, title: `Synthetic session ${index}`,
     startedAtMillis: AS_OF - (index + 1) * 3_600_000, endedAtMillis: row.workouts.status === 'inProgress' ? null : AS_OF - (index + 1) * 3_600_000 + 1_800_000,
@@ -65,7 +77,7 @@ function extended(row, cutoff, uid) {
   const copy = { ...row, firstName: `${uid === 'synthetic-admin-two' ? 'Second account ' : ''}${label[0]}`, lastName: label[1],
     usage: { ...row.usage }, workouts: { ...row.workouts },
     adminReporting: { signIn: { status: signInStatus, lastSignInAtMillis: signInStatus === 'recorded' ? AS_OF - 86_400_000 : null },
-      usage: { lastActivityWindow: row.usage.collected && row.usage.activeMinutes > 0 ? { startMillis: cutoff - 900_000, endMillis: cutoff } : null },
+      usage: { lastActivityWindow },
       workouts: { latest }, assigned } };
   if (index === 46) { copy.workouts.timerMinutes = 137; copy.workouts.timerRecords = 3; copy.usage = { ...copy.usage, collected: true, webCollected: true, iosCollected: true, activeMinutes: 201, webMinutes: 151, iosMinutes: 65, activeDays: 8 }; }
   return copy;
@@ -81,7 +93,8 @@ function report(payload, uid) {
   // intentionally calculated before name filtering.
   const original = previewInsights(request, 0, reportMode === 'empty' ? 'empty' : 'longNames');
   const cutoff = Math.floor(Math.min(AS_OF, Date.parse(`${request.endDate}T23:59:59Z`)) / 900_000) * 900_000;
-  const population = Array.from({ length: 4 }, (_, page) => previewInsights({ ...request, rosterSearch: '' }, page, reportMode === 'empty' ? 'empty' : 'longNames').players).flat().map(row => extended(row, cutoff, uid));
+  const population = Array.from({ length: 4 }, (_, page) => previewInsights({ ...request, rosterSearch: '' }, page, reportMode === 'empty' ? 'empty' : 'longNames').players).flat()
+    .map(row => extended(row, cutoff, uid, payload.includeLastFeatureEvidence === true));
   const followUp = payload.adminReporting?.followUp || 'all', sort = payload.adminReporting?.sort || 'name';
   const name = row => `${row.firstName} ${row.lastName}`;
   const value = row => sort === 'activeMinutes' ? row.usage.activeMinutes : sort === 'workoutMinutes' ? row.workouts.timerMinutes

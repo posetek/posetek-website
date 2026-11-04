@@ -186,7 +186,8 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
   const visible = directoryPage(accountRows || [], state.page).rows;
   const playerIds = pane === "report" || !showPeople || attention ? undefined : supportedWorkspacePlayerIds(visible, scope, canonicalOrganizationIds);
   const metrics = useWorkspaceMetrics({ scope, search: workspaceReportSearch(state), playerIds, enabled,
-    adminReporting: !legacy && (activityView || !showPeople && Boolean(state.orgId)) });
+    adminReporting: !legacy && (activityView || !showPeople && Boolean(state.orgId)),
+    includeLastFeatureEvidence: !legacy && pane === "report" && view === "usage" });
   const report = metrics.data;
   const focusReview = useRef(false);
   const focusActivity = useRef(false);

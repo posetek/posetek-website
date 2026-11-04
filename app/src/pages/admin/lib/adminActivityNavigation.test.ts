@@ -34,6 +34,16 @@ describe("admin activity navigation and opt-in", () => {
     expect(workspaceMetricsPayload(search, scope)).not.toHaveProperty("adminReporting");
     expect(workspaceMetricsPayload(search, scope, undefined, new Date("2026-11-03T20:00:00Z"), true).adminReporting).toEqual({ version: 1, followUp: "noSignIn", sort: "lastActivity" });
   });
+  it("requests last-feature detail only for the visible admin Usage tab", () => {
+    const scope = { kind: "team" as const, organizationId: "northfield", teamId: "harbor" };
+    const build = (view: string, admin: boolean, visibleUsage: boolean) => workspaceMetricsPayload(`view=${view}`, scope, undefined, new Date("2026-11-03T20:00:00Z"), admin, visibleUsage);
+    const optedIn = build("usage", true, true);
+    expect(optedIn.includeLastFeatureEvidence).toBe(true);
+    expect(optedIn.adminReporting).toEqual({ version: 1, followUp: "all", sort: "lastActivity" });
+    expect(build("usage", true, false)).not.toHaveProperty("includeLastFeatureEvidence");
+    expect(build("usage", false, true)).not.toHaveProperty("includeLastFeatureEvidence");
+    for (const view of ["testing", "workouts", "overview"]) expect(build(view, true, true)).not.toHaveProperty("includeLastFeatureEvidence");
+  });
   it.each([["usage", "lastActivity"], ["workouts", "lastWorkout"], ["overview", "name"]])("uses the %s default across the complete server page", (view, sort) => {
     expect(workspaceMetricsPayload(`view=${view}`, { kind: "global" }, undefined, new Date("2026-11-03T20:00:00Z"), true).adminReporting).toEqual({ version: 1, followUp: "all", sort });
   });

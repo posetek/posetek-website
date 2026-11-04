@@ -1,4 +1,5 @@
 import { inFlightRequests } from "../../../lib/inflightRequests";
+import { USAGE_FEATURES } from "../../../lib/insight-usage/clock";
 import { completeReport } from "../../insights/lib/completeReport";
 import { expandedRequest } from "../../insights/lib/expandedQuery";
 import { assertReportScope, reportPayload } from "../../insights/lib/expanded";
@@ -6,18 +7,21 @@ import type { ExpandedInsights, InsightScope } from "../../insights/lib/expanded
 import { adminActivitySelection } from "./adminActivity";
 import type { AdminActivityRequest } from "./adminActivity";
 
-export type WorkspaceReportPayload = ReturnType<typeof reportPayload> & { rosterPlayerIds?: string[]; adminReporting?: AdminActivityRequest };
+export type WorkspaceReportPayload = ReturnType<typeof reportPayload> & {
+  rosterPlayerIds?: string[]; adminReporting?: AdminActivityRequest; includeLastFeatureEvidence?: true;
+};
 export type WorkspaceReportReader = (payload: WorkspaceReportPayload) => Promise<ExpandedInsights>;
 const invalid = (message: string) => Object.assign(new Error(message), { code: "failed-precondition" });
 
-export function workspaceMetricsPayload(search: string, scope: InsightScope, playerIds?: string[], now = new Date(), adminReporting = false): WorkspaceReportPayload {
+export function workspaceMetricsPayload(search: string, scope: InsightScope, playerIds?: string[], now = new Date(), adminReporting = false, includeLastFeatureEvidence = false): WorkspaceReportPayload {
   const request = expandedRequest(search, now);
   const ids = playerIds?.length ? [...playerIds].sort() : undefined;
   if (ids && (ids.length > 20 || new Set(ids).size !== ids.length || ids.some(id => typeof id !== "string" || !id || id.includes("/")))) {
     throw invalid("The visible players changed. Refresh the roster before loading metrics.");
   }
   return { ...reportPayload(request, scope, request.cursor), pageSize: 20, ...(ids ? { rosterPlayerIds: ids } : {}),
-    ...(adminReporting ? { adminReporting: adminActivitySelection(request.view, request.adminFollowUp, request.adminSort) } : {}) };
+    ...(adminReporting ? { adminReporting: adminActivitySelection(request.view, request.adminFollowUp, request.adminSort) } : {}),
+    ...(adminReporting && includeLastFeatureEvidence && request.view === "usage" ? { includeLastFeatureEvidence: true } : {}) };
 }
 
 /** Keyed only by server-visible inputs, so changing the presentation tab reuses data. */
@@ -80,6 +84,15 @@ export function assertAdminActivity(data: ExpandedInsights, payload: WorkspaceRe
       || !row.usage || !row.workouts || !row.assigned || !["available", "noActivePlan", "unavailable"].includes(row.assigned.status)) throw invalid("Player activity is incomplete. Refresh reporting.");
     const window = row.usage.lastActivityWindow;
     if (window && (!stamp(window.startMillis) || !stamp(window.endMillis) || window.endMillis <= window.startMillis || window.endMillis - window.startMillis > 15 * 60_000)) throw invalid("Recorded activity timing is unavailable.");
+    if (window && Object.hasOwn(window, "featureEvidence")) {
+      const evidence = window.featureEvidence;
+      if (!evidence || !["latestInterval", "window"].includes(evidence.basis) || !Array.isArray(evidence.features)
+        || evidence.features.length < 1 || evidence.features.length > USAGE_FEATURES.length
+        || new Set(evidence.features).size !== evidence.features.length
+        || !Array.from(evidence.features).every(feature => USAGE_FEATURES.includes(feature))) {
+        throw invalid("Recorded feature evidence is unavailable. Refresh reporting.");
+      }
+    }
     if (row.assigned.status === "available" && ![row.assigned.remaining, row.assigned.notStarted, row.assigned.noEnding].every(count)) throw invalid("Assignment coverage is unavailable.");
     const latest = row.workouts.latest;
     if (latest && (!["workoutLogs", "personalWorkoutLogs"].includes(latest.source) || !latest.logId || !stamp(latest.startedAtMillis) || !stamp(latest.endedAtMillis)

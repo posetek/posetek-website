@@ -1,7 +1,7 @@
 import { Component, Fragment, Suspense, lazy, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { minuteText, workoutDurationText } from '../../insights/lib/expanded';
+import { FEATURE_LABELS, minuteText, workoutDurationText } from '../../insights/lib/expanded';
 import type { ExpandedInsights } from '../../insights/lib/expanded';
 import type { ExpandedRequest } from '../../insights/lib/expandedQuery';
 import { adminActivitySelection } from '../lib/adminActivity';
@@ -45,6 +45,23 @@ function Assigned({ activity }: { activity?: AdminPlayerActivity }) {
   return <><strong>{assigned.remaining == null ? 'Remaining unavailable' : `${assigned.remaining} remaining`}</strong>
     <small>{assigned.weekNumber == null ? 'Current plan week' : `Current plan · week ${assigned.weekNumber}`}</small>
     <small>{assigned.notStarted == null ? 'Not-started count unavailable' : `${assigned.notStarted} not started`} · {assigned.noEnding == null ? 'Open-log count unavailable' : `${assigned.noEnding} with no ending`}</small></>;
+}
+function LastObservedFeature({ activity, collected, timezone }: { activity?: AdminPlayerActivity; collected: boolean; timezone: string }) {
+  if (!activity) return <span className="activity-missing">Activity window unavailable</span>;
+  const window = activity.usage.lastActivityWindow;
+  if (!window) return <span className="activity-missing">{collected ? 'No retained activity window' : 'Not collected'}</span>;
+  const evidence = window.featureEvidence;
+  let description;
+  if (evidence?.basis === 'latestInterval') {
+    description = evidence.features.length === 1 ? 'Latest measured interval' : 'Latest observations tied';
+  } else if (evidence?.basis === 'window') {
+    description = 'Window summary · order unknown';
+  }
+  return <>
+    <strong>{evidence ? evidence.features.map(feature => FEATURE_LABELS[feature]).join(', ') : 'Feature unavailable'}</strong>
+    {description && <small>{description}</small>}
+    <small>{activityWindow(window, timezone)}</small>
+  </>;
 }
 function FollowUps({ report, selected, busy, onChange }: { report: AdminActivityReportData; selected: AdminActivityFollowUp; busy?: boolean; onChange(patch: Partial<ExpandedRequest>): void }) {
   return <section className="activity-followups" aria-labelledby="activity-followup-title"><h2 id="activity-followup-title">People to follow up with</h2>
@@ -94,7 +111,7 @@ function PlayerRows({ data, view, playerLink }: Pick<AdminActivityReportProps, '
   const timezone = data.period.timeZone;
   const columns = view === 'overview' ? ['Player', 'Recorded sign-in', 'Estimated app use', 'Workouts completed', 'Assigned work']
     : view === 'workouts' ? ['Player', 'Period activity', 'Recorded duration', 'Latest saved workout', 'Assigned work', 'Recent history']
-      : ['Player', 'Estimated app use', 'Active days', 'Platforms', 'Latest observed app use'];
+      : ['Player', 'Estimated app use', 'Active days', 'Platforms', 'Last observed feature'];
   return <div className="activity-table-wrap"><table className="activity-table"><caption>Player activity in this reporting scope</caption><thead><tr>{columns.map(column => <th key={column} scope="col">{column}</th>)}</tr></thead>
     <tbody>{data.players.map(player => {
       const name = `${player.firstName} ${player.lastName}`.trim() || 'Player';
@@ -107,7 +124,8 @@ function PlayerRows({ data, view, playerLink }: Pick<AdminActivityReportProps, '
           <td data-label="Recorded duration"><strong>{workoutDurationText(player.workouts.timerMinutes, player.workouts.timerRecords)} timer</strong><small>{workoutDurationText(player.workouts.estimatedMinutes, player.workouts.estimatedRecords)} elapsed estimate</small></td>
           <td data-label="Latest saved workout">{latest ? <><Link className="activity-row-action" to={exactWorkoutLink(playerLink(player.id, 'workouts'), latest)}>{latest.title || 'Saved workout'}</Link><span className="activity-state">{OUTCOMES[latest.status] || 'Status unavailable'}</span><small>Started {activityDate(latest.startedAtMillis, timezone)}</small><small>{latest.endedAtMillis == null ? 'No ending recorded' : `Ended ${activityDate(latest.endedAtMillis, timezone)}`}</small><small>{latest.timerMinutes != null ? `${minuteText(latest.timerMinutes)} recorded timer` : latest.estimatedMinutes != null ? `${minuteText(latest.estimatedMinutes)} elapsed estimate` : 'Duration not recorded'} · {latest.setsCompleted} sets recorded</small></> : <span className="activity-missing">{activity ? 'No saved workout' : 'Latest workout unavailable'}</span>}</td>
           <td data-label="Assigned work"><Assigned activity={activity} /></td><td data-label="Recent history"><button id={`admin-player-${player.id}-history`} type="button" className="activity-row-action" aria-label={`${open ? 'Hide' : 'Show'} recent workouts for ${name}`} aria-expanded={open} aria-controls={`activity-history-${player.id}`} onClick={() => setExpanded(open ? '' : player.id)}>{open ? 'Hide recent workouts' : 'Show recent workouts'}</button></td></>}
-        {view === 'usage' && <><td data-label="Estimated app use"><strong>{minuteText(player.usage.activeMinutes, player.usage.collected)}</strong></td><td data-label="Active days"><strong>{player.usage.collected ? player.usage.activeDays : 'Not collected'}</strong></td><td data-label="Platforms"><strong>{minuteText(player.usage.webMinutes, player.usage.webCollected)} website</strong><small>{minuteText(player.usage.iosMinutes, player.usage.iosCollected)} iOS</small></td><td data-label="Latest observed app use"><span>{activity ? activityWindow(activity.usage.lastActivityWindow, timezone) : 'Activity window unavailable'}</span>{activity?.usage.lastActivityWindow && <small>15-minute retained activity window · {timezone}</small>}</td></>}
+        {view === 'usage' && <><td data-label="Estimated app use"><strong>{minuteText(player.usage.activeMinutes, player.usage.collected)}</strong></td><td data-label="Active days"><strong>{player.usage.collected ? player.usage.activeDays : 'Not collected'}</strong></td><td data-label="Platforms"><strong>{minuteText(player.usage.webMinutes, player.usage.webCollected)} website</strong><small>{minuteText(player.usage.iosMinutes, player.usage.iosCollected)} iOS</small></td>
+          <td data-label="Last observed feature"><LastObservedFeature activity={activity} collected={player.usage.collected} timezone={timezone} /></td></>}
       </tr>{open && <tr className="activity-expanded-row"><td className="activity-expansion-cell" colSpan={columns.length}><section id={`activity-history-${player.id}`} className="activity-expansion" aria-label={`Recent workouts for ${name}`}><div className="activity-expansion-heading"><h3>Recent workouts · {name}</h3><Link className="quiet-button" to={playerLink(player.id, 'workouts')}>Open full workout record</Link></div><RecentHistory key={player.id} playerId={player.id} /></section></td></tr>}</Fragment>;
     })}</tbody></table></div>;
 }
@@ -140,7 +158,8 @@ export default function AdminActivityReport({ data, request, view, busy, onChang
     </section>
     <details className="activity-method"><summary>How this is measured</summary><p className="activity-note">Workout starts, completions, durations and estimated app use cover {data.period.startDate} through {data.period.endDate}, in {data.period.timeZone}. Rankings, team comparisons and follow-up counts cover the complete reporting selection before name search, follow-up selection and pagination. Workout timers and elapsed estimates remain separate.</p>
       <p className="activity-note">{report ? `Account sign-in, latest saved workout and current-week assignments were checked ${activityDate(report.asOfMillis, data.period.timeZone)}. ` : ''}These are current account and workout facts, even when the reporting period is historical. A recorded sign-in does not mean the player is online. No recorded sign-in includes unlinked accounts; unknown sign-in evidence is separate.</p>
-      <p className="activity-note">Latest observed app use is a retained 15-minute activity window through the reporting cutoff. It may precede the selected period. It is not a precise logout or stopping time. No collected active use requires collection coverage; missing collection is not zero use.</p>
+      <p className="activity-note">The latest observed app use appears in a 15-minute retained activity window through the reporting cutoff. It may precede the selected period. The window is not a precise logout or stopping time.</p>
+      {view === 'usage' && <p className="activity-note">The feature names describe areas of the app. Recent intervals identify the last measured feature and show ties together. A window summary lists areas with recorded use in that quarter hour. Their order is unknown. Times use {data.period.timeZone}.</p>}
       <p className="activity-note">Unfinished assigned work describes the current active plan week and may include workouts not yet started or with no ending. It is separate from having no completed workouts in the reporting period. A saved completion can contain partial or skipped work; an open log does not mean the player is training now.</p>
     </details>
   </div>;
