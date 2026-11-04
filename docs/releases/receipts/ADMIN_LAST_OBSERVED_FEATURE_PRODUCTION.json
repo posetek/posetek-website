@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "accepted": true,
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "authorization": "Explicit user approval to publish the reviewed reporting function and website candidate.",
+  "endpoint": "getClubInsightsV2",
+  "feature": "Last observed feature in admin Usage",
+  "deployId": "6aeb76624e362b0c48f30421",
+  "publishedAt": "2026-11-04T18:49:05.682Z",
+  "previousDeploymentId": "6aea6ecaca4a6743660ac238",
+  "candidateDigest": "be9a9782097290504d5b8d86ac2a71f6ea9b47d84f28497610625086eaa182d5",
+  "artifactFiles": 2553,
+  "providerRecords": 2554,
+  "httpChecks": 19,
+  "preservedPriorFiles": 2543,
+  "privateReportAssetsPreserved": 6,
+  "backendVersion": "11",
+  "backendSha256": "6083deb3af5e8775de5f9b9a8fa09d209862dacfeec5457d6dec775425324cf1",
+  "backendUnrelatedFunctionsPreserved": 145,
+  "backendCallableChecks": 21,
+  "hostedAcceptance": {
+    "functionalAcceptance": "passed with documented WebKit diagnostic",
+    "browserFunctionalChecks": {
+      "chromiumDesktop": 14,
+      "webkitPhone": 13
+    },
+    "realScopedRowsPerBrowser": 3,
+    "blockedUnsafeRequests": 0
+  },
+  "liveAcceptance": {
+    "functionalAcceptance": "passed with documented WebKit diagnostic",
+    "browserFunctionalChecks": {
+      "chromiumDesktop": 14,
+      "webkitPhone": 13
+    },
+    "realScopedRowsPerBrowser": 3,
+    "blockedUnsafeRequests": 0
+  },
+  "cleanup": {
+    "passed": true,
+    "readOnly": true,
+    "checkedAt": "2026-11-04T18:55:08.385Z",
+    "elapsedSeconds": 74,
+    "checkedDocumentPaths": 24,
+    "checkedAuthAccounts": 2,
+    "checkedDescendantRoots": 7,
+    "remainingDocuments": 0,
+    "remainingAuthAccounts": 0,
+    "remainingDescendants": 0,
+    "temporaryCredentialsAbsent": true
+  },
+  "cleanupNotes": "Three delayed projection event markers under deleted synthetic player parents were verified, removed with version preconditions, and checked again after the delay. No customer records were used.",
+  "entryVerification": {
+    "homepageRoutes": 2,
+    "coachesRoutes": 3,
+    "applicationRoutes": 25,
+    "assets": 2362,
+    "preservedFiles": 2551
+  },
+  "verificationLimits": "Signed-in synthetic accounts and three synthetic players. Browser phone emulation. WebKit logged Firestore Listen/Write connection diagnostics on the predecessor and candidate while the scoped report returned successfully. See the browser receipts for live observations.",
+  "proofSha256": {
+    "backendArchiveQualification": "c61515704461f5ccd2ee0db2e11fb0631f8aac5ae5263bc2593aa9d0680ff25d",
+    "backendIndependentReview": "e90b82bf45eb012412f8f6786431003f1f30c37a754d5645e04069e1ec33662e",
+    "backendOperatorReview": "64e8585ff09751052d686580af20269e5293efde7fb5149aab48cb016663460a",
+    "backendPublication": "621622cd46c81f685d749de03225cb671aacb4a82e9a1d8bc06ab851f99d1a7c",
+    "backendCallableAcceptance": "5c644c31e48ad8dedb9d9c9af4501c74eed2ef933fd5722316b77961342d45c7",
+    "webSourceReview": "f27a586551f766af133cbb12f0a96415d33fbfda8afc2a3c559d2c44ecb6c08b",
+    "runtimeArtifactReview": "4b7813c23088cb5b299e565a9c5b49971689372f533db9d6783e776ca847ec45",
+    "runtimeCI": "39d3a809163ff2a0e87f9e8dcde342b8117c3eeb8ae71d2a57fb9c1458dd5c3f",
+    "hostedBrowser": "6886869535b8b467e8ba27954a792b627c4b6a97adbd9c6dfcaea7b98db62051",
+    "liveBrowser": "f6ebd68ab53d143668d2a408384c0fca181afb7c5b60d5caecc1a8f3fc081471",
+    "websiteOperatorReview": "5e44d0009698d2f844256af3b93e9f74a45d5a48096e13fc890b0af6cf5d15fb",
+    "websiteAcceptance": "78eb781a9c19e2ce5d2defa9635a3a90578496deb9110c7d94465849509f0c98",
+    "promotionIntent": "03a0219ec206429451285c2798df5a60f0dea0e3ac5f8f7eaf73838c51fa5389",
+    "acknowledgement": "5951b566bada862fc2cc576e19938caae45f79f0e3c993e2cd24948fa0e1932e",
+    "productionInventory": "6e27c2941b2ace5f8858d7911d0172f06eead18fd3725e0b484673a5b3c66a72",
+    "productionVerification": "a2c8e51134bbab5e4f148c13fd5cffe8a680a7c36e00e08a9d0a11d0fe42cf48",
+    "providerConfigVerification": "51c426d10fe4bf210b1af488ee6c37ef646317e49b93cd4c8aaeeaf63974ab7b",
+    "rollbackEvidence": "afbff4e27a6b9ccb77476ff5a4958f3c13642d479d86f80ce1f8900a7430969a",
+    "cleanupReadback": "cd41aa29e4f60c9e397aec917f1e6e23551adae099e520b399cf37107bf999bd",
+    "independentCleanup": "064c838fe664f0703f756c72cfdbc66e380d4ae1e5efe1d4aba57589acac4459",
+    "independentProjectionAndIdentityChecks": "469e474ba83926d22e6afff0f1e9fddd32e3afd74bb4788a6a05e47874b06c96",
+    "delayedMarkers": "1af091ff9411d03cb9546b3a90bb5f9a419d352e85b6b89d24c80ad7e88b908f",
+    "baselineReconciliation": "3469994e05c6cb272e7d431ff0ff8afc55cdab2a5530388b39083230f230bb73",
+    "ordinaryBuild": "f8fa631cdacc82ec5adcd6c52eb914e3e74e8bcfeea452a8ef04cbedc79aee7a",
+    "entryVerification": "242fb024349a620e9fcc9a56559b7373337384ef22d912618d11606086cff927"
+  },
+  "websiteSource": {
+    "pr": 122,
+    "source": "32a45a4060b3c498256d03de1dd8f12151e9d34a",
+    "merge": "1d365b02f2cd09c7f088422e72a96d1544e22af4",
+    "runtime": "6d105a7db40f6925304fc80df245ec0d7d8c291a",
+    "previousRuntime": "c33a9c80187a604659ee4c3c851b701c74dacd9c"
+  },
+  "backendSource": {
+    "pr": 85,
+    "source": "96a38e63550c2eb785a27a5bcc762ed96091dcc7",
+    "merge": "f8b7f2db1e0498e15156b2a0dcafcd7a7007660d",
+    "previousVersion": "10",
+    "previousSha256": "9b61266b5c6dc01de52369c078f97537f202b630468e9a34ea9f566ec7c161ab",
+    "changedFiles": [
+      "insight-usage.js",
+      "insights-v2.js"
+    ]
+  },
+  "baseline": {
+    "deployId": "6aeb76624e362b0c48f30421",
+    "protectedFiles": 2551,
+    "previousProtected": 2542,
+    "recoveryMappings": 37,
+    "changed": [
+      "/application.html"
+    ],
+    "newAssets": 9,
+    "artifactFiles": 2553,
+    "providerRecords": 2554
+  },
+  "status": "published_verified"
+}
