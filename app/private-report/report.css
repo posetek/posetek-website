@@ -65,6 +65,15 @@ button:focus-visible, a:focus-visible, summary:focus-visible {
   text-decoration: none;
 }
 .pt-cta-note { font-size: 11px; text-align: center; color: var(--pt-muted); margin: 7px 0 0; }
+.pt-app-options { margin-top: 7px; }
+.pt-app-options summary { min-height: 44px; align-content: center; text-align: center; color: var(--pt-muted); font-size: 12px; font-weight: 600; }
+.pt-recovery-links { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 16px; }
+.pt-recovery-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--pt-ink); font-size: 12px; font-weight: 600; text-underline-offset: 3px; }
+.pt-install { margin-top: 12px; padding: 10px 14px 4px; border: 1px solid var(--pt-line); border-radius: 10px; background: var(--pt-panel); }
+.pt-install-title { margin: 0; font-size: 13px; font-weight: 650; }
+.pt-install-list { margin: 2px 0 6px; padding-left: 20px; font-size: 12px; color: var(--pt-muted); }
+.pt-install-list li { min-height: 44px; align-content: center; }
+.pt-install-list .pt-recovery-link { display: inline; min-height: 0; padding: 12px 0; }
 .pt-download-row { text-align: center; margin-top: 6px; }
 .pt-quiet-button { border: 0; padding: 10px 8px; min-height: 44px; background: transparent; color: var(--pt-ink); font: 600 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .pt-section-title { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; margin: 0 0 10px; }
