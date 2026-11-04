@@ -1,5 +1,11 @@
 # PoseTek website project context
 
+## Admin Usage release — November 4, 2026
+
+Deployment `6aeb76624e362b0c48f30421` is live with runtime `6d105a7` and `getClubInsightsV2` version 11. Admin Usage shows each displayed player's last observed feature and its 15-minute activity window. The baseline protects 2,551 files and retains 37 recovery mappings. [Release handoff](docs/releases/ADMIN_LAST_OBSERVED_FEATURE.md) · [Production receipt](docs/releases/receipts/ADMIN_LAST_OBSERVED_FEATURE_PRODUCTION.json)
+
+Earlier entries are historical release records.
+
 ## Safari marketing link activation release — November 3, 2026
 
 Exact deployment `6aea6ecaca4a6743660ac238` is live. Animated public labels now

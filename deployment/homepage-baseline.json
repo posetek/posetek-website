@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6aea6ecaca4a6743660ac238",
+  "deploymentId": "6aeb76624e362b0c48f30421",
   "sourceCommit": null,
-  "url": "https://6aea6ecaca4a6743660ac238--posetek.netlify.app",
+  "url": "https://6aeb76624e362b0c48f30421--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "f9b73570baaeb4e5a7bc4d8279faae96828af9cf",
-    "size": 4893,
+    "sha": "8f76b8d41b1492810a7f60dd5ff450ec60a6fb0d",
+    "size": 4903,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -431,6 +431,11 @@
       "size": 3676
     },
     {
+      "path": "/_astro/admin-directory-lightning.ccmsrm93.js",
+      "sha": "2feed72761b7fefe955dcc08c0939d7152471ee0",
+      "size": 7005
+    },
+    {
       "path": "/_astro/admin-directory-lightning.cu2w_wf4.css",
       "sha": "e1bf5ef20f23e8de06f8df17f44f24be8595c2d3",
       "size": 5358
@@ -731,6 +736,11 @@
       "size": 14239
     },
     {
+      "path": "/_astro/adminpage.dliuttd3.js",
+      "sha": "a4458cdaab6269cdb040251bfb07e0e41d445e6d",
+      "size": 14357
+    },
+    {
       "path": "/_astro/adminpage.dmaadv9s.js",
       "sha": "5ae31ad6e1fbae66cb275fbbbcb44b8890066b7e",
       "size": 14151
@@ -789,6 +799,11 @@
       "path": "/_astro/adminpage.x8va4ouj.js",
       "sha": "79bcf18d4d684c881e1a1343187023890c99b512",
       "size": 15087
+    },
+    {
+      "path": "/_astro/adminrecentworkouts.by0-pvpm.js",
+      "sha": "63fcd4155ae7d97380cc228f33ec5828a7423c2c",
+      "size": 1033
     },
     {
       "path": "/_astro/adminrecentworkouts.cq2awnwd.js",
@@ -1184,6 +1199,11 @@
       "path": "/_astro/applicationroot.b-jhqocz.js",
       "sha": "b2bf8fef796f63791a17ee3b3f8b786b5dedf50c",
       "size": 17370
+    },
+    {
+      "path": "/_astro/applicationroot.b3f9lkds.js",
+      "sha": "fbabb10afd85a8a5a483b0c21775da1b0742323e",
+      "size": 15792
     },
     {
       "path": "/_astro/applicationroot.beld6nfx.js",
@@ -1791,6 +1811,11 @@
       "size": 24605
     },
     {
+      "path": "/_astro/clock.bj_zxljd.js",
+      "sha": "e1d1ded5c442eec084398957dae4af810e67df7c",
+      "size": 2474
+    },
+    {
       "path": "/_astro/coach-navigation.c97g-wgo.js",
       "sha": "8d74b6716b62c0d46796af593790077a5d2c0a52",
       "size": 968
@@ -1834,6 +1859,11 @@
       "path": "/_astro/coachdetail.b2psdlws.js",
       "sha": "f2342996b103150ab57865e648d5a4903cbc9e20",
       "size": 4588
+    },
+    {
+      "path": "/_astro/coachdetail.b4q_nc26.js",
+      "sha": "e702a94117e1e9d574a21fb35973bc246a3bf2ca",
+      "size": 4735
     },
     {
       "path": "/_astro/coachdetail.baa5u9nj.js",
@@ -3881,6 +3911,11 @@
       "size": 19593
     },
     {
+      "path": "/_astro/monitoraccounts.crclkgt9.js",
+      "sha": "e7e94eb73be863a19c9e4475873ca403f3c34637",
+      "size": 89979
+    },
+    {
       "path": "/_astro/monitoraccounts.cuehbpj2.js",
       "sha": "8370dfcc197adbcdb7ac2f5f86f50e31de370e48",
       "size": 12880
@@ -4724,6 +4759,11 @@
       "path": "/_astro/playerdetail.bjbr9cb8.js",
       "sha": "dd26f2743fc927dd4d6e792094e3a6fd6a69d500",
       "size": 38812
+    },
+    {
+      "path": "/_astro/playerdetail.bmye9ttn.js",
+      "sha": "4612ff43440843d4297d46ef50a3dfa75576cdaa",
+      "size": 36726
     },
     {
       "path": "/_astro/playerdetail.bolhqkie.js",
@@ -5736,6 +5776,11 @@
       "size": 10814
     },
     {
+      "path": "/_astro/supportpage.bhc5i8qv.js",
+      "sha": "ff192dcad5faab40a9e9e44c1746f99fc93a2d0f",
+      "size": 10814
+    },
+    {
       "path": "/_astro/supportpage.bir1zv1m.js",
       "sha": "15c6da8db52d72a30c8a13dc0360d04ecd4aa2e0",
       "size": 10814
@@ -6637,8 +6682,8 @@
     },
     {
       "path": "/application.html",
-      "sha": "75c9282b04042bd417ec2fcf11ebd320412958c8",
-      "size": 16113
+      "sha": "e65666f9c222bd1f7e688ae9c842facf0ba24181",
+      "size": 16112
     },
     {
       "path": "/assets/accesslinkcard-bwk4cx6k.css",
