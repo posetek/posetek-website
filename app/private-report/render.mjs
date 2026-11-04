@@ -12,7 +12,7 @@ export function workoutPlatform(hints = globalThis.navigator) {
 /** Locators carry no report key, credentials, or authorization. */
 export function workoutLinks(playerId) {
   if (typeof playerId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(playerId)) {
-    throw new Error('Invalid player locator');
+    return null;
   }
   const query = `player=${encodeURIComponent(playerId)}&view=training`;
   return {
@@ -57,7 +57,6 @@ function validate(report) {
   for (const field of ['name', 'firstName', 'team', 'coach', 'testDate', 'focusTitle', 'focusText', 'playerId']) {
     string(report[field], field);
   }
-  workoutLinks(report.playerId);
   for (const metric of array(report.metrics, 'metrics', 16)) {
     string(metric.label, 'metric label', 160);
     if (metric.percentile !== null || metric.result !== null) string(metric.result, 'metric result', 160);
@@ -164,8 +163,12 @@ function workoutAnchor(text, href, className = 'pt-recovery-link') {
 
 function makeWorkoutEntry(report) {
   const links = workoutLinks(report.playerId);
-  const platform = workoutPlatform();
   const entry = element('div', 'pt-workout-entry');
+  if (!links) {
+    entry.append(element('p', 'pt-cta-note', 'Workouts aren’t available from this report.'));
+    return entry;
+  }
+  const platform = workoutPlatform();
   entry.append(workoutAnchor(`Open ${report.firstName}’s workouts`, platform === 'ios' ? links.native : links.browser, 'pt-primary'));
   entry.append(element('p', 'pt-cta-note', platform === 'ios'
     ? 'Sign in if asked. If PoseTek doesn’t open, use an option below.'

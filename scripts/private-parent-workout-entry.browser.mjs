@@ -22,6 +22,7 @@ const sample = {
   pdfBase64: Buffer.from('%PDF-1.4\n% Synthetic fixture\n%%EOF').toString('base64'),
 };
 const sealed = sealReport(sample);
+const legacy = sealReport({...sample, firstName: 'Legacy', playerId: 'player.1'});
 const browserURL = 'https://posetek.net/athlete?player=synthetic_Player-123&view=training';
 const nativeURL = 'posetek-workouts-v1://athlete?player=synthetic_Player-123&view=training';
 const installURL = 'https://testflight.apple.com/join/3byuBWYW';
@@ -31,9 +32,10 @@ const server = createServer(async (request, response) => {
   requestHeaders.push({url: request.url, referer: request.headers.referer, cookie: request.headers.cookie});
   const path = new URL(request.url, 'http://localhost').pathname;
   try {
-    if (path === `/report/data/${sealed.id}.bin`) {
+    const report = [sealed, legacy].find(item => path === `/report/data/${item.id}.bin`);
+    if (report) {
       response.writeHead(200, {...headers, 'Content-Type': 'application/octet-stream'});
-      response.end(sealed.envelope); return;
+      response.end(report.envelope); return;
     }
     const file = path === '/report/' ? 'index.html' : path.replace(/^\/report\//, '');
     if (!['index.html', 'report.css', 'render.mjs', 'loader.mjs', 'crypto.mjs'].includes(file)) {
@@ -137,6 +139,16 @@ try {
           await page.getByRole('heading', {name: 'Sample’s team snapshot'}).waitFor();
           assert.equal(await page.evaluate(() => window.__activatedWorkoutLink), null);
           assert.equal(await page.locator('.pt-primary').getAttribute('href'), entry.ios ? nativeURL : browserURL);
+          // Legacy v1 reports can have IDs outside the app's narrower locator grammar.
+          // Keep the results and exact downloadable PDF, and disclose no invalid locator.
+          await page.goto(`${origin}/report/#${legacy.fragment}`);
+          await page.getByRole('heading', {name: 'Legacy’s team snapshot'}).waitFor();
+          assert(await page.getByText('Workouts aren’t available from this report.', {exact: true}).isVisible());
+          assert.equal(await page.locator('#report-root a').count(), 0);
+          assert.equal(await page.locator('.pt-marker').count(), 1);
+          const [legacyPDF] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', {name: 'Download PDF'}).click()]);
+          assert.deepEqual(await readFile(await legacyPDF.path()), Buffer.from(sample.pdfBase64, 'base64'));
+          await legacyPDF.delete();
           await page.evaluate(() => { location.hash = ''; });
           await page.getByText('Open your complete private report link to see your results.', {exact: true}).waitFor();
           assert.equal(await page.locator('#report-root a').count(), 0);
@@ -148,7 +160,7 @@ try {
       }
     } finally { await browser.close(); }
   }
-  assert(requestHeaders.every(request => !request.referer && !request.cookie && !request.url.includes(sealed.fragment)));
+  assert(requestHeaders.every(request => !request.referer && !request.cookie && ![sealed, legacy].some(item => request.url.includes(item.fragment))));
   const receipt = {status: 'passed', results, actualNativeOpening: 'unverified', accountWrites: false, network: 'loopback only', fixture: 'synthetic'};
   await writeFile(join(output, 'receipt.json'), JSON.stringify(receipt, null, 2) + '\n');
   console.log(JSON.stringify({status: 'passed', cases: results.length, receipt: join(output, 'receipt.json'), actualNativeOpening: 'unverified'}));

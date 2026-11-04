@@ -49,8 +49,9 @@ do not establish native opening. No AASA or new hostname is added by this candid
 
 The mobile owner's versioned contract is
 `posetek-workouts-v1://athlete?player=<player-document-id>&view=training`.
-IDs contain 1–128 ASCII letters, digits, `_` or `-`; the website rejects other IDs
-before rendering. This is a destination locator, never authentication. It carries
+Workout locators accept 1–128 ASCII letters, digits, `_` or `-`. Previously valid
+v1 reports with other IDs keep the chart and PDF but omit all workout links.
+This is a destination locator, never authentication. It carries
 no report key, invitation, name or session credentials. The existing `posetek://`
 outdoor run/bike/walk routes remain separate and must not be reused.
 
@@ -121,13 +122,13 @@ that collide under the provider's normalized, case-insensitive paths are rejecte
 before the preservation build. Empty batches, plaintext/key files and reader drift
 are rejected. Do not reuse an obsolete predecessor inventory.
 
-For the one-time transition from the initial unsent-preview label to the neutral
-“Private player report” label, append `--update-entry-label` after `--append`.
-This permits only the pinned original and replacement `/report/index.html` bytes;
-it is not a general viewer overwrite. The receipt separately counts that changed
-entry, unchanged predecessor files and new encrypted snapshots. The other reader
-files, existing snapshots, application and marketing remain exact. After that
-transition, subsequent batches use plain `--append`.
+The preceding browser-only source (`6b2f4dd`, PR #120) supports a label-only
+transition from the initial unsent-preview label to “Private player report” using
+`--append --update-entry-label`. That command requires the matching, unchanged
+browser renderer/CSS from that revision. The held app-entry source below uses a
+different renderer and cannot perform that label-only migration. Do not apply
+the two migrations in sequence; select the reviewed path matching the actual
+published predecessor.
 
 The separately held app-entry transition uses `--update-workout-entry` after
 `--append`. It pins both the initial published and reviewed replacement bytes of
@@ -135,7 +136,8 @@ The separately held app-entry transition uses `--update-workout-entry` after
 `--update-entry-label` or applied to a different predecessor. The other two reader
 files and every old encrypted snapshot remain exact. Its receipt records
 `readerTransition: workouts-v1` and `requiresSeparateNativeAcceptance: true`.
-The builder does not verify or waive the compatible signed-build and physical-device
+An initial build installing this reader also records that native acceptance is
+required. The builder does not verify or waive the compatible signed-build and physical-device
 release checks. After that exact transition is accepted, later batches use plain
 `--append` against their freshly captured predecessor.
 

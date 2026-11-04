@@ -19,7 +19,7 @@ test('malformed player locators cannot change destinations or add parameters', (
   for (const id of ['', 'a'.repeat(129), '../player', 'player&view=home', 'player#secret',
     'player?key=secret', 'player%41', 'player:secret', 'player@host', 'player/child',
     'player\\child', ' player', 'player\n', 'pläyer', null, undefined, 123]) {
-    assert.throws(() => workoutLinks(id), /Invalid player locator/);
+    assert.equal(workoutLinks(id), null);
   }
 });
 

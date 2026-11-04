@@ -22,7 +22,7 @@ const WORKOUT_ENTRY_UPDATE = {
   'index.html': ENTRY_LABEL_UPDATE,
   'render.mjs': {
     before: { sha: 'e9e2bf1dad26d359ff7348add11d39fc109976fb', size: 9742 },
-    after: { sha: 'ab6cf255daf5a40e74bbab311e48da2e4eb75d93', size: 11854 },
+    after: { sha: '966093cef19fb31c8552d37be0602359f25dff1b', size: 11925 },
   },
   'report.css': {
     before: { sha: 'fedb70b7ab63577b7a8713b63273b539f84e33e3', size: 6793 },
@@ -240,7 +240,7 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
     const receipt = {
       mode: append ? 'append-encrypted-reports' : 'initial-reader',
       readerTransition: updateWorkoutEntry ? 'workouts-v1' : updateEntryLabel ? 'neutral-label' : null,
-      requiresSeparateNativeAcceptance: updateWorkoutEntry,
+      requiresSeparateNativeAcceptance: !append || updateWorkoutEntry,
       previousDeploymentId: baseline.deploymentId,
       inventorySha256: createHash('sha256').update(inventoryBytes).digest('hex'),
       baselineSha256: createHash('sha256').update(baselineBytes).digest('hex'),

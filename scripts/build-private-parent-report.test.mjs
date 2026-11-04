@@ -230,6 +230,7 @@ test('preserves every predecessor document and asset; discards generated changes
 
 test('shell-only build succeeds without encrypted input or provider metadata file on disk', async t => {
   const f = await fixture(t), receipt = await f.run();
+  assert.equal(receipt.requiresSeparateNativeAcceptance, true);
   assert.equal(receipt.addedFiles.length, 5);
   assert.equal(receipt.artifactFiles, Object.keys(files).length + 5);
 });
