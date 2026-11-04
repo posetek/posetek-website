@@ -91,7 +91,7 @@ describe('admin activity reporting presentation', () => {
       data.players[0].adminReporting = { ...facts, usage: { lastActivityWindow: { ...window, featureEvidence: { basis, features: ['workout', 'video'] } } } };
       const html = render('usage', data);
       expect(html).toContain('<strong>Workouts, Video</strong>');
-      expect(html).toContain(basis === 'window' ? 'Window summary · order unknown' : 'Latest intervals ended together');
+      expect(html).toContain(basis === 'window' ? 'Window summary · order unknown' : 'Latest observations tied');
     }
     data.players[0].adminReporting = facts;
     const older = render('usage', data);
