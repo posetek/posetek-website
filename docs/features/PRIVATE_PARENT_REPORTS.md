@@ -31,7 +31,7 @@ fails closed when controlled by a service worker and uses no-store, no-referrer,
 noindex, frame-denial and a restrictive CSP. Invalid/missing/tampered data shows a
 generic message without revealing an athlete.
 
-The workout button builds only
+The published browser-only workout button builds
 `https://posetek.net/athlete?player=<id>&view=training`. This is a locator, not an
 access grant. Existing account authorization continues to decide access. The
 reader never claims an account, starts a workout, writes activity or transfers
@@ -42,12 +42,48 @@ invitation is embedded in the report.
 
 ## Installed app boundary
 
-The audited native app has no athlete-workout URL handler or associated-domain
-entitlement; the website AASA paths currently return HTML. The report therefore
-uses the working HTTPS browser destination. Installed-app opening remains held
-until a native authenticated route, valid association, signed build and physical
-phone acceptance exist. Do not add a speculative custom scheme or app-install
-probe. Existing outdoor run/bike/walk links must not be reused.
+The published review release uses the HTTPS browser destination. The new app-entry
+source candidate is held until the companion native handler, compatible signed
+TestFlight build and physical-phone acceptance are verified; source/browser tests
+do not establish native opening. No AASA or new hostname is added by this candidate.
+
+The mobile owner's versioned contract is
+`posetek-workouts-v1://athlete?player=<player-document-id>&view=training`.
+IDs contain 1–128 ASCII letters, digits, `_` or `-`; the website rejects other IDs
+before rendering. This is a destination locator, never authentication. It carries
+no report key, invitation, name or session credentials. The existing `posetek://`
+outdoor run/bike/walk routes remain separate and must not be reused.
+
+For iOS presentation hints, the one primary report button is a direct, user-tapped
+versioned-scheme anchor. Visible **Install or update PoseTek** links to
+`https://testflight.apple.com/join/3byuBWYW` without parameters, and **Continue in
+browser** retains the authenticated HTTPS route. The instruction is to return to
+the report and tap Open workouts again after installation/update; TestFlight does
+not transfer the child destination or sign in. Android retains the HTTPS button
+with no TestFlight links. Unknown/missing hints keep HTTPS and offer a labeled
+iPhone/iPad disclosure with explicit app/install choices. Hints select presentation
+only and are not stored, tracked or treated as installation evidence.
+
+No timer, iframe, visibility check, automatic launch or delayed redirect is used.
+Absent/old apps, declined prompts and blocked schemes share the visible recovery
+choices. Scheme registration is not exclusive ownership or access authorization.
+The native implementation must validate the exact locator and authorize the signed-in
+actor before selecting that child's Training view. New accounts still need their
+private invitation; no new signup destination guarantee is introduced.
+
+The existing PDF button/QR keep HTTPS. No report plaintext, PDF bytes, encrypted
+envelopes or complete private links change in this source candidate. PDF install
+instructions await a separately reviewed revision. The five-file reader, cryptography,
+no-tracking isolation, PDF download and chart behavior remain intact. The batch
+append builder does not authorize arbitrary reader replacement; a reviewed pinned
+transition and fresh exact-artifact acceptance are required for eventual delivery.
+
+Focused checks: `node --test scripts/private-parent-workout-entry.test.mjs` and
+`node scripts/private-parent-workout-entry.browser.mjs`. The latter uses synthetic
+reports on loopback, blocks external requests, inspects/prevents link activation,
+and never executes a custom scheme. It covers Chromium/WebKit iOS, iPad desktop
+hints, Android, unknown/missing hints, 320/390/430px, PDF byte equality and clearing
+report links. Actual device and account acceptance remain separate.
 
 ## Assembly and verification
 
@@ -92,6 +128,16 @@ it is not a general viewer overwrite. The receipt separately counts that changed
 entry, unchanged predecessor files and new encrypted snapshots. The other reader
 files, existing snapshots, application and marketing remain exact. After that
 transition, subsequent batches use plain `--append`.
+
+The separately held app-entry transition uses `--update-workout-entry` after
+`--append`. It pins both the initial published and reviewed replacement bytes of
+`index.html`, `render.mjs` and `report.css`; it cannot be combined with
+`--update-entry-label` or applied to a different predecessor. The other two reader
+files and every old encrypted snapshot remain exact. Its receipt records
+`readerTransition: workouts-v1` and `requiresSeparateNativeAcceptance: true`.
+The builder does not verify or waive the compatible signed-build and physical-device
+release checks. After that exact transition is accepted, later batches use plain
+`--append` against their freshly captured predecessor.
 
 Each child's measurements, cohort, missing-data handling, PDF and exact workout
 target must be reviewed before sealing. Keep recipient identity and tone evidence

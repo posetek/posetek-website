@@ -1,5 +1,27 @@
 let pdfUrl;
 
+/** Presentation hints only; neither platform nor app installation is verified. */
+export function workoutPlatform(hints = globalThis.navigator) {
+  const agent = typeof hints?.userAgent === 'string' ? hints.userAgent : '';
+  if (/Android/i.test(agent)) return 'android';
+  if (/iPad|iPhone|iPod/i.test(agent) ||
+      (/Macintosh|MacIntel/i.test(agent) && hints?.maxTouchPoints > 1)) return 'ios';
+  return 'unknown';
+}
+
+/** Locators carry no report key, credentials, or authorization. */
+export function workoutLinks(playerId) {
+  if (typeof playerId !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(playerId)) {
+    throw new Error('Invalid player locator');
+  }
+  const query = `player=${encodeURIComponent(playerId)}&view=training`;
+  return {
+    browser: `https://posetek.net/athlete?${query}`,
+    native: `posetek-workouts-v1://athlete?${query}`,
+    install: 'https://testflight.apple.com/join/3byuBWYW',
+  };
+}
+
 function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -35,6 +57,7 @@ function validate(report) {
   for (const field of ['name', 'firstName', 'team', 'coach', 'testDate', 'focusTitle', 'focusText', 'playerId']) {
     string(report[field], field);
   }
+  workoutLinks(report.playerId);
   for (const metric of array(report.metrics, 'metrics', 16)) {
     string(metric.label, 'metric label', 160);
     if (metric.percentile !== null || metric.result !== null) string(metric.result, 'metric result', 160);
@@ -130,6 +153,37 @@ function makeDetails(report) {
   return details;
 }
 
+function workoutAnchor(text, href, className = 'pt-recovery-link') {
+  const link = element('a', className, text);
+  link.href = href;
+  if (href.startsWith('https://')) link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.referrerPolicy = 'no-referrer';
+  return link;
+}
+
+function makeWorkoutEntry(report) {
+  const links = workoutLinks(report.playerId);
+  const platform = workoutPlatform();
+  const entry = element('div', 'pt-workout-entry');
+  entry.append(workoutAnchor(`Open ${report.firstName}’s workouts`, platform === 'ios' ? links.native : links.browser, 'pt-primary'));
+  entry.append(element('p', 'pt-cta-note', platform === 'ios'
+    ? 'Sign in if asked. If PoseTek doesn’t open, use an option below.'
+    : 'Opens PoseTek in your browser. Sign in if asked.'));
+  if (platform !== 'android') {
+    const recovery = element(platform === 'ios' ? 'div' : 'details', 'pt-app-options');
+    if (platform !== 'ios') recovery.append(element('summary', '', 'Using an iPhone or iPad?'));
+    const choices = element('div', 'pt-recovery-links');
+    if (platform !== 'ios') choices.append(workoutAnchor('Open in PoseTek', links.native));
+    choices.append(workoutAnchor('Install or update PoseTek', links.install));
+    if (platform === 'ios') choices.append(workoutAnchor('Continue in browser', links.browser));
+    recovery.append(choices, element('p', 'pt-cta-note', 'After installing or updating, return to this report and tap Open workouts again.'));
+    entry.append(recovery);
+  }
+  entry.append(element('p', 'pt-cta-note', 'New here? Use your private invitation.'));
+  return entry;
+}
+
 /** Render only an already-decrypted report. Report strings are always plain text. */
 export function renderReport(report) {
   clearReport();
@@ -148,13 +202,7 @@ export function renderReport(report) {
   main.append(focus);
 
   const actions = element('div', 'pt-actions');
-  const workout = element('a', 'pt-primary', `Open ${report.firstName}’s workouts`);
-  workout.href = `https://posetek.net/athlete?player=${encodeURIComponent(report.playerId)}&view=training`;
-  workout.target = '_blank';
-  workout.rel = 'noopener noreferrer';
-  workout.referrerPolicy = 'no-referrer';
-  actions.append(workout, element('p', 'pt-cta-note', 'Opens PoseTek in your browser. Sign in if asked.'));
-  actions.append(element('p', 'pt-cta-note', 'New here? Use your private invitation.'));
+  actions.append(makeWorkoutEntry(report));
   const downloadRow = element('div', 'pt-download-row');
   const download = element('button', 'pt-quiet-button', 'Download PDF');
   download.type = 'button';

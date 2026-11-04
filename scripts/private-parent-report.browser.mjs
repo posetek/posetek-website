@@ -55,7 +55,7 @@ try {
     await page.emulateMedia({colorScheme});await page.setViewportSize({width,height:844});
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Horizontal overflow');
    }
-   await page.locator('summary').click();
+   await page.locator('.pt-details > summary').click();
    await page.setViewportSize({width:320,height:844});
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Expanded overflow');
    assert.deepEqual(await page.evaluate(()=>({local:localStorage.length,session:sessionStorage.length})),{local:0,session:0});

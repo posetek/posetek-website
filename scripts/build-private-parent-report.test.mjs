@@ -72,6 +72,72 @@ async function addExistingReports(f) {
   return existing;
 }
 
+async function initialReaderTransitionFixture(t) {
+  const f = await fixture(t), existing = await addExistingReports(f);
+  for (const name of ['index.html', 'render.mjs', 'report.css']) {
+    const path = '/report/' + name;
+    const oldBytes = await readFile(new URL('./fixtures/private-parent-report-reader-v1/' + name, import.meta.url));
+    const newBytes = await readFile(new URL('../app/private-report/' + name, import.meta.url));
+    existing[path] = oldBytes;
+    Object.assign(f.rows.find(row => row.path === path), { sha: sha(oldBytes), size: oldBytes.length });
+    await put(f.predecessor, path, oldBytes);
+    await put(f.root, 'app/private-report/' + name, newBytes);
+  }
+  await f.saveRows();
+  await put(f.root, 'deployment/homepage-baseline.json', JSON.stringify(f.baseline));
+  const sealedDirectory = join(f.root, '.netlify/sealed');
+  await put(sealedDirectory, 'c'.repeat(32) + '.bin', Buffer.concat([Buffer.from([1]), Buffer.alloc(40)]));
+  return { ...f, existing, sealedDirectory };
+}
+
+test('explicit workout transition preserves all other files and old ciphertext while replacing only three pinned reader files', async t => {
+  const f = await initialReaderTransitionFixture(t);
+  await assert.rejects(f.run({ sealedDirectory: f.sealedDirectory, append: true }), /existing unchanged report reader/);
+  const receipt = await f.run({ sealedDirectory: f.sealedDirectory, append: true, updateWorkoutEntry: true });
+  assert.equal(receipt.readerTransition, 'workouts-v1');
+  assert.equal(receipt.requiresSeparateNativeAcceptance, true);
+  assert.deepEqual(receipt.changedFiles, ['/report/index.html', '/report/render.mjs', '/report/report.css']);
+  assert.equal(receipt.preservedFiles, Object.keys(files).length + Object.keys(f.existing).length - 3);
+  assert.equal(receipt.existingEncryptedReportsUnchanged, true);
+  assert.equal(receipt.allPredecessorFilesUnchanged, false);
+  assert.equal(receipt.addedFiles.length, 1);
+  for (const [path, oldBytes] of Object.entries(f.existing)) {
+    const expected = receipt.changedFiles.includes(path)
+      ? await readFile(join(f.root, 'app/private-report', path.split('/').at(-1))) : oldBytes;
+    assert.deepEqual(await readFile(join(f.root, 'production-dist', path)), expected);
+  }
+  for (const [path, text] of Object.entries(files)) assert.equal(await readFile(join(f.root, 'production-dist', path), 'utf8'), text);
+});
+
+test('workout transition rejects changed predecessor or replacement bytes before the guard', async t => {
+  for (const location of ['predecessor', 'source']) {
+    for (const name of ['index.html', 'render.mjs', 'report.css']) {
+      const f = await initialReaderTransitionFixture(t), path = '/report/' + name;
+      if (location === 'predecessor') {
+        const changed = Buffer.concat([f.existing[path], Buffer.from('\nchanged')]);
+        Object.assign(f.rows.find(row => row.path === path), { sha: sha(changed), size: changed.length });
+        await put(f.predecessor, path, changed);
+        await f.saveRows(); await put(f.root, 'deployment/homepage-baseline.json', JSON.stringify(f.baseline));
+      } else {
+        const target = join(f.root, 'app/private-report', name);
+        await writeFile(target, Buffer.concat([await readFile(target), Buffer.from('\nchanged')]));
+      }
+      await assert.rejects(f.run({ sealedDirectory: f.sealedDirectory, append: true, updateWorkoutEntry: true }), /pinned original and reviewed replacement/);
+      await assert.rejects(readFile(join(f.evidenceDirectory, 'guard-ran')), { code: 'ENOENT' });
+    }
+  }
+});
+
+test('workout transition is explicit, mutually exclusive and cannot replace other reader files', async t => {
+  const f = await initialReaderTransitionFixture(t), sealedDirectory = f.sealedDirectory;
+  await assert.rejects(f.run({ sealedDirectory, updateWorkoutEntry: true }), /requires explicit append/);
+  await assert.rejects(f.run({ sealedDirectory, append: true, updateWorkoutEntry: 'true' }), /requires explicit append/);
+  await assert.rejects(f.run({ sealedDirectory, append: true, updateWorkoutEntry: true, updateEntryLabel: true }), /only one pinned reader transition/);
+  await put(f.root, 'app/private-report/crypto.mjs', 'unreviewed crypto change');
+  await assert.rejects(f.run({ sealedDirectory, append: true, updateWorkoutEntry: true }), /existing unchanged report reader/);
+  await assert.rejects(readFile(join(f.evidenceDirectory, 'guard-ran')), { code: 'ENOENT' });
+});
+
 test('explicit append preserves the complete reader and old reports; adds only new encrypted snapshots', async t => {
   const f = await fixture(t), existing = await addExistingReports(f);
   const sealedDirectory = join(f.root, '.netlify/sealed');
