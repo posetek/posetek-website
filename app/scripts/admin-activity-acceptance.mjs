@@ -105,6 +105,12 @@ for (const [engine, driver] of [['chromium', chromium], ['webkit', webkit]]) {
           if (name !== 'Overview') await view(page, name);
           await assertHeader(page, 'Northfield FC'); await noOverflow(page);
           assert.ok(await playerRows(page).count() > 0, `${name} has actual player rows.`);
+          if (name === 'Usage') {
+            assert.ok((await requestLog(page)).some(entry => entry.input?.includeLastFeatureEvidence === true), 'Usage requested last-feature evidence.');
+            const featureCells = table(page).locator('td[data-label="Last observed feature"]');
+            assert.equal(await featureCells.count(), await playerRows(page).count(), 'Every player gets a labeled feature cell.');
+            assert.ok((await featureCells.allTextContents()).some(value => value.includes('Results')), 'A retained feature is visible in the player rows.');
+          }
           const targets = await page.locator('.admin-activity-report :is(button,input,select), .workspace-scope-header [role="tab"]').evaluateAll(nodes => nodes.filter(node => node.getClientRects().length && getComputedStyle(node).visibility !== 'hidden').map(node => ({ label: node.getAttribute('aria-label') || node.textContent, width: node.getBoundingClientRect().width, height: node.getBoundingClientRect().height })));
           assert.ok(targets.every(target => target.width >= 43.5 && target.height >= 43.5), `Activity controls must remain at least44px: ${JSON.stringify(targets.filter(target => target.width < 43.5 || target.height < 43.5))}`);
           const truncated = await page.locator('.activity-roster-toolbar :is(button,label), .workspace-scope-header h2').evaluateAll(nodes => nodes.filter(node => node.scrollWidth > node.clientWidth + 1).map(node => node.textContent));

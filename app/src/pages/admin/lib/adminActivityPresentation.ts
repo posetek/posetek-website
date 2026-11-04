@@ -8,6 +8,11 @@ export function activityDate(value: number | null | undefined, timezone: string)
 }
 export function activityWindow(window: AdminPlayerActivity['usage']['lastActivityWindow'] | undefined, timezone: string) {
   if (!window) return 'No retained activity window';
+  const dayAndZone = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: 'numeric', day: 'numeric', timeZoneName: 'shortOffset' });
+  if (dayAndZone.format(window.startMillis) !== dayAndZone.format(window.endMillis)) {
+    const full = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+    return `${full.format(window.startMillis)} – ${full.format(window.endMillis)}`;
+  }
   return `${activityDate(window.startMillis, timezone)} – ${new Date(window.endMillis).toLocaleTimeString('en-US', { timeZone: timezone, hour: 'numeric', minute: '2-digit' })}`;
 }
 export function exactWorkoutLink(base: string, latest: NonNullable<AdminPlayerActivity['workouts']['latest']>) {
