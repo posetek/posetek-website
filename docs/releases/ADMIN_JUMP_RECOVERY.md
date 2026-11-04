@@ -46,6 +46,12 @@ authorization required. Release ordering and synthetic
 acceptance are recorded in the private Backend repository; do not publish
 backend code from this website checkout.
 
+Later the same day, `adminReviseRep` (v7, 23:32 UTC) and
+`adminRestoreRepRevision` (v6, 23:33 UTC) were redeployed with backend PR #67's
+reviewed-results projection. The two readers and `adminGetRepRevisions` are
+unchanged. The backend reconciliation receipts of November 4 record the current
+versions; this page keeps the October 30 release as published.
+
 Source verification passed 2,220 frontend tests, TypeScript/Astro production
 build, 82 web-script checks, 32 policy checks, seven guest-browser checks and
 the six-lane hosted CI run at feature head `7a5bd4b`. The scoped runtime passed

@@ -30,6 +30,12 @@ numeric estimate is stored only under `jumpRecovery.heightMetres`; root and
 metadata `jumpHeight` stay null so older installed clients cannot display it as
 an unlabeled measurement. Admin shows the saved nested value with ESTIMATE,
 and save readback verifies the empty root height and matching labeled estimate.
+
+Since the backend writer redeploy at 23:32 UTC on October 30 (`adminReviseRep`
+v7, backend PR #67), a save also writes a display-only `reviewedResult`
+projection to the rep, `metadata.json` and the revision. Root and metadata
+`jumpHeight` still stay null. This panel reads only the nested `jumpRecovery`
+value, so an estimate that exists only as `reviewedResult` does not appear here.
 The review does not recover force, power or technique scores. Missing recording,
 unusable pose, unclear ground contact or unresolved timing needs evidence
 recovery or a retest; the interface does not fabricate a number.
