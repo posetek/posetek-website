@@ -73,6 +73,35 @@ describe('admin activity reporting presentation', () => {
     expect(html).toContain('may precede the selected period');
     expect(html).toContain('data-label="Platforms"');
   });
+  it('shows the feature observed in the latest interval with its window in the report timezone', () => {
+    const data = fixture();
+    data.period = { ...data.period, timeZone: 'America/New_York' };
+    data.players[0].adminReporting = { ...facts, usage: { lastActivityWindow: { ...facts.usage.lastActivityWindow!, featureEvidence: { basis: 'latestInterval', features: ['training'] } } } };
+    const html = render('usage', data);
+    expect(html).toContain('<th scope="col">Last observed feature</th>');
+    expect(html).toContain('data-label="Last observed feature"><strong>Training</strong>');
+    expect(html).toContain('Latest measured interval');
+    expect(html).toContain('Nov 2, 2026, 1:00 PM – 1:15 PM');
+    expect(html).toContain('America/New_York');
+  });
+  it('distinguishes tied intervals, unordered summary features, and absent feature evidence', () => {
+    const data = fixture();
+    const window = facts.usage.lastActivityWindow!;
+    for (const basis of ['latestInterval', 'window'] as const) {
+      data.players[0].adminReporting = { ...facts, usage: { lastActivityWindow: { ...window, featureEvidence: { basis, features: ['workout', 'video'] } } } };
+      const html = render('usage', data);
+      expect(html).toContain('<strong>Workouts, Video</strong>');
+      expect(html).toContain(basis === 'window' ? 'Window summary · order unknown' : 'Latest intervals ended together');
+    }
+    data.players[0].adminReporting = facts;
+    const older = render('usage', data);
+    expect(older).toContain('<strong>Feature unavailable</strong>');
+    expect(older).toContain('Nov 2, 2026, 10:00 AM – 10:15 AM');
+    data.players[0].adminReporting = { ...facts, usage: { lastActivityWindow: null } };
+    expect(render('usage', data)).toContain('No retained activity window');
+    data.players[0].usage = { ...data.players[0].usage, collected: false };
+    expect(render('usage', data)).toContain('data-label="Last observed feature"><span class="activity-missing">Not collected</span>');
+  });
   it('does not turn missing usage or missing additive data into measured zero', () => {
     const data = fixture();
     data.adminReporting = undefined;
@@ -119,5 +148,12 @@ describe('admin activity reporting presentation', () => {
     expect(activityDate(Number.NaN, 'UTC')).toBe('Not recorded');
     expect(activityDate(0, 'UTC')).toContain('Jan 1, 1970');
     expect(activityWindow(null, 'UTC')).toBe('No retained activity window');
+  });
+  it('shows both dates or timezone offsets when a window crosses midnight or a clock change', () => {
+    const range = (start: string, end: string) => activityWindow({ startMillis: Date.parse(start), endMillis: Date.parse(end) }, 'America/New_York');
+    const midnight = range('2026-11-03T04:45:00Z', '2026-11-03T05:00:00Z');
+    expect(midnight).toContain('Nov 2, 2026'); expect(midnight).toContain('Nov 3, 2026');
+    const repeatedHour = range('2026-11-01T05:45:00Z', '2026-11-01T06:00:00Z');
+    expect(repeatedHour).toMatch(/1:45 AM EDT.*1:00 AM EST/);
   });
 });

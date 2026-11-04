@@ -65,6 +65,21 @@ unchanged. Each view explains these limits under **How this is measured**.
 
 ## Compatible contract
 
+### Last observed feature in Usage (source update)
+
+The Usage tab requests `includeLastFeatureEvidence: true` alongside the
+existing administrator options. Each displayed player's latest activity window
+can include `featureEvidence`. The column pairs the feature with its 15-minute
+window in the selected reporting timezone. A window can predate the requested
+start if the player's most recent observation was earlier.
+
+For recent retained intervals, `basis: "latestInterval"` identifies the feature
+whose activity ended latest in that window. Features that end together are
+listed together. When only aggregate evidence is available, `basis: "window"`
+identifies the features credited in the window. Their order is unknown.
+Older servers can omit feature evidence and still supply the activity window.
+These observations describe engagement and do not establish a logout or app close.
+
 Only administrator reporting views send:
 
 ```json

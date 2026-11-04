@@ -1,3 +1,5 @@
+import type { UsageFeature } from "../../../lib/insight-usage/clock";
+
 /** Optional admin-only reporting. Account and assignment facts are current at
  * asOfMillis; period totals and retained usage windows keep their own clocks. */
 export const ADMIN_ACTIVITY_FOLLOW_UPS = ["all", "active", "noSignIn", "noActivity", "unfinishedAssigned", "noCompletion"] as const;
@@ -8,7 +10,11 @@ export interface AdminActivityRequest { version: 1; followUp: AdminActivityFollo
 
 export interface AdminPlayerActivity {
   signIn: { status: "recorded" | "none" | "unlinked" | "unknown"; lastSignInAtMillis: number | null };
-  usage: { lastActivityWindow: { startMillis: number; endMillis: number } | null };
+  usage: { lastActivityWindow: {
+    startMillis: number;
+    endMillis: number;
+    featureEvidence?: { basis: "latestInterval" | "window"; features: UsageFeature[] };
+  } | null };
   workouts: { latest: {
     source: "workoutLogs" | "personalWorkoutLogs"; logId: string; title: string;
     startedAtMillis: number | null; endedAtMillis: number | null; status: string;

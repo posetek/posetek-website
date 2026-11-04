@@ -5,7 +5,7 @@ import { assertWorkspaceMetrics, createWorkspaceMetricsTransport, workspaceMetri
 import type { ExpandedInsights } from "../../insights/lib/expanded";
 
 const search = "start=2026-09-01&end=2026-10-01&view=usage&adminSort=lastActivity";
-const input = () => workspaceMetricsPayload(search, { kind: "organization", organizationId: "northfield" }, undefined, new Date("2026-11-03T20:00:00Z"), true);
+const input = () => workspaceMetricsPayload(search, { kind: "organization", organizationId: "northfield" }, undefined, new Date("2026-11-03T20:00:00Z"), true, true);
 function fixture(): ExpandedInsights {
   const payload = input(), data = previewInsights(expandedRequest(search, new Date("2026-11-03T20:00:00Z")));
   data.scope = { ...payload.scope, label: "Northfield", access: "admin", assignedTeamsOnly: false };
@@ -42,6 +42,27 @@ describe("admin activity read validation", () => {
   it("rejects impossible activity windows rather than displaying a precise stop", () => {
     const data = fixture(); data.players[0].adminReporting!.usage.lastActivityWindow = { startMillis: 1000, endMillis: 1000 };
     expect(() => assertWorkspaceMetrics(data, input())).toThrow(/timing/);
+  });
+  it("accepts a generic window from an older server and both supported feature evidence bases", () => {
+    const data = fixture();
+    const interval = { startMillis: 900_000, endMillis: 1_800_000 };
+    const usage = data.players[0].adminReporting!.usage;
+    usage.lastActivityWindow = interval;
+    expect(() => assertWorkspaceMetrics(data, input())).not.toThrow();
+    for (const basis of ["latestInterval", "window"] as const) {
+      usage.lastActivityWindow = { ...interval, featureEvidence: { basis, features: ["training", "video"] } };
+      expect(() => assertWorkspaceMetrics(data, input())).not.toThrow();
+    }
+  });
+  it("rejects malformed feature evidence before presentation", () => {
+    for (const featureEvidence of [null, "training", { basis: "screen", features: ["training"] },
+      { basis: "latestInterval", features: [] }, { basis: "window", features: ["training", "training"] },
+      { basis: "window", features: ["unknown_screen"] }, { basis: "window", features: "training" }]) {
+      const data = fixture();
+      data.players[0].adminReporting!.usage.lastActivityWindow = { startMillis: 900_000, endMillis: 1_800_000 };
+      Object.assign(data.players[0].adminReporting!.usage.lastActivityWindow!, { featureEvidence });
+      expect(() => assertWorkspaceMetrics(data, input())).toThrow(/feature evidence/);
+    }
   });
   it("clears late activity reads when the actor changes", async () => {
     let finish!: (report: ExpandedInsights) => void;
