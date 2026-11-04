@@ -53,7 +53,7 @@ function LastObservedFeature({ activity, collected, timezone }: { activity?: Adm
   const evidence = window.featureEvidence;
   let description;
   if (evidence?.basis === 'latestInterval') {
-    description = evidence.features.length === 1 ? 'Latest measured interval' : 'Latest intervals ended together';
+    description = evidence.features.length === 1 ? 'Latest measured interval' : 'Latest observations tied';
   } else if (evidence?.basis === 'window') {
     description = 'Window summary · order unknown';
   }
