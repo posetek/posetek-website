@@ -169,22 +169,41 @@ function makeWorkoutEntry(report) {
     return entry;
   }
   const platform = workoutPlatform();
-  entry.append(workoutAnchor(`Open ${report.firstName}’s workouts`, platform === 'ios' ? links.native : links.browser, 'pt-primary'));
-  entry.append(element('p', 'pt-cta-note', platform === 'ios'
-    ? 'Sign in if asked. If PoseTek doesn’t open, use an option below.'
-    : 'Opens PoseTek in your browser. Sign in if asked.'));
-  if (platform !== 'android') {
-    const recovery = element(platform === 'ios' ? 'div' : 'details', 'pt-app-options');
-    if (platform !== 'ios') recovery.append(element('summary', '', 'Using an iPhone or iPad?'));
-    const choices = element('div', 'pt-recovery-links');
-    if (platform !== 'ios') choices.append(workoutAnchor('Open in PoseTek', links.native));
-    choices.append(workoutAnchor('Install or update PoseTek', links.install));
-    if (platform === 'ios') choices.append(workoutAnchor('Continue in browser', links.browser));
-    recovery.append(choices, element('p', 'pt-cta-note', 'After installing or updating, return to this report and tap Open workouts again.'));
-    entry.append(recovery);
+  if (platform === 'ios') {
+    // Lead with install guidance: tapping the app link without the app shows a browser error first.
+    entry.append(workoutAnchor('Open in the PoseTek app', links.native, 'pt-primary'));
+    entry.append(element('p', 'pt-cta-note', `Already have PoseTek? Sign in with ${report.firstName}’s player login.`));
+    entry.append(makeInstallSteps(links));
+    entry.append(element('p', 'pt-cta-note',
+      'If Safari says the address is invalid, or nothing happens, PoseTek isn’t installed or needs updating. Use Install above.'));
+    const browser = element('div', 'pt-recovery-links');
+    browser.append(workoutAnchor('Continue in browser instead', links.browser));
+    entry.append(browser);
+  } else {
+    entry.append(workoutAnchor(`Open ${report.firstName}’s workouts`, links.browser, 'pt-primary'));
+    entry.append(element('p', 'pt-cta-note', 'Opens PoseTek in your browser. Sign in if asked.'));
+    if (platform !== 'android') {
+      const recovery = element('details', 'pt-app-options');
+      recovery.append(element('summary', '', 'Using an iPhone or iPad?'));
+      const choices = element('div', 'pt-recovery-links');
+      choices.append(workoutAnchor('Open in the PoseTek app', links.native));
+      recovery.append(choices, makeInstallSteps(links));
+      entry.append(recovery);
+    }
   }
   entry.append(element('p', 'pt-cta-note', 'New here? Use your private invitation.'));
   return entry;
+}
+
+function makeInstallSteps(links) {
+  const steps = element('div', 'pt-install');
+  steps.append(element('p', 'pt-install-title', 'Don’t have PoseTek yet?'));
+  const list = element('ol', 'pt-install-list');
+  const install = element('li');
+  install.append(workoutAnchor('Install or update PoseTek', links.install), ' through Apple’s TestFlight.');
+  list.append(install, element('li', '', 'Come back to this report and tap Open in the PoseTek app.'));
+  steps.append(list);
+  return steps;
 }
 
 /** Render only an already-decrypted report. Report strings are always plain text. */

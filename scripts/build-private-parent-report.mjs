@@ -22,11 +22,11 @@ const WORKOUT_ENTRY_UPDATE = {
   'index.html': ENTRY_LABEL_UPDATE,
   'render.mjs': {
     before: { sha: 'e9e2bf1dad26d359ff7348add11d39fc109976fb', size: 9742 },
-    after: { sha: '966093cef19fb31c8552d37be0602359f25dff1b', size: 11925 },
+    after: { sha: '5175993b059c8621b8d1d1f75ff70addd2375e09', size: 12717 },
   },
   'report.css': {
     before: { sha: 'fedb70b7ab63577b7a8713b63273b539f84e33e3', size: 6793 },
-    after: { sha: 'a4d99de0cb99d3ffb54e4f634ece0c125c3254dc', size: 7244 },
+    after: { sha: '639290753226a76116f97d83d77515088af8e7ad', size: 7708 },
   },
 };
 const hash = bytes => createHash('sha1').update(bytes).digest('hex');

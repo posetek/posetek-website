@@ -55,12 +55,20 @@ This is a destination locator, never authentication. It carries
 no report key, invitation, name or session credentials. The existing `posetek://`
 outdoor run/bike/walk routes remain separate and must not be reused.
 
-For iOS presentation hints, the one primary report button is a direct, user-tapped
-versioned-scheme anchor. Visible **Install or update PoseTek** links to
-`https://testflight.apple.com/join/3byuBWYW` without parameters, and **Continue in
-browser** retains the authenticated HTTPS route. The instruction is to return to
-the report and tap Open workouts again after installation/update; TestFlight does
-not transfer the child destination or sign in. Android retains the HTTPS button
+For iOS presentation hints, the one primary report button, **Open in the PoseTek
+app**, is a direct, user-tapped versioned-scheme anchor. Parents sign in with the
+child's player login (Nolan, 2026-11-04), and the note under the button says so.
+Tapping the scheme without the app shows a browser error first, so a parent
+without the app must see install guidance before tapping (Nolan, 2026-11-04).
+
+A visible **Don't have PoseTek yet?** box sits directly under the button. It
+links **Install or update PoseTek** to `https://testflight.apple.com/join/3byuBWYW`,
+without parameters, and tells the parent to come back to the report and tap the
+button again. A note then explains that Safari's "address is invalid" message, or
+nothing happening, means the app is missing or needs updating. **Continue in
+browser instead** retains the authenticated HTTPS route.
+
+TestFlight does not transfer the child destination or sign in. Android retains the HTTPS button
 with no TestFlight links. Unknown/missing hints keep HTTPS and offer a labeled
 iPhone/iPad disclosure with explicit app/install choices. Hints select presentation
 only and are not stored, tracked or treated as installation evidence.

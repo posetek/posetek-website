@@ -98,14 +98,20 @@ try {
             if (!entry.ios) {
               assert.equal(await page.locator('.pt-app-options').getAttribute('open'), null);
               await page.getByText('Using an iPhone or iPad?', {exact: true}).click();
-              assert.equal(await page.getByRole('link', {name: 'Open in PoseTek', exact: true}).getAttribute('href'), nativeURL);
+              assert.equal(await page.getByRole('link', {name: 'Open in the PoseTek app', exact: true}).getAttribute('href'), nativeURL);
             } else {
-              assert.equal(await page.getByRole('link', {name: 'Continue in browser', exact: true}).getAttribute('href'), browserURL);
-              assert(await page.getByRole('link', {name: 'Continue in browser', exact: true}).isVisible());
+              // A parent without the app must see install guidance before tapping, not only after an error.
+              assert.equal(await page.locator('.pt-primary').textContent(), 'Open in the PoseTek app');
+              assert(await page.getByText('Already have PoseTek? Sign in with Sample’s player login.', {exact: true}).isVisible());
+              assert(await page.locator('.pt-primary + .pt-cta-note + .pt-install').isVisible());
+              assert(await page.getByText('If Safari says the address is invalid, or nothing happens, PoseTek isn’t installed or needs updating. Use Install above.', {exact: true}).isVisible());
+              assert.equal(await page.getByRole('link', {name: 'Continue in browser instead', exact: true}).getAttribute('href'), browserURL);
+              assert(await page.getByRole('link', {name: 'Continue in browser instead', exact: true}).isVisible());
             }
+            assert(await page.getByText('Don’t have PoseTek yet?', {exact: true}).isVisible());
             assert.equal(await page.getByRole('link', {name: 'Install or update PoseTek', exact: true}).getAttribute('href'), installURL);
             assert(await page.getByRole('link', {name: 'Install or update PoseTek', exact: true}).isVisible());
-            assert(await page.getByText('After installing or updating, return to this report and tap Open workouts again.', {exact: true}).isVisible());
+            assert(await page.getByText('Come back to this report and tap Open in the PoseTek app.', {exact: true}).isVisible());
           }
           for (const link of await page.locator('.pt-workout-entry a').all()) {
             assert.equal(await link.getAttribute('referrerpolicy'), 'no-referrer');
