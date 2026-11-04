@@ -1,6 +1,7 @@
 import type { ExpandedRequest } from "./expandedQuery";
 import { shiftDate } from "./expandedQuery";
 import { workoutMinutes } from '../../../lib/workout-duration';
+import type { AdminActivityReportData, AdminPlayerActivity } from '../../admin/lib/adminActivity';
 export type InsightScope = { kind: "coachRoster"; coachId?: string } | { kind: "global" } | { kind: "organization"; organizationId: string } | { kind: "team"; organizationId: string; teamId: string };
 export type CountGroup = { key: string; count: number };
 export type InsightAccess = "admin" | "manager" | "coach";
@@ -25,6 +26,7 @@ export interface CoachTestingOverview {
   improvingPlayers: CoachTestingPlayer[]; reviewPlayers: CoachTestingPlayer[];
 }
 export interface ExpandedPlayer {
+  adminReporting?: AdminPlayerActivity;
   id: string; firstName: string; lastName: string; organizationId: string; organizationName: string; teamId: string | null; teamName: string | null;
   division: string; age: number | null; ageBand: string; registered?: boolean; signupInvitationReady?: boolean;
   testing: { status: string; exercisesComplete: number; exerciseKeys: string[]; recordedDocuments: number; distinctAttempts: number; qualifyingTests: number; dateUnknownAttempts?: number; hasDateUnknownAttempts?: boolean };
@@ -38,6 +40,7 @@ export interface ExpandedPlayer {
 export type RosterMetric = { playerId: string; status: "included"; player: ExpandedPlayer }
   | { playerId: string; status: "excluded" };
 export interface ExpandedInsights {
+  adminReporting?: AdminActivityReportData;
   schemaVersion: 2;
   scope: InsightScope & { label: string; access: InsightAccess; assignedTeamsOnly: boolean };
   choices: InsightChoices;

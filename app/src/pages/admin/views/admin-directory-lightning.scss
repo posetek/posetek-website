@@ -1,10 +1,42 @@
 .pt-admin.admin-workspace {
+  .workspace-scope-header { position: sticky; top: calc(var(--workspace-toolbar-height, 76px) + 8px); z-index: 12; min-width: 0; padding: 16px 20px 0; margin-bottom: 18px; border: 1px solid #d4dfd8; border-radius: 12px; background: #fff; box-shadow: 0 6px 20px #173b2c0a; }
+  .workspace-scope-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: -8px 0 4px; color: #55675e; font-size: 12px; }
+  .workspace-scope-breadcrumb > span { overflow-wrap: anywhere; }
+  .workspace-scope-breadcrumb .directory-text-button { font-size: inherit; min-height: 44px; padding: 6px 0; }
+  .workspace-scope-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .workspace-scope-heading > div { min-width: 0; }
+  .workspace-scope-heading .eyebrow { margin: 0 0 5px; font-size: 10px; color: #597064; letter-spacing: .12em; }
+  .workspace-scope-heading h2 { margin: 0; font-size: clamp(21px, 2vw, 28px); line-height: 1.2; letter-spacing: -.025em; overflow-wrap: anywhere; }
+  .workspace-scope-count { flex: none; padding: 6px 10px; border-radius: 6px; background: #edf5ef; color: #234f37; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .workspace-scope-period, .workspace-scope-coverage { margin: 8px 0 0; color: #52675b; font-size: 12px; line-height: 1.5; }
+  .workspace-scope-coverage { margin-top: 2px; font-size: 11px; }
+  .workspace-scope-header .directory-workspace-tabs { margin-top: 12px; margin-bottom: 0; border-bottom: 0; }
+  .workspace-report-method { margin: 0 0 18px; border-bottom: 1px solid #dce5df; }
+  .workspace-report-method > summary { width: fit-content; min-height: 44px; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #365e47; font-size: 13px; font-weight: 600; }
+  .workspace-report-method > summary::before { content: "+"; font-size: 18px; }
+  .workspace-report-method[open] > summary::before { content: "−"; }
+  .admin-directory [tabindex="-1"], .admin-directory [id^="admin-player-"] { scroll-margin-top: 290px; }
   .directory-view-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 16px 0; }
   .directory-view-toolbar .eyebrow { margin: 0 0 5px; color: #315d4b; }
   .directory-period-summary { margin: 0; color: #56655e; font-size: 13px; }
   .directory-workspace-tabs { margin-top: 18px; overflow-x: auto; flex-wrap: nowrap; border-bottom: 1px solid #dce5df; }
   .directory-workspace-tabs button { flex: 1 0 auto; white-space: nowrap; min-width: max-content; min-height: 48px; border-radius: 0; }
   .directory-workspace-tabs button[aria-selected="true"] { background: #edf5ef; color: #123d2b; box-shadow: inset 0 -3px #287445; }
+  @media (max-width: 760px) {
+    .workspace-scope-header { top: var(--workspace-toolbar-height, 64px); padding: 10px 12px 0; border-radius: 8px; }
+    .workspace-scope-breadcrumb { margin: -6px 0 0; gap: 2px 6px; font-size: 11px; }
+    .workspace-scope-breadcrumb > span[aria-current="page"] { display: none; }
+    .workspace-scope-breadcrumb > span:last-of-type:not([aria-current]) { display: none; }
+    .workspace-scope-heading { gap: 8px; }
+    .workspace-scope-heading .eyebrow, .workspace-scope-coverage { display: none; }
+    .workspace-scope-heading h2 { font-size: 19px; }
+    .workspace-scope-count { font-size: 11px; padding: 4px 7px; }
+    .workspace-scope-period { margin-top: 5px; font-size: 10px; }
+    .workspace-scope-period span { display: block; }
+    .workspace-scope-header .directory-workspace-tabs { margin-top: 6px; }
+    .workspace-scope-header .directory-workspace-tabs button { min-height: 44px; padding: 10px; font-size: 12px; }
+  }
+  @media (max-height: 540px) { .workspace-scope-header { position: static; } }
   .directory-filter-trigger { flex-shrink: 0; }
   .directory-active-filters { padding: 0; min-width: 0; min-height: 0; }
   .directory-list-search { flex: 1; min-width: 0; }

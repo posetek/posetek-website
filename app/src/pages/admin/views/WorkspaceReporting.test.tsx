@@ -11,7 +11,7 @@ vi.mock("../../insights/BreakdownChart", async importOriginal => {
     return <actual.BreakdownChart {...props} />;
   } };
 });
-import { WorkspaceAttention, WorkspaceMetricCells, WorkspaceReportDetails, WorkspaceReportTabs, WorkspaceScopeSummary, WorkspaceSummary } from "./WorkspaceReporting";
+import { WorkspaceAttention, WorkspaceMetricCells, WorkspaceReportDetails, WorkspaceReportTabs, WorkspaceScopeHeader, WorkspaceScopeSummary, WorkspaceSummary } from "./WorkspaceReporting";
 import { DirectoryPlayersTable, supportedWorkspacePlayerIds } from "./MonitorAccounts";
 import ExpandedReport from "../../insights/ExpandedReport";
 import { previewInsights } from "../../insights/lib/preview";
@@ -32,6 +32,17 @@ const renderReport = (view: "overview" | "testing" | "workouts" | "usage", onCha
 };
 
 describe("unified workspace reporting", () => {
+  it("uses the complete reporting roster for the persistent header beyond the identity lookup bound", () => {
+    const report = { ...data, roster: { ...data.roster, total: 2500 } };
+    const html = renderToStaticMarkup(<WorkspaceScopeHeader {...metricState} data={report} accountCount={2000} scopeLabel="Large club" request={request}><span>Tabs</span></WorkspaceScopeHeader>);
+    expect(html).toContain('class="workspace-scope-count">2,500 players');
+    expect(html).not.toContain('2,000 players');
+  });
+  it("labels bounded subset counts without presenting parent totals as the selected unassigned roster", () => {
+    const html = renderToStaticMarkup(<WorkspaceScopeHeader {...metricState} accountCount={2} accountScopeIsSubset scopeLabel="Unassigned" request={request}><span>Tabs</span></WorkspaceScopeHeader>);
+    expect(html).toContain('class="workspace-scope-count">2 loaded players');
+    expect(html).toContain(`Across ${data.scope.label}:`);
+  });
   it("provides precisely four manual report tabs, with one selected focus target", () => {
     const html = renderToStaticMarkup(<WorkspaceReportTabs active="testing" onChange={() => {}} />);
     expect(html.match(/role="tab"/g)).toHaveLength(4);

@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "status": "published_verified",
+  "accepted": true,
+  "deploymentId": "6aea6ecaca4a6743660ac238",
+  "previousDeploymentId": "6aea5e0ceb047cc53ae49efc",
+  "sourceIntegration": {
+    "repository": "posetek/posetek-website",
+    "pullRequest": 118,
+    "sourceCommit": "64b25991d355361f3660d0081d55b8c78ba2127e",
+    "mergeCommit": "f9cf233a33fafd1b377480db2c40d2caf4e61211",
+    "sourceCI": "https://github.com/posetek/posetek-website/actions/runs/41738516533",
+    "mergeCI": "https://github.com/posetek/posetek-website/actions/runs/41739778800",
+    "checksPassedPerRun": 6,
+    "skipNetlify": true,
+    "latestRevisionReview": {
+      "status": "complete",
+      "findings": 0,
+      "policyBlob": "6e879f639a41b8306f4e505cb04a7aaf13f261aa",
+      "receiptSha256": "75c2f805e4676bdd4812373767c99daf484f2d3303d3cbae2f5f417f4f93df34"
+    }
+  },
+  "sourceProvenance": {
+    "preservedApplicationRuntime": "c33a9c80187a604659ee4c3c851b701c74dacd9c",
+    "heldMainCandidatesExcluded": [
+      "policy",
+      "session",
+      "Ball Striking"
+    ],
+    "unchangedBackendReleasedSource": "4ef6e77e8e563ca9682c5229624dd66a944b92a1",
+    "nativeReleasePerformed": false
+  },
+  "artifact": {
+    "files": 2544,
+    "providerRecords": 2545,
+    "sha256": "f48621479c02b8c29a99d40cffb508c334df32d9d9e954f0b501cb41d0d7a041",
+    "bytes": 182111408,
+    "digestDefinition": "SHA-256 over sorted path, tab, decimal byte length, tab, SHA-256 file hash, newline",
+    "configurationSha256": "ecf037fc5b9c2d8b1bbda34b0e1bd86ef2082660f289ef838a1abbb26cae4f69",
+    "providerInventorySha256": "c312d7516e62af0fe919e2f79f843bea0a5384116da587588e41ea19248c32cd",
+    "productionVerificationSha256": "6cead3c025aa598c0268f52b7a566ce67d7f431d34d2213fb63fec21d75b2d99",
+    "reviewedOperatorSha256": "7e4b4f75f4380cdf59f3efe537de79b27989b21de5e1bcf2647a571425212aa2",
+    "artifactReviewSha256": "94e07f4f5b745ba99137bd4d943bc7a4dd51b185847f527a8f5bc70442b052ec",
+    "readOnlyVerificationReviewSha256": "47f0d676c02bef34a749dce1e3753dd6fb8d800dbe325b2c7f3e3eeb56c04796",
+    "promotionIntentSha256": "627ac84b47b7c50da5736170311c33df2ad332ac6a58ecf1d3f50a0035931973"
+  },
+  "preservation": {
+    "previousProtectedFiles": 2470,
+    "allPreviousProtectedFilesExact": true,
+    "changedServedPaths": [
+      "/index.html",
+      "/coaches/index.html"
+    ],
+    "addedHashedAssets": 72,
+    "removedFiles": 0,
+    "preservedLocalPathRecords": 37,
+    "protectedBaselineFiles": 2542,
+    "previousServedFiles": 2472,
+    "unchangedPriorServedFiles": 2470,
+    "addedHashedAssetBytes": 2749029,
+    "baselineSha256": "51a695e07e8164828ff003e99dea114dcccfb1ab5d40bd07ac4c98859428a7e4",
+    "privateReportFilesPreserved": 6,
+    "applicationSha256": "14019c30b0d6c281d25f3b640a2dfc50fdfec098c8ad6e1378c85cb7bf5f4b25",
+    "providerMetadata": "Only the generated absolute build.publish directory differs; normalized configuration is identical. Provider inventory lowercases paths; file hashes and sizes remain exact."
+  },
+  "validation": {
+    "localBrowserRegressionCasesPassed": 18,
+    "localPublicPageTestsPassed": 240,
+    "localNavigationPreservationChecksPassed": 23,
+    "localWorkflowPolicyChecksPassed": 32,
+    "candidateBrowser": {
+      "passed": true,
+      "cases": 24,
+      "assertions": 90,
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844"
+      ],
+      "receiptSha256": "7e733471f04f41e661f335be4f0626c6a3374696bde65f5317de843fa5678720"
+    },
+    "productionBrowser": {
+      "functionalAssertionsPassed": 90,
+      "cases": 24,
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "viewports": [
+        "1440x900",
+        "390x844"
+      ],
+      "strictInitialCasesPassed": 23,
+      "strictInitialDiagnosticCases": 1,
+      "diagnostic": "All navigation assertions passed. The WebKit phone closing-link case also recorded two Clarity CORS page errors caused by blocking non-read requests in the acceptance harness.",
+      "receiptSha256": "7c80c2db3513e397d3141a6a1c4bbfbdac241cc03b18bd718cfdc17b10a9d658",
+      "isolatedClosingConfirmation": {
+        "casesPassed": 1,
+        "assertionsPassed": 4,
+        "pageErrors": 0,
+        "nonReadRequestsStillBlocked": true,
+        "analyticsTagInterceptedBeforeLoad": true,
+        "consoleErrors": 0,
+        "receiptSha256": "b72d4df9662e05c5bce4c484ddcce6b97ec5f94eb0e8056526b5871424ad7d12"
+      },
+      "settledCaptures": 8,
+      "capturesReceiptSha256": "5e580af4274f5a2e790a1fc74d8c96df4cf57d72ab97c064aadfc4cce8929730",
+      "completedAt": "2026-11-03T23:39:28.906Z"
+    },
+    "physicalSafariAcceptance": false,
+    "physicalPhoneAcceptance": false,
+    "authenticatedWorkflowAcceptance": false,
+    "browserCoverage": [
+      "Players and Coaches header/menu destinations",
+      "first text-centered pointer and touch activation",
+      "booking and section links",
+      "menu close/focus and native Back",
+      "closing Sign in links",
+      "keyboard",
+      "reduced motion",
+      "disabled JavaScript",
+      "anonymous sign-in form arrival without submission"
+    ],
+    "httpRoutesVerified": 14,
+    "readOnlyVerificationNote": "The former production permalink gains duplicate noindex as a preview. A reviewed read-only derivative normalizes directive sets while requiring noindex, nofollow, noarchive and nosnippet; all artifact, body and other header checks remain. Original promotion operator unchanged; no repeat publication.",
+    "browserAcceptanceSummarySha256": "38a09118d583604d27b9d35e693b3f3473180c7d02731f56e1a1d5687da2c299"
+  },
+  "releaseScope": {
+    "websiteMarketing": true,
+    "applicationRuntime": false,
+    "backend": false,
+    "rules": false,
+    "indexes": false,
+    "gateway": false,
+    "catalog": false,
+    "native": false,
+    "realAccountOrWorkoutWrites": false
+  },
+  "recovery": {
+    "previousArtifactRetained": true,
+    "rollbackPerformed": false,
+    "previousConfigurationRetained": true,
+    "futureRecovery": "Freshly inspect the serving inventory and use a reviewed exact artifact preserving later accepted files; a source revert alone does not publish.",
+    "reportOutreach": "held; no messages sent"
+  },
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "publishedAt": "2026-11-03T23:37:02.237Z",
+  "authorization": "Dylan requested PR #118 merged into main and the fix deployed through the guarded release workflow.",
+  "promotion": "The exact accepted new draft was promoted once without rebuilding.",
+  "checkedAt": "2026-11-03T23:38:21.930Z",
+  "activeMarketingClosure": {
+    "logicalAssetsBefore": 50,
+    "logicalAssetsAfter": 50,
+    "logicalAssetsAdded": 0,
+    "logicalAssetsRemoved": 0,
+    "css": "Two existing marketing bundles each gain one pointer-events:none declaration.",
+    "javascript": "Only hashed dependency references change.",
+    "heldApplicationReferences": [],
+    "additionalApplicationChunks": "Ordinary-builder additive assets remain unreferenced by the preserved application entry."
+  },
+  "ordinaryPreservationBuild": {
+    "passed": true,
+    "command": "node scripts/build-production.mjs",
+    "protectedFiles": 2542,
+    "ordinaryArtifactFiles": 2544,
+    "checkOnlyNotPublished": true,
+    "logSha256": "4e002dfd81c6e5b4f8a435a4de841b443a267daa382fa0ef614e7e3b96db1b36",
+    "preservationTestsPassed": 16,
+    "preservationTestLogSha256": "7772cfe6432998938e9287c4ef9cc89dff77610d1c5858724eccc1ffd1943338",
+    "entryVerification": {
+      "homepageRoutes": 2,
+      "coachesRoutes": 3,
+      "applicationRoutes": 25,
+      "assets": 2345,
+      "preservedFiles": 2542
+    },
+    "browserChecks": false,
+    "authenticatedWorkflows": false,
+    "entryVerificationLogSha256": "3cf59b143da0184082368c87bd28ac9d06a7c793974385966e4032bd6fda71d1",
+    "baselineVerificationSha256": "04f310195779b2bbf505207e094e742a10b0424f4767f074b53e2e8461e66778"
+  }
+}

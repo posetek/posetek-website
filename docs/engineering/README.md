@@ -1,6 +1,73 @@
 # PoseTek engineering handbook
 
-## Current admin jump recovery release — October 30, 2026
+## Safari marketing link activation release — November 3, 2026
+
+Exact deployment `6aea6ecaca4a6743660ac238` is live. Animated public labels now
+leave pointer activation to their enclosing controls, restoring first-click Sign in
+navigation in WebKit while preserving native destinations and keyboard behavior.
+PR #118 is merged as `f9cf233`; source integration used `[skip netlify]`.
+
+All 2,544 artifact files match 2,545 provider records. Every prior protected file
+remains exact; the reconciled baseline protects 2,542 files and retains all 37
+local recovery mappings. Application runtime `c33a9c8`, feedback, coach enrollment
+and private reports remain unchanged. Held application candidates and report
+outreach remain held. Keep `[skip netlify]` on source/receipt integration.
+
+Read [the release handoff](../releases/HOMEPAGE_LINK_ACTIVATION.md) and
+[production receipt](../releases/receipts/HOMEPAGE_LINK_ACTIVATION_PRODUCTION.json) for exact-artifact, browser and recovery evidence.
+Earlier release sections are historical.
+
+## Private parent report review release — November 3, 2026
+
+Exact deployment `6aea5e0ceb047cc53ae49efc` is live for private review. One encrypted
+phone report adds a team chart, sample practice, PDF download and an exact-athlete
+HTTPS Workouts button. The prior Revamp application and all 2,466 served files
+remain exact; only six report files and dedicated routing/privacy headers were added.
+The reconciled baseline protects 2,470 files.
+
+All parent/coach report texts stay held after merge, deployment and review; fresh
+explicit send authorization is required. Native app opening remains pending.
+Keep `[skip netlify]` on source/receipt integration and preserve approved runtime
+`c33a9c8`; held main candidates remain excluded. Read [the release handoff](../releases/PRIVATE_PARENT_REPORTS.md)
+and [production receipt](../releases/receipts/PRIVATE_PARENT_REPORTS_PRODUCTION.json)
+for access limits and verification. Earlier release sections are historical.
+
+
+## Admin activity reporting release — November 3, 2026
+
+Exact deployment `6aea3d1459da561c7113e606` is live. Admin organization/team
+reporting now keeps the selected scope visible and provides distinct Overview,
+Teams, Workouts, Usage and Testing evidence. Only Backend `getClubInsightsV2`
+was updated (version 10); existing admin/manager/coach reporting remains compatible.
+
+All 2,466 artifact files match 2,467 provider records. The reconciled baseline
+protects 2,464 files. Players, Coaches, feedback, coach enrollment and prior assets
+remain exact. Runtime `c33a9c8` extends approved `f4ce1a8`; it is separate from
+source main. Held policy, session and Ball Striking candidates remain excluded.
+Keep `[skip netlify]` on source and receipt integration.
+
+Read [the release handoff](../releases/ADMIN_ACTIVITY_REPORTING.md) and [the production receipt](../releases/receipts/ADMIN_ACTIVITY_REPORTING_PRODUCTION.json) for exact artifacts, verification,
+measurement limits and cleanup. Earlier release sections are historical.
+
+## Current planner preview context guard release — November 1, 2026
+
+Exact deployment `6ae7cb8d2a05c4dbbbd9b7e5` is live. **Preview priorities** now
+requires the same completed training context as generation, with visible guidance
+when schedule or equipment confirmation is missing. Candidate and production
+signed-in synthetic assessments completed; no real player profile or plan changed.
+
+All 2,436 artifact files match 2,437 provider records. The reconciled baseline
+protects 2,434 files and passes the ordinary preservation build. Only the existing
+application entry changed; seven runtime assets were added. Marketing, feedback,
+coach enrollment and prior accepted results remain preserved. Read [the release
+handoff](../releases/PLANNER_PREVIEW_CONTEXT_GUARD.md) and [production receipt](../releases/receipts/PLANNER_PREVIEW_CONTEXT_GUARD_PRODUCTION.json) for exact scope and limits.
+
+Runtime `f4ce1a8` extends approved `757cf1b`; it is separate from source main.
+Held policy, session and Ball Striking candidates remain excluded. Keep
+`[skip netlify]` on source/receipt integration. No backend, rules, indexes,
+gateway, catalog or native release is included. Earlier sections are historical.
+
+## Admin jump recovery release — October 30, 2026
 
 Exact deployment `6ae4fc4e990d28e8d584e696` is published and byte-verified. Admin
 Rep Tools reviews original jump recordings using manual marker selection or
@@ -12,8 +79,9 @@ assets. The reconciled baseline protects 2,381 files. Runtime `63bae636` contain
 only approved `bb3274c` plus this feature and the re2js 2.8.7 patch; held policy,
 session, Ball Striking and shared AI transport candidates remain excluded. Five
 scoped Backend callables were coordinated; no native release or real athlete
-result change is included. Source PR #109 remains unmerged while coordinated
-Backend hosted CI is billing-blocked. Keep `[skip netlify]` on integration.
+result change is included. Source PR #109 stayed unmerged while Backend hosted
+CI was billing-blocked; its source was reconciled with main on
+November 4. Keep `[skip netlify]` on integration.
 
 Read [the release handoff](../releases/ADMIN_JUMP_RECOVERY.md),
 [production receipt](../releases/receipts/ADMIN_JUMP_RECOVERY_PRODUCTION.json)
@@ -21,9 +89,10 @@ and [review workflow](../features/ADMIN_JUMP_REVIEW.md). Earlier release
 sections are historical checkpoints. Do not publish the full current main
 application or merge the separate runtime branch.
 
-## Preceding web AI-sharing recovery release — October 24, 2026
+## Preserved web AI-sharing recovery release — October 24, 2026
 
-Exact reviewed deployment `6adc6d7bf370755a2aabc65b` is live. Players can review
+Exact reviewed deployment `6adc6d7bf370755a2aabc65b` was published October 24.
+Its preserved behavior lets players review
 AI sharing from Coach, personal Workouts and their own Profile, explicitly allow
 or decline, and retry a blocked AI request after allowing sharing. Opening the
 control never saves consent or starts generation. No real account choice was

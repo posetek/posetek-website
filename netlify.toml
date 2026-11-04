@@ -88,6 +88,17 @@
   status = 200
   force = true
 
+# Isolated private report reader; no application scripts or tracking.
+[[redirects]]
+  from = "/report"
+  to = "/report/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/report/"
+  to = "/report/index.html"
+  status = 200
+
 # SPA fallback: files that exist in dist/ (unported legacy pages, assets) are
 # served directly; everything else — including the ported legacy URLs like
 # /profile.html that are intentionally absent from dist/ — is handled by the
@@ -125,3 +136,15 @@
   for = "/_astro/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/report*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Netlify-CDN-Cache-Control = "no-store"
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
