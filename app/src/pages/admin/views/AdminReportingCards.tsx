@@ -23,7 +23,7 @@ export default function AdminReportingCards({ metrics }: { metrics?: AdminReport
       return <div key={key} className="activity-stat activity-card" title={metric?.note || 'Updated reporting data is unavailable.'}>
         <dt>{title}</dt><dd className={`activity-stat-value is-${direction}`}>{format(value, minutes)}</dd>
         <dd className="activity-stat-comparison"><span>Last week <strong>{format(previous, minutes)}</strong></span>{delta != null && <span className={`activity-stat-delta is-${direction}`} aria-label={`${delta > 0 ? 'Increase' : delta < 0 ? 'Decrease' : 'No change'} ${format(Math.abs(delta), minutes)}`}>{delta > 0 ? '↑' : delta < 0 ? '↓' : '–'} {format(Math.abs(delta), minutes)}</span>}</dd>
-        <dd className="activity-stat-note">{value == null ? metric?.note || 'Updated reporting unavailable' : metric?.status === 'partial' ? `Partial coverage · ${metric.note || description}` : description}</dd>
+        <dd className="activity-stat-note">{value == null ? metric?.note || 'Updated reporting unavailable' : metric?.status === 'partial' ? `Partial coverage · ${description}` : description}</dd>
       </div>;
     })}
   </dl><details className="activity-card-definitions"><summary>Metric definitions</summary>

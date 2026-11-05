@@ -90,8 +90,10 @@ function ratingOrNull(value: unknown): number | null {
 
 // MARK: - Reads
 
-export async function loadOrganizations(): Promise<OrganizationRow[]> {
-  const snapshot = await db.collection("organizations").get();
+/** Current-only callers filter in Firestore, before documents are downloaded. */
+export async function loadOrganizations({ currentOnly = false }: { currentOnly?: boolean } = {}): Promise<OrganizationRow[]> {
+  const organizations = db.collection("organizations");
+  const snapshot = await (currentOnly ? organizations.where("schemaVersion", "==", 2) : organizations).get();
   return snapshot.docs
     .map(doc => {
       const data: any = doc.data() || {};

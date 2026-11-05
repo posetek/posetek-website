@@ -46,9 +46,12 @@ describe('participation and usage cards', () => {
   it('makes partial coverage visible and does not compare snapshots with incomplete coverage', () => {
     const metrics = fixture();
     metrics.cards.iosDownloads = value(12, 10, 'partial', 'Only retained iOS activity is available.');
-    const html = card(render(metrics), 'iOS downloads');
+    const report = render(metrics), html = card(report, 'iOS downloads');
     expect(html).toContain('is-neutral">12');
-    expect(html).toContain('Partial coverage · Only retained iOS activity is available.');
+    expect(html).toContain('Partial coverage · Players with recorded iOS use');
+    expect(html).not.toContain('Only retained iOS activity is available.');
+    expect(report).toContain('title="Only retained iOS activity is available."');
+    expect(report).toContain('<strong>iOS downloads:</strong> Only retained iOS activity is available.');
     expect(html).not.toContain('activity-stat-delta');
   });
   it('treats unavailable or invalid measurements as missing rather than positive or zero evidence', () => {

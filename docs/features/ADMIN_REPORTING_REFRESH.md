@@ -76,20 +76,66 @@ Canonical Backend owns all aggregation. The companion feature adds optional
 requests the bounded station reader. No browser joins paginated rows into totals.
 Old coach/manager and installed-native contracts are preserved.
 
-The concurrent website efficiency work merged as PR #124 (`b876eb1`). Its
-current-organization filtering, 60-second bounded in-memory exact-response reuse,
-auth/scope invalidation and late-response fences must remain intact. This patch
-adds the Testing option to that existing payload/key; it does not create another
-cache or report-session architecture. Integration overlaps are MonitorAccounts,
-workspaceMetrics and workspaceMetricsData. The larger backend reader/SQL plan
-remains separate.
+The concurrent website efficiency work merged as PR #124 (`b876eb1`) and is
+integrated into this feature branch. Its current-organization filtering, 60-second
+bounded in-memory exact-response reuse, auth/scope invalidation and late-response
+fences remain intact. This patch adds the Testing option to that existing
+payload/key; it does not create another cache or report-session architecture.
+Integration overlaps were MonitorAccounts, workspaceMetrics and
+workspaceMetricsData. The larger backend reader/SQL plan remains separate.
+
+The canonical Backend companion is branch `feat/admin-reporting-refresh`,
+implementation `eb74046473503edd4366338f9d4940f8afe949a8`, with validation receipt
+`5fc55bd25c606d5a8c9bb04c84c48e08a47feb3e`. Its
+`docs/ADMIN_REPORTING_REFRESH.md` records the additive contract, bounded reads,
+independent Astra review and pending SDK checks. The website Backend pin is not
+changed by this candidate; any future integration pin must identify the reviewed
+merged Backend source.
 
 ## Validation and release
 
-Validation results and the companion Backend commit will be finalized after
-integration with PR #124. Synthetic fixtures block external traffic and writes;
-all names and records are invented. Browser evidence is local desktop Chromium
-and WebKit, not live authentication, physical-device or production acceptance.
+Local website validation used Node 22.23.3, Python 3.12 and isolated worktree
+dependencies. The integrated source passed:
+
+| Check | Result |
+| --- | --- |
+| Frontend Vitest | 2,300 tests in 209 files |
+| Lint | Exit zero; existing warnings retained |
+| Tooling / legacy guards | 100 tests |
+| Python CI policy | 32 tests |
+| Svelte | Zero errors and warnings |
+| TypeScript / Astro and marketing builds | Both passed; five document routes |
+| Static Firestore transport | Two fixture tests and 124 compiled HTML/JS files |
+| Guest routes / marketing activation | 25 checks passed |
+| App production dependency audit | Zero advisory-path findings; zero blocking |
+| New reporting UI | 16 scenarios: four tabs, two engines, phone/desktop widths |
+| Integrated tab persistence | 36 scenarios passed across both engines and widths |
+
+The display checks cover card counts, removed sections, chart/table order, drill
+selection, daily range/mode changes, horizontal overflow, browser errors and
+blocked network writes. Screenshots were reviewed at phone and desktop widths.
+A final independent Astra integration review found no concrete regression in
+report composition, request gating or the retained cache behavior. The persistence
+harness now waits for the requested tab selection before checking
+readiness and tests restored report content instead of the removed coverage
+header. Earlier failed runs are retained separately; no application cache change
+was made to satisfy those obsolete/racing assertions.
+
+The Backend companion passed 105 affected reporting tests, 101 policy tests,
+473 imported-file migration checks, client contract exports, 23 scoped package
+tests, 3,977 gateway tests (two skips, ten subtests), and 19 authored replay
+profiles. Independent Astra review issues were fixed and re-reviewed. Its broader
+Functions/tooling suite had 1,454 passes and five missing-SDK failures; three
+private-fixture skips and one SDK package-discovery skip remain. The exact
+SDK-dependent checks are registered in the deferred-validation queue. Missing
+`firebase-admin` / `firebase-functions` dependencies were not installed or borrowed
+from another checkout. These checks remain pending, not passed.
+
+Synthetic fixtures block external traffic and writes; all names and records are
+invented. Browser evidence is local desktop Chromium and WebKit, not live
+Firebase authorization, physical-device or production acceptance. Rules/emulator
+integration, hosted CI and the protected production preservation/release build
+were not run. No production records, account settings or messages were changed.
 
 Release requires separately qualified canonical Backend publication first, then
 an exact approved website application artifact and preserved baseline verification.

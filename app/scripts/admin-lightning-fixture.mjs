@@ -5,7 +5,7 @@ export async function installDirectoryFixture(page,{state='normal',record=false,
   const request=route.request(),url=new URL(request.url());
   if(!['127.0.0.1','localhost'].includes(url.hostname)){return route.abort()}
   if(url.pathname==='/src/lib/firebase.ts') return route.fulfill({contentType:'text/javascript',body:`const listeners=new Set();export const auth={currentUser:{uid:'synthetic-fixture-admin',email:'admin@example.test'},onAuthStateChanged(fn){listeners.add(fn);queueMicrotask(()=>listeners.has(fn)&&fn(auth.currentUser));return()=>listeners.delete(fn)}};window.fixtureSetAccount=uid=>{auth.currentUser=uid?{uid,email:'admin@example.test'}:null;listeners.forEach(fn=>fn(auth.currentUser))};const deny=()=>{throw Error('Unmocked data access is forbidden in this fixture')};export const db={collection:deny};export const cloud={httpsCallable:()=>async()=>{throw Error('Synthetic fixture does not write data')}};export const storage={ref:deny};export default {auth:()=>auth,firestore:()=>db};`});
-  if(url.pathname==='/src/pages/admin/lib/workspaceMetrics.ts') return route.fulfill({contentType:'text/javascript',body:'export {useWorkspaceMetrics} from "/scripts/fixtures/admin-lightning/directory.tsx";' });
+  if(url.pathname==='/src/pages/admin/lib/workspaceMetrics.ts') return route.fulfill({contentType:'text/javascript',body:'export const setWorkspaceMetricsScope=()=>{};export {useWorkspaceMetrics} from "/scripts/fixtures/admin-lightning/directory.tsx";' });
   if(record&&!url.searchParams.has('fixture-original')) {
    const exports={
     '/src/pages/admin/lib/accounts.ts':"export {fixturePlayer as loadPlayer} from '/scripts/fixtures/admin-lightning/directory.tsx';",
