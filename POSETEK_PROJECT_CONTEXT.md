@@ -5,7 +5,8 @@
 Organization reporting adds compact comparison cards, an age-by-drill Testing
 chart, station timing analytics and daily consolidated usage. This is not a
 production release. It integrates PR #124 tab persistence and requires the
-companion canonical Backend change; exact repeat-visit history is unavailable.
+companion canonical Backend change. Repeat users means activity on two or more
+distinct local days in each shown week, approved November 5.
 The integrated candidate passed 2,300 frontend tests, 16 display scenarios and
 36 persistence scenarios, plus the local website build and policy lanes.
 See [definitions, verification and release order](docs/features/ADMIN_REPORTING_REFRESH.md).

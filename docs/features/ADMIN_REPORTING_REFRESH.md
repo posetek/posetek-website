@@ -7,7 +7,8 @@ outreach is included. The published November 4 release remains the baseline.
 
 Overview and Usage share six compact cards: players with at least four different
 recorded drills, claimed accounts, observed iOS users under the requested iOS
-downloads label, repeat users, weekly distinct users, and estimated platform time.
+downloads label, repeat users active on at least two distinct days in the shown
+week, weekly distinct users, and estimated platform time.
 Prior values are shown beneath current values. Known increases/decreases use
 color and directional text; partial coverage never produces a confident trend.
 The repeated scope breadcrumb, Current selection label, date/coverage lines,
@@ -47,10 +48,12 @@ reconstructed from period totals. The exact-day data table preserves nulls.
   substituted for a claim date.
 - iOS downloads: users with positive retained iOS activity, not App Store installs.
   Historical telemetry retention and collection coverage are explicit.
-- Repeat users: the requested distinct-visit definition is not recoverable from
-  retained daily summaries. The card stays unavailable rather than silently using
-  the old two-active-days definition. A product decision on that substitute is
-  pending; exact visits require a defined visit lifecycle and new telemetry.
+- Repeat users: the user approved two or more distinct active local days on
+  November 5. Each player counts once in each matching weekly window (Monday
+  through selected report end, compared with the same weekdays last week).
+  Positive website or iOS time qualifies a day; multiple visits or platforms on
+  one day still count as one day. The card shows this definition. Missing
+  collection and historical coverage retain unavailable/partial states.
 - Weekly users and platform minutes: Monday through selected report end compared
   with the same weekdays one week earlier. The current day may still be
   accumulating; this is not an equal-elapsed-hours comparison. A player counts
@@ -86,7 +89,8 @@ workspaceMetricsData. The larger backend reader/SQL plan remains separate.
 
 The canonical Backend companion is branch `feat/admin-reporting-refresh`,
 implementation `eb74046473503edd4366338f9d4940f8afe949a8`, with validation receipt
-`5fc55bd25c606d5a8c9bb04c84c48e08a47feb3e`. Its
+`5fc55bd25c606d5a8c9bb04c84c48e08a47feb3e` and approved active-day follow-up
+`5f2019f0153f02eca1793b89aa74f33db17006df`. Its
 `docs/ADMIN_REPORTING_REFRESH.md` records the additive contract, bounded reads,
 independent Astra review and pending SDK checks. The website Backend pin is not
 changed by this candidate; any future integration pin must identify the reviewed
@@ -121,7 +125,7 @@ readiness and tests restored report content instead of the removed coverage
 header. Earlier failed runs are retained separately; no application cache change
 was made to satisfy those obsolete/racing assertions.
 
-The Backend companion passed 105 affected reporting tests, 101 policy tests,
+The initial Backend companion passed 105 affected reporting tests, 101 policy tests,
 473 imported-file migration checks, client contract exports, 23 scoped package
 tests, 3,977 gateway tests (two skips, ten subtests), and 19 authored replay
 profiles. Independent Astra review issues were fixed and re-reviewed. Its broader
@@ -130,6 +134,17 @@ private-fixture skips and one SDK package-discovery skip remain. The exact
 SDK-dependent checks are registered in the deferred-validation queue. Missing
 `firebase-admin` / `firebase-functions` dependencies were not installed or borrowed
 from another checkout. These checks remain pending, not passed.
+
+After the November 5 repeat-user definition confirmation, frontend validation
+again passed all 2,300 tests, lint, the TypeScript/Astro build and 16 display
+scenarios. The browser assertions now verify a populated Repeat users card and
+its explicit active-day definition in both Overview and Usage. The Backend
+follow-up passed 109 affected reporting tests, including duplicate-day/platform
+handling, matching weekly boundaries, missing collection, retention and an
+actual synthetic writer-to-reader timezone case. Backend policy (101), migration
+(473) and scoped packaging (23 passed, one unchanged SDK skip) also passed;
+independent Astra review found no remaining issue. Earlier unaffected validation
+results above remain evidence for the unchanged lanes.
 
 Synthetic fixtures block external traffic and writes; all names and records are
 invented. Browser evidence is local desktop Chromium and WebKit, not live

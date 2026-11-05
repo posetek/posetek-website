@@ -8,7 +8,7 @@ function fixture(): AdminReportingMetrics {
   return {
     version: 1,
     windows: { current: { startDate: '2026-11-02', endDate: '2026-11-05' }, previous: { startDate: '2026-10-26', endDate: '2026-10-29' } },
-    cards: { testedPlayers: value(20, 15), claimedAccounts: value(18, 18), iosDownloads: value(12, 10), repeatUsers: value(null, null, 'unavailable', 'Separate visits are not collected.'), weeklyUsers: value(6, 9), platformMinutes: value(132.5, 121.2) },
+    cards: { testedPlayers: value(20, 15), claimedAccounts: value(18, 18), iosDownloads: value(12, 10), repeatUsers: value(4, 3), weeklyUsers: value(6, 9), platformMinutes: value(132.5, 121.2) },
   };
 }
 const render = (metrics?: AdminReportingMetrics) => renderToStaticMarkup(<AdminReportingCards metrics={metrics} />);
@@ -23,6 +23,10 @@ describe('participation and usage cards', () => {
     expect(card(html, 'Weekly users')).toContain('is-down">6');
     expect(card(html, 'Weekly users')).toContain('aria-label="Decrease 3"');
     expect(card(html, 'Accounts claimed')).toContain('aria-label="No change 0"');
+    expect(card(html, 'Repeat users')).toContain('is-up">4');
+    expect(card(html, 'Repeat users')).toContain('Last week <strong>3</strong>');
+    expect(card(html, 'Repeat users')).toContain('Active on 2+ days in the shown week');
+    expect(html).toContain('Multiple visits on one day count as one active day.');
     expect(card(html, 'Time on platform')).toContain('132.5 min');
     expect(card(html, 'Time on platform')).toContain('aria-label="Increase 11.3 min"');
     expect(html).toContain('2026-11-02–2026-11-05');
@@ -30,9 +34,10 @@ describe('participation and usage cards', () => {
     expect(html).toContain('same weekdays last week');
     expect(html).toContain('not an App Store installation count');
   });
-  it('preserves known zero and refuses to infer unsupported visits or a trend without prior evidence', () => {
+  it('preserves known zero and refuses to infer activity or a trend without collection evidence', () => {
     const metrics = fixture();
     metrics.cards.testedPlayers = value(0, 0);
+    metrics.cards.repeatUsers = value(null, null, 'unavailable', 'Usage collection unavailable.');
     metrics.cards.claimedAccounts = value(18, null, 'available', 'Historical claim dates unavailable.');
     const html = render(metrics);
     expect(card(html, 'Players tested')).toContain('is-neutral">0');
@@ -40,7 +45,7 @@ describe('participation and usage cards', () => {
     expect(card(html, 'Accounts claimed')).toContain('Last week <strong>—</strong>');
     expect(card(html, 'Accounts claimed')).not.toContain('activity-stat-delta');
     expect(card(html, 'Repeat users')).toContain('is-neutral">—');
-    expect(card(html, 'Repeat users')).toContain('Separate visits are not collected.');
+    expect(card(html, 'Repeat users')).toContain('Usage collection unavailable.');
     expect(card(html, 'Repeat users')).not.toContain('activity-stat-delta');
   });
   it('makes partial coverage visible and does not compare snapshots with incomplete coverage', () => {

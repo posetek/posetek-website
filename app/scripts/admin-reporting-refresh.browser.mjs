@@ -39,7 +39,12 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
         } else {
           await panel.locator('.admin-activity-report[aria-busy="false"]').waitFor();
           assert.equal(await panel.getByRole('heading', { name: 'People to follow up with', exact: true }).count(), 0);
-          if (view === 'Overview' || view === 'Usage') assert.equal(await panel.locator('.activity-summary-six .activity-stat').count(), 6);
+          if (view === 'Overview' || view === 'Usage') {
+            assert.equal(await panel.locator('.activity-summary-six .activity-stat').count(), 6);
+            const repeat = panel.locator('.activity-summary-six .activity-stat').filter({ has: page.getByText('Repeat users', { exact: true }) });
+            assert.equal(await repeat.locator('.activity-stat-value').innerText(), '14');
+            assert.equal(await repeat.locator('.activity-stat-note').innerText(), 'Active on 2+ days in the shown week');
+          }
           if (view === 'Overview') assert.equal(await panel.getByRole('heading', { name: 'Compare teams', exact: true }).count(), 0);
           if (view === 'Workouts') {
             assert.equal(await panel.getByRole('heading', { name: 'Work completed', exact: true }).count(), 0);

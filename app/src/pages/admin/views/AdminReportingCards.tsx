@@ -4,7 +4,7 @@ const CARDS = [
   ['testedPlayers', 'Players tested', '4+ different drills recorded'],
   ['claimedAccounts', 'Accounts claimed', 'Players who claimed their account'],
   ['iosDownloads', 'iOS downloads', 'Players with recorded iOS use'],
-  ['repeatUsers', 'Repeat users', 'More than one recorded visit'],
+  ['repeatUsers', 'Repeat users', 'Active on 2+ days in the shown week'],
   ['weeklyUsers', 'Weekly users', 'Distinct players active in the shown week'],
   ['platformMinutes', 'Time on platform', 'Estimated active website + iOS use'],
 ] as const;
@@ -28,6 +28,7 @@ export default function AdminReportingCards({ metrics }: { metrics?: AdminReport
     })}
   </dl><details className="activity-card-definitions"><summary>Metric definitions</summary>
     {metrics && <p>Weekly activity: {metrics.windows.current.startDate}–{metrics.windows.current.endDate}. Comparison: {metrics.windows.previous.startDate}–{metrics.windows.previous.endDate}, the same weekdays last week. Players tested, accounts claimed and observed iOS users are cumulative through each cutoff. Partial coverage does not support a week-to-week trend.</p>}
+    <p>Repeat users counts players with recorded website or iOS use on at least two distinct local days in each shown week. Multiple visits on one day count as one active day.</p>
     <p>iOS downloads uses observed iOS activity as a proxy; it is not an App Store installation count. Estimated active time counts simultaneous website and iOS use once.</p>
     {CARDS.map(([key, title]) => metrics?.cards[key]?.note && <p key={key}><strong>{title}:</strong> {metrics.cards[key].note}</p>)}
   </details></section>;

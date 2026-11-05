@@ -115,7 +115,7 @@ function participationMetrics(population, request) {
     cards: { testedPlayers: metric(Math.floor(count * .85), Math.floor(count * .75), 'Four distinct recorded drills; failures included.'),
       claimedAccounts: metric(Math.floor(count * .7), Math.floor(count * .6), 'Claimed through each cutoff.'),
       iosDownloads: metric(Math.floor(count * .6), Math.floor(count * .55), 'Players with positive retained iOS activity; not App Store installations.'),
-      repeatUsers: { value: null, previousValue: null, status: 'unavailable', note: 'Distinct visit history is not retained.' },
+      repeatUsers: metric(Math.floor(count * .3), Math.floor(count * .25), 'Players active on two or more distinct local days in matching weekly windows; same-day visits count once.'),
       weeklyUsers: metric(Math.floor(count * .45), Math.floor(count * .5), 'Distinct active players during matching weekdays.'),
       platformMinutes: metric(count * 3.7, count * 3.2, 'Simultaneous website and iOS time counted once.') } };
 }
