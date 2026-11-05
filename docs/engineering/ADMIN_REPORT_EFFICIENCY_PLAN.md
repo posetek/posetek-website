@@ -75,6 +75,14 @@ inspected Backend `bbe7cb4065c3d59c2bb91f210cd603a3ebbe77b7` match that source.
 Recheck these identities when starting implementation; source main and the approved
 runtime are separate. Do not use all of source main as the next runtime.
 
+November 5 hosted qualification found that authenticated browser equality reads
+on `organizations.schemaVersion` returned HTTP 500 `INTERNAL`, while operator
+reads succeeded. The website compatibility fix uses the inclusive numeric point
+range `>= 2` and `<= 2`, followed by a raw numeric-2 check. Repeated server-only
+Chromium/WebKit SDK reads qualified that range against the same current/legacy
+fixtures. This retains the bounded directory read; it does not qualify a new
+backend reporting reader or establish the cause of the equality-query failure.
+
 | Evidence | Consequence for the implementation |
 | --- | --- |
 | Web `app/src/pages/admin/lib/accounts.ts`: `loadClubAccountData`, `loadOrganizationPlayers`, `loadTeamPlayers`; Backend `functions/clubs.js`: `getClubContext` | Context reads players/staff/invitations, then browser reloads organization profiles; team identity loading starts from the organization roster. Split descriptors, management data and paged identities. |
