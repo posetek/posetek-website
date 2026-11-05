@@ -36,14 +36,14 @@ coverage-count tests. Source-text assertions alone do not prove runtime behavior
 
 | Repository | PR lanes in this candidate | Important limit |
 | --- | --- | --- |
-| Website | Hosted PR `ci`: Vitest and lint; Functions/tooling and legacy-guard Node tests; TypeScript/Astro build; Svelte check; marketing build; guest Chromium smoke; policy and production dependency audits | [PR #42](https://github.com/posetek/posetek_website/pull/42) passed all hosted lanes. Ordinary builds do not prove the protected production artifact. Three existing private-fixture tests skip. Canonical mobile contract parity is a separate explicit integration command, not a standing public PR check. |
+| Website | Hosted PR `ci`: Vitest and lint; tooling and legacy-guard Node tests; TypeScript/Astro build; Svelte check; marketing build; guest Chromium smoke and Chromium/WebKit link activation; policy and app production dependency audit | [PR #42](https://github.com/posetek/posetek_website/pull/42) passed all hosted lanes. Ordinary builds do not prove the protected production artifact. Three existing private-fixture tests skip. Backend/rules integration is a separate pinned-source lane, not a standing public PR check. |
 | Backend | Gateway pytest with live-network guard; authored replay evaluation; legacy processor syntax; workflow contract tests | Replay is not model-quality evidence. Processor syntax is not video/biomechanics coverage. Python dependencies need Linux lock work. |
 | Mobile | Canonical Firestore/Storage emulator suites and hash receipt; publishing-tool unit tests; all tracked app Swift syntax; workflow contract tests | No full native build, simulator XCTest, signing or camera acceptance is claimed. |
 
-The website's additional rule suites still need the canonical mobile checkout.
-They are **not yet a required hosted lane**: private cross-repo source retrieval
-must be wired without exposing its token to PR code (D23). Do not copy rule files
-into this repository to remove that dependency.
+Canonical Firebase rules and shared backend integration suites live in Backend.
+Ordinary website PR lanes use committed client contracts and do not require a
+private checkout. Additional integration uses reviewed, pinned Backend source as
+described below; do not copy rules or server source back into this repository.
 
 All three main CI workflows have PR, main-push, merge-group and manual triggers, no path
 filters, per-job read permissions, timeouts and immutable action SHAs. The gate
@@ -55,28 +55,49 @@ approval requirement. Server-enforced controls remain an activation prerequisite
 
 ## Local website commands
 
-Use Node 22.23.3, Python 3.12 for policy checks, and the committed lockfiles:
+### Website worktree local lane
+
+Website sessions that start in the primary checkout begin read-only. Startup and
+status inspection do not acquire or reserve it; existing live claims remain.
+Primary edits, Git mutations, dependency setup, builds and validation require
+atomic acquisition when free and exact current-session live ownership.
+
+An isolated website worktree may install its own dependencies and run tests,
+lint, typechecks, builds, localhost servers and isolated browser tests without
+owning the primary. Keep mutable dependencies, caches and generated outputs
+isolated from other checkouts, use verified development storage according to
+machine-local policy, and use nonconflicting ports. Do not reuse a foreign
+checkout's mutable dependency tree or write outputs into it. Report unrun checks
+and their actual cause: written policy, tool approval, sandbox/process/network
+denial, missing dependency or test failure.
+
+This local web allowance supersedes the older broad website worktree app-test
+and build ban. Native builds/simulators, mobile/backend policies, main-commit
+protection, liveness checks, FIFO waitlists and release/deployment rules remain.
+Localhost does not authorize production writes. Runtime tool approval remains
+independent of checkout policy; never change wrappers or global sandbox settings
+to bypass a rejection.
+
+The following mirrors the current [website CI lanes](../../.github/workflows/ci.yml).
+Use Node 22.23.3, Python 3.12 for policy checks, and the committed app lockfile:
 
 ```sh
 npm --prefix app ci --ignore-scripts --no-audit --no-fund
-npm --prefix functions ci --ignore-scripts --no-audit --no-fund
 npm --prefix app test
 npm --prefix app run lint
-node --test functions/*.test.js scripts/*.test.cjs scripts/*.test.mjs
-node --test ci/verify-mobile-contract-artifact.test.cjs
+node --test scripts/*.test.cjs scripts/*.test.mjs
 npm --prefix app run check:svelte
 npm --prefix app run build
 npm --prefix app run build:marketing
 node --test ci/check-static-firestore-transport.test.mjs
 node scripts/check-static-firestore-transport.mjs
-node app/node_modules/playwright/cli.js install chromium
+node app/node_modules/playwright/cli.js install chromium webkit
 node --test scripts/browser-smoke.mjs
+node --test scripts/marketing-link-activation.browser.mjs
 # In your Python virtual environment:
 python -m pip install -r ci/requirements.txt
 python -m unittest discover -s ci -p 'test_*.py'
 python3 ci/run_dependency_audit.py app --baseline ci/dependency-exceptions/app.json
-python3 ci/run_dependency_audit.py functions --baseline ci/dependency-exceptions/functions.json
-python3 ci/run_dependency_audit.py legacy --baseline ci/dependency-exceptions/legacy.json
 ```
 
 Browser smoke starts a disposable loopback server on an available port, exercises
@@ -84,28 +105,39 @@ the current `app/astro-dist` output, uses separate guest contexts and blocks ext
 WebSocket requests before navigation. It does not log in, seed data, send email,
 call a model or claim authenticated end-to-end coverage.
 
-Canonical mobile contract parity for both server and frontend pinned copies is
-outside ordinary server and Vitest CI. Set
-`POSETEK_MOBILE_REPO` to a reviewed canonical mobile checkout, record its exact
-SHA, and run `node --test functions/device-performance-parity.integration.cjs`.
-Missing source fails this explicit integration command. A local override does
-not complete hosted cross-repository source delivery; the manually dispatched
-source workflow is only a preparation candidate until its trusted handoff and
-PR gate are verified.
+The browser install above selects both required engines. Hosted Linux CI uses
+`install --with-deps chromium webkit` to provide its system libraries; use the
+supported setup for the local platform and keep browser caches isolated under
+machine-local storage policy.
 
-Rules integration, when a reviewed mobile checkout is available:
+### Additional Backend and rules integration
+
+Server Functions, Firebase rules/indexes, their dependencies and shared backend
+contract suites moved to `posetek/posetek-backend`. Run their applicable lanes in
+that owning repository under its current instructions; they are not additional
+website `functions/` commands or dependency-audit scopes. The website audit runner
+currently accepts only `app`.
+
+For website integration that requires the canonical rules or synthetic backend,
+follow [the Backend migration handoff](../features/BACKEND_MIGRATION.md). Use the
+exact `backend-source.json` pin in a separate reviewed Backend checkout, with its
+required dependencies and Java 21 available. From this website checkout, the
+supported bridge verifies source identity before running the complete Backend
+rule suites and Web-contract integration:
 
 ```sh
-RULES_PATH=/absolute/path/to/mobile/firebase/firestore.rules \
-STORAGE_RULES_PATH=/absolute/path/to/mobile/firebase/storage.rules \
-FIREBASE_BIN=/absolute/path/to/mobile/firebase/node_modules/firebase-tools/lib/bin/firebase.js \
-node scripts/run-rules-tests.mjs
+# In your Python 3.12 virtual environment, after preparing the pinned Backend checkout:
+python scripts/backend.py verify
+python scripts/backend.py rules
 ```
 
-The runner accepts `RULES_PORT_OFFSET=20000` to isolate ports from other local
-emulator users. Choose a distinct offset per concurrent worktree; a bind failure
-must not terminate somebody else's emulators. Use isolated runners for hosted
-integration, with exact partner SHAs logged.
+Set `POSETEK_BACKEND_REPO` to that checkout when it is not at the helper's default
+sibling path. The helper checks the canonical remote, exact commit and source
+bytes; it never fetches, installs or deploys implicitly. For emulator/authenticated
+browser acceptance, use the migration handoff's synthetic profile and record exact
+partner SHAs and nonconflicting ports. Ordinary website guest smoke does not
+complete those integration checks, and source integration never authorizes a
+rules, Functions or production release.
 
 ## GitHub rollout, in order
 

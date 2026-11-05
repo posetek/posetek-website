@@ -1,5 +1,22 @@
 # PoseTek website context
 
+## Website checkout and local validation policy
+
+Start sessions in the primary checkout read-only; opening a session or checking
+status must not acquire or reserve the primary. Preserve existing live claims.
+An authorized primary mutation requires atomic acquisition when free and exact
+current-session live ownership before the action.
+
+Use an isolated feature worktree for website development. Worktree-local
+dependency setup, tests, lint, typechecks, builds, localhost servers and isolated
+browser tests are allowed without the primary claim. Keep mutable dependencies,
+caches and outputs isolated from other checkouts, use verified development
+storage under machine-local policy, and choose nonconflicting ports. Localhost
+access does not authorize production writes. Native build/simulator restrictions,
+PR requirements and release/deployment holds remain unchanged. Runtime tool
+approval is separate from this policy; report exact tool rejections and never
+switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.md#website-worktree-local-lane).
+
 ## Admin Usage release — November 4, 2026
 
 Deployment `6aeb76624e362b0c48f30421` is live with runtime `6d105a7` and `getClubInsightsV2` version 11. Admin Usage shows each displayed player's last observed feature and its 15-minute activity window. The baseline protects 2,551 files and retains 37 recovery mappings. [Release handoff](docs/releases/ADMIN_LAST_OBSERVED_FEATURE.md) · [Production receipt](docs/releases/receipts/ADMIN_LAST_OBSERVED_FEATURE_PRODUCTION.json)
