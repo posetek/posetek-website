@@ -169,25 +169,73 @@ summary-backed pagination or report-path replacement recommended here.
 
 ## Validation and delivery
 
-- Passed: changed TypeScript/TSX syntax (6 files), scoped lint (three existing
-  Fast Refresh export warnings), policy tests (32), source-tooling tests (100),
-  static transport checker fixtures (2), dependency audit (zero findings/blockers),
-  and `git diff --check`.
-- The initial source-tooling run passed 96/100; four loopback-server cases failed
-  with sandbox `listen EPERM 127.0.0.1`. The same suite passed 100/100 with normal
-  loopback execution permission. No application change was needed.
-- Added regression coverage for current-format queries, sorting, read errors,
-  legacy-compatible callers, directory query options, hidden legacy choices and
-  stale legacy links. These frontend tests have not run in this source-only lane.
-- Pending: frontend Vitest (focused then full), full lint, TypeScript/build,
-  Svelte check, marketing build, compiled static-transport check, guest/browser
-  checks and focused authenticated directory acceptance. Another session owns
-  the primary checkout; its application build/test lane was not used.
-- The compiled static-transport command was attempted and failed with
-  `ERR_MODULE_NOT_FOUND: Cannot find package 'astro'` in the isolated worktree.
-  It has no installed app dependencies or newly compiled artifact. No dependency
-  installation was performed. Node was 22.19.0; hosted CI pins 22.23.3.
-- No Backend source change, rules/index change, production query, database write,
-  push, PR creation, merge or deployment is included. Source integration and
-  publication remain separate. A future release must compose this scoped patch
-  onto the then-approved runtime and preserve the protected baseline.
+Local checks cover source candidate `e6647ba` in the isolated website worktree.
+The user-approved website worktree lane used its own mutable dependencies,
+optimizer caches, generated output and localhost ports on verified external
+storage. The primary checkout and its live owner's files were not used for
+validation. Official Node **22.23.3** was downloaded to task-local scratch and
+verified against Node's published SHA-256; Python policy checks use **3.12.11**.
+The initial syntax and scoped lint checks used Node 22.19.0; the final standing
+Node CI lanes below used 22.23.3.
+`npm --prefix app ci --ignore-scripts --no-audit --no-fund` installed 423 packages
+from the unchanged committed lockfile. Existing browser installations were reused.
+
+| Check | Result |
+| --- | --- |
+| Changed TypeScript/TSX syntax | 6 files passed |
+| Focused admin-directory Vitest | 35 tests across 3 files passed |
+| Full frontend Vitest (`--maxWorkers=2`) | 2,245 tests across 200 files passed |
+| Scoped / full lint | Passed; 3 scoped existing Fast Refresh warnings / 242 full-source warnings |
+| Python policy suite | 32 passed |
+| Current scripts/tooling Node suite | 100 passed |
+| Static-transport checker fixtures | 2 passed |
+| Svelte check | 0 errors, 0 warnings |
+| TypeScript and Astro build | Passed; 5 static pages |
+| Marketing build | Passed; 5 static pages |
+| Compiled Firestore transport guard | Passed across 123 HTML/JS files |
+| Guest Chromium smoke | 7 passed |
+| Marketing link activation, Chromium/WebKit | 18 passed |
+| Focused synthetic directory browser acceptance | 48 scenarios passed |
+| Current app production-dependency audit | 0 findings, 0 blockers |
+| `git diff --check` | Passed |
+
+The focused browser matrix exercised the actual directory component in Chromium
+and WebKit at 390 and 1,440 CSS pixels. It covered current organization choices
+and roster navigation; legacy deep links in Players, Staff, Manage teams and
+Organization settings; missing, string and future schema versions; loading,
+empty and query-error states; and retry. Injected legacy choices remained hidden,
+and rejected deep links mounted no roster or management reader. All scenarios
+had no page errors or horizontal page overflow. Browser adapters supplied only
+synthetic local data, rejected unmocked database access, and blocked external
+HTTP/WebSocket traffic and writes. This is not real authenticated Firebase,
+production-data, physical-device or live-latency acceptance.
+
+The initial source-tooling run passed 96/100; four loopback-server cases failed
+with sandbox `listen EPERM 127.0.0.1`. Normal loopback execution permission resolved
+that environment restriction and the suite passed 100/100. The initial compiled
+transport attempt lacked `astro`; isolated dependency setup and the completed
+build resolved it. The first scratch browser-preview attempt encountered Vite
+`504 Outdated Optimize Dep` while builds and the preview shared a task cache.
+Giving the preview its own optimizer cache resolved that harness issue; all 48
+scenarios then passed. No application change was required for these failures.
+Existing build diagnostics about default Svelte configuration and ineffective
+dynamic imports remain warnings.
+
+Current CI has no website Functions or legacy dependency-audit lane and no
+`verify-mobile-contract-artifact` command: shared runtime source has moved to
+Backend. Those retired commands are not pending checks; the engineering workflow
+now reflects the current CI and canonical Backend ownership. No new browser
+installation was needed. These are local results, not a hosted PR `ci` receipt.
+
+Logs, the scratch browser driver, 48 screenshots and structured browser results
+are retained under external task scratch `admin-report-efficiency/` (including
+`directory-browser/results.json`). Generated files and dependencies stay outside
+Git. The synthetic localhost preview is review-only and does not change the live
+site. No production preservation/release build was run; the pinned deployed
+reference capture is absent from this worktree, and an exact production artifact
+must be prepared and verified separately before publication.
+
+No Backend source change, rules/index change, production query, database write,
+push, PR creation, merge or deployment is included. A future release must compose
+this scoped patch onto the then-approved runtime and preserve the protected
+baseline. Local source integration and publication remain separate.

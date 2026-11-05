@@ -36,7 +36,7 @@ coverage-count tests. Source-text assertions alone do not prove runtime behavior
 
 | Repository | PR lanes in this candidate | Important limit |
 | --- | --- | --- |
-| Website | Hosted PR `ci`: Vitest and lint; tooling and legacy-guard Node tests; TypeScript/Astro build; Svelte check; marketing build; guest Chromium smoke and Chromium/WebKit link activation; policy and app production dependency audit | [PR #42](https://github.com/posetek/posetek_website/pull/42) passed all hosted lanes. Ordinary builds do not prove the protected production artifact. Three existing private-fixture tests skip. Backend/rules integration is a separate pinned-source lane, not a standing public PR check. |
+| Website | Hosted PR `ci`: Vitest and lint; tooling and legacy-guard Node tests; TypeScript/Astro build; Svelte check; marketing build; guest Chromium smoke and Chromium/WebKit link activation; policy and app production dependency audit | [PR #42](https://github.com/posetek/posetek_website/pull/42) passed all hosted lanes. Ordinary builds do not prove the protected production artifact. Backend/rules integration is a separate pinned-source lane, not a standing public PR check. |
 | Backend | Gateway pytest with live-network guard; authored replay evaluation; legacy processor syntax; workflow contract tests | Replay is not model-quality evidence. Processor syntax is not video/biomechanics coverage. Python dependencies need Linux lock work. |
 | Mobile | Canonical Firestore/Storage emulator suites and hash receipt; publishing-tool unit tests; all tracked app Swift syntax; workflow contract tests | No full native build, simulator XCTest, signing or camera acceptance is claimed. |
 

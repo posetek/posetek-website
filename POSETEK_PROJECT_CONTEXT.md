@@ -6,9 +6,16 @@ People & organizations now queries and displays only `schemaVersion: 2`
 organizations in the source candidate. Legacy deep links show an unavailable
 organization; no data migration or deletion is performed. This is not deployed.
 The [loading review](docs/features/ADMIN_REPORT_LOADING.md) traces report read/write
-amplification, related migration PRs, recommended improvements and pending
-application validation. The database replica proposal does not yet replace this
-screen's reporting queries.
+amplification and related migration work. [Local validation](docs/features/ADMIN_REPORT_LOADING.md#validation-and-delivery)
+passed the frontend, tooling, build and browser lanes, including 2,245 frontend
+tests and 48 synthetic directory browser scenarios. Synthetic browser coverage
+does not establish real authenticated Firebase or production acceptance; no
+production artifact or release is included.
+
+The [implementation plan](docs/engineering/ADMIN_REPORT_EFFICIENCY_PLAN.md) proposes
+phased read reductions and whole-cohort report sessions, with a measured choice
+between compact Firestore projections and the existing SQL replica program.
+It is a plan, not an implemented or production-approved reporting architecture.
 
 
 ## Admin Usage release — November 4, 2026
