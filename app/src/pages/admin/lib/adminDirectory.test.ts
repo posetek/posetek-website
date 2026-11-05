@@ -21,6 +21,7 @@ describe("admin directory reads", () => {
   it("opening organization choices does not eagerly fetch player or staff collections", async () => {
     reads.organizations.mockResolvedValue([club]);
     await directorySource.organizations();
+    expect(reads.organizations).toHaveBeenCalledWith({ currentOnly: true });
     expect(reads.coaches).not.toHaveBeenCalled(); expect(reads.lookup).not.toHaveBeenCalled(); expect(reads.club).not.toHaveBeenCalled();
   });
   it("management reads canonical context without the extra full-profile roster query", async () => {

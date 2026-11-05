@@ -39,8 +39,9 @@ export default function MonitorAccounts({ source = directorySource }: { source?:
     const target = adminDirectoryPath({ ...state, ...patch });
     setQuery(new URLSearchParams(target.split("?")[1] || ""), { replace });
   };
-  const selected = organizations.kind === "ready" ? organizations.data.find(org => org.id === state.orgId) : undefined;
-  const available = organizations.kind === "ready" ? organizations.data : [];
+  // Keep stale links and alternate data sources inside the current organization format.
+  const available = organizations.kind === "ready" ? organizations.data.filter(org => org.schemaVersion === 2) : [];
+  const selected = available.find(org => org.id === state.orgId);
   const navigateScope: ChooseDirectory = patch => choose(selectDirectoryScope(state, patch));
   const navigator = <DirectoryNavigator organizations={available} state={state} choose={navigateScope} pending={organizations.kind === "loading"} error={organizations.kind === "error" ? organizations.message : ""} retry={refresh} />;
   useEffect(() => { document.title = "People & organizations | PoseTek admin"; }, []);
@@ -57,7 +58,7 @@ export default function MonitorAccounts({ source = directorySource }: { source?:
             {state.directoryTab !== "players" && selected.schemaVersion !== 2 && <LegacyStaff key={selected.id} organization={selected} source={source} state={state} />}
           </> : !state.orgId && <>
             {state.directoryTab === "players" && <PlayerLookup source={source} state={state} choose={choose} navigateScope={navigateScope} canonicalOrganizationIds={available.filter(org => org.schemaVersion === 2).map(org => org.id)} />}
-            {state.directoryTab === "staff" && <IndependentStaff source={source} organizations={organizations.kind === "ready" ? organizations.data : []} state={state} />}
+            {state.directoryTab === "staff" && <IndependentStaff source={source} organizations={available} state={state} />}
             {state.directoryTab === "teams" && <p className="admin-empty">Choose an organization to view its teams.</p>}
             {state.directoryTab === "settings" && <DirectoryManagement tab="settings" state={state} choose={navigateScope} source={source} onOrganizationsChanged={refresh} />}
           </>}

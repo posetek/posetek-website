@@ -24,7 +24,7 @@ const fake = vi.hoisted(() => {
 });
 vi.mock("../../../lib/firebase", () => ({ default: { firestore: { FieldValue: { serverTimestamp: fake.serverTimestamp } } }, auth: {}, db: fake.db }));
 vi.mock("../../../lib/organization-data", () => ({ getClubContext: fake.context }));
-import { loadClubAccountData, loadCoachAccount, loadCoachOfPlayer, loadCoachRoster, loadCoaches, loadTeamPlayers, playerRow, resolvePlayerAge, savePlayerProfile } from "./accounts";
+import { loadClubAccountData, loadCoachAccount, loadCoachOfPlayer, loadCoachRoster, loadCoaches, loadOrganizations, loadTeamPlayers, playerRow, resolvePlayerAge, savePlayerProfile } from "./accounts";
 
 const team = { id: "team", organizationId: "club", name: "Team", coachUIDs: [], playerIds: ["wrong"] };
 function seedContext() {
@@ -60,6 +60,25 @@ describe('admin age read alignment', () => {
     expect(Object.keys(fake.writes.mock.calls[1][1]).sort()).toEqual(['age', 'ageRecordedAt', 'updatedAt']);
     expect(resolvePlayerAge(fake.documents.get('players/player'))).toMatchObject({ age: 15, stale: false, observationStatus: 'current' });
     expect(fake.documents.get('players/player')).not.toHaveProperty('birthDate');
+  });
+});
+
+describe("admin organization choices", () => {
+  it("queries only numeric schema-version-2 organizations and preserves name ordering", async () => {
+    fake.documents.set("organizations/z", { name: "Zebra", schemaVersion: 2 });
+    fake.documents.set("organizations/a", { name: "Alpha", schemaVersion: 2 });
+    fake.documents.set("organizations/legacy", { name: "Legacy", schemaVersion: 1 });
+    fake.documents.set("organizations/unversioned", { name: "Unversioned" });
+    fake.documents.set("organizations/string", { name: "String version", schemaVersion: "2" });
+    fake.documents.set("organizations/future", { name: "Future", schemaVersion: 3 });
+    expect((await loadOrganizations({ currentOnly: true })).map(row => row.id)).toEqual(["a", "z"]);
+    // Other admin tools still explicitly support legacy organization workflows.
+    expect(await loadOrganizations()).toHaveLength(6);
+    expect(fake.writes).not.toHaveBeenCalled();
+  });
+  it("propagates a failed organization query rather than showing an empty directory", async () => {
+    fake.failures.add("organizations");
+    await expect(loadOrganizations({ currentOnly: true })).rejects.toThrow("Read failed");
   });
 });
 

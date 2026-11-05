@@ -1,5 +1,16 @@
 # PoseTek website project context
 
+## Current-format admin directory candidate — November 4, 2026
+
+People & organizations now queries and displays only `schemaVersion: 2`
+organizations in the source candidate. Legacy deep links show an unavailable
+organization; no data migration or deletion is performed. This is not deployed.
+The [loading review](docs/features/ADMIN_REPORT_LOADING.md) traces report read/write
+amplification, related migration PRs, recommended improvements and pending
+application validation. The database replica proposal does not yet replace this
+screen's reporting queries.
+
+
 ## Admin Usage release — November 4, 2026
 
 Deployment `6aeb76624e362b0c48f30421` is live with runtime `6d105a7` and `getClubInsightsV2` version 11. Admin Usage shows each displayed player's last observed feature and its 15-minute activity window. The baseline protects 2,551 files and retains 37 recovery mappings. [Release handoff](docs/releases/ADMIN_LAST_OBSERVED_FEATURE.md) · [Production receipt](docs/releases/receipts/ADMIN_LAST_OBSERVED_FEATURE_PRODUCTION.json)

@@ -60,7 +60,7 @@ export function directoryCoachPath(coachId: string, state: AdminDirectoryState) 
 }
 
 export const directorySource = {
-  organizations: loadOrganizations,
+  organizations: () => loadOrganizations({ currentOnly: true }),
   roster: loadDirectoryRoster,
   context: loadDirectoryContext,
   coaches: loadCoaches,
