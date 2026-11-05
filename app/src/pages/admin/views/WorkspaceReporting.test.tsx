@@ -153,7 +153,8 @@ describe("unified workspace reporting", () => {
   it("shows Testing totals, age results, stations, activity, audit and failure counts", () => {
     const html = renderReport("testing");
     expect(html).toContain('aria-label="testing summary"');
-    for (const label of ["Fully tested", "Partially tested", "Qualifying results", "Distinct recorded attempts", "Testing coverage", "Players qualified by exercise", "Testing activity by week", "Recording audit", "Failure reports", "Results by age", "Results by age drill", "Station analytics", "Players tested in selected week", "Average time through stations"]) expect(html).toContain(label);
+    for (const label of ["Fully tested", "Partially tested", "Qualifying results", "Distinct recorded attempts", "Testing coverage", "Players qualified by exercise", "Testing activity by week", "Results by age", "Results by age drill", "Station analytics", "Players tested in selected week", "Average time through stations"]) expect(html).toContain(label);
+    expect(html).not.toContain("Recording audit"); expect(html).not.toContain("Failure reports");
     expect(html).toContain("Results by age are unavailable in this report");
     expect(html).toContain("Station timing is unavailable in this report");
     expect(html).not.toContain("Qualified performance by week");

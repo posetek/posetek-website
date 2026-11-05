@@ -206,3 +206,8 @@ Independent review found no blocking issue in the summary isolation or Backend
 history/transfer changes. Previous failed test-driver attempts are retained;
 the final readiness helper waits for directory/detail revalidation, while the
 new continuity assertions inspect the still-pending intermediate state directly.
+
+During the November 5 localhost review, the user requested removal of the
+Recording audit and Failure reports sections from admin Testing. Both sections
+and their local explanatory disclosures are removed; the underlying reporting
+records and shared coach views are unchanged.
