@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "status": "published_verification_complete_cleanup_pending",
-  "accepted": false,
+  "status": "published_verified",
+  "accepted": true,
   "feature": "Admin reporting refresh",
   "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
   "deployId": "6aecbf94751cf215f811865f",
@@ -73,7 +73,8 @@
     "candidateConfiguration": "passed",
     "sourceAndArtifactReview": "complete_no_blocking_findings",
     "receiptPolicyTests": 32,
-    "deployedCallableAssertions": 27
+    "deployedCallableAssertions": 27,
+    "receiptSourceIntegration": "60756267b2c7516f70345f5f72e359e04e021a1a"
   },
   "hostedAcceptance": {
     "status": "passed",
@@ -113,9 +114,22 @@
     "limits": "Owned synthetic cohort; desktop and phone-size browsers. Qualified age-chart points and station elapsed timings are covered by local synthetic tests, not populated in this deployed fixture."
   },
   "cleanup": {
-    "status": "pending",
-    "completedAt": null,
-    "delayedAbsenceProofSha256": null
+    "status": "passed",
+    "completedAt": "2026-11-05T19:18:17.606827+00:00",
+    "readOnlyFinalAudit": true,
+    "knownRoots": 42,
+    "scopedQueries": 24,
+    "secondsAfterFinalRemoval": 119.2,
+    "secondsAfterInitialCleanup": 251.8,
+    "initialDocumentRemovals": 42,
+    "delayedDocumentRemovals": 13,
+    "ownedAuthAccountsRemoved": 2,
+    "remainingDocumentsAndDescendants": 0,
+    "remainingAuthAccounts": 0,
+    "remainingQueryMatches": 0,
+    "temporaryCredentialsAbsent": true,
+    "delayedAbsenceProofSha256": "fa078c37755ff5ac8e8fc6693cb8dbd3a684f594ab1635bfd64e72fcd991a370",
+    "note": "First delayed probe found 11 owned projection markers and two Auth-deletion tombstones. Exact conditional cleanup removed them; final delayed read-only probe passed. Earlier evidence retained."
   },
   "productionVerification": {
     "status": "passed",
@@ -161,7 +175,8 @@
     "baselineReconciliation": "37c23bf6ffecea2a279225252b2ce3d17a3d8167c3f30cff0271b2d3e272503e",
     "preservationBuild": "69c0ea8a476c6d14fd8b2ec96c343ecba52d459882c2f67d05c89bc9d5f9d711",
     "receiptPolicy": "0cd59fee507d2e259f2a4e2690b55bb78d69a382a309b2dde335ed1c8bb24336",
-    "prepublicationReadiness": "6b3839553e8a8d47ad4e8267723a3c3cfbcbb2555d57c9160331bc4037e47d54"
+    "prepublicationReadiness": "6b3839553e8a8d47ad4e8267723a3c3cfbcbb2555d57c9160331bc4037e47d54",
+    "postIntegrationPreservationBuild": "febfc406046359a80a0f80045ef430d87876e9906864abda06ceb7460f00f9bd"
   },
   "authorization": "Explicit user authorization to push, merge and deploy; separate one-time owner exception for billing-blocked Backend hosted CI."
 }
