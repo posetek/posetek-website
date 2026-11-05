@@ -6,6 +6,7 @@ import { clubCall, invalidateClubContext } from "../../../lib/organization-data"
 import type { ClubContext } from "../../../lib/organization-data";
 import type { OrganizationRow } from "../lib/accounts";
 import { useAccountLoad } from "../lib/useAccountLoad";
+import { directorySession } from "../lib/directoryRetention";
 import type { DirectorySource } from "../lib/adminDirectory";
 import { directoryCoachPath } from "../lib/adminDirectory";
 import type { AdminDirectoryState } from "../lib/adminNavigation";
@@ -42,10 +43,10 @@ function useDirectoryMutation(organizationId: string | undefined, refresh: () =>
       const result = await operation();
       if (!current()) return;
       invalidateClubContext();
-      after?.(result); setNotice(success); refresh();
+      after?.(result); setNotice(success); if (!organizationId) refresh();
     } catch (failure) { if (current()) {
       const message = failure instanceof Error ? failure.message : "This change could not be saved.";
-      if (/permission|access denied|unauthenticated/i.test(message)) { invalidateClubContext(); clearPrivate(); refresh(); }
+      if (/permission|access denied|unauthenticated/i.test(message)) { invalidateClubContext(); clearPrivate(); }
       setError(message);
     } }
     finally { if (current()) { pending.current = false; setBusy(false); } }
@@ -64,7 +65,7 @@ export default function DirectoryManagement({ org, tab, state, choose, source, o
   choose(patch: Partial<AdminDirectoryState>): void; source: DirectorySource; onOrganizationsChanged?: () => void;
 }) {
   const loader = useCallback(() => org ? source.context(org.id) : Promise.resolve(null), [org, source]);
-  const { state: loaded, refresh } = useAccountLoad(loader);
+  const { state: loaded, refresh } = useAccountLoad(loader, org ? directorySession(source).context(org.id) : undefined);
   const context = loaded.kind === "ready" ? loaded.data : null;
   const mutation = useDirectoryMutation(org?.id, refresh);
   const clearPrivate = mutation.clearPrivate;

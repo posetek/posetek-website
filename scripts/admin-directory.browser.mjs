@@ -211,7 +211,7 @@ for (const [engine, engineName] of [[chromium, 'chromium'], [webkit, 'webkit']])
       check(await rows.first().locator('[data-label="Testing"]').innerText().then(value => value.includes('Partially tested') && value.includes('/6 exercises')), 'retry restores recorded metric cells');
       check(query(page).get('orgId') === 'northfield' && query(page).get('teamId') === 'harbor' && query(page).get('directoryPane') === 'list' && (!queue || query(page).get('reportTestingStatus') === 'partiallyTested'), 'retry retains scope, list selection and active filter');
       check(await noOverflow(page), 'retry state has no page overflow');
-      check(errors.length === 0, 'retry journey has no page errors');
+      check(errors.length === 0, `retry journey has no page errors: ${JSON.stringify(errors)}`);
       await rows.first().scrollIntoViewIfNeeded();
       await page.screenshot({ path: join(out, `${engineName}-${width}-${queue ? 'queue' : 'people'}-reporting-recovered.png`), fullPage: false });
       results.push({ engine: engineName, width, state, checks, pageErrors: errors });
