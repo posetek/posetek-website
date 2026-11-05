@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "status": "published_verification_complete_cleanup_pending",
+  "accepted": false,
+  "feature": "Admin reporting refresh",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "deployId": "6aecbf94751cf215f811865f",
+  "previousDeploymentId": "6aec430f45bc0d0841566ba7",
+  "publishedAt": "2026-11-05T19:06:24.045Z",
+  "websiteSource": {
+    "pullRequest": 127,
+    "head": "db08e95e1ca53ea3783f32d79489596085ff07d6",
+    "mergeCommit": "c1b34a8d9dff6d7f3b00a6220fdbdbbd5a904615",
+    "hostedCI": "passed"
+  },
+  "runtime": {
+    "head": "bc6ed7cddf848d33e277e9d90b98b16f0144e572",
+    "base": "6a27edf803bacd460087f728c395bbc3c285c786",
+    "applicationSource": "383929e8baacd38b2367d0f3adbf044ab20e71eb"
+  },
+  "candidateDigestType": "sha256",
+  "candidateDigest": "f2215ed7b9e3925327b62806eecb2e3adfb8370d6d8ba574eed262e881456d9a",
+  "artifactFiles": 2583,
+  "providerRecords": 2584,
+  "preservation": {
+    "priorServedFilesByteExact": 2569,
+    "changedExistingFiles": [
+      "/application.html"
+    ],
+    "addedHashedAssets": 13,
+    "marketing": "byte-exact",
+    "feedback": "byte-exact",
+    "coachEnrollment": "byte-exact",
+    "privateReports": "byte-exact"
+  },
+  "providerConfiguration": {
+    "onlyDifference": "build.publish",
+    "headersPreserved": 11,
+    "redirectsPreserved": 10
+  },
+  "backend": {
+    "pullRequest": 94,
+    "head": "7a725b454ee947258a5280f49a42898edff034ac",
+    "mergeCommit": "99cd460e75184b8926898dd5efb86918b4d34981",
+    "endpoint": "projects/kickai-69dd0/locations/us-central1/functions/getClubInsightsV2",
+    "candidateArchiveSha256": "ae1a4f56b65ef13f199848d805e6a70c631db6d4c60c23c76e2b9da8d7f8a186",
+    "preservedArchiveFiles": 17,
+    "changedArchiveFiles": 2,
+    "addedArchiveFiles": 4,
+    "hostedCI": false,
+    "hostedCIStatus": "blocked_billing",
+    "ownerException": {
+      "scope": "One-time admin reporting release; hosted execution only",
+      "record": "Backend release/receipts/admin-reporting-owner-exception-20261105.json",
+      "requiredLocalLanes": 7,
+      "localLanes": "passed"
+    },
+    "publicationVerification": "passed",
+    "activeVersion": "12",
+    "verifiedAt": "2026-11-05T18:54:54.966201+00:00",
+    "configurationPreserved": true,
+    "iamPreserved": true,
+    "unrelatedFunctionsPreserved": 147,
+    "updatedAt": "2026-11-05T18:50:03.219Z"
+  },
+  "validation": {
+    "runtimeFrontendTests": 2186,
+    "releaseToolingTests": 155,
+    "syntheticDisplayScenarios": 16,
+    "syntheticPersistenceScenarios": 60,
+    "candidateHttpChecks": 27,
+    "candidateArtifact": "passed",
+    "candidateConfiguration": "passed",
+    "sourceAndArtifactReview": "complete_no_blocking_findings",
+    "receiptPolicyTests": 32,
+    "deployedCallableAssertions": 27
+  },
+  "hostedAcceptance": {
+    "status": "passed",
+    "realFirebaseAuth": true,
+    "serviceResponsesMocked": false,
+    "checksPerBrowser": {
+      "chromium": 10,
+      "webkit": 10
+    },
+    "blockedAutomaticDiagnosticWrites": {
+      "chromium": 0,
+      "webkit": 3
+    },
+    "otherBlockedRequests": 0,
+    "knownWebKitAccessControlExceptions": 8,
+    "unexpectedApplicationExceptions": 0,
+    "proofSha256": "e3f7c22efac78c12d6fbde6e734f63ba3bdac0507d244c3bfcd3db93810ea6fc",
+    "limits": "Owned synthetic cohort; desktop and phone-size browsers. Qualified age-chart points and station elapsed timings are covered by local synthetic tests, not populated in this deployed fixture.",
+    "readinessCorrection": "First Chromium harness sampled before the Overview request began. Original evidence retained; readiness now waits selected URL/tab/panel and the actual Overview response. No application change or weakened no-refetch assertion."
+  },
+  "liveAcceptance": {
+    "status": "passed",
+    "realFirebaseAuth": true,
+    "serviceResponsesMocked": false,
+    "checksPerBrowser": {
+      "chromium": 10,
+      "webkit": 10
+    },
+    "blockedAutomaticDiagnosticWrites": {
+      "chromium": 0,
+      "webkit": 0
+    },
+    "otherBlockedRequests": 0,
+    "knownWebKitAccessControlExceptions": 7,
+    "unexpectedApplicationExceptions": 0,
+    "proofSha256": "df545bd4f23ce7b4f2cec4a1e707974d1d8eef858c45420298def9270b061e9a",
+    "limits": "Owned synthetic cohort; desktop and phone-size browsers. Qualified age-chart points and station elapsed timings are covered by local synthetic tests, not populated in this deployed fixture."
+  },
+  "cleanup": {
+    "status": "pending",
+    "completedAt": null,
+    "delayedAbsenceProofSha256": null
+  },
+  "productionVerification": {
+    "status": "passed",
+    "artifactFiles": 2583,
+    "providerRecords": 2584,
+    "httpChecks": 27,
+    "configMatchesAcceptedDraft": true,
+    "liveBefore": "6aecbf94751cf215f811865f",
+    "liveAfter": "6aecbf94751cf215f811865f",
+    "proofSha256": "6a635ec9fa52d12a4633a268ddee1f14b1e758b3fdbea597090c9d27515b0c05"
+  },
+  "baseline": {
+    "status": "reconciled_verified",
+    "protectedFiles": 2581,
+    "recoveryMappings": 37,
+    "ordinaryPreservationBuild": "passed",
+    "applicationSha1": "c230c3cb19c6ebdedc46f9f4b49879a12f92b1a1"
+  },
+  "releaseScope": {
+    "website": "Scoped admin reporting application and preservation tooling",
+    "backend": "getClubInsightsV2 only",
+    "excluded": [
+      "new workout funnel implementation",
+      "held policy/session/Ball Striking candidates",
+      "parent/coach report outreach",
+      "rules",
+      "indexes",
+      "gateway",
+      "catalog",
+      "native"
+    ]
+  },
+  "proofSha256": {
+    "runtimeValidation": "ca692ad31e418f49ec3c117182d2ee3ac80f48897427b0d098f3c3e9be806d79",
+    "candidateArtifact": "c1a941b001cb780b9deac7f134ca5baec801726ddc4f014146febc95cec86307",
+    "candidateHttp": "f315d8f09af0534407f8866f89396a4a952385f31e9afc984dd588cfdd380719",
+    "candidateConfiguration": "0b09546b8637627f4099202b35b7e589c5cdf8e4cee351c31235f21f65f63e5b",
+    "sourceReview": "3977ac051dca3dada8706e43106560b3b0dbba7475b715114a973c666ef76ce7",
+    "runtimeArtifactReview": "5eea85793eae6684ffade3abbe17965e6b840127cf4b3d6297f74c5cac489b45",
+    "backendPublication": "017aa1baf4a0543f4a32d6755042c4ad352ea8d0527509f4e6e7e22c346d1b22",
+    "backendLocalCi": "61dd51d605f4d7b82d0208433409e27a3aa9c77a1444255dde32f5b3da584c70",
+    "callableAcceptance": "2c16394db8eaddd6fd84c2cee4afaabca4594aa6b3a025b64a528fe7441b6ed9",
+    "baselineReconciliation": "37c23bf6ffecea2a279225252b2ce3d17a3d8167c3f30cff0271b2d3e272503e",
+    "preservationBuild": "69c0ea8a476c6d14fd8b2ec96c343ecba52d459882c2f67d05c89bc9d5f9d711",
+    "receiptPolicy": "0cd59fee507d2e259f2a4e2690b55bb78d69a382a309b2dde335ed1c8bb24336",
+    "prepublicationReadiness": "6b3839553e8a8d47ad4e8267723a3c3cfbcbb2555d57c9160331bc4037e47d54"
+  },
+  "authorization": "Explicit user authorization to push, merge and deploy; separate one-time owner exception for billing-blocked Backend hosted CI."
+}
