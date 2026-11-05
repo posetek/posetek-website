@@ -1,5 +1,17 @@
 # PoseTek website project context
 
+## Private report app entry — held preparation, November 5, 2026
+
+The report reader prepares an explicit iOS app-opening button using the mobile
+owner's versioned workout locator, with visible TestFlight install/update and
+browser recovery. Android keeps web workouts; unknown platforms get an iOS choice.
+This is source only: the current production report still uses browser workouts.
+Compatible signed TestFlight and physical-phone acceptance remain required before
+delivery. No parent or coach text follows from source integration. Read the
+[feature contract](docs/features/PRIVATE_PARENT_REPORTS.md#installed-app-boundary).
+Keep `[skip netlify]`; the existing production artifact and application runtime
+remain preserved.
+
 ## Admin rep tracking playback — source fix, November 5, 2026
 
 Rep Tools loads and displays saved tracking from the exact recording folder,

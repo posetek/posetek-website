@@ -15,6 +15,20 @@ const ENTRY_LABEL_UPDATE = {
   before: { sha: '23b667dda974035fc22bc0d59a15efda25c02f82', size: 829 },
   after: { sha: '52284a92871e0e2f795cfbc060e2f80746a90230', size: 816 },
 };
+// This transition is limited to the reviewed initial reader and app-entry bytes.
+// Source integration is separate from a compatible native release and device
+// acceptance; this option does not establish either or authorize outreach.
+const WORKOUT_ENTRY_UPDATE = {
+  'index.html': ENTRY_LABEL_UPDATE,
+  'render.mjs': {
+    before: { sha: 'e9e2bf1dad26d359ff7348add11d39fc109976fb', size: 9742 },
+    after: { sha: '95946611eac53eb8306805769214ce1b1e840db1', size: 12720 },
+  },
+  'report.css': {
+    before: { sha: 'fedb70b7ab63577b7a8713b63273b539f84e33e3', size: 6793 },
+    after: { sha: '639290753226a76116f97d83d77515088af8e7ad', size: 7708 },
+  },
+};
 const hash = bytes => createHash('sha1').update(bytes).digest('hex');
 const collisionKey = name => name.normalize('NFC').toLowerCase();
 const fail = message => { throw new Error(message); };
@@ -102,10 +116,12 @@ function overlaps(a, b) {
 
 // root is injectable only through this module API for filesystem fixture tests.
 // The CLI always uses this repository and has no guard-skip option.
-export async function buildPrivateParentReport({ root = repository, evidenceDirectory, sealedDirectory, append = false, updateEntryLabel = false }) {
+export async function buildPrivateParentReport({ root = repository, evidenceDirectory, sealedDirectory, append = false, updateEntryLabel = false, updateWorkoutEntry = false }) {
   root = resolve(root);
   if (typeof append !== 'boolean') fail('Append mode must be boolean');
   if (typeof updateEntryLabel !== 'boolean' || (updateEntryLabel && !append)) fail('Entry label transition requires explicit append mode');
+  if (typeof updateWorkoutEntry !== 'boolean' || (updateWorkoutEntry && !append)) fail('Workout entry transition requires explicit append mode');
+  if (updateEntryLabel && updateWorkoutEntry) fail('Choose only one pinned reader transition');
   if (append && !sealedDirectory) fail('Append mode requires new sealed reports');
   if (!evidenceDirectory) fail('An evidence directory is required');
   const evidence = resolve(root, evidenceDirectory), output = join(root, 'production-dist');
@@ -149,12 +165,14 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
   for (const name of REPORT_FILES) {
     const path = '/report/' + name, bytes = await regularFile(join(source, name));
     if (append) {
-      // Batch publication cannot replace a viewer or silently introduce a new
-      // schema. Reader changes require their own reviewed release.
+      // Normal append cannot replace the viewer. Each explicit transition pins
+      // both its old and new bytes, with no arbitrary replacement option.
       const previous = prior.get(path);
-      if (name === 'index.html' && updateEntryLabel) {
-        if (!previous || previous.sha !== ENTRY_LABEL_UPDATE.before.sha || previous.size !== ENTRY_LABEL_UPDATE.before.size ||
-            !matches(bytes, ENTRY_LABEL_UPDATE.after)) fail('Entry label transition must match the pinned original and reviewed replacement');
+      const transition = updateWorkoutEntry ? WORKOUT_ENTRY_UPDATE[name]
+        : name === 'index.html' && updateEntryLabel ? ENTRY_LABEL_UPDATE : null;
+      if (transition) {
+        if (!previous || previous.sha !== transition.before.sha || previous.size !== transition.before.size ||
+            !matches(bytes, transition.after)) fail('Reader transition must match the pinned original and reviewed replacement: ' + path);
         replacements.set(path, bytes);
       } else if (!previous || !matches(bytes, previous)) fail('Append requires the existing unchanged report reader: ' + path);
     } else additions.set(path, bytes);
@@ -221,6 +239,8 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
     const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
     const receipt = {
       mode: append ? 'append-encrypted-reports' : 'initial-reader',
+      readerTransition: updateWorkoutEntry ? 'workouts-v1' : updateEntryLabel ? 'neutral-label' : null,
+      requiresSeparateNativeAcceptance: !append || updateWorkoutEntry,
       previousDeploymentId: baseline.deploymentId,
       inventorySha256: createHash('sha256').update(inventoryBytes).digest('hex'),
       baselineSha256: createHash('sha256').update(baselineBytes).digest('hex'),
@@ -249,14 +269,16 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2), updateEntryLabel = args.at(-1) === '--update-entry-label';
+  const args = process.argv.slice(2), updateWorkoutEntry = args.at(-1) === '--update-workout-entry';
+  if (updateWorkoutEntry) args.pop();
+  const updateEntryLabel = args.at(-1) === '--update-entry-label';
   if (updateEntryLabel) args.pop();
   const append = args.at(-1) === '--append';
   if (append) args.pop();
   const [evidenceDirectory, flag, sealedDirectory, ...extra] = args;
   if (!evidenceDirectory || (flag && (flag !== '--sealed-dir' || !sealedDirectory)) || extra.length) {
-    fail('Use: build-private-parent-report.mjs <evidence-directory> [--sealed-dir <binary-only-directory>] [--append] [--update-entry-label]');
+    fail('Use: build-private-parent-report.mjs <evidence-directory> [--sealed-dir <binary-only-directory>] [--append] [--update-entry-label | --update-workout-entry]');
   }
-  const receipt = await buildPrivateParentReport({ evidenceDirectory, sealedDirectory, append, updateEntryLabel });
+  const receipt = await buildPrivateParentReport({ evidenceDirectory, sealedDirectory, append, updateEntryLabel, updateWorkoutEntry });
   console.log(`[private-report] Preserved ${receipt.preservedFiles} predecessor files; added ${receipt.addedFiles.length} report files. No upload performed.`);
 }
