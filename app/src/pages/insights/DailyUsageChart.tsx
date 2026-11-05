@@ -22,17 +22,24 @@ export default function DailyUsageChart({ days, period, history }: {
   useEffect(() => {
     if (!canvas.current || !hasData) return;
     const datasets = categoryMode
-      ? USAGE_CATEGORIES.map(category => ({ label: category.label, data: window.rows.map(row => row.categories?.[category.key] ?? null), backgroundColor: category.color }))
-      : [{ label: "Total estimated active use", data: window.rows.map(row => row.total), backgroundColor: CHART_THEME.accent }];
+      ? USAGE_CATEGORIES.map(category => ({ label: category.label, data: window.rows.map(row => row.categories?.[category.key] ?? null), borderColor: category.color, backgroundColor: category.color }))
+      : [{ label: "Total estimated active use", data: window.rows.map(row => row.total), borderColor: CHART_THEME.accent, backgroundColor: CHART_THEME.accent }];
     const chart = new Chart(canvas.current, {
-      type: "bar", data: { labels: window.rows.map(row => shortDate(row.date)), datasets: datasets.map(dataset => ({ ...dataset, maxBarThickness: 30, borderRadius: 2, borderSkipped: false })) },
+      type: "line",
+      data: {
+        labels: window.rows.map(row => shortDate(row.date)),
+        datasets: datasets.map(dataset => ({
+          ...dataset, borderWidth: 2, pointRadius: 3, pointHoverRadius: 5,
+          pointBorderWidth: 0, fill: false, tension: 0, spanGaps: false,
+        })),
+      },
       options: {
         maintainAspectRatio: false, animation: false,
         interaction: { mode: "index", intersect: false },
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: item => `${item.dataset.label}: ${item.formattedValue} min` } } },
         scales: {
-          x: { ...CHART_AXIS, stacked: categoryMode, grid: { display: false }, ticks: { ...CHART_AXIS.ticks, maxRotation: 0, autoSkip: true, maxTicksLimit: 9 } },
-          y: { ...CHART_AXIS, stacked: categoryMode, beginAtZero: true, title: { display: true, text: "Minutes", color: CHART_THEME.text } },
+          x: { ...CHART_AXIS, grid: { display: false }, ticks: { ...CHART_AXIS.ticks, maxRotation: 0, autoSkip: true, maxTicksLimit: 9 } },
+          y: { ...CHART_AXIS, beginAtZero: true, title: { display: true, text: "Minutes", color: CHART_THEME.text } },
         },
       },
     });
@@ -49,7 +56,7 @@ export default function DailyUsageChart({ days, period, history }: {
     {categoryMode && hasData && <ul className="daily-usage-legend" aria-label="Usage categories">{USAGE_CATEGORIES.map(category => <li key={category.key}><i aria-hidden="true" style={{ background: category.color }} />{category.label}</li>)}</ul>}
     {hasData ? <div className="insights-chart daily-usage-chart"><canvas ref={canvas} aria-hidden="true" /></div> : <div className="insights-uncollected"><strong>{categoryMode && window.measuredDays ? "Daily category detail unavailable" : "Not collected"}</strong><p>{categoryMode && window.measuredDays ? "This report has daily totals, but no daily feature breakdown. Select Total to see measured activity." : "This range has no measured daily usage."}</p></div>}
     {categoryMode && window.categoryDays > 0 && window.categoryDays < window.measuredDays && <p className="daily-usage-note">Some measured days have no category detail. Their totals remain available in Total and the data table.</p>}
-    <AboutNumbers><p>Daily totals count overlapping website and iOS use once. Category bars divide that same measured time; missing collection is not zero activity. Training combines workouts, training, video and planning. Profile &amp; overview uses the recorded overview feature; Social uses the feed. These are app-use minutes, not workout duration.</p><p>Ranges end on the selected report end date. 1m and 2m use calendar months. When extended daily history is available, the same reporting group is shown across the full daily range, independently of the report start date. Weekly charts and period totals keep the selected report period. Dates use {period.timeZone}.</p></AboutNumbers>
+    <AboutNumbers><p>Daily totals count overlapping website and iOS use once. Each category line shows its daily share of that measured time. Points mark each collected day; gaps indicate missing collection, not zero activity. Training combines workouts, training, video and planning. Profile &amp; overview uses the recorded overview feature; Social uses the feed. These are app-use minutes, not workout duration.</p><p>Ranges end on the selected report end date. 1m and 2m use calendar months. When extended daily history is available, the same reporting group is shown across the full daily range, independently of the report start date. Weekly charts and period totals keep the selected report period. Dates use {period.timeZone}.</p></AboutNumbers>
     <details className="insights-data-table"><summary>View daily chart data</summary><div className="insights-table-wrap"><table className="insights-table"><caption className="insights-sr-only">Estimated active use by day, in minutes</caption><thead><tr><th scope="col">Date</th><th scope="col">Total (minutes)</th>{categoryMode && USAGE_CATEGORIES.map(category => <th scope="col" key={category.key}>{category.label} (minutes)</th>)}</tr></thead><tbody>{window.rows.map(row => <tr key={row.date}><th scope="row">{row.date}</th><td>{format(row.total)}</td>{categoryMode && USAGE_CATEGORIES.map(category => <td key={category.key}>{row.categories ? format(row.categories[category.key]) : row.total === null ? "Not collected" : "Unavailable"}</td>)}</tr>)}</tbody></table></div></details>
   </section>;
 }

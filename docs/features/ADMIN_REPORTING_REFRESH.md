@@ -211,3 +211,5 @@ During the November 5 localhost review, the user requested removal of the
 Recording audit and Failure reports sections from admin Testing. Both sections
 and their local explanatory disclosures are removed; the underlying reporting
 records and shared coach views are unchanged.
+
+Daily usage review refinement: the daily chart uses connected points, one line per category and one point per collected day. Total mode uses a single line. Missing collection stays a gap; the range controls, daily values and accessible data table are unchanged.
