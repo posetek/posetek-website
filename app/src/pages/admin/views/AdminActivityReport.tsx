@@ -2,17 +2,18 @@ import { Component, Fragment, Suspense, lazy, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { FEATURE_LABELS, minuteText, workoutDurationText } from '../../insights/lib/expanded';
-import type { ExpandedInsights } from '../../insights/lib/expanded';
+import type { ExpandedInsights, ExpandedReportSummary } from '../../insights/lib/expanded';
 import type { ExpandedRequest } from '../../insights/lib/expandedQuery';
 import { adminActivitySelection } from '../lib/adminActivity';
 import type { AdminActivityFollowUp, AdminActivityReportData, AdminActivitySort, AdminPlayerActivity } from '../lib/adminActivity';
 import { activityDate, activityWindow, exactWorkoutLink } from '../lib/adminActivityPresentation';
+import AdminReportingCards from './AdminReportingCards';
 import './admin-activity-report.scss';
 
 type View = 'overview' | 'workouts' | 'usage';
 type PlayerLink = (playerId: string, panel: 'results' | 'workouts' | 'profile') => string;
 export interface AdminActivityReportProps {
-  data: ExpandedInsights; request: ExpandedRequest; view: View; busy?: boolean;
+  data: ExpandedInsights | ExpandedReportSummary; request: ExpandedRequest; view: View; busy?: boolean; children?: ReactNode; detailsPending?: boolean;
   onChange(patch: Partial<ExpandedRequest>): void; onFirstPage(): void; onNextPage(): void;
   onExplore?(patch: Partial<ExpandedRequest>): void;
   playerLink: PlayerLink; teamLink(organizationId: string, teamId: string | null): string;
@@ -63,21 +64,12 @@ function LastObservedFeature({ activity, collected, timezone }: { activity?: Adm
     <small>{activityWindow(window, timezone)}</small>
   </>;
 }
-function FollowUps({ report, selected, busy, onChange }: { report: AdminActivityReportData; selected: AdminActivityFollowUp; busy?: boolean; onChange(patch: Partial<ExpandedRequest>): void }) {
-  return <section className="activity-followups" aria-labelledby="activity-followup-title"><h2 id="activity-followup-title">People to follow up with</h2>
-    <div className="activity-followup-controls" role="group" aria-label="Explore follow-up groups">{GROUPS.map(group => <button key={group.key} type="button" className="activity-followup"
-      aria-pressed={selected === group.key} disabled={busy} onClick={() => onChange({ adminFollowUp: selected === group.key ? 'all' : group.key, rosterSearch: '', page: 0, cursor: '' })}>
-      <strong>{report.summary[group.key].toLocaleString()}</strong><span>{group.title}</span><small>{group.note}</small>
-    </button>)}</div>
-    <p className="activity-note">{report.summary.signInUnknown.toLocaleString()} players have unavailable sign-in evidence · {report.summary.usageNotCollected.toLocaleString()} have no usage collection. These are separate from the follow-up groups above.</p>
-  </section>;
-}
-function Rankings({ report, playerLink }: { report: AdminActivityReportData; playerLink: PlayerLink }) {
+function Rankings({ report, playerLink }: { report: Omit<AdminActivityReportData, 'sort' | 'followUp'>; playerLink: PlayerLink }) {
   return <div className="activity-rankings">
-    <section className="activity-ranking activity-card" aria-labelledby="activity-workout-rank"><h2 id="activity-workout-rank">Most workout timer time</h2><p className="activity-note">Recorded active timers in the selected period. Elapsed estimates and unknown durations are excluded.</p>
-      {report.topWorkoutPlayers.length ? <ol>{report.topWorkoutPlayers.map(player => <li key={player.id}><Link to={playerLink(player.id, 'workouts')}>{player.name || 'Player'}</Link><span>{minuteText(player.timerMinutes)}</span></li>)}</ol> : <p className="activity-note">No positive recorded workout timer time in this selection.</p>}
+    <section className="activity-ranking activity-card" aria-labelledby="activity-workout-rank"><h2 id="activity-workout-rank">Most workout activity</h2><p className="activity-note">Workouts, training, videos and planning · measured website and iOS time.</p>
+      {report.metricsV2?.topTrainingPlayers ? report.metricsV2.topTrainingPlayers.length ? <ol>{report.metricsV2.topTrainingPlayers.map(player => <li key={player.id}><Link to={playerLink(player.id, 'workouts')}>{player.name || 'Player'}</Link><span>{minuteText(player.activeMinutes)}</span></li>)}</ol> : <p className="activity-note">No measured workout activity in this selection.</p> : <p className="activity-note">Workout activity breakdown unavailable. Saved timer totals remain in Workouts.</p>}
     </section>
-    <section className="activity-ranking activity-card" aria-labelledby="activity-use-rank"><h2 id="activity-use-rank">Most estimated app use</h2><p className="activity-note">Measured website and iOS activity in the selected period. Simultaneous use is counted once.</p>
+    <section className="activity-ranking activity-card" aria-labelledby="activity-use-rank"><h2 id="activity-use-rank">Most time on platform</h2><p className="activity-note">Measured website and iOS activity in the selected period. Simultaneous use is counted once.</p>
       {report.topActivePlayers.length ? <ol>{report.topActivePlayers.map(player => <li key={player.id}><Link to={playerLink(player.id, 'results')}>{player.name || 'Player'}</Link><span>{minuteText(player.activeMinutes)}</span></li>)}</ol> : <p className="activity-note">No positive measured app use in this selection.</p>}
     </section>
   </div>;
@@ -106,7 +98,7 @@ function RecentHistory({ playerId }: { playerId: string }) {
   const [Recent, setRecent] = useState(() => lazy(() => import('./AdminRecentWorkouts')));
   return <RecentHistoryBoundary key={attempt} retry={() => { setRecent(() => lazy(() => import('./AdminRecentWorkouts'))); setAttempt(value => value + 1); }}><Suspense fallback={<p role="status">Loading recent workouts…</p>}><Recent playerId={playerId} /></Suspense></RecentHistoryBoundary>;
 }
-function PlayerRows({ data, view, playerLink }: Pick<AdminActivityReportProps, 'data' | 'view' | 'playerLink'>) {
+function PlayerRows({ data, view, playerLink }: { data: ExpandedInsights; view: View; playerLink: PlayerLink }) {
   const [expanded, setExpanded] = useState('');
   const timezone = data.period.timeZone;
   const columns = view === 'overview' ? ['Player', 'Recorded sign-in', 'Estimated app use', 'Workouts completed', 'Assigned work']
@@ -129,38 +121,34 @@ function PlayerRows({ data, view, playerLink }: Pick<AdminActivityReportProps, '
       </tr>{open && <tr className="activity-expanded-row"><td className="activity-expansion-cell" colSpan={columns.length}><section id={`activity-history-${player.id}`} className="activity-expansion" aria-label={`Recent workouts for ${name}`}><div className="activity-expansion-heading"><h3>Recent workouts · {name}</h3><Link className="quiet-button" to={playerLink(player.id, 'workouts')}>Open full workout record</Link></div><RecentHistory key={player.id} playerId={player.id} /></section></td></tr>}</Fragment>;
     })}</tbody></table></div>;
 }
-export default function AdminActivityReport({ data, request, view, busy, onChange, onExplore = onChange, onFirstPage, onNextPage, playerLink, teamLink }: AdminActivityReportProps) {
+export default function AdminActivityReport({ data, request, view, busy, onChange, onFirstPage, onNextPage, playerLink, children, detailsPending = false }: AdminActivityReportProps) {
   const selection = adminActivitySelection(view, request.adminFollowUp, request.adminSort);
   const [searchDraft, setSearchDraft] = useState({ source: request.rosterSearch, value: request.rosterSearch });
   const search = searchDraft.source === request.rosterSearch ? searchDraft.value : request.rosterSearch;
   const report = data.adminReporting;
   const selectedGroup = GROUPS.find(group => group.key === selection.followUp);
   const selectionLabel = selection.followUp === 'active' ? 'Active players, including returning players' : selectedGroup?.title;
-  const showPlayers = (followUp: AdminActivityFollowUp, sort: AdminActivitySort) => {
-    onExplore({ adminFollowUp: followUp, adminSort: sort, rosterSearch: '', page: 0, cursor: '' });
-  };
-  const start = request.page * data.pagination.pageSize + (data.players.length ? 1 : 0), end = request.page * data.pagination.pageSize + data.players.length;
+  const exact = "players" in data ? data : null;
+  const start = exact ? request.page * exact.pagination.pageSize + (exact.players.length ? 1 : 0) : 0, end = exact ? request.page * exact.pagination.pageSize + exact.players.length : 0;
   return <div className="admin-activity-report" aria-label="Admin activity report" aria-busy={busy || false}>
     {!report && <p className="form-message" role="status">Detailed account activity is unavailable in this report. Existing period totals remain available below; refresh reporting to retry.</p>}
-    <dl className="activity-summary">
-      {view === 'workouts' ? <><Stat title="Workouts started" value={data.workouts.started} note="Starts in the selected period" /><Stat title="Workouts completed" value={data.workouts.completed} note="Personal, assigned and extra" /><Stat title="Recorded timer duration" value={workoutDurationText(data.workouts.timerMinutes, data.workouts.timerRecords)} note="Active timer time; pauses excluded" /></>
-        : <><Stat title="Players in this selection" value={data.roster.filtered} note={`${data.usage.collectedPlayers} with usage collection`} onClick={report ? () => showPlayers('all', 'name') : undefined} disabled={busy} /><Stat title="Active players" value={data.usage.collectedPlayers ? data.usage.activePlayers : 'Not collected'} note="Measured app use in the selected period" onClick={report ? () => showPlayers('active', 'name') : undefined} disabled={busy} /><Stat title="Estimated app use" value={minuteText(data.usage.activeMinutes, data.usage.collectedPlayers > 0)} note="Website + iOS, overlap counted once" onClick={report ? () => showPlayers('active', 'activeMinutes') : undefined} disabled={busy} /></>}
-    </dl>
-    {report && <FollowUps report={report} selected={selection.followUp} busy={busy} onChange={onExplore} />}
-    {view === 'overview' && report && <><Rankings report={report} playerLink={playerLink} /><TeamComparison data={data} teamLink={teamLink} /></>}
-    <section className="activity-card" aria-labelledby="activity-people-title"><div className="activity-section-heading"><div><h2 id="activity-people-title" tabIndex={-1}>{view === 'workouts' ? 'Player workouts' : view === 'usage' ? 'Player app use' : 'People in this selection'}</h2><p className="activity-note">{data.pagination.total.toLocaleString()} matching players · {report ? 'Sorted across the complete reporting selection.' : 'Current reporting page.'}</p></div><p className="activity-period">{data.period.startDate} – {data.period.endDate}<br />{data.period.timeZone}</p></div>
-      <div className="activity-roster-toolbar"><form className="activity-search" onSubmit={event => { event.preventDefault(); onChange({ rosterSearch: search.trim(), cursor: '', page: 0 }); }}><label>Find a player in this report<input type="search" value={search} maxLength={120} placeholder="Player name" onChange={event => setSearchDraft({ source: request.rosterSearch, value: event.target.value })} /></label><button type="submit" className="quiet-button" disabled={busy}>Search</button></form>
-        <label>Sort players<select aria-label="Sort players" value={selection.sort} disabled={busy || !report} onChange={event => onChange({ adminSort: event.target.value as AdminActivitySort, cursor: '', page: 0 })}>{SORTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-      </div>
-      {(selectionLabel || request.rosterSearch) && <div className="activity-filter-summary"><span>{selectionLabel || 'All follow-up groups'}{request.rosterSearch ? ` · Name: ${request.rosterSearch}` : ''}</span><button type="button" className="quiet-button" disabled={busy} onClick={() => onChange({ adminFollowUp: 'all', rosterSearch: '', cursor: '', page: 0 })}>Clear</button></div>}
-      {data.players.length ? <PlayerRows data={data} view={view} playerLink={playerLink} /> : <p className="activity-empty">No players match this selection. Clear the follow-up group or name search to review the full reporting roster.</p>}
-      <nav className="activity-pagination" aria-label="Activity player pages"><p>{data.players.length ? `${start}–${end} of ${data.pagination.total.toLocaleString()}` : '0 matching players'} · summaries above cover the full reporting selection.</p><div><button type="button" className="quiet-button" disabled={busy || request.page === 0} onClick={onFirstPage}>First page</button><button type="button" className="quiet-button" disabled={busy || !data.pagination.nextCursor} onClick={onNextPage}>Next</button></div></nav>
-    </section>
-    <details className="activity-method"><summary>How this is measured</summary><p className="activity-note">Workout starts, completions, durations and estimated app use cover {data.period.startDate} through {data.period.endDate}, in {data.period.timeZone}. Rankings, team comparisons and follow-up counts cover the complete reporting selection before name search, follow-up selection and pagination. Workout timers and elapsed estimates remain separate.</p>
+    {view === 'workouts' ? <dl className="activity-summary"><Stat title="Workouts started" value={data.workouts.started} note="Saved starts in the selected period" /><Stat title="Workouts completed" value={data.workouts.completed} note="Saved completion records" /><Stat title="Recorded timer duration" value={workoutDurationText(data.workouts.timerMinutes, data.workouts.timerRecords)} note="Saved active timer time; pauses excluded" /></dl> : <AdminReportingCards metrics={report?.metricsV2} />}
+    {view === 'overview' && report && <Rankings report={report} playerLink={playerLink} />}
+    {children}
+    <details className="activity-method"><summary>How this is measured</summary><p className="activity-note">Workout records and rankings cover {data.period.startDate} through {data.period.endDate}, in {data.period.timeZone}. Participation and usage cards use the cutoffs and weekly windows in Metric definitions. All summaries cover the complete reporting selection before name search and pagination. Workout timers and elapsed estimates remain separate.</p>
       <p className="activity-note">{report ? `Account sign-in, latest saved workout and current-week assignments were checked ${activityDate(report.asOfMillis, data.period.timeZone)}. ` : ''}These are current account and workout facts, even when the reporting period is historical. A recorded sign-in does not mean the player is online. No recorded sign-in includes unlinked accounts; unknown sign-in evidence is separate.</p>
       <p className="activity-note">The latest observed app use appears in a 15-minute retained activity window through the reporting cutoff. It may precede the selected period. The window is not a precise logout or stopping time.</p>
       {view === 'usage' && <p className="activity-note">The feature names describe areas of the app. Recent intervals identify the last measured feature and show ties together. A window summary lists areas with recorded use in that quarter hour. Their order is unknown. Times use {data.period.timeZone}.</p>}
       <p className="activity-note">Unfinished assigned work describes the current active plan week and may include workouts not yet started or with no ending. It is separate from having no completed workouts in the reporting period. A saved completion can contain partial or skipped work; an open log does not mean the player is training now.</p>
     </details>
+    <section className="activity-card" aria-labelledby="activity-people-title"><div className="activity-section-heading"><div><h2 id="activity-people-title" tabIndex={-1}>{view === 'workouts' ? 'Player workouts' : view === 'usage' ? 'Player app usage' : 'People in this selection'}</h2><p className="activity-note">{exact ? `${exact.pagination.total.toLocaleString()} matching players · ${report ? "Sorted across the complete reporting selection." : "Current reporting page."}` : "Player details for the selected view"}</p></div><p className="activity-period">{data.period.startDate} – {data.period.endDate}<br />{data.period.timeZone}</p></div>
+      {exact ? <><div className="activity-roster-toolbar"><form className="activity-search" onSubmit={event => { event.preventDefault(); onChange({ rosterSearch: search.trim(), cursor: '', page: 0 }); }}><label>Find a player in this report<input type="search" value={search} maxLength={120} placeholder="Player name" onChange={event => setSearchDraft({ source: request.rosterSearch, value: event.target.value })} /></label><button type="submit" className="quiet-button" disabled={busy}>Search</button></form>
+        <label>Sort players<select aria-label="Sort players" value={selection.sort} disabled={busy || !report} onChange={event => onChange({ adminSort: event.target.value as AdminActivitySort, cursor: '', page: 0 })}>{SORTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      </div>
+      {(selectionLabel || request.rosterSearch) && <div className="activity-filter-summary"><span>{selectionLabel || 'All follow-up groups'}{request.rosterSearch ? ` · Name: ${request.rosterSearch}` : ''}</span><button type="button" className="quiet-button" disabled={busy} onClick={() => onChange({ adminFollowUp: 'all', rosterSearch: '', cursor: '', page: 0 })}>Clear</button></div>}
+      {exact.players.length ? <PlayerRows data={exact} view={view} playerLink={playerLink} /> : <p className="activity-empty">No players match this selection. Clear the follow-up group or name search to review the full reporting roster.</p>}
+      <nav className="activity-pagination" aria-label="Activity player pages"><p>{exact.players.length ? `${start}–${end} of ${exact.pagination.total.toLocaleString()}` : '0 matching players'} · summaries above cover the full reporting selection.</p><div><button type="button" className="quiet-button" disabled={busy || request.page === 0} onClick={onFirstPage}>First page</button><button type="button" className="quiet-button" disabled={busy || !exact.pagination.nextCursor} onClick={onNextPage}>Next</button></div></nav></> : <p className="activity-note" role="status">{detailsPending ? "Loading player details…" : "Player details are unavailable. Refresh reporting to retry."}</p>}
+    </section>
+
   </div>;
 }

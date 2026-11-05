@@ -1,3 +1,5 @@
+import type { AdminReportingMetrics } from "./adminReportingMetrics";
+import type { DailyUsageHistory } from "../../insights/lib/dailyUsage";
 import type { UsageFeature } from "../../../lib/insight-usage/clock";
 
 /** Optional admin-only reporting. Account and assignment facts are current at
@@ -30,6 +32,8 @@ export interface AdminActivityTeam {
   timerMinutes: number; estimatedMinutes: number; timerRecords: number; estimatedRecords: number;
 }
 export interface AdminActivityReportData {
+  dailyUsage?: DailyUsageHistory;
+  metricsV2?: AdminReportingMetrics;
   version: 1; followUp: AdminActivityFollowUp; sort: AdminActivitySort; asOfMillis: number; population: number;
   summary: { noSignIn: number; noActivity: number; unfinishedAssigned: number; noCompletion: number; signInUnknown: number; usageNotCollected: number };
   topActivePlayers: { id: string; name: string; activeMinutes: number }[];

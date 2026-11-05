@@ -26,20 +26,20 @@ function observeWorkspaceSession() {
 }
 /** Called by the directory owner, including on Staff/Settings scope transitions. */
 export function setWorkspaceMetricsScope(scope: InsightScope | null) { transport.observeScope(scope); }
-export interface WorkspaceMetricsInput { scope: InsightScope | null; search: string; playerIds?: string[]; enabled?: boolean; refreshKey?: number; foreground?: boolean; adminReporting?: boolean; includeLastFeatureEvidence?: boolean; validate?: (data: ExpandedInsights) => void; retain?: boolean }
+export interface WorkspaceMetricsInput { scope: InsightScope | null; search: string; playerIds?: string[]; enabled?: boolean; refreshKey?: number; foreground?: boolean; adminReporting?: boolean; includeLastFeatureEvidence?: boolean; includeTestingAnalytics?: boolean; validate?: (data: ExpandedInsights) => void; retain?: boolean; readEnabled?: boolean }
 const empty = (): ReadOnlyReport<ExpandedInsights> => ({ kind: 'loading', data: null, refreshing: true, stale: false, message: '', checkedAt: null });
 const ready = (data: ExpandedInsights, checkedAt: number): ReadOnlyReport<ExpandedInsights> => ({ kind: 'ready', data, refreshing: false, stale: false, message: '', checkedAt });
 
 /** Admin-only opt-in. The ordinary read-only hook remains authoritative for
  * PlayerSummary/Detail and any caller with a custom freshness validator. */
-function useRetainedWorkspaceReport(payload: WorkspaceReportPayload | null, revision: string, enabled: boolean) {
+function useRetainedWorkspaceReport(payload: WorkspaceReportPayload | null, revision: string, enabled: boolean, readEnabled: boolean) {
   const key = workspacePayloadKey(payload), uid = auth.currentUser?.uid || null;
   const [invalidated, invalidate] = useState(0);
   const [result, setResult] = useState<{ key: string; uid: string; generation: number; revision: string; state: ReadOnlyReport<ExpandedInsights> } | null>(null);
   const lastSelection = useRef<{ key: string; revision: string } | null>(null);
   useEffect(() => { if (!enabled) return; observeWorkspaceSession(); return transport.subscribe(() => invalidate(value => value + 1)); }, [enabled]);
   useEffect(() => {
-    if (!payload || !uid) return;
+    if (!payload || !uid || !readEnabled) return;
     let active = true;
     const force = Boolean(lastSelection.current && lastSelection.current.revision !== revision);
     lastSelection.current = { key, revision };
@@ -67,8 +67,8 @@ function useRetainedWorkspaceReport(payload: WorkspaceReportPayload | null, revi
     return () => { active = false; };
     // Result is the previous observation, not a trigger for another network read.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, uid, revision, invalidated]);
-  if (!payload || !uid) return empty();
+  }, [key, uid, revision, invalidated, readEnabled]);
+  if (!payload || !uid || !readEnabled) return empty();
   if (result?.key === key && result.uid === uid && result.generation === transport.getGeneration()) {
     return result.revision === revision ? result.state : result.state.kind === 'ready' ? { ...result.state, refreshing: true } : empty();
   }
@@ -76,8 +76,8 @@ function useRetainedWorkspaceReport(payload: WorkspaceReportPayload | null, revi
   return cached ? ready(cached.data, cached.checkedAt) : empty();
 }
 
-export function useWorkspaceMetrics({ scope, search, playerIds, enabled = true, refreshKey = 0, foreground = true, adminReporting = false, includeLastFeatureEvidence = false, validate, retain = false }: WorkspaceMetricsInput) {
-  const key = workspacePayloadKey(enabled && scope ? workspaceMetricsPayload(search, scope, playerIds, new Date(), adminReporting, includeLastFeatureEvidence) : null);
+export function useWorkspaceMetrics({ scope, search, playerIds, enabled = true, refreshKey = 0, foreground = true, adminReporting = false, includeLastFeatureEvidence = false, includeTestingAnalytics = false, validate, retain = false, readEnabled = true }: WorkspaceMetricsInput) {
+  const key = workspacePayloadKey(enabled && scope ? workspaceMetricsPayload(search, scope, playerIds, new Date(), adminReporting, includeLastFeatureEvidence, includeTestingAnalytics) : null);
   const payload = useMemo(() => key ? JSON.parse(key) as WorkspaceReportPayload : null, [key]);
   const retained = retain && !validate;
   const [revision, setRevision] = useState(0);
@@ -85,16 +85,19 @@ export function useWorkspaceMetrics({ scope, search, playerIds, enabled = true, 
   useEffect(() => subscribeClubContextInvalidation(() => { if (!retained) { transport.clear(); setRevision(value => value + 1); } }), [retained]);
   const reader = useCallback(async (current: () => boolean, onRebuild: () => void) => {
     const uid = auth.currentUser?.uid;
-    return !retained && payload && uid ? transport.load(uid, payload, () => current() && auth.currentUser?.uid === uid, onRebuild, validate) : null;
-  }, [payload, validate, retained]);
-  const ordinaryOutcome = useReadOnlyReport({ key: retained ? '' : key, read: reader, revision: revision + refreshKey });
-  const retainedOutcome = useRetainedWorkspaceReport(retained ? payload : null, `${revision}:${refreshKey}`, retained);
+    return !retained && readEnabled && payload && uid ? transport.load(uid, payload, () => current() && auth.currentUser?.uid === uid, onRebuild, validate) : null;
+  }, [payload, validate, retained, readEnabled]);
+  const ordinaryOutcome = useReadOnlyReport({ key: retained || !readEnabled ? '' : key, read: reader, revision: revision + refreshKey });
+  const retainedOutcome = useRetainedWorkspaceReport(retained ? payload : null, `${revision}:${refreshKey}`, retained, readEnabled);
   const outcome = retained ? retainedOutcome : ordinaryOutcome;
-  const refreshing = Boolean(payload && outcome.refreshing);
+  const summary = retained && payload ? transport.peekSummary(auth.currentUser?.uid || null, payload) : null;
+  const refreshing = Boolean(payload && readEnabled && outcome.refreshing);
   const loading = refreshing && !outcome.data;
-  useForegroundReport({ key, refresh, busy: refreshing, enabled: Boolean(payload && foreground) });
+  useForegroundReport({ key, refresh, busy: refreshing, enabled: Boolean(payload && foreground && readEnabled) });
   return {
-    data: payload ? outcome.data : null,
+    data: payload && readEnabled ? outcome.data : null,
+    summaryData: summary?.data || null, summaryCheckedAt: summary?.checkedAt ?? null,
+    summaryStale: Boolean(summary && (summary.stale || outcome.stale || outcome.kind === 'error')),
     error: outcome.kind === 'error' ? outcome.message : '',
     rebuilding: refreshing && outcome.message === 'Refreshing complete report…',
     loading, refreshing, stale: outcome.stale, checkedAt: outcome.checkedAt,

@@ -131,3 +131,20 @@
     .activity-stat .activity-stat-note { grid-column: 1 / -1; margin: 0; }
   }
 }
+
+.pt-admin.admin-workspace .admin-activity-report {
+  .activity-summary-six { margin: 0 0 8px; }
+  .activity-summary-six .activity-stat { display: block; padding: 16px 18px; }
+  .activity-summary-six .activity-stat-value { margin-top: 8px; font-size: 30px; line-height: 1.15; }
+  .activity-summary-six .activity-stat-comparison { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; margin-top: 8px; color: var(--text-muted); font-size: 11px; font-weight: 400; letter-spacing: normal; }
+  .activity-stat-comparison strong { color: var(--text-primary); font-weight: 550; }
+  .activity-stat-delta { font-weight: 600; }
+  .activity-stat-value.is-up, .activity-stat-delta.is-up { color: #26734e; }
+  .activity-stat-value.is-down, .activity-stat-delta.is-down { color: #ac4141; }
+  .activity-card-definitions { margin: 0 0 20px; color: var(--text-muted); font-size: 11px; line-height: 1.6; }
+  .activity-card-definitions summary { min-height: 32px; display: flex; align-items: center; cursor: pointer; }
+  .activity-card-definitions summary::before { content: '+'; margin-right: 8px; }
+  .activity-card-definitions[open] summary::before { content: '−'; }
+  .activity-card-definitions p { margin-bottom: 6px; max-width: 100ch; }
+  @media (max-width: 600px) { .activity-summary-six { grid-template-columns: repeat(2, minmax(0, 1fr)); } .activity-summary-six .activity-stat { padding: 14px 12px; } .activity-summary-six .activity-stat-value { font-size: 25px; } }
+}
