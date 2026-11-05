@@ -1,6 +1,6 @@
 # Admin directory and reporting loading review
 
-Reviewed November 4, 2026. Source candidate only; no publication or database mutation.
+Reviewed November 4, 2026; client persistence updated November 5. Source candidate only; no publication or database mutation.
 
 ## Requested directory behavior
 
@@ -16,6 +16,106 @@ unfiltered `loadOrganizations()` default. No organization, player or membership
 is deleted or migrated. The legacy directory reader remains available to older
 embedded consumers. This is a small directory-read reduction; it does not fix
 the reporting fan-out described below.
+
+## Client tab persistence — November 5 source candidate
+
+The current admin workspace can reuse successful directory/context/roster reads
+and exact report observations for up to 60 seconds within its bounded memory cache. Returning between
+Players, Staff, Manage teams and Organization settings reuses the selected
+organization's shared context; returning to a previously loaded reporting request
+reuses its validated observation without showing a new loading state. The first
+load retains its existing loading state and visible Teams comparisons/summaries.
+Nothing is saved to localStorage, IndexedDB or a server cache.
+Unclaimed-player `SignupStatus` still reads `getPlayerSignupInvitation` on
+remount because its response can contain private signup codes. Those invitation
+reads, one-time codes and issuing forms are intentionally outside this shared
+context/roster/report cache; not every possible tab request is eliminated.
+
+Directory retention is limited to one actor, source adapter and selected
+organization, with a 4 MiB bound per retained result. The roster inherits the
+context's earlier expiry. Report retention is bounded to five exact payloads and
+2 MiB total. A view change can still make a genuinely different request: default
+sorts, visible player IDs, filters, pages and Usage feature detail are part of the
+key. Such a request loads once, then can be reused within its remaining lifetime.
+A report's original checked/observation timestamps are preserved on reuse.
+
+Explicit Refresh, known club mutations, auth changes and organization/team scope
+boundaries invalidate the affected reads. Report Refresh also evicts the other
+completed report variants in that scope so their shared totals are fetched again. Report variants are cleared on scope
+changes even while Players reporting is unmounted on Staff or Settings. Directory
+context/roster is retained only for the selected organization. Leaving the
+workspace clears its observations. Generation fences prevent a response started
+before invalidation from refilling the cache. Permission/schema failures cannot
+use cached data as a fallback; existing same-selection transient-refresh behavior
+remains qualified by its stale state. Fresh cached observations represent the
+prior authorized read for their bounded lifetime, not a new server authorization
+check on every tab click.
+
+This is client reuse of existing responses. It does not reduce the backend work
+for a genuinely new report, create whole-cohort backend report sessions, add
+projections, change canonical authorization, or implement the planned SQL reader.
+The remaining read amplification below describes a network report request.
+
+## Client persistence validation — November 5
+
+The source candidate is based on `94ed38367e090fd7562d074fda3cad95994af775`
+on `fix/admin-current-organizations`, plus the client-persistence patch validated below. All application source bytes remained unchanged throughout the final
+local CI and subsequent strengthened browser checks. Node **22.23.3** and Python
+**3.12.11** ran in the isolated website worktree with verified external storage,
+separate mutable dependencies, preview optimizer cache, generated output and
+loopback port. The unchanged committed lockfile's existing isolated installation
+and existing Chromium/WebKit installations were reused; no dependency install or
+browser download was needed for this follow-up.
+
+| Check | Result |
+| --- | --- |
+| Full frontend Vitest (`--maxWorkers=2`) | 2,272 passed across 202 files |
+| Full lint | Passed; 242 existing warnings |
+| Python policy suite | 32 passed |
+| Current scripts/tooling Node suite | 100 passed |
+| Svelte check | 0 errors, 0 warnings |
+| TypeScript + Astro build / marketing build | Both passed; 5 static pages each |
+| Compiled Firestore transport guard / fixtures | Passed across 123 HTML/JS files / 2 passed |
+| Guest Chromium smoke / marketing link activation | 7 passed / 18 passed in Chromium and WebKit |
+| New actual-hook persistence browser matrix | 36 passed in Chromium/WebKit at 390 and 1,440 CSS pixels |
+| Existing snapshot-fixture reporting retry smoke | 8 passed in Chromium/WebKit at 390 and 1,440 CSS pixels |
+| Final browser-fixture scoped lint / diff check | Passed |
+| Production dependency audit | 0 findings, 0 blockers |
+
+The new [reusable browser harness](../../app/scripts/admin-persistence-fixtures/README.md)
+uses actual `MonitorAccounts`, `DirectoryManagement`, `useAccountLoad`,
+`useWorkspaceMetrics`, validation and retention code. Only auth/source/callable
+boundaries supply invented data; the hooks are not mocked. A fresh shared
+organization roundtrip reads organizations once, context once and roster once.
+The reporting roundtrip fetches three distinct default payloads once each in the
+organization Teams fixture, then returns between Overview, Testing, Workouts and
+Usage without further reads. Testing shares Overview's payload in that fixture;
+other layouts can have different visible-row/detail payloads.
+
+DOM mutation assertions reject loading/refreshing flashes on fresh reuse. Tests
+also verify original observation labels, first-load pending behavior, dependency
+expiry, Refresh of related variants, global scope, auth and organization/team
+changes, shared access-denial latching and explicit recovery. Both invalidated
+report and context responses carry distinguishable old/new observations; releasing
+the original delayed response cannot replace or refill the newer cached result.
+The former snapshot fixture still mocks reporting and is compatibility evidence
+only, not proof of persistence.
+
+Earlier driver attempts are preserved separately. They exposed readiness and
+mobile collapsed-Browse assertion mistakes in the new harness; those were fixed
+before the completed matrix. The existing snapshot fixture's first run stopped
+at a generic WebKit page-error assertion after Chromium passed. That earlier
+driver did not record the error text; an identical focused WebKit replay returned
+no page errors, and the full eight-case retry rerun passed. Its diagnostic now
+includes actual page errors if it recurs. No application fix or invented cause
+is attributed to that unreproduced failure.
+
+This does not establish real authenticated Firebase/server authorization,
+production-data, physical-device, live-latency or billing acceptance. No hosted
+PR CI, remote push, production preservation assembly, Functions/rules release or
+website deployment ran. The protected production baseline and release holds remain
+unchanged. Local logs, source fingerprints, failed attempts and screenshots are
+retained outside Git; generated output and credentials are not committed.
 
 ## Evidence boundary
 
@@ -94,9 +194,10 @@ source-derived model, not a bill. For example, 100 included players with 100
 workout logs each would request about 20,000 log documents alone per admin
 report request, assuming both validation passes complete.
 
-The browser transport deduplicates concurrent identical requests but retains no
-cross-request report cache. Returning to a previous key can repeat the work.
-Focus/visibility return can refresh after 60 seconds; this hook does not enable
+The browser transport deduplicates concurrent identical requests. The November 5
+source candidate also reuses a bounded, fresh exact observation across tab
+remounts as described above. A new/expired/invalidated key still repeats the
+backend work. Focus/visibility return can refresh after 60 seconds; this hook does not enable
 continuous interval polling. Activity search is submitted explicitly, rather
 than fetching on every typed character. Retryable report failures can make up
 to five attempts; a failed page is therefore potentially more expensive.
@@ -167,9 +268,9 @@ and increasing load. It should follow read-volume reduction and measurements.
 No open PR found in the inspected website/backend listings implements the
 summary-backed pagination or report-path replacement recommended here.
 
-## Validation and delivery
+## Historical directory validation — November 4
 
-Local checks cover source candidate `e6647ba` in the isolated website worktree.
+The following checks cover the earlier directory-only source candidate `e6647ba` in the isolated website worktree.
 The user-approved website worktree lane used its own mutable dependencies,
 optimizer caches, generated output and localhost ports on verified external
 storage. The primary checkout and its live owner's files were not used for

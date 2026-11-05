@@ -6,6 +6,7 @@ import type { CoachRow, OrganizationRow, PlayerRow } from "../lib/accounts";
 import { hasClubIdentity, legacyCoachGroups, staffName } from "../lib/accountHierarchy";
 import type { AccountContext, HierarchyTeam } from "../lib/accountHierarchy";
 import { useAccountLoad } from "../lib/useAccountLoad";
+import { directorySession } from "../lib/directoryRetention";
 import { directoryCoachPath, directoryPage, directoryPlayers, directorySource, unassignedDirectoryPlayers } from "../lib/adminDirectory";
 import type { DirectoryRoster, DirectorySource } from "../lib/adminDirectory";
 import { adminDirectoryPath, adminPlayerPath, directoryLevelOf, directoryWorkspacePaneOf, parseAdminDirectoryState, selectDirectoryScope, withWorkspaceReport, workspaceReportRequest, workspaceReportSearch } from "../lib/adminNavigation";
@@ -18,7 +19,7 @@ import PlayerFilters from "../../insights/PlayerFilters";
 import { clearPlayerFilters, hasPlayerFilters } from "../../insights/lib/expandedQuery";
 import type { ExpandedRequest } from "../../insights/lib/expandedQuery";
 import type { ExpandedPlayer, InsightScope } from "../../insights/lib/expanded";
-import { useWorkspaceMetrics } from "../lib/workspaceMetrics";
+import { setWorkspaceMetricsScope, useWorkspaceMetrics } from "../lib/workspaceMetrics";
 import { WorkspaceAttention, WorkspaceMetricCells, WorkspaceReportControls, WorkspaceReportDetails, WorkspaceScopeHeader } from "./WorkspaceReporting";
 import type { WorkspaceMetricState, WorkspacePlayerMetric } from "./WorkspaceReporting";
 import DirectoryNavigator, { TeamDirectory } from "./DirectoryNavigator";
@@ -32,9 +33,15 @@ type ChooseDirectory = (patch: Partial<AdminDirectoryState>, replace?: boolean) 
 
 /** Lookup and management are deliberately separate mounts from organization browsing. */
 export default function MonitorAccounts({ source = directorySource }: { source?: DirectorySource }) {
-  const { state: organizations, refresh } = useAccountLoad(source.organizations);
+  const session = directorySession(source);
+  const { state: organizations, refresh } = useAccountLoad(source.organizations, session.organizations());
   const [query, setQuery] = useSearchParams();
   const state = parseAdminDirectoryState(query);
+  session.selectOrganization(state.orgId);
+  useEffect(() => {
+    setWorkspaceMetricsScope(state.orgId ? state.teamId ? { kind: "team", organizationId: state.orgId, teamId: state.teamId } : { kind: "organization", organizationId: state.orgId } : { kind: "global" });
+  }, [state.orgId, state.teamId, session]);
+  useEffect(() => () => { setWorkspaceMetricsScope(null); session.clearAll(false); }, [session]);
   const choose = (patch: Partial<AdminDirectoryState>, replace = false) => {
     const target = adminDirectoryPath({ ...state, ...patch });
     setQuery(new URLSearchParams(target.split("?")[1] || ""), { replace });
@@ -95,7 +102,7 @@ export function DirectoryTabs({ active, onChange }: { active: AdminDirectoryStat
 
 function OrganizationPlayers({ org, organizations, state, choose, navigateScope, source }: { org: OrganizationRow; organizations: OrganizationRow[]; state: AdminDirectoryState; choose: ChooseDirectory; navigateScope: ChooseDirectory; source: DirectorySource }) {
   const loader = useCallback(() => source.roster(org), [org, source]);
-  const { state: loaded, refresh } = useAccountLoad(loader);
+  const { state: loaded, refresh } = useAccountLoad(loader, directorySession(source).roster(org));
   const roster = loaded.kind === "ready" ? loaded.data : null;
   const identityScope = roster ? organizationPeopleScope(org, roster, state) : null;
   const team = identityScope?.team;
@@ -186,7 +193,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
   const activityView = pane === "report" && view !== "testing";
   const visible = directoryPage(accountRows || [], state.page).rows;
   const playerIds = pane === "report" || !showPeople || attention ? undefined : supportedWorkspacePlayerIds(visible, scope, canonicalOrganizationIds);
-  const metrics = useWorkspaceMetrics({ scope, search: workspaceReportSearch(state), playerIds, enabled,
+  const metrics = useWorkspaceMetrics({ retain: true, scope, search: workspaceReportSearch(state), playerIds, enabled,
     adminReporting: !legacy && (activityView || !showPeople && Boolean(state.orgId)),
     includeLastFeatureEvidence: !legacy && pane === "report" && view === "usage" });
   const report = metrics.data;

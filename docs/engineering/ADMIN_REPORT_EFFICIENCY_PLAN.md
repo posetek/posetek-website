@@ -1,9 +1,13 @@
 # Admin reporting efficiency implementation plan
 
-Status: proposed implementation plan, November 4, 2026. The directory patch and
-checkout-policy work are separate source changes. None of the report architecture,
-new endpoint, worker, projection, cache, SQL reader or performance targets below
-has been implemented, approved for production or measured by this plan.
+Status: proposed backend implementation plan, November 4, 2026; client reuse
+status updated November 5. The current source candidate implements bounded
+60-second in-memory directory and exact-response report reuse across admin tabs,
+with expiry, explicit refresh, auth/scope/mutation invalidation and late-response
+fences. See the [loading review](../features/ADMIN_REPORT_LOADING.md#client-tab-persistence--november-5-source-candidate).
+It does not implement the backend report-session architecture, new endpoint,
+worker, compact projection, durable snapshot, SQL reader or performance targets
+below. None is approved for production by this plan.
 
 ## Outcome and boundary
 
@@ -79,7 +83,7 @@ runtime are separate. Do not use all of source main as the next runtime.
 | Backend `functions/insights-v2-projection.js`: `loadInsightPlayer`, `rebuildInsightPlayer`, `invalidateInsightPlayer` | Every manifest day loads before period filtering; missing/dirty/old projections can rebuild and write during a report, up to 25 players/request. Existing background triggers also rebuild. |
 | Backend `functions/insight-usage.js`: `readPlayerUsage`, `readLastFeatureEvidence` | Latest activity currently extends daily scanning to 24 months. Feature detail is already restricted to authorized displayed rows; preserve that useful boundary. |
 | Backend `functions/insights-admin-reporting.js`: `loadAdminSignIns`, `readBindings`, `currentAssignments`, `latestWorkout`, `adminAggregate` | Account bindings include aliases outside the cohort, Auth is batched, and bindings are rechecked. Reuse semantic functions; preserve ambiguity and distinct evidence clocks. |
-| Web `lib/workspaceMetricsData.ts`: `createWorkspaceMetricsTransport`; shared `app/src/lib/useReadOnlyReport.ts`, `foreground-report.ts`, Insights `lib/completeReport.ts` | Identical concurrent work is deduplicated; no retained cross-request report cache exists. Focus can refresh after 60 seconds, with up to five report attempts. Cache and retry changes must be scoped to admin reporting. |
+| Web `lib/workspaceMetricsData.ts`: `createWorkspaceMetricsTransport`; shared `app/src/lib/useReadOnlyReport.ts`, `foreground-report.ts`, Insights `lib/completeReport.ts` | Identical concurrent work is deduplicated. The November 5 client candidate retains up to five exact responses/2 MiB for 60 seconds within the active actor/scope, preserving original observation time. Focus/Refresh bypass reuse. This does not create a backend cohort snapshot; exact new requests still repeat the existing reader. Other report consumers retain their original behavior. |
 
 Backend source links: [report orchestration](https://github.com/posetek/posetek-backend/blob/96a38e63550c2eb785a27a5bcc762ed96091dcc7/functions/insights-v2.js),
 [history projections](https://github.com/posetek/posetek-backend/blob/96a38e63550c2eb785a27a5bcc762ed96091dcc7/functions/insights-v2-projection.js),
@@ -184,6 +188,19 @@ non-sensitive summary artifact. Profiling must include operations currently
 hidden in retries and final transaction revalidation.
 
 ### P1 — avoid unsolicited reports and duplicate identity reads (Web first)
+
+**Implemented source subset (November 5):** the current admin workspace shares
+its selected organization's context and roster across directory tabs and retains
+fresh exact report responses across reporting tabs. It preserves existing first
+load and Teams reporting behavior, with no Backend change. Directory reads remain
+bounded to one selected organization and expire with their oldest dependency;
+reports retain their original observation time and clear on auth/scope/mutation
+boundaries. This subset is independent of the descriptor/page endpoints below.
+The actual-hook browser regression is
+`app/scripts/admin-persistence-acceptance.mjs`; its synthetic source boundary does
+not certify real Firebase authorization or production performance.
+
+The remaining P1 items below are proposals, not completed by client reuse.
 
 Web owner: `views/MonitorAccounts.tsx`, `DirectoryNavigator.tsx`,
 `lib/accounts.ts`, `adminDirectory.ts`, `workspaceMetrics.ts`,
@@ -678,10 +695,9 @@ Synthetic profiling protocol:
 
 ## Validation, rollout and recovery sequence
 
-The [loading review](../features/ADMIN_REPORT_LOADING.md#validation-and-delivery)
-contains the directory patch's completed local checks and production-acceptance
-boundaries. Its results
-must not be reused as tests of this unimplemented plan. Record current checkout
+The [loading review](../features/ADMIN_REPORT_LOADING.md#client-persistence-validation--november-5)
+contains completed directory/client-persistence local checks and production-acceptance
+boundaries. Its results must not be reused as tests of the proposed backend architecture. Record current checkout
 policy/check results separately from later reporting-package results. Before each
 PR, follow [WORKFLOW.md](WORKFLOW.md) and each owning repo's current `AGENTS.md`;
 report every unrun lane with its exact reason. No production or authenticated
