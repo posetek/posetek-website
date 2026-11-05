@@ -17,6 +17,26 @@ PR requirements and release/deployment holds remain unchanged. Runtime tool
 approval is separate from this policy; report exact tool rejections and never
 switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.md#website-worktree-local-lane).
 
+## Admin reporting refresh release — November 5, 2026
+
+Deployment `6aecbf94751cf215f811865f` was published at
+`2026-11-05T19:06:24.045Z` with runtime `bc6ed7c` and
+`getClubInsightsV2` version 12. Organization reports now show six comparison
+cards, age-by-drill Testing, station analytics and daily usage lines. Shared
+summaries persist across tab transitions; player tables finish Workouts and Usage.
+
+Candidate and live signed-in Chromium/WebKit checks passed, as did all 27 deployed
+API assertions. All 2,583 artifact files match 2,584 provider records. The
+reconciled baseline protects 2,581 files and retains all 37 recovery mappings.
+[Release handoff](docs/releases/ADMIN_REPORTING_REFRESH.md) ·
+[Production receipt](docs/releases/receipts/ADMIN_REPORTING_REFRESH_PRODUCTION.json)
+
+Website PR #127 and Backend PR #94 are merged. Backend hosted CI remained blocked
+by billing; the owner authorized a one-release exception backed by seven passing
+local lanes. Website hosted CI passed. New workout funnel wiring/UI remains a
+[separate follow-up](docs/features/WORKOUT_REPORTING_FUNNEL_HANDOFF.md). Keep
+`[skip netlify]` on source/receipt integration; held candidates and outreach remain held.
+
 ## Admin tab persistence release — November 5, 2026
 
 Deployment `6aec430f45bc0d0841566ba7` was published at

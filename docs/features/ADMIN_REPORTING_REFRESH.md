@@ -1,8 +1,23 @@
 # Admin organization reporting refresh
 
-Source candidate, November 5, 2026. No deployment, production-data change or
-outreach is included in this source candidate. Release preparation preserves the
-published November 5 admin tab-persistence baseline (`6aec430f45bc0d0841566ba7`).
+Source integrated, November 5, 2026. Website PR #127 merged as `c1b34a8`;
+Backend PR #94 merged as `99cd460`, following qualification of integrated head
+`7a725b454ee947258a5280f49a42898edff034ac`. The exact application release
+`6aecbf94751cf215f811865f` is published with Backend callable version 12;
+production acceptance and cleanup are recorded separately below.
+
+The [release handoff](../releases/ADMIN_REPORTING_REFRESH.md) and
+[release receipt](../releases/receipts/ADMIN_REPORTING_REFRESH_PRODUCTION.json)
+are the authoritative records for exact source, artifact, publication and
+production verification. Preparation preserves the published November 5 admin
+tab-persistence baseline (`6aec430f45bc0d0841566ba7`).
+
+Website hosted CI passed. Backend hosted CI was blocked by GitHub billing before
+jobs ran. The owner explicitly authorized a one-release exception; all seven
+Backend lanes passed local qualification with their documented skips and scope
+limits. This is local replacement evidence, not a passing hosted Backend check.
+The earlier source-only and missing-SDK results below are historical checkpoints;
+those SDK failures were subsequently resolved with isolated dependencies.
 
 ## Behavior
 
@@ -31,8 +46,9 @@ longitudinal improvement. Six cards include weekly four-drill participants and
 average complete station rotation time, with previous-week evidence. Compact
 station analytics appears immediately before Testing activity by week.
 
-Usage retains its weekly chart and adds a daily stacked/total chart with 1 week,
-2 weeks, 1 month and 2 month controls. Calendar-month ranges end at the selected
+Usage retains its weekly chart and adds a daily chart with connected points and
+lines: one line per category, or a single line in Total mode. Controls cover
+1 week, 2 weeks, 1 month and 2 months. Calendar-month ranges end at the selected
 report end date. A bounded two-calendar-month daily history supplies the complete
 range independently of the report start; weekly charts and other period totals
 keep their selected window. Older responses without that history disclose clipping. Training combines
@@ -98,20 +114,18 @@ visible while details or directory authority refresh; auth/scope/invalidation
 and permission/schema failures clear retained evidence. Display snapshots share
 the existing memory bounds and never enable directory management actions. The larger backend reader/SQL plan remains separate.
 
-The canonical Backend companion is branch `feat/admin-reporting-refresh`,
-implementation `eb74046473503edd4366338f9d4940f8afe949a8`, with validation receipt
-`5fc55bd25c606d5a8c9bb04c84c48e08a47feb3e` and approved active-day follow-up
-`5f2019f0153f02eca1793b89aa74f33db17006df`, followed by audit fixes
-`516229112ffdd925f9be7e76ac2a50eb882c73d9`. Its
-`docs/ADMIN_REPORTING_REFRESH.md` records the additive contract, bounded reads,
-independent Astra review and pending SDK checks. The website Backend pin is not
-changed by this candidate; any future integration pin must identify the reviewed
-merged Backend source.
+The canonical Backend reporting implementation is
+`516229112ffdd925f9be7e76ac2a50eb882c73d9`. Subsequent release tooling and integration
+were qualified at `7a725b454ee947258a5280f49a42898edff034ac`, then merged through
+Backend PR #94 as `99cd460`. Its `docs/ADMIN_REPORTING_REFRESH.md` records the
+additive contract and bounded reads. The release handoff identifies the exact
+published callable source and application runtime separately from source main;
+use that record for release and rollback provenance.
 
 ## Validation and release
 
-Local website validation used Node 22.23.3, Python 3.12 and isolated worktree
-dependencies. The integrated source passed:
+The source-validation checkpoint used Node 22.23.3, Python 3.12 and isolated
+worktree dependencies. That integrated source passed:
 
 | Check | Result |
 | --- | --- |
@@ -140,12 +154,12 @@ was made to satisfy those obsolete/racing assertions.
 The initial Backend companion passed 105 affected reporting tests, 101 policy tests,
 473 imported-file migration checks, client contract exports, 23 scoped package
 tests, 3,977 gateway tests (two skips, ten subtests), and 19 authored replay
-profiles. Independent Astra review issues were fixed and re-reviewed. Its broader
-Functions/tooling suite had 1,454 passes and five missing-SDK failures; three
-private-fixture skips and one SDK package-discovery skip remain. The exact
-SDK-dependent checks are registered in the deferred-validation queue. Missing
-`firebase-admin` / `firebase-functions` dependencies were not installed or borrowed
-from another checkout. These checks remain pending, not passed.
+profiles. Independent Astra review issues were fixed and re-reviewed. At that initial checkpoint, the broader Functions/tooling suite had 1,454 passes
+and five missing-SDK failures; three private-fixture skips and one SDK
+package-discovery skip were recorded. The SDK-dependent checks were deferred
+rather than marked passed. Later release qualification installed dependencies
+in an isolated owned environment and resolved all five failures and the SDK
+discovery skip; no shared checkout dependencies were borrowed.
 
 After the November 5 repeat-user definition confirmation, frontend validation
 again passed all 2,300 tests, lint, the TypeScript/Astro build and 16 display
@@ -160,11 +174,15 @@ results above remain evidence for the unchanged lanes.
 
 Synthetic fixtures block external traffic and writes; all names and records are
 invented. Browser evidence is local desktop Chromium and WebKit, not live
-Firebase authorization, physical-device or production acceptance. Rules/emulator
-integration, hosted CI and the protected production preservation/release build
-were not run. No production records, account settings or messages were changed.
+Firebase authorization, physical-device or production acceptance. At that source-validation checkpoint, rules/emulator integration, hosted CI and
+the protected production preservation/release build had not run, and no
+production records, account settings or messages had changed. Later release
+qualification supersedes those pending-check statements: all seven Backend
+local lanes passed, Website hosted CI passed, and the protected artifact was
+prepared and verified. Hosted acceptance and publication status belong in the
+release handoff and receipt; this feature document does not claim they are complete.
 
-Release requires separately qualified canonical Backend publication first, then
+The release order is separately qualified canonical Backend publication first, then
 an exact approved website application artifact and preserved baseline verification.
 An older backend produces explicit unavailable additions, not invented zeros.
 Source integration retains `[skip netlify]`; do not publish all of source main as
@@ -217,4 +235,18 @@ Daily usage review refinement: the daily chart uses connected points, one line p
 
 The requested workout lifecycle breakdown is a separate follow-up: [Workout reporting funnel handoff](WORKOUT_REPORTING_FUNNEL_HANDOFF.md). Its new ingestion and UI are excluded from this refresh release.
 
-Release qualification, November 5: the exact Backend candidate `5162291` was checked with its own isolated Firebase SDK dependencies. The full Functions/tooling run passed 1,472 tests with three existing private-fixture skips and zero failures; all 24 packaging checks passed, including SDK discovery. This resolves the earlier five dependency-related failures and one packaging skip. Hosted CI and production acceptance remain separate release gates.
+SDK qualification checkpoint, November 5: Backend runtime source `5162291` was
+checked with its own isolated Firebase SDK dependencies. The full
+Functions/tooling run passed 1,472 tests with three existing private-fixture skips
+and zero failures; all 24 packaging checks passed, including SDK discovery. This
+resolved the earlier five dependency-related failures and one packaging skip.
+
+Final local Backend qualification covered policy, gateway, processor syntax and
+Bodyscan tests on Python 3.12/3.10, Firebase Functions, rules/emulators,
+Firebase operations, and dependency audits. The gateway evidence combines the
+full baseline suite with focused integration tests for incoming Coach changes
+and an authored replay run; it does not claim a second full suite at the merged
+revision. Exact revisions, counts, skips, unchanged-source proofs and macOS versus
+hosted Ubuntu limits are retained in the release evidence. The explicit
+one-release owner exception addresses the billing-blocked hosted Backend gate;
+it does not represent a hosted CI pass or remove production verification.
