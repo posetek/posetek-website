@@ -1,7 +1,8 @@
 # Admin organization reporting refresh
 
 Source candidate, November 5, 2026. No deployment, production-data change or
-outreach is included. The published November 4 release remains the baseline.
+outreach is included in this source candidate. Release preparation preserves the
+published November 5 admin tab-persistence baseline (`6aec430f45bc0d0841566ba7`).
 
 ## Behavior
 
@@ -215,3 +216,5 @@ records and shared coach views are unchanged.
 Daily usage review refinement: the daily chart uses connected points, one line per category and one point per collected day. Total mode uses a single line. Missing collection stays a gap; the range controls, daily values and accessible data table are unchanged.
 
 The requested workout lifecycle breakdown is a separate follow-up: [Workout reporting funnel handoff](WORKOUT_REPORTING_FUNNEL_HANDOFF.md). Its new ingestion and UI are excluded from this refresh release.
+
+Release qualification, November 5: the exact Backend candidate `5162291` was checked with its own isolated Firebase SDK dependencies. The full Functions/tooling run passed 1,472 tests with three existing private-fixture skips and zero failures; all 24 packaging checks passed, including SDK discovery. This resolves the earlier five dependency-related failures and one packaging skip. Hosted CI and production acceptance remain separate release gates.
