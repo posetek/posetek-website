@@ -22,6 +22,8 @@ export interface RepArtifactBundle {
   mediaUrl: string | null;
   mediaName: string | null;
   pose: any;
+  tracking: any;
+  trackingLoadError: boolean;
   metadata: any;
   reprocessContext: any;
   arucoCorners: any;
@@ -76,7 +78,7 @@ export async function loadRepArtifacts(drill: Drill, rep: any, playerId: string)
     console.warn("[rep tools] folder listing unavailable", folder, error);
   }
 
-  const [pose, metadata, reprocessContext, adminAnnotations, ballBoxes, arucoCorners, markerConfig] = await Promise.all([
+  const [pose, metadata, reprocessContext, adminAnnotations, ballBoxes, arucoCorners, markerConfig, tracking] = await Promise.all([
     readJsonAt(base.child("pose.json")),
     readJsonAt(base.child("metadata.json")),
     readJsonAt(base.child("reprocess_context.json")),
@@ -84,10 +86,11 @@ export async function loadRepArtifacts(drill: Drill, rep: any, playerId: string)
     files.includes("ball_boxes.json") ? readJsonAt(base.child("ball_boxes.json")) : Promise.resolve(null),
     readJsonAt(root.child("aruco_corners.json")),
     MARKER_CONFIG_NAMES[drill.key] ? readJsonAt(root.child(MARKER_CONFIG_NAMES[drill.key])) : Promise.resolve(null),
+    readJsonAt(base.child("tracking.json")),
   ]);
 
   const jumpTechnique = drill.key === "jump" ? Object.fromEntries(await Promise.all(JUMP_ARTIFACTS.map(async name => [name, await readJsonAt(base.child(name))]))) : {};
-  return { folder, sessionRoot, mediaUrl, mediaName, pose, metadata, reprocessContext, arucoCorners, markerConfig, adminAnnotations, ballBoxes, jumpTechnique, files };
+  return { folder, sessionRoot, mediaUrl, mediaName, pose, tracking, trackingLoadError: files.includes("tracking.json") && tracking === null, metadata, reprocessContext, arucoCorners, markerConfig, adminAnnotations, ballBoxes, jumpTechnique, files };
 }
 
 export interface RepRevisionRow {
