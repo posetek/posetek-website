@@ -17,12 +17,13 @@ describe("Testing reporting components", () => {
   });
   it("distinguishes unsupported station timing from a genuine empty result", () => {
     expect(renderToStaticMarkup(<TestingStationAnalytics stations={null} />)).toContain("Station timing is unavailable");
+    expect(renderToStaticMarkup(<TestingStationAnalytics stations={null} pending />)).toContain("Loading station timing…");
     expect(renderToStaticMarkup(<TestingStationAnalytics stations={[]} />)).toContain("No station sessions were recorded");
   });
   it("renders actual timing coverage without treating missing timing as zero", () => {
     const html = renderToStaticMarkup(<TestingStationAnalytics stations={[{ id: "one", label: "Speed", order: 1, completedPlayers: 3, eligiblePlayers: 4, syncedReps: 15, plannedReps: 20, failed: 2, partial: 1, elapsedMeanMs: null, timingSamples: 0 }]} />);
     expect(html).toContain("Unavailable");
-    expect(html).toContain("0 timed rotations");
+    expect(html).toContain("0 timed visits");
     expect(html).not.toContain("0s</strong>");
     expect(html).toContain("Speed reps synced");
   });

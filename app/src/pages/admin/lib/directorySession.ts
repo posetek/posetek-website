@@ -68,6 +68,12 @@ export class DirectorySession {
         const entry = this.entries.get(key);
         return selected() && entry && entry.data !== undefined && entry.expires! > this.now() ? { data: entry.data as T } : undefined;
       },
+      // Display-only evidence while canonical context/roster is revalidated.
+      // Callers must not enable management controls from this snapshot.
+      snapshot: () => {
+        const entry = this.entries.get(key);
+        return this.denial === undefined && selected() && entry?.version === current() && entry.data !== undefined ? { data: entry.data as T } : undefined;
+      },
       load: () => {
         if (this.denial !== undefined) return Promise.reject(this.denial);
         if (!selected()) return Promise.reject(new Error("The organization selection changed. Retry the current scope."));
@@ -76,7 +82,7 @@ export class DirectorySession {
         const previous = this.entries.get(key);
         if (previous?.pending) return previous.pending as Promise<T>;
         const version = current();
-        const entry: { data?: T; expires?: number; pending?: Promise<T>; version: number } = { version };
+        const entry: { data?: T; expires?: number; pending?: Promise<T>; version: number } = { version, ...(previous?.version === version ? { data: previous.data as T, expires: previous.expires } : {}) };
         const pending = Promise.resolve().then(() => {
           if (current() !== version) throw new Error("The directory session changed. Retry the current scope.");
           return read();

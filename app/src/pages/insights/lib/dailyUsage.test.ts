@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { shiftDate } from "./expandedQuery";
+import type { DailyUsageHistory } from "./dailyUsage";
 import { dailyUsageCategories, dailyUsageStart, dailyUsageWindow } from "./dailyUsage";
 
 describe("daily usage evidence", () => {
@@ -36,5 +38,50 @@ describe("daily usage evidence", () => {
     expect(window.rows).toHaveLength(7);
     expect(window.rows.every(row => row.total === null)).toBe(true);
     expect(window.clipped).toBe(false);
+  });
+});
+
+
+describe("bounded admin daily history", () => {
+  const period = { startDate: "2026-08-04", endDate: "2026-08-31", timeZone: "America/Los_Angeles" };
+  const history: DailyUsageHistory = { startDate: "2026-07-01", endDate: period.endDate, timeZone: period.timeZone,
+    days: Array.from({ length: 62 }, (_, index) => ({ date: shiftDate("2026-07-01", index), activeMinutes: index === 0 ? null : index,
+      featureMinutes: index === 0 ? null : { workout: index * .75, overview: index * .25 } })) };
+  const reportDays = history.days.filter(day => day.date >= period.startDate);
+  it("shows all 62 actual days for 2m despite the selected report containing only 28 days", () => {
+    expect(reportDays).toHaveLength(28);
+    const result = dailyUsageWindow(reportDays, period, "2m", history);
+    expect(result.rows).toHaveLength(62);
+    expect(result.startDate).toBe("2026-07-01");
+    expect(result.endDate).toBe("2026-08-31");
+    expect(result.extendedHistory).toBe(true);
+    expect(result.clipped).toBe(false);
+    expect(result.rows[0]).toEqual({ date: "2026-07-01", total: null, categories: null });
+    expect(result.rows[4]).toEqual({ date: "2026-07-05", total: 4, categories: { training: 3, profile: 1, results: 0, social: 0, other: 0 } });
+    expect(period.startDate).toBe("2026-08-04");
+  });
+  it("selects exact weekly and calendar-month ranges from the same bounded history", () => {
+    for (const [range, count, start] of [["1w", 7, "2026-08-25"], ["2w", 14, "2026-08-18"], ["1m", 31, "2026-08-01"]] as const) {
+      const result = dailyUsageWindow(reportDays, period, range, history);
+      expect(result.rows).toHaveLength(count);
+      expect(result.startDate).toBe(start);
+      expect(result.rows.at(-1)?.total).toBe(61);
+      expect(result.clipped).toBe(false);
+    }
+  });
+  it("rejects mismatched, incorrectly bounded, duplicated or incomplete history and keeps honest legacy clipping", () => {
+    const invalid: (DailyUsageHistory | undefined)[] = [undefined,
+      { ...history, endDate: "2026-08-30" }, { ...history, timeZone: "UTC" },
+      { ...history, startDate: "2026-07-02" }, { ...history, startDate: "2026-06-30" },
+      { ...history, days: history.days.slice(1) }, { ...history, days: [...history.days, history.days[0]] },
+      { ...history, days: history.days.map((day, index) => index === 4 ? { ...day, activeMinutes: NaN } : day) },
+    ];
+    for (const candidate of invalid) {
+      const result = dailyUsageWindow(reportDays, period, "2m", candidate);
+      expect(result.extendedHistory).toBe(false);
+      expect(result.clipped).toBe(true);
+      expect(result.startDate).toBe(period.startDate);
+      expect(result.rows).toHaveLength(28);
+    }
   });
 });

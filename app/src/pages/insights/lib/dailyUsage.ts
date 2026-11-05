@@ -19,6 +19,13 @@ export interface DailyUsageInput {
   activeMinutes: number | null;
   featureMinutes?: Record<string, number> | null;
 }
+/** Admin-only complete history for the same filtered cohort, independent of report start. */
+export interface DailyUsageHistory {
+  startDate: string;
+  endDate: string;
+  timeZone: string;
+  days: DailyUsageInput[];
+}
 export interface DailyUsageRow {
   date: string;
   total: number | null;
@@ -55,16 +62,36 @@ export function dailyUsageStart(endDate: string, range: DailyUsageRange): string
   return shiftDate(previous, 1);
 }
 
-export function dailyUsageWindow(days: DailyUsageInput[], period: { startDate: string; endDate: string }, range: DailyUsageRange) {
+/** Reject a stale or incomplete history rather than labelling its missing dates uncollected. */
+export function dailyUsageHistoryMatches(history: DailyUsageHistory | undefined, period: { endDate: string; timeZone?: string }): history is DailyUsageHistory {
+  if (!history || history.endDate !== period.endDate || history.timeZone !== period.timeZone
+    || history.startDate !== dailyUsageStart(period.endDate, "2m") || !Array.isArray(history.days)) return false;
+  const dates = new Set<string>();
+  for (const day of history.days) {
+    if (!day || day.date < history.startDate || day.date > history.endDate || dates.has(day.date)
+      || day.activeMinutes !== null && !measured(day.activeMinutes)) return false;
+    dates.add(day.date);
+  }
+  let expected = 0;
+  for (let date = history.startDate; date <= history.endDate; date = shiftDate(date, 1)) {
+    if (!dates.has(date)) return false;
+    expected++;
+  }
+  return dates.size === expected;
+}
+
+export function dailyUsageWindow(days: DailyUsageInput[], period: { startDate: string; endDate: string; timeZone?: string }, range: DailyUsageRange, history?: DailyUsageHistory) {
   const requestedStart = dailyUsageStart(period.endDate, range);
-  const startDate = requestedStart < period.startDate ? period.startDate : requestedStart;
-  const byDate = new Map(days.map(day => [day.date, day]));
+  const extendedHistory = dailyUsageHistoryMatches(history, period);
+  const availableStart = extendedHistory ? history.startDate : period.startDate;
+  const startDate = requestedStart < availableStart ? availableStart : requestedStart;
+  const byDate = new Map((extendedHistory ? history.days : days).map(day => [day.date, day]));
   const rows: DailyUsageRow[] = [];
   for (let date = startDate; date <= period.endDate; date = shiftDate(date, 1)) {
     const day = byDate.get(date);
     rows.push({ date, total: day && measured(day.activeMinutes) ? day.activeMinutes : null, categories: day ? dailyUsageCategories(day) : null });
   }
-  return { rows, startDate, endDate: period.endDate, clipped: requestedStart < period.startDate,
+  return { rows, startDate, endDate: period.endDate, clipped: requestedStart < availableStart, extendedHistory,
     measuredDays: rows.filter(row => row.total !== null).length,
     categoryDays: rows.filter(row => row.categories !== null).length };
 }

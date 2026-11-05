@@ -142,6 +142,20 @@ describe('admin activity reporting presentation', () => {
     expect(withChart.indexOf('Daily charts')).toBeLessThan(withChart.indexOf('activity-people-title'));
     expect(html).toContain('id="activity-people-title" tabindex="-1"');
   });
+  it.each(['workouts', 'usage'] as const)('places the %s player section after every chart and measurement disclosure', view => {
+    const html = render(view);
+    expect(html.indexOf('class="activity-method"')).toBeLessThan(html.indexOf('aria-labelledby="activity-people-title"'));
+    expect(html.slice(html.indexOf('aria-label="Activity player pages"'))).not.toContain('<details');
+  });
+  it('renders retained summaries without borrowing an old player page or its sort', () => {
+    const { players, pagination, rosterMetrics, nameSearch, ...summary } = fixture();
+    const html = renderToStaticMarkup(<MemoryRouter><AdminActivityReport data={summary} request={request} view="usage" detailsPending onChange={() => {}} onFirstPage={() => {}} onNextPage={() => {}} playerLink={playerLink} teamLink={() => '#team'} /></MemoryRouter>);
+    expect(html).toContain('Participation and usage summary');
+    expect(html).toContain('Loading player details…');
+    expect(html).not.toContain('Alex Player');
+    expect(html).not.toContain('Activity player pages');
+    expect(html).not.toContain('Sort players');
+  });
   it('retains coach identity when the team comparison replaces navigation cards', () => {
     const html = renderToStaticMarkup(<MemoryRouter><TeamComparison data={fixture()} teamLink={() => '/admin/accounts?teamId=harbor'} coachNames={{ 'northfield/harbor': 'Coach Taylor' }} /></MemoryRouter>);
     expect(html).toContain('Coach Taylor');

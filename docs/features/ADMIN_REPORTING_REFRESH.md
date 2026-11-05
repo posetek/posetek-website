@@ -32,7 +32,9 @@ station analytics appears immediately before Testing activity by week.
 
 Usage retains its weekly chart and adds a daily stacked/total chart with 1 week,
 2 weeks, 1 month and 2 month controls. Calendar-month ranges end at the selected
-report end date and visibly clip to available report dates. Training combines
+report end date. A bounded two-calendar-month daily history supplies the complete
+range independently of the report start; weekly charts and other period totals
+keep their selected window. Older responses without that history disclose clipping. Training combines
 workouts, training, videos and planning; other categories are Results, Social,
 Profile & overview, and Other. Missing daily categories are unavailable, never
 reconstructed from period totals. The exact-day data table preserves nulls.
@@ -78,6 +80,9 @@ Canonical Backend owns all aggregation. The companion feature adds optional
 `adminTesting` through `includeTestingAnalytics: true`. Only the Testing view
 requests the bounded station reader. No browser joins paginated rows into totals.
 Old coach/manager and installed-native contracts are preserved.
+`adminReporting.dailyUsage` adds only bounded two-month daily evidence and reuses
+the existing usage read. Historical station evidence follows current authorized
+team membership, including players transferred between teams in one organization.
 
 The concurrent website efficiency work merged as PR #124 (`b876eb1`) and is
 integrated into this feature branch. Its current-organization filtering, 60-second
@@ -85,12 +90,18 @@ bounded in-memory exact-response reuse, auth/scope invalidation and late-respons
 fences remain intact. This patch adds the Testing option to that existing
 payload/key; it does not create another cache or report-session architecture.
 Integration overlaps were MonitorAccounts, workspaceMetrics and
-workspaceMetricsData. The larger backend reader/SQL plan remains separate.
+workspaceMetricsData. The audit follow-up adds a separate same-cohort summary
+observation so first visits and expired detail reads retain the high-level
+report. Exact player pages remain separate. Original observation times remain
+visible while details or directory authority refresh; auth/scope/invalidation
+and permission/schema failures clear retained evidence. Display snapshots share
+the existing memory bounds and never enable directory management actions. The larger backend reader/SQL plan remains separate.
 
 The canonical Backend companion is branch `feat/admin-reporting-refresh`,
 implementation `eb74046473503edd4366338f9d4940f8afe949a8`, with validation receipt
 `5fc55bd25c606d5a8c9bb04c84c48e08a47feb3e` and approved active-day follow-up
-`5f2019f0153f02eca1793b89aa74f33db17006df`. Its
+`5f2019f0153f02eca1793b89aa74f33db17006df`, followed by audit fixes
+`516229112ffdd925f9be7e76ac2a50eb882c73d9`. Its
 `docs/ADMIN_REPORTING_REFRESH.md` records the additive contract, bounded reads,
 independent Astra review and pending SDK checks. The website Backend pin is not
 changed by this candidate; any future integration pin must identify the reviewed
@@ -103,7 +114,7 @@ dependencies. The integrated source passed:
 
 | Check | Result |
 | --- | --- |
-| Frontend Vitest | 2,300 tests in 209 files |
+| Frontend Vitest | 2,321 tests in 209 files |
 | Lint | Exit zero; existing warnings retained |
 | Tooling / legacy guards | 100 tests |
 | Python CI policy | 32 tests |
@@ -113,7 +124,7 @@ dependencies. The integrated source passed:
 | Guest routes / marketing activation | 25 checks passed |
 | App production dependency audit | Zero advisory-path findings; zero blocking |
 | New reporting UI | 16 scenarios: four tabs, two engines, phone/desktop widths |
-| Integrated tab persistence | 36 scenarios passed across both engines and widths |
+| Integrated tab persistence | 60 scenarios passed across both engines and widths, including 24 held-response continuity cases |
 
 The display checks cover card counts, removed sections, chart/table order, drill
 selection, daily range/mode changes, horizontal overflow, browser errors and
@@ -159,3 +170,39 @@ Source integration retains `[skip netlify]`; do not publish all of source main a
 an application release. No rules, indexes, gateway or native release is included.
 Rollback uses the then-verified prior application artifact and compatible prior
 callable source, with a release receipt. A source merge is not a release.
+
+## Original-request audit and corrections
+
+The initial completion report was too broad. The [item-by-item audit](ADMIN_REPORTING_REQUEST_AUDIT.md)
+records both the original implementation and corrections. The source-only
+candidate had not been deployed when the discrepancy was raised.
+
+Confirmed omissions corrected after audit:
+
+- First-visit and expired tab requests removed high-level reports; the original
+  browser checks warmed every exact request before testing continuity.
+- Daily month/two-month controls clipped to the already loaded report period.
+- Workouts/Usage tables had a measurement disclosure after them, so they were not
+  the final visible sections.
+- The workout ranking included planning but omitted it from its visible subtitle.
+- Station event prefiltering could exclude an existing player's previous-team
+  sessions within the same organization.
+- Individual-station samples were labeled rotations instead of visits; historical
+  unavailable rotation copy also incorrectly said this week.
+
+No measured workout-generation count or individual production-player forensic
+verification is claimed. Saved-log starts/completions and observed platform-use
+categories retain their documented meanings. Exact visit counting is superseded
+by the approved active-day definition.
+
+Audit-fix validation passed 2,321 frontend tests, 16 display scenarios, and all
+60 persistence/continuity scenarios in Chromium and WebKit at phone and desktop
+widths. Lint, TypeScript/Astro, marketing, Svelte (zero diagnostics), 32 policy
+checks and 100 tooling checks passed. The final Backend changes passed 116
+focused tests and 221 broader reporting/usage/station tests (three existing
+private-fixture skips), plus 101 policy checks, 473 migration imports, contract
+exports and 23 package tests (one existing missing-SDK discovery skip).
+Independent review found no blocking issue in the summary isolation or Backend
+history/transfer changes. Previous failed test-driver attempts are retained;
+the final readiness helper waits for directory/detail revalidation, while the
+new continuity assertions inspect the still-pending intermediate state directly.

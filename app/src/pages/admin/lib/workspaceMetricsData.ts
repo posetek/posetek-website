@@ -5,7 +5,7 @@ import { expandedRequest } from "../../insights/lib/expandedQuery";
 import { assertReportScope, reportPayload } from "../../insights/lib/expanded";
 import type { ExpandedInsights, InsightScope } from "../../insights/lib/expanded";
 import { adminActivitySelection } from "./adminActivity";
-import type { AdminActivityRequest } from "./adminActivity";
+import type { AdminActivityReportData, AdminActivityRequest } from "./adminActivity";
 
 export type WorkspaceReportPayload = ReturnType<typeof reportPayload> & {
   rosterPlayerIds?: string[]; adminReporting?: AdminActivityRequest; includeLastFeatureEvidence?: true; includeTestingAnalytics?: true;
@@ -105,17 +105,36 @@ export const WORKSPACE_REPORT_TTL_MS = 60_000;
 export const WORKSPACE_REPORT_MAX_ENTRIES = 5;
 export const WORKSPACE_REPORT_MAX_BYTES = 2 * 1024 * 1024;
 export interface WorkspaceReportObservation { data: ExpandedInsights; checkedAt: number }
+/** Aggregate evidence only: never a substitute for requested player ordering or detail. */
+export type WorkspaceSummaryData = Omit<ExpandedInsights, 'players' | 'pagination' | 'rosterMetrics' | 'nameSearch' | 'roster' | 'adminReporting'> & {
+  roster: Omit<ExpandedInsights['roster'], 'matched'>;
+  adminReporting?: Omit<AdminActivityReportData, 'sort' | 'followUp'>;
+};
+export interface WorkspaceSummaryObservation { data: WorkspaceSummaryData; checkedAt: number; stale: boolean }
+export function workspaceSummaryKey(payload: WorkspaceReportPayload) {
+  if (!payload.adminReporting) return '';
+  return JSON.stringify([payload.scope, payload.timeZone, payload.startDate, payload.endDate, payload.testingMode,
+    Object.entries(payload.filters).sort(([a], [b]) => a.localeCompare(b))]);
+}
+function summaryData(data: ExpandedInsights): WorkspaceSummaryData | null {
+  if (!data.adminReporting) return null;
+  const { players: _players, pagination: _pagination, rosterMetrics: _metrics, nameSearch: _search, roster, adminReporting, ...aggregate } = data;
+  const { matched: _matched, ...population } = roster;
+  const { sort: _sort, followUp: _followUp, ...activity } = adminReporting;
+  return { ...aggregate, roster: population, adminReporting: activity };
+}
 
 /** Completed observations live only in this admin workspace's memory. Exact
  * server inputs remain the key: different sorts/pages/detail never masquerade
  * as the selected report. Invalidation also fences every pending response. */
 export function createWorkspaceMetricsTransport(read: WorkspaceReportReader, now = Date.now) {
   const requests = inFlightRequests<ExpandedInsights>();
-  const completed = new Map<string, WorkspaceReportObservation & { bytes: number }>();
+  const completed = new Map<string, WorkspaceReportObservation & { bytes: number; cohortKey: string }>();
   const listeners = new Set<() => void>();
+  let summary: { key: string; data: WorkspaceSummaryData; checkedAt: number; bytes: number } | null = null;
   let actor: string | null = null, scopeKey = '', generation = 0, bytes = 0;
   const clear = (silent = false) => {
-    ++generation; requests.clear(); completed.clear(); bytes = 0;
+    ++generation; requests.clear(); completed.clear(); summary = null; bytes = 0;
     if (!silent) listeners.forEach(listener => listener());
   };
   const observeIdentity = (uid: string | null) => { if (actor !== uid) { actor = uid; clear(); } };
@@ -132,8 +151,31 @@ export function createWorkspaceMetricsTransport(read: WorkspaceReportReader, now
     if (!uid || actor !== uid || scopeKey !== JSON.stringify(payload.scope)) return null;
     return completed.get(workspacePayloadKey(payload)) || null;
   };
+  const peekSummary = (uid: string | null, payload: WorkspaceReportPayload): WorkspaceSummaryObservation | null => {
+    const key = workspaceSummaryKey(payload);
+    if (!key || !uid || uid !== actor || scopeKey !== JSON.stringify(payload.scope)) return null;
+    // Returning to a fresh exact observation can restore its cohort summary;
+    // another cohort's newer snapshot must never occupy that display slot.
+    if (summary?.key !== key) {
+      const candidate = [...completed.values()].filter(entry => entry.cohortKey === key && now() >= entry.checkedAt && now() - entry.checkedAt < WORKSPACE_REPORT_TTL_MS).sort((a, b) => b.checkedAt - a.checkedAt)[0];
+      if (candidate) retainSummary(payload, candidate.data, candidate.checkedAt);
+    }
+    if (!summary || summary.key !== key) return null;
+    if (now() < summary.checkedAt) { bytes -= summary.bytes; summary = null; return null; }
+    return { data: summary.data, checkedAt: summary.checkedAt, stale: now() - summary.checkedAt >= WORKSPACE_REPORT_TTL_MS };
+  };
+  const retainSummary = (payload: WorkspaceReportPayload, data: ExpandedInsights, checkedAt: number) => {
+    const key = workspaceSummaryKey(payload), aggregate = key ? summaryData(data) : null;
+    if (!aggregate) { if (key && summary) { bytes -= summary.bytes; summary = null; } return; }
+    let size: number;
+    try { size = new TextEncoder().encode(JSON.stringify(aggregate)).byteLength; } catch { return; }
+    if (summary) { bytes -= summary.bytes; summary = null; }
+    if (size > WORKSPACE_REPORT_MAX_BYTES) return;
+    while (completed.size && bytes + size > WORKSPACE_REPORT_MAX_BYTES) remove(completed.keys().next().value!);
+    summary = { key, data: aggregate, checkedAt, bytes: size }; bytes += size;
+  };
   return {
-    observeIdentity, observeScope, clear, peek,
+    observeIdentity, observeScope, clear, peek, peekSummary,
     getGeneration: () => generation,
     subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
     async load(uid: string, payload: WorkspaceReportPayload, isCurrent: () => boolean, onRebuild?: () => void, validate?: (data: ExpandedInsights) => void, options: { force?: boolean; retain?: boolean } = {}) {
@@ -143,7 +185,7 @@ export function createWorkspaceMetricsTransport(read: WorkspaceReportReader, now
       const current = () => isCurrent() && actor === uid && generation === start;
       const cached = options.retain && !options.force && peek(uid, payload);
       if (cached) {
-        try { assertWorkspaceMetrics(cached.data, payload); validate?.(cached.data); return cached.data; }
+        try { assertWorkspaceMetrics(cached.data, payload); validate?.(cached.data); retainSummary(payload, cached.data, cached.checkedAt); return cached.data; }
         catch (error) {
           remove(key);
           if (!retryableReportError(error)) { clear(true); throw error; }
@@ -152,7 +194,7 @@ export function createWorkspaceMetricsTransport(read: WorkspaceReportReader, now
       // Refresh applies to this whole shared workspace observation. Other tab
       // variants must be read again too; the mounted hook retains its own prior
       // result while refreshing, without notifying or restarting other readers.
-      if (options.retain && options.force) { completed.clear(); bytes = 0; }
+      if (options.retain && options.force) { completed.clear(); bytes = summary?.bytes || 0; }
       else if (options.retain) remove(key);
       const data = await completeReport(async () => {
         const result = await requests.run(JSON.stringify([uid, payload]), () => read(payload));
@@ -170,9 +212,10 @@ export function createWorkspaceMetricsTransport(read: WorkspaceReportReader, now
       try { size = new TextEncoder().encode(JSON.stringify(data)).byteLength; }
       catch { return data; } // Cache accounting must never reject a valid report.
       prune(); remove(key);
-      if (options.retain && size <= WORKSPACE_REPORT_MAX_BYTES) {
-        while (completed.size >= WORKSPACE_REPORT_MAX_ENTRIES || bytes + size > WORKSPACE_REPORT_MAX_BYTES) remove(completed.keys().next().value!);
-        completed.set(key, { data, checkedAt, bytes: size }); bytes += size;
+      retainSummary(payload, data, checkedAt);
+      if (options.retain && size + (summary?.bytes || 0) <= WORKSPACE_REPORT_MAX_BYTES) {
+        while (completed.size && (completed.size >= WORKSPACE_REPORT_MAX_ENTRIES || bytes + size > WORKSPACE_REPORT_MAX_BYTES)) remove(completed.keys().next().value!);
+        completed.set(key, { data, checkedAt, bytes: size, cohortKey: workspaceSummaryKey(payload) }); bytes += size;
       }
       return data;
     },

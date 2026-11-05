@@ -50,6 +50,7 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
             assert.equal(await panel.getByRole('heading', { name: 'Work completed', exact: true }).count(), 0);
             const order = await panel.locator('h2').allTextContents();
             assert.ok(order.indexOf('Workout activity by week') < order.indexOf('Player workouts'));
+            assert.equal(await panel.locator('.admin-activity-report > :last-child').getAttribute('aria-labelledby'), 'activity-people-title');
           }
           if (view === 'Usage') {
             await panel.getByRole('heading', { name: 'Estimated active use by day', exact: true }).waitFor();
@@ -60,6 +61,9 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
             const order = await panel.locator('h2').allTextContents();
             assert.ok(order.indexOf('Estimated active use by week') < order.indexOf('Estimated active use by day'));
             assert.ok(order.indexOf('Estimated active use by day') < order.indexOf('Player app usage'));
+            assert.equal(await panel.locator('.admin-activity-report > :last-child').getAttribute('aria-labelledby'), 'activity-people-title');
+            assert.equal(await daily.locator('tbody tr').count(), 61, 'Two calendar months remain complete despite the 28-day report period.');
+            assert.equal(await daily.getByText('Showing available dates', { exact: false }).count(), 0);
             assert.equal(await daily.getByText('Daily category detail unavailable', { exact: false }).count(), 0);
           }
         }

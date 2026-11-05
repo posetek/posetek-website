@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import DailyUsageChart from "./DailyUsageChart";
+import { shiftDate } from "./lib/expandedQuery";
 const period = { startDate: "2026-11-01", endDate: "2026-11-05", timeZone: "America/Los_Angeles" };
 describe("daily usage chart", () => {
   it("exposes range and display controls plus an exact-day accessible table", () => {
@@ -23,4 +24,15 @@ describe("daily usage chart", () => {
     expect(html).toContain("<td>0</td>");
     expect(html).not.toContain("NaN");
   });
+});
+
+
+it("renders the full default calendar month from extended history without altering the report period", () => {
+  const selectedPeriod = { ...period, startDate: "2026-08-04", endDate: "2026-08-31" };
+  const days = Array.from({ length: 62 }, (_, index) => ({ date: shiftDate("2026-07-01", index), activeMinutes: index, featureMinutes: { workout: index } }));
+  const html = renderToStaticMarkup(<DailyUsageChart period={selectedPeriod} days={days.slice(34)} history={{ ...selectedPeriod, startDate: "2026-07-01", days }} />);
+  expect(html).toContain("Aug 1–Aug 31");
+  expect(html).toContain('<th scope="row">2026-08-01</th><td>31</td>');
+  expect(html).not.toContain("Showing available dates");
+  expect(html).toContain("Weekly charts and period totals keep the selected report period");
 });

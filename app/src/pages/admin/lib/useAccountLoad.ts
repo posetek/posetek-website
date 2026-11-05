@@ -6,6 +6,7 @@ export type AccountLoad<T> = { kind: "loading" } | { kind: "ready"; data: T } | 
 /** Optional retention is confined to the admin directory's shared read model. */
 export interface AccountRetention<T> {
   peek(): { data: T } | undefined;
+  snapshot?(): { data: T } | undefined;
   load(loader: () => Promise<T>): Promise<T>;
   version(): number;
   invalidate(): void;
@@ -35,5 +36,6 @@ export function useAccountLoad<T>(loader: () => Promise<T>, retention?: AccountR
   }, [loader, revision, retention]);
   const cached = auth.currentUser ? retention?.peek() : undefined;
   const state: AccountLoad<T> = result?.retention === retention && result?.loader === loader && result.revision === revision && result.uid === auth.currentUser?.uid && result.retainedVersion === (retention?.version() || 0) ? result.state : cached ? { kind: "ready", data: cached.data } : { kind: "loading" };
-  return { state, refresh: () => { if (retention) retention.invalidate(); else setRevision(value => value + 1); } };
+  const previousData = state.kind === "loading" && auth.currentUser ? retention?.snapshot?.()?.data ?? null : null;
+  return { state, previousData, refresh: () => { if (retention) retention.invalidate(); else setRevision(value => value + 1); } };
 }

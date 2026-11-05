@@ -2,13 +2,13 @@ import { useMemo } from "react";
 import { AboutNumbers, ActivityChart, BreakdownChart } from "../../insights/BreakdownChart";
 import DailyUsageChart from "../../insights/DailyUsageChart";
 import { USAGE_LABELS, platformSlices, weeklySeries } from "../../insights/lib/expanded";
-import type { ExpandedInsights } from "../../insights/lib/expanded";
+import type { ExpandedReportSummary } from "../../insights/lib/expanded";
 import type { ExpandedRequest } from "../../insights/lib/expandedQuery";
 import { USAGE_CATEGORIES, dailyUsageCategories } from "../../insights/lib/dailyUsage";
 
 /** Admin usage evidence; summary cards and the player table belong to its caller. */
 export default function WorkspaceUsage({ data, request, onChange }: {
-  data: ExpandedInsights; request: ExpandedRequest; onChange: (patch: Partial<ExpandedRequest>) => void;
+  data: ExpandedReportSummary; request: ExpandedRequest; onChange: (patch: Partial<ExpandedRequest>) => void;
 }) {
   const { usage } = data;
   const weeks = useMemo(() => weeklySeries(usage.days, ["webMinutes", "iosMinutes"], data.period.startDate, data.period.endDate, [usage.webCollectedPlayers > 0, usage.iosCollectedPlayers > 0]), [usage, data.period]);
@@ -20,7 +20,7 @@ export default function WorkspaceUsage({ data, request, onChange }: {
     </div>
     <AboutNumbers><p>Website: {usage.webCollectedPlayers ? `${usage.webCollectedPlayers} players with collection` : "Not collected"} · iOS app: {usage.iosCollectedPlayers ? `${usage.iosCollectedPlayers} players with collection` : "Not collected"}.{usage.collectionStartedAtMillis ? ` Collection began ${new Date(usage.collectionStartedAtMillis).toLocaleDateString("en-US", { timeZone: data.period.timeZone })}.` : " No collection is available in this period."}</p></AboutNumbers>
     <ActivityChart title="Estimated active use by week" labels={weeks.labels} series={[{ label: "Website", values: weeks.values[0] }, { label: "iOS app", values: weeks.values[1] }]} unit="minutes" note="Platform series can overlap. Total estimated active use counts simultaneous use once." />
-    <DailyUsageChart days={usage.days} period={data.period} />
+    <DailyUsageChart days={usage.days} period={data.period} history={data.adminReporting?.dailyUsage} />
     {usage.collectedPlayers > 0 && categories && <BreakdownChart title="Estimated active use by category" slices={USAGE_CATEGORIES.map(category => ({ ...category, value: categories[category.key] }))} unit="minutes" note="Categories divide measured active time across the full selected report period. Training combines workouts, training, video and planning; Social uses the feed; Profile & overview uses the overview feature. Each interval is counted once. These are app-use minutes, not workout duration." />}
     <AboutNumbers><p>Dates use {data.period.timeZone}; weeks begin Monday. Historical records follow current organization and team ownership. Updated {new Date(data.generatedAtMillis).toLocaleString("en-US", { timeZone: data.period.timeZone })}. Totals cover the complete filtered reporting roster.</p></AboutNumbers>
   </>;

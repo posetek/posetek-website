@@ -67,6 +67,11 @@ export interface ExpandedInsights {
   rosterMetrics?: RosterMetric[];
   pagination: { total: number; pageSize: number; nextCursor: string | null };
 }
+/** Whole-cohort display evidence without a page, row ordering or roster identities. */
+export type ExpandedReportSummary = Omit<ExpandedInsights, 'players' | 'pagination' | 'rosterMetrics' | 'nameSearch' | 'roster' | 'adminReporting'> & {
+  roster: Omit<ExpandedInsights['roster'], 'matched'>;
+  adminReporting?: Omit<AdminActivityReportData, 'sort' | 'followUp'>;
+};
 export const TESTING_LABELS: Record<string, string> = { fullyTested: "Fully tested", partiallyTested: "Partially tested", noSuccessfulTests: "No successful tests", noRecordedTests: "No recorded tests" };
 export const WORKOUT_LABELS: Record<string, string> = { completed: "Completed a workout", inProgress: "No ending record", endedEarly: "Ended early", abandoned: "Abandoned", none: "No workout status" };
 export const USAGE_LABELS: Record<string, string> = { returning: "Returning", active: "Active on one day", inactive: "No active use", notCollected: "Not collected" };

@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import WorkspaceUsage from "./WorkspaceUsage";
-import { expandedRequest } from "../../insights/lib/expandedQuery";
+import { expandedRequest, shiftDate } from "../../insights/lib/expandedQuery";
 import { previewInsights } from "../../insights/lib/preview";
 const request = { ...expandedRequest("", new Date("2026-11-05T12:00:00Z")), view: "usage" as const };
 describe("admin usage evidence", () => {
@@ -27,4 +27,23 @@ describe("admin usage evidence", () => {
     expect(html).toContain("This range has no measured daily usage");
     expect(html).not.toContain("Estimated active use by category");
   });
+});
+
+
+it("uses admin daily history only for the daily chart and leaves selected-period weekly/category totals intact", () => {
+  const selected = { ...request, startDate: "2026-08-04", endDate: "2026-08-31" };
+  const data = previewInsights(selected);
+  const originalUsage = JSON.stringify(data.usage);
+  const before = renderToStaticMarkup(<WorkspaceUsage data={data} request={selected} onChange={() => {}} />);
+  data.adminReporting = { version: 1, followUp: "all", sort: "name", asOfMillis: data.generatedAtMillis, population: data.roster.filtered,
+    summary: { noSignIn: 0, noActivity: 0, unfinishedAssigned: 0, noCompletion: 0, signInUnknown: 0, usageNotCollected: 0 }, topActivePlayers: [], topWorkoutPlayers: [], teams: [],
+    dailyUsage: { startDate: "2026-07-01", endDate: selected.endDate, timeZone: selected.timezone,
+      days: Array.from({ length: 62 }, (_, index) => ({ date: shiftDate("2026-07-01", index), activeMinutes: index, featureMinutes: { workout: index } })) } };
+  const after = renderToStaticMarkup(<WorkspaceUsage data={data} request={selected} onChange={() => {}} />);
+  expect(after).toContain('<th scope="row">2026-08-01</th><td>31</td>');
+  expect(after).not.toContain("Showing available dates");
+  const weekly = (html: string) => html.slice(html.indexOf("Estimated active use by week"), html.indexOf('class="insights-card daily-usage"'));
+  expect(weekly(after)).toEqual(weekly(before));
+  expect(after.slice(after.indexOf("Estimated active use by category"))).toEqual(before.slice(before.indexOf("Estimated active use by category")));
+  expect(JSON.stringify(data.usage)).toBe(originalUsage);
 });

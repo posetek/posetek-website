@@ -112,6 +112,27 @@ describe("admin directory shared observations", () => {
     await expect(session.organizations().load(unused)).resolves.toEqual([cyclic]);
     expect(session.organizations().peek()).toBeUndefined();
   });
+  it("keeps an expired display snapshot during revalidation without treating it as fresh authority", async () => {
+    const { session, source, advance } = fixture();
+    const handle = session.roster(org()), first = await handle.load(unused);
+    advance(DIRECTORY_FRESHNESS_MS + 1);
+    expect(handle.peek()).toBeUndefined(); expect(handle.snapshot?.()?.data).toBe(first);
+    let finish!: (value: ReturnType<typeof context>) => void;
+    vi.mocked(source.context).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const pending = handle.load(unused);
+    await vi.waitFor(() => expect(source.context).toHaveBeenCalledTimes(2));
+    expect(handle.snapshot?.()?.data).toBe(first); expect(handle.peek()).toBeUndefined();
+    finish(context()); await pending;
+    expect(handle.peek()).toBeDefined();
+    session.fail(new Error("Permission denied")); expect(handle.snapshot?.()).toBeUndefined();
+  });
+  it("does not reuse display snapshots across scope or mutation boundaries", async () => {
+    const { session } = fixture();
+    const handle = session.roster(org()); await handle.load(unused);
+    session.selectOrganization("other"); expect(handle.snapshot?.()).toBeUndefined();
+    session.selectOrganization("club"); const current = session.roster(org()); await current.load(unused);
+    session.clearScopes(); expect(current.snapshot?.()).toBeUndefined();
+  });
   it("does not retain oversized payloads", async () => {
     const { source, session } = fixture(); vi.mocked(source.organizations).mockResolvedValue([{ ...org(), name: "x".repeat(3 * 1024 * 1024) }]);
     await session.organizations().load(unused); expect(session.organizations().peek()).toBeUndefined();

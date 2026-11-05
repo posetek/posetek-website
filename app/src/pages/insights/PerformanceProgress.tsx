@@ -41,7 +41,7 @@ function ProgressMetric({ series, denominator }: { series: QualifiedProgress; de
   </section>;
 }
 
-export default function PerformanceProgress({ data }: { data: ExpandedInsights }) {
+export default function PerformanceProgress({ data }: { data: Pick<ExpandedInsights, "testing" | "period" | "roster"> }) {
   return <section className="insights-card" aria-labelledby="insights-progress-heading"><div className="insights-section-title"><h2 id="insights-progress-heading">Qualified performance by week</h2><span>{data.period.startDate}–{data.period.endDate}</span></div>
     <AboutNumbers><p>Best verified primary result across the full filtered roster each week, using {data.period.timeZone}. The line connects weeks with qualified results across empty weeks; the data table marks weeks with no qualified result. This series always uses the selected period, including partial boundary weeks. Cumulative coverage above can include earlier results. Different players may set each weekly best; this is not a measure of individual improvement.</p></AboutNumbers>
     {data.testing.progress ? data.testing.progress.length ? <div className="insights-metric-grid">{data.testing.progress.map(series => <ProgressMetric key={series.drill} series={series} denominator={data.roster.filtered} />)}</div> : <p className="insights-note">No qualified results in this period.</p> : <p className="insights-note" role="status">Qualified performance is unavailable in this response. Refresh to load the complete report.</p>}

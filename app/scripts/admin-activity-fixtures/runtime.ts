@@ -2,6 +2,7 @@
 // Keep the actual report transport, validation, identity and retry hooks in use.
 import { PREVIEW_CHOICES, previewInsights } from '/src/pages/insights/lib/preview';
 import { expandedRequest } from '/src/pages/insights/lib/expandedQuery';
+import { dailyUsageStart } from '/src/pages/insights/lib/dailyUsage';
 import { requestFromWorkspacePayload } from '/src/pages/admin/lib/workspaceMetricsData';
 
 export const AS_OF = Date.parse('2026-11-03T18:00:00Z');
@@ -119,11 +120,14 @@ function participationMetrics(population, request) {
       weeklyUsers: metric(Math.floor(count * .45), Math.floor(count * .5), 'Distinct active players during matching weekdays.'),
       platformMinutes: metric(count * 3.7, count * 3.2, 'Simultaneous website and iOS time counted once.') } };
 }
+const featureDays = days => days.map((day, index) => ({ ...day, featureMinutes: day.activeMinutes === null ? null : { workout: day.activeMinutes * (index % 7 > 4 ? .5 : .2), training: day.activeMinutes * .15, video: day.activeMinutes * .15, results: day.activeMinutes * .1, overview: day.activeMinutes * (index % 7 > 4 ? .05 : .35), other: day.activeMinutes * .05 } }));
 function report(payload, uid) {
   const request = { ...requestFromWorkspacePayload(payload), orgId: payload.scope.organizationId || '', teamId: payload.scope.teamId || '' };
   // The response echoes the selected search even though aggregate population is
   // intentionally calculated before name filtering.
   const original = previewInsights(request, 0, reportMode === 'empty' ? 'empty' : 'longNames');
+  const historyStart = dailyUsageStart(request.endDate, "2m");
+  const history = previewInsights({ ...request, startDate: historyStart }, 0, reportMode === "empty" ? "empty" : "longNames");
   const cutoff = Math.floor(Math.min(AS_OF, Date.parse(`${request.endDate}T23:59:59Z`)) / 900_000) * 900_000;
   const population = Array.from({ length: 4 }, (_, page) => previewInsights({ ...request, rosterSearch: '' }, page, reportMode === 'empty' ? 'empty' : 'longNames').players).flat()
     .map(row => extended(row, cutoff, uid, payload.includeLastFeatureEvidence === true));
@@ -148,12 +152,13 @@ function report(payload, uid) {
       timerMinutes: total(group, row => row.workouts.timerMinutes), estimatedMinutes: total(group, row => row.workouts.estimatedMinutes), timerRecords: total(group, row => row.workouts.timerRecords), estimatedRecords: total(group, row => row.workouts.estimatedRecords) };
   });
   return { ...original, filters: { ...payload.filters }, generatedAtMillis: AS_OF,
-    usage: { ...original.usage, days: original.usage.days.map((day, index) => ({ ...day, featureMinutes: day.activeMinutes === null ? null : { workout: day.activeMinutes * (index % 7 > 4 ? .5 : .2), training: day.activeMinutes * .15, video: day.activeMinutes * .15, results: day.activeMinutes * .1, overview: day.activeMinutes * (index % 7 > 4 ? .05 : .35), other: day.activeMinutes * .05 } })) },
+    usage: { ...original.usage, days: featureDays(original.usage.days) },
     ...(payload.includeTestingAnalytics && reportMode !== 'missing-extension' ? { adminTesting: testingAnalytics(population, request) } : {}),
     players: rows.slice(offset, offset + pageSize), pagination: { total: rows.length, pageSize, nextCursor: offset + pageSize < rows.length ? `fixture-page-${offset + pageSize}` : null },
     ...(payload.rosterPlayerIds ? { rosterMetrics: payload.rosterPlayerIds.map(playerId => { const player = population.find(row => row.id === playerId); return player ? { playerId, status: 'included', player } : { playerId, status: 'excluded' }; }) } : {}),
     ...(payload.adminReporting && reportMode !== 'missing-extension' ? { adminReporting: { version: 1, followUp, sort, asOfMillis: AS_OF, population: population.length,
       metricsV2: participationMetrics(population, request),
+      dailyUsage: { startDate: historyStart, endDate: request.endDate, timeZone: request.timezone, days: featureDays(history.usage.days) },
       summary: { noSignIn: population.filter(row => matchFollowUp(row, 'noSignIn')).length, noActivity: population.filter(row => matchFollowUp(row, 'noActivity')).length,
         unfinishedAssigned: population.filter(row => matchFollowUp(row, 'unfinishedAssigned')).length, noCompletion: population.filter(row => matchFollowUp(row, 'noCompletion')).length,
         signInUnknown: population.filter(row => row.adminReporting.signIn.status === 'unknown').length, usageNotCollected: population.filter(row => !row.usage.collected).length },
