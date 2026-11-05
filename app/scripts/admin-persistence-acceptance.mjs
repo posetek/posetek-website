@@ -23,12 +23,21 @@ async function ready(page) {
     if (selected === 'directory-tab-staff') return document.body.textContent.includes(new URLSearchParams(location.search).has('orgId') ? 'No staff have activated access yet.' : 'No coaches in this selection.');
     if (selected === 'directory-tab-teams') return !!document.querySelector('.directory-management-table');
     if (selected === 'directory-tab-settings') return !!document.querySelector('.directory-settings');
-    return !!document.querySelector('.workspace-scope-coverage') && !document.querySelector('.admin-activity-report[aria-busy="true"]') && ![...document.querySelectorAll('[role="status"]')].some(node => /Loading activity reporting|Updating activity|Preparing .*report/.test(node.textContent || ''));
+    return !!document.querySelector('.admin-activity-report, .workspace-testing, .activity-team-comparison, .directory-player-table') && !document.querySelector('.admin-activity-report[aria-busy="true"]') && ![...document.querySelectorAll('[role="status"]')].some(node => /Loading activity reporting|Loading player details|Updating organization and teams|Updating activity|Preparing .*report/.test(node.textContent || ''));
   });
   await frames(page);
 }
-async function directory(page, name) { await page.getByRole('tab', { name, exact: true }).click(); await ready(page); }
-async function view(page, name) { await page.getByRole('tablist', { name: 'Directory and reporting views' }).getByRole('tab', { name, exact: true }).click(); await ready(page); }
+async function directory(page, name) {
+  await page.getByRole('tab', { name, exact: true }).click();
+  await page.getByRole('tab', { name, exact: true, selected: true }).waitFor();
+  await ready(page);
+}
+async function view(page, name) {
+  const tabs = page.getByRole('tablist', { name: 'Directory and reporting views' });
+  await tabs.getByRole('tab', { name, exact: true }).click();
+  await tabs.getByRole('tab', { name, exact: true, selected: true }).waitFor();
+  await ready(page);
+}
 async function watch(page, includeReports = true) { await page.evaluate(include => window.__adminPersistence.observeLoading(include), includeReports); }
 async function visibleError(page, message) {
   const error = page.getByText(message, { exact: true });
@@ -55,9 +64,42 @@ async function check(browser, engine, width, name, run, options = {}) {
     evidence.results.push({ title, passed: true, requests: await log(page), network }); console.log('PASS ' + title);
   } catch (error) {
     await page.screenshot({ path: resolve(artifacts, title.replaceAll(' ', '-') + '-failed.png') }).catch(() => {});
-    evidence.results.push({ title, passed: false, error: String(error.stack || error), requests: await log(page).catch(() => []), errors, network }); console.error('FAIL ' + title + ': ' + error.message);
+    evidence.results.push({ title, passed: false, error: String(error.stack || error), loadingTrace: await page.evaluate(() => window.__adminPersistence.loadingTrace || []).catch(() => []), requests: await log(page).catch(() => []), errors, network }); console.error('FAIL ' + title + ': ' + error.message);
   } finally { await context.close(); await writeFile(resolve(artifacts, 'acceptance.json'), JSON.stringify(evidence, null, 2) + '\n'); }
 }
+// Summary continuity is separate from exact player-detail readiness. These
+// helpers deliberately never call ready() while a source response is held.
+const playerRows = page => page.locator('table.activity-table').filter({ has: page.locator('caption', { hasText: 'Player activity in this reporting scope' }) }).locator('tbody tr');
+const summaryMeasurements = page => page.locator('.activity-summary .activity-stat > dd:first-of-type, .workspace-testing-summary .insights-tile-value strong');
+async function summaryVisible(page, name) {
+  const selector = name === 'Testing' ? '.workspace-testing-summary' : name === 'Workouts' ? '.admin-activity-report > .activity-summary' : '[aria-label="Participation and usage summary"] .activity-summary';
+  const cards = page.locator(selector);
+  await cards.waitFor();
+  const values = await cards.locator(name === 'Testing' ? '.insights-tile-value strong' : '.activity-stat > dd:first-of-type').allTextContents();
+  assert.equal(values.length, name === 'Workouts' ? 3 : 6, `${name} keeps its complete high-level card row.`);
+  assert.ok(values.slice(0, name === 'Testing' ? 4 : values.length).every(value => /\d/.test(value)), `${name} retains measured aggregate values, not placeholder-only cards: ${JSON.stringify(values)}`);
+  return values;
+}
+async function noPlayerDetails(page) {
+  await frames(page);
+  assert.equal(await playerRows(page).count(), 0, 'A previous payload must never stand in for the newly selected player rows.');
+  assert.equal(await page.locator('.activity-pagination').count(), 0, 'Player pagination must wait for the exact selected response.');
+}
+async function summaryCleared(page) {
+  await frames(page);
+  const values = await summaryMeasurements(page).allTextContents();
+  assert.ok(values.every(value => !/\d/.test(value)), `Invalidated cohort/account must not retain numeric summaries: ${JSON.stringify(values)}`);
+  await noPlayerDetails(page);
+}
+async function holdView(page, name) {
+  await page.evaluate(() => window.__adminActivity.holdNextReport());
+  const tabs = page.getByRole('tablist', { name: 'Directory and reporting views' });
+  await tabs.getByRole('tab', { name, exact: true }).click();
+  await page.waitForFunction(() => window.__adminActivity.pending.length === 1);
+  await frames(page);
+}
+async function releaseReport(page) { await page.evaluate(() => window.__adminActivity.releaseReports()); await ready(page); }
+
 for (const [engine, driver] of [['chromium', chromium], ['webkit', webkit]]) {
   if (process.env.ADMIN_PERSISTENCE_ENGINE && process.env.ADMIN_PERSISTENCE_ENGINE !== engine) continue;
   const browser = await driver.launch();
@@ -97,6 +139,7 @@ for (const [engine, driver] of [['chromium', chromium], ['webkit', webkit]]) {
       const reports = (await log(page)).filter(row => row.kind === 'getClubInsightsV2');
       assert.equal(new Set(reports.map(row => JSON.stringify(row.input))).size, reports.length, 'Every distinct request payload is fetched only once.');
       assert.equal(reports.filter(row => row.input.includeLastFeatureEvidence).length, 1, 'Only initial Usage obtains feature detail.');
+      assert.equal(reports.filter(row => row.input.includeTestingAnalytics).length, 1, 'Only initial Testing obtains station analytics; its exact variant is retained.');
     });
 
     await check(browser, engine, width, 'expiry and explicit refresh obtain new observations', async page => {
@@ -188,7 +231,9 @@ for (const [engine, driver] of [['chromium', chromium], ['webkit', webkit]]) {
       assert.deepEqual(await counts(page), deniedReads, 'Known denial does not trigger automatic retries on tab navigation.');
       await page.evaluate(() => window.__adminActivity.setReportMode('normal'));
       await page.getByRole('button', { name: 'Refresh organizations', exact: true }).click(); await ready(page);
-      assert.ok(await page.locator('.workspace-scope-coverage').count(), 'Explicit refresh restores the current authorized read after the synthetic denial is removed.');
+      assert.ok(await page.locator('.admin-activity-report').count(), 'Explicit refresh restores the current authorized report after the synthetic denial is removed.');
+      assert.match(await page.getByText(/^Report checked /).innerText(), /^Report checked .+/, 'The restored report includes its observation timestamp.');
+      assert.equal(await page.getByText('Synthetic admin access changed.', { exact: true }).count(), 0, 'The previous denial is cleared after an authorized refresh.');
       await page.evaluate(() => { window.__adminActivity.setReportMode('normal'); window.__adminPersistence.setDirectoryMode('denied'); });
       await page.evaluate(() => window.__adminPersistence.invalidate());
       await visibleError(page, 'Synthetic directory permission denied.'); await frames(page);
@@ -220,6 +265,99 @@ for (const [engine, driver] of [['chromium', chromium], ['webkit', webkit]]) {
       await page.evaluate(() => window.__adminActivity.setAccount(null)); await page.getByRole('heading', { name: 'Synthetic signed-out state' }).waitFor();
       await page.evaluate(() => window.__adminActivity.setAccount('synthetic-admin-one')); await ready(page);
       assert.equal(await page.getByText(/Second account/).count(), 0, 'No previous account content remains.');
+    });
+
+    await check(browser, engine, width, 'continuity held first visits retain totals without stale player details', async page => {
+      await page.goto(origin + base); await ready(page);
+      assert.ok(await playerRows(page).count() > 0, 'The starting Overview has actual player rows to fence.');
+      for (const name of ['Testing', 'Workouts', 'Usage']) {
+        if (name !== 'Testing') await view(page, 'Overview');
+        await holdView(page, name);
+        await summaryVisible(page, name); await noPlayerDetails(page);
+        await page.getByRole('status').filter({ hasText: 'Updating activity… Showing the last successful report.' }).waitFor();
+        if (name === 'Testing') {
+          const pending = await page.locator('.workspace-testing').innerText();
+          assert.match(pending, /Loading/i, 'Testing-only analytics are loading on their first request.');
+          assert.doesNotMatch(pending, /Results by age are unavailable|Station timing is unavailable|Previous week: Unavailable/, 'An in-flight first Testing request is not unavailable evidence.');
+          assert.equal(await page.locator('.workspace-testing-chart circle').count(), 0, 'No unrequested age analytics are fabricated.');
+        } else await page.getByRole('status').filter({ hasText: 'Loading player details…' }).waitFor();
+        await releaseReport(page); await summaryVisible(page, name);
+        if (name === 'Testing') assert.ok(await page.locator('.workspace-testing-chart circle').count() > 0);
+        else assert.ok(await playerRows(page).count() > 0, 'Rows arrive only after the exact selected response resolves.');
+      }
+    });
+
+    await check(browser, engine, width, 'continuity held expired report return keeps only same-cohort summaries', async page => {
+      await page.goto(origin + base); await ready(page); await view(page, 'Workouts');
+      const values = await summaryVisible(page, 'Workouts');
+      await view(page, 'Testing');
+      await page.clock.setSystemTime((await page.evaluate(() => Date.now())) + 60_001);
+      await holdView(page, 'Workouts');
+      assert.deepEqual(await summaryVisible(page, 'Workouts'), values, 'Expired detail does not erase the last observed same-cohort totals.');
+      await noPlayerDetails(page);
+      await page.getByRole('status').filter({ hasText: 'Loading player details…' }).waitFor();
+      await releaseReport(page); assert.ok(await playerRows(page).count() > 0);
+    });
+
+    await check(browser, engine, width, 'continuity held directory expiry restores summary shell without management access', async page => {
+      await page.goto(origin + base); await ready(page);
+      const values = await summaryVisible(page, 'Overview');
+      await directory(page, 'Staff');
+      await page.clock.setSystemTime((await page.evaluate(() => Date.now())) + 60_001);
+      await page.evaluate(() => { window.__adminPersistence.holdNextDirectory('context'); window.__adminActivity.holdNextReport(); });
+      await page.getByRole('tab', { name: 'Players', exact: true }).click();
+      await page.waitForFunction(() => window.__adminPersistence.pending.length === 1);
+      assert.deepEqual(await summaryVisible(page, 'Overview'), values);
+      await noPlayerDetails(page);
+      assert.equal(await page.locator('.directory-settings, .directory-management-table, .directory-player-table, .directory-player-tools, .directory-form').count(), 0, 'Expired authorization context does not retain management or account roster controls.');
+      await page.evaluate(() => window.__adminPersistence.releaseDirectory());
+      await page.waitForFunction(() => window.__adminActivity.pending.length === 1);
+      await summaryVisible(page, 'Overview'); await noPlayerDetails(page);
+      await releaseReport(page); assert.ok(await playerRows(page).count() > 0);
+    });
+
+    await check(browser, engine, width, 'continuity transient failure keeps aggregate evidence and clears detail rows', async page => {
+      await page.goto(origin + base); await ready(page);
+      const values = await summaryVisible(page, 'Overview');
+      await page.evaluate(() => window.__adminActivity.setReportMode('error'));
+      // A failed first Usage request has no exact Usage rows to preserve. This
+      // is distinct from a same-payload refresh retaining explicitly stale rows.
+      await page.getByRole('tablist', { name: 'Directory and reporting views' }).getByRole('tab', { name: 'Usage', exact: true }).click();
+      await page.getByText('Refresh failed. These figures are from the last successful report. Refresh reporting to retry.', { exact: true }).waitFor();
+      assert.deepEqual(await summaryVisible(page, 'Usage'), values);
+      await noPlayerDetails(page);
+      await page.evaluate(() => window.__adminActivity.setReportMode('normal'));
+      await page.getByRole('button', { name: 'Refresh reporting', exact: true }).click(); await ready(page);
+      assert.ok(await playerRows(page).count() > 0);
+    });
+
+    await check(browser, engine, width, 'continuity scope date and filter changes invalidate old summaries', async page => {
+      await page.goto(origin + base); await ready(page);
+      for (const next of [base.replace('orgId=northfield', 'orgId=riverside'), base.replace('reportStart=2026-10-07', 'reportStart=2026-10-14'), base + '&reportDivision=girls']) {
+        await page.evaluate(() => window.__adminActivity.holdNextReport());
+        await page.evaluate(path => window.__adminPersistence.navigate(path), next);
+        await page.waitForFunction(() => window.__adminActivity.pending.length === 1);
+        await summaryCleared(page);
+        await releaseReport(page); await summaryVisible(page, 'Overview');
+        // Return to a settled reference before checking a different boundary.
+        await navigate(page, base); await summaryVisible(page, 'Overview');
+      }
+    });
+
+    await check(browser, engine, width, 'continuity auth lifecycle and permission failure erase summary evidence', async page => {
+      await page.goto(origin + base); await ready(page); await summaryVisible(page, 'Overview');
+      await page.evaluate(() => { window.__adminActivity.holdNextReport(); window.__adminActivity.setAccount('synthetic-admin-two'); });
+      await page.waitForFunction(() => window.__adminActivity.pending.length === 1);
+      await summaryCleared(page);
+      await releaseReport(page); await summaryVisible(page, 'Overview');
+      await page.evaluate(() => window.__adminActivity.setAccount(null));
+      await page.getByRole('heading', { name: 'Synthetic signed-out state' }).waitFor(); await summaryCleared(page);
+      await page.evaluate(() => { window.__adminActivity.holdNextReport(); window.__adminActivity.setAccount('synthetic-admin-two'); });
+      await page.waitForFunction(() => window.__adminActivity.pending.length === 1);
+      await summaryCleared(page); await releaseReport(page);
+      await page.evaluate(() => window.__adminActivity.setReportMode('denied'));
+      await page.getByRole('button', { name: 'Refresh reporting', exact: true }).click();
+      await visibleError(page, 'Synthetic admin access changed.'); await summaryCleared(page);
     });
   } } finally { await browser.close(); }
 }

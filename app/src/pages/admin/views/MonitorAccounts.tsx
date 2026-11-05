@@ -102,8 +102,9 @@ export function DirectoryTabs({ active, onChange }: { active: AdminDirectoryStat
 
 function OrganizationPlayers({ org, organizations, state, choose, navigateScope, source }: { org: OrganizationRow; organizations: OrganizationRow[]; state: AdminDirectoryState; choose: ChooseDirectory; navigateScope: ChooseDirectory; source: DirectorySource }) {
   const loader = useCallback(() => source.roster(org), [org, source]);
-  const { state: loaded, refresh } = useAccountLoad(loader, directorySession(source).roster(org));
-  const roster = loaded.kind === "ready" ? loaded.data : null;
+  const { state: loaded, previousData, refresh } = useAccountLoad(loader, directorySession(source).roster(org));
+  const directoryReady = loaded.kind === "ready";
+  const roster = loaded.kind === "ready" ? loaded.data : loaded.kind === "loading" ? previousData : null;
   const identityScope = roster ? organizationPeopleScope(org, roster, state) : null;
   const team = identityScope?.team;
   const teamValid = identityScope?.valid ?? !state.teamId;
@@ -115,10 +116,10 @@ function OrganizationPlayers({ org, organizations, state, choose, navigateScope,
   const navigator = <DirectoryNavigator organizations={organizations} state={state} choose={navigateScope} context={roster?.context} pending={loaded.kind === "loading"} />;
   return <DirectoryFrame navigator={navigator} state={state}>
     {(!roster || !teamValid) && <div className="directory-scope-title"><h2>{teamValid && team ? team.name : org.name}</h2>{org.schemaVersion !== 2 && <span className="admin-chip">Legacy</span>}</div>}
-    {loaded.kind === "loading" && <p role="status">Loading organization and teams…</p>}
+    {loaded.kind === "loading" && <p role="status">{roster ? "Updating organization and teams…" : "Loading organization and teams…"}</p>}
     {loaded.kind === "error" && <LoadError message={loaded.message} retry={refresh} />}
     {roster && !teamValid && <section className="directory-invalid-team" role="alert"><h2>Team unavailable</h2><p>This team is no longer available in {org.name}. No team reporting or people are shown.</p><button type="button" className="quiet-button" onClick={() => navigateScope({ teamId: undefined, directoryLevel: "teams" })}>Back to organization</button></section>}
-    {roster && teamValid && <>{roster.notices.map(message => <p className="admin-note" role="status" key={message}>{message}</p>)}<PlayerReporting state={state} choose={choose} scope={scope} accountRows={people ? rows : undefined} roster={roster} accountCount={selectedRows.length} enabled legacy={org.schemaVersion !== 2} scopeLabel={identityScope?.label || org.name} showPeople={people}
+    {roster && teamValid && <>{roster.notices.map(message => <p className="admin-note" role="status" key={message}>{message}</p>)}<PlayerReporting state={state} choose={choose} scope={scope} accountRows={people ? rows : undefined} roster={roster} accountCount={selectedRows.length} enabled directoryReady={directoryReady} legacy={org.schemaVersion !== 2} scopeLabel={identityScope?.label || org.name} showPeople={people}
     afterGraphs={!people ? metrics => <TeamDirectory organization={org} context={roster.context} players={roster.players} choose={navigateScope} metrics={metrics} state={state} /> : undefined}
     scopeControl={<><button type="button" className="directory-text-button" onClick={() => navigateScope({ orgId: undefined, teamId: undefined, directoryLevel: "organizations" })}>Organizations</button><span aria-hidden="true">/</span>{people ? <button type="button" className="directory-text-button" onClick={() => navigateScope({ teamId: undefined, directoryLevel: "teams" })}>{org.name}</button> : <span aria-current="page">{org.name}</span>}{team && <><span aria-hidden="true">/</span><span aria-current="page">{team.name}</span></>}</>}
     toolbar={<div className="directory-toolbar"><label className="directory-search"><span>Find a player in this organization</span><input type="search" value={state.search} placeholder="Name or email" onChange={event => choose({ search: event.target.value, page: 1, reportMode: "directory" }, true)} /></label>
@@ -185,18 +186,21 @@ function PlayerLookup({ source, state, choose, navigateScope, canonicalOrganizat
 }
 
 /** One reporting reader and one roster per scope; history never substitutes for current account ownership. */
-export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds, accountRows, roster, accountCount, enabled, legacy = false, scopeLabel, scopeControl, toolbar, beforeRoster, afterRoster, afterGraphs, showPeople }: {
-  state: AdminDirectoryState; choose: ChooseDirectory; scope: InsightScope | null; canonicalOrganizationIds?: string[]; accountRows?: PlayerRow[]; roster?: DirectoryRoster; accountCount?: number; enabled: boolean; legacy?: boolean; scopeLabel: string; scopeControl?: ReactNode; toolbar: ReactNode; beforeRoster?: ReactNode; afterRoster?: ReactNode; afterGraphs?: ReactNode | ((metrics: WorkspaceMetricState) => ReactNode); showPeople: boolean;
+export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds, accountRows, roster, accountCount, enabled, directoryReady = true, legacy = false, scopeLabel, scopeControl, toolbar, beforeRoster, afterRoster, afterGraphs, showPeople }: {
+  state: AdminDirectoryState; choose: ChooseDirectory; scope: InsightScope | null; canonicalOrganizationIds?: string[]; accountRows?: PlayerRow[]; roster?: DirectoryRoster; accountCount?: number; enabled: boolean; directoryReady?: boolean; legacy?: boolean; scopeLabel: string; scopeControl?: ReactNode; toolbar: ReactNode; beforeRoster?: ReactNode; afterRoster?: ReactNode; afterGraphs?: ReactNode | ((metrics: WorkspaceMetricState) => ReactNode); showPeople: boolean;
 }) {
   const attention = state.reportMode === "attention", request = workspaceReportRequest(state);
   const view = state.reportView || "overview", pane = directoryWorkspacePaneOf(state);
   const activityView = pane === "report" && view !== "testing";
   const visible = directoryPage(accountRows || [], state.page).rows;
   const playerIds = pane === "report" || !showPeople || attention ? undefined : supportedWorkspacePlayerIds(visible, scope, canonicalOrganizationIds);
-  const metrics = useWorkspaceMetrics({ retain: true, scope, search: workspaceReportSearch(state), playerIds, enabled,
-    adminReporting: !legacy && (activityView || !showPeople && Boolean(state.orgId)),
-    includeLastFeatureEvidence: !legacy && pane === "report" && view === "usage" });
+  const metrics = useWorkspaceMetrics({ retain: true, scope, search: workspaceReportSearch(state), playerIds, enabled, readEnabled: directoryReady,
+    adminReporting: !legacy && (pane === "report" || !showPeople && Boolean(state.orgId)),
+    includeLastFeatureEvidence: !legacy && pane === "report" && view === "usage",
+    includeTestingAnalytics: !legacy && pane === "report" && view === "testing" });
   const report = metrics.data;
+  const displayReport = report || metrics.summaryData;
+  const detailsPending = !report && !metrics.error;
   const focusReview = useRef(false);
   const focusActivity = useRef(false);
   const update = (patch: Partial<ExpandedRequest>) => {
@@ -243,38 +247,40 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
   const filters = <DirectoryFilters summary="Changes apply to this reporting scope. Name/email lookup remains separate from reporting filters.">
         <WorkspaceReportControls request={request} disabled={legacy} onChange={update} />
         {!legacy && <DirectoryPlayerFilters request={request} onChange={update} />}
-        {report && <div className="pt-insights"><PlayerFilters data={report} request={request} onChange={update} /></div>}
+        {displayReport && <div className="pt-insights"><PlayerFilters data={displayReport} request={request} onChange={update} /></div>}
       </DirectoryFilters>;
   return <>
-    <WorkspaceScopeHeader {...metricState} accountCount={accountCount} accountScopeIsSubset={state.directoryLookup === "unassigned"} scopeLabel={scopeLabel} request={request} breadcrumb={scopeControl}>
+    <WorkspaceScopeHeader {...metricState} data={displayReport} accountCount={accountCount} accountScopeIsSubset={state.directoryLookup === "unassigned"} scopeLabel={scopeLabel} request={request} breadcrumb={scopeControl}>
       <DirectoryWorkspaceTabs active={activeView} listLabel={showPeople ? "People" : state.orgId ? "Teams" : "Organizations"} onChange={selected => choose({ reportCursor: undefined, reportPage: undefined, reportAdminSort: undefined, reportAdminFollowUp: undefined,
         ...(selected === "list" ? { directoryPane: "list" as const } : { directoryPane: "report" as const, reportView: selected, reportMode: "directory" as const }) })} />
     </WorkspaceScopeHeader>
-    <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : <p className="directory-period-summary">{request.startDate} – {request.endDate} · {request.timezone.replaceAll("_", " ")}</p>}</div>
+    <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : null}</div>
       {filters}
       {pane === "report" && !legacy && <button type="button" className="quiet-button" disabled={metrics.loading || metrics.refreshing} onClick={() => { metrics.refresh(); refreshQueue(); }}>Refresh reporting</button>}
     </div>
-    {report && hasPlayerFilters(request) && <div className="pt-insights directory-active-filters"><PlayerFilters data={report} request={request} onChange={update} /></div>}
-    {pane === "report" && metrics.data && <p className="admin-note">Report checked {new Date(metrics.data.generatedAtMillis).toLocaleString('en-US', { timeZone: request.timezone, dateStyle: 'medium', timeStyle: 'short' })} · {request.timezone}.</p>}
-    {metrics.refreshing && metrics.data && <p role="status" className="admin-note">Updating activity… Showing the last successful report.</p>}
-    {metrics.stale && <p role="alert" className="form-message">Refresh failed. These figures are from the last successful report. Refresh reporting to retry.</p>}
+    {displayReport && hasPlayerFilters(request) && <div className="pt-insights directory-active-filters"><PlayerFilters data={displayReport} request={request} onChange={update} /></div>}
+    {pane === "report" && displayReport && <p className="admin-note">Report checked {new Date(displayReport.generatedAtMillis).toLocaleString('en-US', { timeZone: request.timezone, dateStyle: 'medium', timeStyle: 'short' })} · {request.timezone}.</p>}
+    {metrics.refreshing && displayReport && <p role="status" className="admin-note">Updating activity… Showing the last successful report.</p>}
+    {(metrics.stale || !report && metrics.summaryStale && metrics.error) && <p role="alert" className="form-message">Refresh failed. These figures are from the last successful report. Refresh reporting to retry.</p>}
     {pane === "report" && (!activityView || !report?.adminReporting) && <details className="workspace-report-method"><summary>How this is measured</summary><p className="admin-note">Name search and pages change the displayed people, not the complete organization/team totals or rankings. Follow-up lists are separate from reporting cohort filters.</p>
     <p className="admin-note">Testing coverage is {request.testingWindow === "cumulative" ? "cumulative through the selected end date" : "limited to the selected period"}. Workouts and estimated use cover {request.startDate} through {request.endDate}, in {request.timezone.replaceAll("_", " ")}. Reporting follows current membership; excluded history and uncollected use remain distinct from zero.</p></details>}
     {legacy && <p className="admin-note" role="status">Activity reporting is unavailable for this legacy organization. Its accounts and signup controls remain available below.</p>}
-      {metrics.loading && <p role="status">{metrics.rebuilding ? "Preparing the latest complete activity report…" : "Loading activity reporting…"}</p>}
+      {metrics.loading && !displayReport && <p role="status">{metrics.rebuilding ? "Preparing the latest complete activity report…" : "Loading activity reporting…"}</p>}
       {metrics.error && <LoadError message={metrics.error} retry={() => { metrics.refresh(); refreshQueue(); }} />}
     {pane === "report" && <section id={`workspace-report-panel-${view}`} role="tabpanel" aria-labelledby={`workspace-report-tab-${view}`}>
-      {report && activityView && <AdminActivityReport data={report} request={request} view={view as "overview" | "workouts" | "usage"} busy={metrics.refreshing}
+      {displayReport && activityView && <AdminActivityReport data={displayReport} detailsPending={detailsPending} request={request} view={view as "overview" | "workouts" | "usage"} busy={metrics.refreshing}
         onChange={update} onExplore={patch => { focusActivity.current = true; update(patch); }} onFirstPage={firstPage} onNextPage={nextPage}
         playerLink={(id, panel) => adminPlayerPath(id, panel, state)}
-        teamLink={(orgId, teamId) => adminDirectoryPath(selectDirectoryScope(state, { orgId, teamId: teamId || undefined, directoryLevel: "people", directoryLookup: teamId ? undefined : "unassigned" }))} />}
-      {report && view === "overview" && <WorkspaceAttention data={report} onChange={update} />}
-      <div id="directory-report-graphs" tabIndex={-1} role="region" aria-label="Report graphs">
-        {report && <WorkspaceReportDetails data={report} request={request} onChange={update} showPlayers={view === "testing" || !report.adminReporting}
-          hideSummary={activityView && Boolean(report.adminReporting)} onFirstPage={firstPage} onNextPage={nextPage} playerLink={player => adminPlayerPath(player.id, "results", state)} />}
-      </div>
+        teamLink={(orgId, teamId) => adminDirectoryPath(selectDirectoryScope(state, { orgId, teamId: teamId || undefined, directoryLevel: "people", directoryLookup: teamId ? undefined : "unassigned" }))}>
+        <div id="directory-report-graphs" tabIndex={-1} role="region" aria-label="Report graphs"><WorkspaceReportDetails data={displayReport} request={request} onChange={update} hideSummary detailsPending={detailsPending} /></div>
+      </AdminActivityReport>}
+      {displayReport && view === "overview" && <WorkspaceAttention data={displayReport} onChange={update} />}
+      {(!activityView || !displayReport) && <div id="directory-report-graphs" tabIndex={-1} role="region" aria-label="Report graphs">
+        {displayReport && <WorkspaceReportDetails data={displayReport} detailsPending={detailsPending} request={request} onChange={update} showPlayers={false}
+          hideSummary={activityView && Boolean(displayReport.adminReporting)} onFirstPage={firstPage} onNextPage={nextPage} playerLink={player => adminPlayerPath(player.id, "results", state)} />}
+      </div>}
     </section>}
-    {pane === "list" && <section id="workspace-report-panel-list" role="tabpanel" aria-labelledby="workspace-report-tab-list">
+    {pane === "list" && directoryReady && <section id="workspace-report-panel-list" role="tabpanel" aria-labelledby="workspace-report-tab-list">
       {typeof afterGraphs === "function" ? afterGraphs(metricState) : afterGraphs}
       {showPeople && <>
       {attention && <><h3 id="workspace-review-heading" tabIndex={-1} className="workspace-roster-heading">{view[0].toUpperCase() + view.slice(1)} player review</h3><div className="workspace-queue-toolbar"><label className="directory-search"><span>Find in reporting queue · names only</span><input type="search" value={state.reportSearch || ""} placeholder="Player name" onChange={event => update({ rosterSearch: event.target.value })} /></label><button className="quiet-button" onClick={() => choose({ ...withWorkspaceReport(state, { ...clearPlayerFilters(), rosterSearch: "", cursor: "", page: 0 }), reportMode: "directory", directoryPane: "list" })}>Back to account roster</button></div>{report && <p className="directory-result-count">{report.pagination.total} matching {report.pagination.total === 1 ? "player" : "players"} in this reporting queue{request.rosterSearch ? " · name search applied" : ""}</p>}</>}
