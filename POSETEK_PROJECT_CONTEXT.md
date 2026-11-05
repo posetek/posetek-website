@@ -1,5 +1,13 @@
 # PoseTek website project context
 
+## Admin rep tracking playback — source fix, November 5, 2026
+
+Rep Tools loads and displays saved tracking from the exact recording folder,
+with frame playback and clear video-unavailable/metadata-only states. Viewing
+tracking does not change measurements or annotations. This source is not a
+production release and does not recover original camera images. See the
+[behavior and validation handoff](docs/features/ADMIN_REP_TRACKING_PLAYBACK.md).
+
 ## Admin reporting refresh release — November 5, 2026
 
 Deployment `6aecbf94751cf215f811865f` was published at
