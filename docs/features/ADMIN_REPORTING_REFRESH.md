@@ -213,3 +213,5 @@ and their local explanatory disclosures are removed; the underlying reporting
 records and shared coach views are unchanged.
 
 Daily usage review refinement: the daily chart uses connected points, one line per category and one point per collected day. Total mode uses a single line. Missing collection stays a gap; the range controls, daily values and accessible data table are unchanged.
+
+The requested workout lifecycle breakdown is a separate follow-up: [Workout reporting funnel handoff](WORKOUT_REPORTING_FUNNEL_HANDOFF.md). Its new ingestion and UI are excluded from this refresh release.
