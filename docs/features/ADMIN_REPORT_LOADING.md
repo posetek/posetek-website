@@ -1,15 +1,23 @@
 # Admin directory and reporting loading review
 
-Reviewed November 4, 2026; client persistence updated November 5. Source candidate only; no publication or database mutation.
+Reviewed November 4, 2026; client persistence updated November 5. Source candidate only; hosted qualification uses owned synthetic fixtures.
 
 ## Requested directory behavior
 
 People & organizations offers only numeric `schemaVersion: 2` organizations.
-The directory requests that predicate in Firestore, before downloading documents,
-and filters its selectable rows defensively. An old URL naming a legacy
+The directory requests an inclusive numeric point range in Firestore
+(`schemaVersion >= 2` and `schemaVersion <= 2`), then checks the raw returned
+value is exactly numeric `2` before mapping it or offering a choice. An old URL naming a legacy
 organization shows the existing unavailable-organization message and does not
-mount its roster or management view. The same query shape already exists in
-Backend's `getClubContext`.
+mount its roster or management view.
+
+During hosted qualification, the equality query returned HTTP 500 `INTERNAL`
+for the synthetic administrator's client token while the operator query succeeded.
+The point range passed repeated server-only reads through the actual Chromium
+and WebKit SDKs, returning the same six numeric-version-2 organizations and
+excluding the owned legacy fixture. This records a verified client-query
+compatibility workaround; the backend cause is not established. Failed reads
+still surface the existing error and retry state, without an unfiltered fallback.
 
 Other tools that deliberately support legacy organization workflows retain the
 unfiltered `loadOrganizations()` default. No organization, player or membership
@@ -141,8 +149,9 @@ its small scoped feature-evidence checks.
 
 ## Current request path
 
-1. Directory choices download organization documents. This patch restricts that
-   query to the current format.
+1. Directory choices download current-format organization documents through the
+   qualified inclusive numeric point range, then enforce raw numeric version `2`
+   before mapping. Default legacy-aware callers retain the existing unfiltered read.
 2. Selecting an organization calls `getClubContext`, which reads its teams,
    players, staff and invitations. `loadClubAccountData` then separately downloads
    that organization's player profiles (bounded at 2,000) to build the directory.
