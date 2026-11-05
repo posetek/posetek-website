@@ -1,6 +1,6 @@
-import { loadClubAccountData, loadCoaches, loadOrganizations, loadPlayerIndex, loadTeams } from "./accounts";
+import { loadClubAccountData, loadOrganizationPlayers, loadCoaches, loadOrganizations, loadPlayerIndex, loadTeams } from "./accounts";
 import type { CoachRow, OrganizationRow, PlayerRow, TeamRow } from "./accounts";
-import { hasClubIdentity } from "./accountHierarchy";
+import { buildClubHierarchy, hasClubIdentity } from "./accountHierarchy";
 import type { ClubContext } from "../../../lib/organization-data";
 import { getClubContext } from "../../../lib/organization-data";
 import { adminDirectoryPath, directoryQuery } from "./adminNavigation";
@@ -15,9 +15,13 @@ export interface DirectoryRoster {
 }
 
 /** A selected roster never depends on the incomplete global lookup index. */
-export async function loadDirectoryRoster(organization: OrganizationRow): Promise<DirectoryRoster> {
+export async function loadDirectoryRoster(organization: OrganizationRow, sharedContext?: ClubContext): Promise<DirectoryRoster> {
   if (organization.schemaVersion === 2) {
-    const { context, hierarchy } = await loadClubAccountData(organization.id);
+    const { context, hierarchy } = sharedContext ? await (async () => {
+      if (sharedContext.role !== "admin" || sharedContext.organization?.id !== organization.id) throw new Error("PoseTek admin access to this organization is required.");
+      const roster = await loadOrganizationPlayers(organization.id);
+      return { context: sharedContext, hierarchy: buildClubHierarchy(sharedContext, roster.players, roster.truncated) };
+    })() : await loadClubAccountData(organization.id);
     return { players: hierarchy.players, context, notices: hierarchy.limits };
   }
   const roster = await legacyOrganizationPlayers(organization, [organization]);
@@ -60,7 +64,7 @@ export function directoryCoachPath(coachId: string, state: AdminDirectoryState) 
 }
 
 export const directorySource = {
-  organizations: loadOrganizations,
+  organizations: () => loadOrganizations({ currentOnly: true }),
   roster: loadDirectoryRoster,
   context: loadDirectoryContext,
   coaches: loadCoaches,

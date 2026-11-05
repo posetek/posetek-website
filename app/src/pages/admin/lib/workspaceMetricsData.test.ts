@@ -116,3 +116,118 @@ describe("shared workspace reporting", () => {
     await expect(createWorkspaceMetricsTransport(async () => data).load("admin", payload(), () => true)).rejects.toMatchObject({ code: "permission-denied" });
   });
 });
+
+describe('opt-in short-lived admin workspace observations', () => {
+  const retained = { retain: true };
+  it('reuses completed exact requests without changing original observation/check times', async () => {
+    let clock = 1000;
+    const expected = report(), read = vi.fn().mockResolvedValue(expected);
+    const transport = createWorkspaceMetricsTransport(read, () => clock);
+    await transport.load('admin', payload(), () => true, undefined, undefined, retained);
+    clock += 59_999;
+    expect(await transport.load('admin', payload(), () => true, undefined, undefined, retained)).toBe(expected);
+    expect(transport.peek('admin', payload())?.checkedAt).toBe(1000);
+    expect(transport.peek('admin', payload())?.data.generatedAtMillis).toBe(expected.generatedAtMillis);
+    expect(read).toHaveBeenCalledTimes(1);
+    clock++;
+    expect(transport.peek('admin', payload())).toBeNull();
+    await transport.load('admin', payload(), () => true, undefined, undefined, retained);
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(transport.peek('admin', payload())?.checkedAt).toBe(clock);
+  });
+  it('keeps exact period, scope, filters, page, visible IDs, admin sort and Usage detail separate', () => {
+    const base = workspaceMetricsPayload(search + '&view=overview', scope, undefined, now, true);
+    const keys = [base,
+      workspaceMetricsPayload(search + '&view=workouts', scope, undefined, now, true),
+      workspaceMetricsPayload(search + '&view=usage', scope, undefined, now, true, true),
+      { ...base, cursor: 'next' }, { ...base, startDate: '2026-08-01' },
+      { ...base, rosterPlayerIds: ['one'] }, { ...base, nameSearch: 'someone' },
+      { ...base, filters: { ...base.filters, workoutStatus: 'completed' } },
+    ].map(workspacePayloadKey);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+  it('refreshes all same-scope tab variants when one report is explicitly refreshed', async () => {
+    const read = vi.fn(async (input) => report(input));
+    const transport = createWorkspaceMetricsTransport(read);
+    const overview = payload(), workouts = { ...payload(), nameSearch: 'workout selection' };
+    await transport.load('admin', overview, () => true, undefined, undefined, retained);
+    await transport.load('admin', workouts, () => true, undefined, undefined, retained);
+    expect(read).toHaveBeenCalledTimes(2);
+    const generation = transport.getGeneration();
+    await transport.load('admin', overview, () => true, undefined, undefined, { retain: true, force: true });
+    expect(read).toHaveBeenCalledTimes(3);
+    expect(transport.getGeneration()).toBe(generation);
+    expect(transport.peek('admin', workouts)).toBeNull();
+    await transport.load('admin', workouts, () => true, undefined, undefined, retained);
+    expect(read).toHaveBeenCalledTimes(4);
+  });
+  it('force refresh bypasses a fresh result and removes it even on transient failure', async () => {
+    vi.useFakeTimers();
+    const read = vi.fn().mockResolvedValue(report());
+    const transport = createWorkspaceMetricsTransport(read);
+    await transport.load('admin', payload(), () => true, undefined, undefined, retained);
+    read.mockRejectedValue({ code: 'unavailable' });
+    const pending = transport.load('admin', payload(), () => true, undefined, undefined, { retain: true, force: true }).catch(error => error);
+    await vi.runAllTimersAsync();
+    expect(await pending).toMatchObject({ code: 'unavailable' });
+    expect(read).toHaveBeenCalledTimes(6);
+    expect(transport.peek('admin', payload())).toBeNull();
+  });
+  it('drops scoped observations and late responses after invalidation, even for the same actor', async () => {
+    let finish!: (data: ExpandedInsights) => void;
+    const read = vi.fn().mockResolvedValueOnce(report()).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const transport = createWorkspaceMetricsTransport(read);
+    await transport.load('admin', payload(), () => true, undefined, undefined, retained);
+    const pending = transport.load('admin', payload(), () => true, undefined, undefined, { retain: true, force: true });
+    await Promise.resolve(); transport.clear(); finish(report());
+    expect(await pending).toBeNull();
+    expect(transport.peek('admin', payload())).toBeNull();
+    transport.observeIdentity(null); transport.observeIdentity('admin');
+    expect(transport.peek('admin', payload())).toBeNull();
+  });
+  it('clears earlier scope entries when navigating scope and never serves another actor', async () => {
+    const read = vi.fn().mockResolvedValue(report()), transport = createWorkspaceMetricsTransport(read);
+    await transport.load('admin', payload(), () => true, undefined, undefined, retained);
+    expect(transport.peek('other-admin', payload())).toBeNull();
+    transport.observeScope({ kind: 'organization', organizationId: 'another' });
+    transport.observeScope(scope);
+    expect(transport.peek('admin', payload())).toBeNull();
+  });
+  it.each(['permission-denied', 'failed-precondition'])('invalidates other retained variants on %s without stale fallback', async code => {
+    const read = vi.fn().mockResolvedValueOnce(report()).mockRejectedValueOnce({ code });
+    const transport = createWorkspaceMetricsTransport(read);
+    await transport.load('admin', payload(), () => true, undefined, undefined, retained);
+    const other = { ...payload(), nameSearch: 'new selection' };
+    await expect(transport.load('admin', other, () => true, undefined, undefined, retained)).rejects.toMatchObject({ code });
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(transport.peek('admin', payload())).toBeNull();
+  });
+  it('enforces the aggregate byte budget across otherwise cacheable results', async () => {
+    const read = vi.fn(async (input) => {
+      const data = report(input); data.scope.label = 'x'.repeat(700_000); return data;
+    });
+    const transport = createWorkspaceMetricsTransport(read);
+    const inputs = Array.from({ length: 3 }, (_, index) => ({ ...payload(), nameSearch: `large ${index}` }));
+    for (const input of inputs) await transport.load('admin', input, () => true, undefined, undefined, retained);
+    expect(transport.peek('admin', inputs[0])).toBeNull();
+    expect(transport.peek('admin', inputs[2])).not.toBeNull();
+  });
+  it('returns valid reports even when they cannot be serialized for cache accounting', async () => {
+    const expected = report();
+    Object.assign(expected, { cacheIrrelevantCircularValue: expected });
+    const transport = createWorkspaceMetricsTransport(async () => expected);
+    expect(await transport.load('admin', payload(), () => true, undefined, undefined, retained)).toBe(expected);
+    expect(transport.peek('admin', payload())).toBeNull();
+  });
+  it('bounds retained selections and skips oversized data', async () => {
+    const read = vi.fn(async (input) => report(input)), transport = createWorkspaceMetricsTransport(read);
+    const inputs = Array.from({ length: 6 }, (_, index) => ({ ...payload(), nameSearch: `selection ${index}` }));
+    for (const input of inputs) await transport.load('admin', input, () => true, undefined, undefined, retained);
+    expect(transport.peek('admin', inputs[0])).toBeNull();
+    expect(transport.peek('admin', inputs[5])).not.toBeNull();
+    const huge = report(); huge.scope.label = 'x'.repeat(2 * 1024 * 1024);
+    read.mockResolvedValueOnce(huge);
+    await transport.load('admin', payload(), () => true, undefined, undefined, retained);
+    expect(transport.peek('admin', payload())).toBeNull();
+  });
+});

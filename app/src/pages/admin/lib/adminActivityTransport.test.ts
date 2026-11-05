@@ -69,6 +69,6 @@ describe("admin activity read validation", () => {
     const transport = createWorkspaceMetricsTransport(() => new Promise(resolve => { finish = resolve; }));
     const pending = transport.load("admin-a", input(), () => true);
     await Promise.resolve(); transport.observeIdentity("admin-b"); finish(fixture());
-    await expect(pending).rejects.toMatchObject({ code: "permission-denied" });
+    expect(await pending).toBeNull();
   });
 });

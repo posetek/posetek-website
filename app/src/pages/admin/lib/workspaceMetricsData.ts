@@ -1,6 +1,6 @@
 import { inFlightRequests } from "../../../lib/inflightRequests";
 import { USAGE_FEATURES } from "../../../lib/insight-usage/clock";
-import { completeReport } from "../../insights/lib/completeReport";
+import { completeReport, retryableReportError } from "../../insights/lib/completeReport";
 import { expandedRequest } from "../../insights/lib/expandedQuery";
 import { assertReportScope, reportPayload } from "../../insights/lib/expanded";
 import type { ExpandedInsights, InsightScope } from "../../insights/lib/expanded";
@@ -100,27 +100,79 @@ export function assertAdminActivity(data: ExpandedInsights, payload: WorkspaceRe
   }
 }
 
-/** Concurrent work only: no retained reports, profile index or cross-account results. */
-export function createWorkspaceMetricsTransport(read: WorkspaceReportReader) {
+export const WORKSPACE_REPORT_TTL_MS = 60_000;
+export const WORKSPACE_REPORT_MAX_ENTRIES = 5;
+export const WORKSPACE_REPORT_MAX_BYTES = 2 * 1024 * 1024;
+export interface WorkspaceReportObservation { data: ExpandedInsights; checkedAt: number }
+
+/** Completed observations live only in this admin workspace's memory. Exact
+ * server inputs remain the key: different sorts/pages/detail never masquerade
+ * as the selected report. Invalidation also fences every pending response. */
+export function createWorkspaceMetricsTransport(read: WorkspaceReportReader, now = Date.now) {
   const requests = inFlightRequests<ExpandedInsights>();
-  let actor: string | null = null;
-  const observeIdentity = (uid: string | null) => { if (actor !== uid) { actor = uid; requests.clear(); } };
+  const completed = new Map<string, WorkspaceReportObservation & { bytes: number }>();
+  const listeners = new Set<() => void>();
+  let actor: string | null = null, scopeKey = '', generation = 0, bytes = 0;
+  const clear = (silent = false) => {
+    ++generation; requests.clear(); completed.clear(); bytes = 0;
+    if (!silent) listeners.forEach(listener => listener());
+  };
+  const observeIdentity = (uid: string | null) => { if (actor !== uid) { actor = uid; clear(); } };
+  const observeScope = (scope: InsightScope | null) => {
+    const next = scope ? JSON.stringify(scope) : '';
+    if (scopeKey !== next) { scopeKey = next; clear(); }
+  };
+  const remove = (key: string) => { const entry = completed.get(key); if (entry) { bytes -= entry.bytes; completed.delete(key); } };
+  const prune = () => {
+    for (const [key, entry] of completed) if (now() - entry.checkedAt >= WORKSPACE_REPORT_TTL_MS || now() < entry.checkedAt) remove(key);
+  };
+  const peek = (uid: string | null, payload: WorkspaceReportPayload): WorkspaceReportObservation | null => {
+    prune();
+    if (!uid || actor !== uid || scopeKey !== JSON.stringify(payload.scope)) return null;
+    return completed.get(workspacePayloadKey(payload)) || null;
+  };
   return {
-    observeIdentity,
-    clear: () => requests.clear(),
-    async load(uid: string, payload: WorkspaceReportPayload, isCurrent: () => boolean, onRebuild?: () => void, validate?: (data: ExpandedInsights) => void) {
+    observeIdentity, observeScope, clear, peek,
+    getGeneration: () => generation,
+    subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    async load(uid: string, payload: WorkspaceReportPayload, isCurrent: () => boolean, onRebuild?: () => void, validate?: (data: ExpandedInsights) => void, options: { force?: boolean; retain?: boolean } = {}) {
       if (!isCurrent()) return null;
-      observeIdentity(uid);
+      observeIdentity(uid); if (options.retain) observeScope(payload.scope);
+      const start = generation, key = workspacePayloadKey(payload);
+      const current = () => isCurrent() && actor === uid && generation === start;
+      const cached = options.retain && !options.force && peek(uid, payload);
+      if (cached) {
+        try { assertWorkspaceMetrics(cached.data, payload); validate?.(cached.data); return cached.data; }
+        catch (error) {
+          remove(key);
+          if (!retryableReportError(error)) { clear(true); throw error; }
+        }
+      }
+      // Refresh applies to this whole shared workspace observation. Other tab
+      // variants must be read again too; the mounted hook retains its own prior
+      // result while refreshing, without notifying or restarting other readers.
+      if (options.retain && options.force) { completed.clear(); bytes = 0; }
+      else if (options.retain) remove(key);
       const data = await completeReport(async () => {
         const result = await requests.run(JSON.stringify([uid, payload]), () => read(payload));
-        if (isCurrent() && actor === uid) { assertWorkspaceMetrics(result, payload); validate?.(result); }
+        if (current()) { assertWorkspaceMetrics(result, payload); validate?.(result); }
         return result;
-      }, isCurrent, onRebuild).catch(error => {
-        if (/permission-denied|unauthenticated/.test(String(error?.code || ""))) requests.clear();
+      }, current, onRebuild).catch(error => {
+        if (start === generation && !retryableReportError(error)) clear(true);
         throw error;
       });
-      if (!data || !isCurrent() || actor !== uid) return null;
+      if (!data || !current()) return null;
       assertWorkspaceMetrics(data, payload);
+      if (!options.retain) return data;
+      const checkedAt = now();
+      let size: number;
+      try { size = new TextEncoder().encode(JSON.stringify(data)).byteLength; }
+      catch { return data; } // Cache accounting must never reject a valid report.
+      prune(); remove(key);
+      if (options.retain && size <= WORKSPACE_REPORT_MAX_BYTES) {
+        while (completed.size >= WORKSPACE_REPORT_MAX_ENTRIES || bytes + size > WORKSPACE_REPORT_MAX_BYTES) remove(completed.keys().next().value!);
+        completed.set(key, { data, checkedAt, bytes: size }); bytes += size;
+      }
       return data;
     },
   };
