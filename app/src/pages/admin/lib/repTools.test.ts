@@ -23,6 +23,7 @@ import {
   resolveGate,
   revisionPreviewFields,
   shuttleFramesFrom,
+  sizeFromMetadata,
   signedMeters,
   stringFieldValues,
   toolSpecFor,
@@ -31,6 +32,18 @@ import {
 import type { Gate } from "./repTools";
 
 const gate: Gate = { leftX: 0.2, rightX: 0.8, markerDistance: 10, source: "metadata.arucoGate", distanceSource: "aruco_pose", geometryTrusted: true };
+
+describe("recording geometry", () => {
+  it("uses sprint dimensions when upright display dimensions are absent", () => {
+    expect(sizeFromMetadata({ frameWidth: 1280, frameHeight: 720 })).toEqual({ width: 1280, height: 720 });
+  });
+  it("preserves upright display dimensions and requires a positive matching pair", () => {
+    expect(sizeFromMetadata({ videoDisplayWidth: 720, videoDisplayHeight: 1280, frameWidth: 1280, frameHeight: 720 })).toEqual({ width: 720, height: 1280 });
+    expect(sizeFromMetadata({ videoDisplayWidth: 720, frameHeight: 720 })).toBeNull();
+    expect(sizeFromMetadata({ frameWidth: -1280, frameHeight: 720 })).toBeNull();
+    expect(sizeFromMetadata({ imageWidth: 800, imageHeight: 600 })).toEqual({ width: 800, height: 600 });
+  });
+});
 
 describe("artifact JSON", () => {
   it("tolerates the phone's bare NaN and Infinity tokens", () => {
@@ -55,6 +68,34 @@ describe("clip timing", () => {
     expect(bare.fps).toBe(60);
     expect(bare.totalFrames).toBe(180);
     expect(bare.totalFramesSource).toBe("duration");
+  });
+  it("keeps measured metadata and sidecar fps ahead of tracking timing", () => {
+    const base = { poseFrameCount: 240, videoDuration: 4, trackingFrameCount: 300, trackingFPS: 30 };
+    expect(resolveClipTiming({ ...base, metadata: { framesPerSecond: 119.88, totalFrames: 480 }, reprocessContext: { capture: { clipFramesPerSecondUsed: 120 } } }))
+      .toEqual({ fps: 119.88, fpsSource: "metadata", totalFrames: 480, totalFramesSource: "metadata" });
+    expect(resolveClipTiming({ ...base, metadata: {}, reprocessContext: { capture: { clipFramesPerSecondUsed: 120 } } }))
+      .toMatchObject({ fps: 120, fpsSource: "reprocessContext", totalFrames: 240, totalFramesSource: "pose" });
+    expect(resolveClipTiming({ ...base, metadata: {}, reprocessContext: { capture: { requestedFPS: 90 } } }))
+      .toMatchObject({ fps: 90, fpsSource: "reprocessContext" });
+  });
+  it("uses tracking timing and frame count for a recording without pose or video", () => {
+    expect(resolveClipTiming({ metadata: {}, reprocessContext: {}, poseFrameCount: 0, videoDuration: null, trackingFrameCount: 361, trackingFPS: 59.94 }))
+      .toEqual({ fps: 59.94, fpsSource: "tracking", totalFrames: 361, totalFramesSource: "tracking" });
+  });
+  it("uses tracking frame count ahead of duration while preserving pose priority", () => {
+    const base = { metadata: {}, reprocessContext: {}, videoDuration: 2, trackingFrameCount: 90, trackingFPS: 30 };
+    expect(resolveClipTiming({ ...base, poseFrameCount: 0 }))
+      .toEqual({ fps: 30, fpsSource: "tracking", totalFrames: 90, totalFramesSource: "tracking" });
+    expect(resolveClipTiming({ ...base, poseFrameCount: 120 }))
+      .toMatchObject({ totalFrames: 120, totalFramesSource: "pose" });
+  });
+  it.each([null, 0, -1, NaN, Infinity, 1001])("preserves pose plus duration when tracking fps is unusable (%s)", trackingFPS => {
+    expect(resolveClipTiming({ metadata: {}, reprocessContext: {}, poseFrameCount: 240, videoDuration: 2, trackingFrameCount: 300, trackingFPS }))
+      .toEqual({ fps: 120, fpsSource: "pose+duration", totalFrames: 240, totalFramesSource: "pose" });
+  });
+  it("retains the legacy default when tracking adds no usable timing or frames", () => {
+    expect(resolveClipTiming({ metadata: null, reprocessContext: null, poseFrameCount: 0, videoDuration: null, trackingFrameCount: 0, trackingFPS: null }))
+      .toEqual({ fps: 60, fpsSource: "default", totalFrames: 1, totalFramesSource: "default" });
   });
 });
 
