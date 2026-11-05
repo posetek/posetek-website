@@ -1,11 +1,11 @@
 {
-  "deploymentId": "6aec430f45bc0d0841566ba7",
+  "deploymentId": "6aecbf94751cf215f811865f",
   "sourceCommit": null,
-  "url": "https://6aec430f45bc0d0841566ba7--posetek.netlify.app",
+  "url": "https://6aecbf94751cf215f811865f--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "b2c0f175a1d696ec70da5bf7a737afbcb3af7aa8",
+    "sha": "82955db10940167fb292d5116f09e0a7063056e5",
     "size": 4894,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
@@ -6767,8 +6767,8 @@
     },
     {
       "path": "/application.html",
-      "sha": "6f2bdf6d85102b5526f42fc5f702dc0b6b1e14f4",
-      "size": 16111
+      "sha": "c230c3cb19c6ebdedc46f9f4b49879a12f92b1a1",
+      "size": 16112
     },
     {
       "path": "/assets/accesslinkcard-bwk4cx6k.css",
@@ -12886,6 +12886,71 @@
       "sha": "176038637b2c1ac8be51476afc830c189b65f3b0",
       "size": 66488,
       "localPath": "legacy/videopage.html"
+    },
+    {
+      "path": "/_astro/admin-directory-lightning.ramcmzf0.js",
+      "sha": "9b9bed0f5144cb82b655c6419bfc83b38cda0035",
+      "size": 15159
+    },
+    {
+      "path": "/_astro/adminpage.bt95dqvr.js",
+      "sha": "8e19fd0cd7bebddae49027a11e38d0fe39ca8f90",
+      "size": 14407
+    },
+    {
+      "path": "/_astro/adminrecentworkouts.zcyddybb.js",
+      "sha": "ff61a94ca2e73a59691155cc1a7442516fadbf66",
+      "size": 1033
+    },
+    {
+      "path": "/_astro/applicationroot.bpol-yg7.js",
+      "sha": "46f9883f032af57d66a982fb06e1ff923b5f96b3",
+      "size": 15792
+    },
+    {
+      "path": "/_astro/coachdetail.yszm78sp.js",
+      "sha": "96ac282be16d377eb81fd0beab0b27371d6f5bc1",
+      "size": 4735
+    },
+    {
+      "path": "/_astro/insights.hytgxatp.js",
+      "sha": "b43555fb2b75d3fe807aa6cfa4426887e9988d06",
+      "size": 35313
+    },
+    {
+      "path": "/_astro/insightspage.d3dqf6ab.js",
+      "sha": "b346fc2a2e0525e760dd62ead5709938b52d12a1",
+      "size": 89116
+    },
+    {
+      "path": "/_astro/monitoraccounts.povr5pep.js",
+      "sha": "0a88c000c2ca0c6c0f589a8980edcfe423cebd30",
+      "size": 115989
+    },
+    {
+      "path": "/_astro/monitoraccounts.q5sarr3z.css",
+      "sha": "3033d2b750f002ef20f42fff172f4aa09b37d208",
+      "size": 49258
+    },
+    {
+      "path": "/_astro/playerdetail.nef-gt4a.js",
+      "sha": "ab6ec3b7c7d379ceb8c8c3884cda4b6900c05bea",
+      "size": 36726
+    },
+    {
+      "path": "/_astro/playerstationtiming.bs1u1cti.js",
+      "sha": "00b758614c70bb8a0e2d1c96fa0fd3ec9cdfb26e",
+      "size": 1361
+    },
+    {
+      "path": "/_astro/supportpage.csglytsf.js",
+      "sha": "deaa3e468e2d94b82f2524c001ce80f57c720b87",
+      "size": 10814
+    },
+    {
+      "path": "/_astro/teamsessionperformance.d42d1wxt.js",
+      "sha": "f3b7d3dbe47d147932cbb902a3ac3d2613cf5f6b",
+      "size": 34347
     }
   ]
 }
