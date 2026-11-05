@@ -1,15 +1,37 @@
 # Admin directory and reporting loading review
 
-Reviewed November 4, 2026; client persistence updated November 5. Source candidate only; no publication or database mutation.
+Reviewed November 4, 2026; client persistence published November 5.
+Deployment `6aec430f45bc0d0841566ba7` was published at
+`2026-11-05T09:00:17.782Z` with runtime `6ea75c7`. Source
+[PR #124](https://github.com/posetek/posetek-website/pull/124) and
+[PR #125](https://github.com/posetek/posetek-website/pull/125) are merged.
+[Release handoff](../releases/ADMIN_TAB_PERSISTENCE.md) ·
+[Production receipt](../releases/receipts/ADMIN_TAB_PERSISTENCE_PRODUCTION.json)
+
+Only `application.html` changed among prior served files; 17 hashed assets were
+added. The reconciled baseline protects 2,568 files with all 37 recovery mappings
+and passes the ordinary preservation build. Marketing, feedback, coach enrollment
+and the six private-report files remain exact. Hosted qualification uses owned
+synthetic fixtures; cleanup status belongs to the release handoff and receipt.
+The [broader backend plan](../engineering/ADMIN_REPORT_EFFICIENCY_PLAN.md) remains
+proposed; this publication does not implement its backend or SQL phases.
 
 ## Requested directory behavior
 
 People & organizations offers only numeric `schemaVersion: 2` organizations.
-The directory requests that predicate in Firestore, before downloading documents,
-and filters its selectable rows defensively. An old URL naming a legacy
+The directory requests an inclusive numeric point range in Firestore
+(`schemaVersion >= 2` and `schemaVersion <= 2`), then checks the raw returned
+value is exactly numeric `2` before mapping it or offering a choice. An old URL naming a legacy
 organization shows the existing unavailable-organization message and does not
-mount its roster or management view. The same query shape already exists in
-Backend's `getClubContext`.
+mount its roster or management view.
+
+During hosted qualification, the equality query returned HTTP 500 `INTERNAL`
+for the synthetic administrator's client token while the operator query succeeded.
+The point range passed repeated server-only reads through the actual Chromium
+and WebKit SDKs, returning the same six numeric-version-2 organizations and
+excluding the owned legacy fixture. This records a verified client-query
+compatibility workaround; the backend cause is not established. Failed reads
+still surface the existing error and retry state, without an unfiltered fallback.
 
 Other tools that deliberately support legacy organization workflows retain the
 unfiltered `loadOrganizations()` default. No organization, player or membership
@@ -17,7 +39,9 @@ is deleted or migrated. The legacy directory reader remains available to older
 embedded consumers. This is a small directory-read reduction; it does not fix
 the reporting fan-out described below.
 
-## Client tab persistence — November 5 source candidate
+<a id="client-tab-persistence--november-5-source-candidate"></a>
+
+## Published client tab persistence — November 5
 
 The current admin workspace can reuse successful directory/context/roster reads
 and exact report observations for up to 60 seconds within its bounded memory cache. Returning between
@@ -110,14 +134,17 @@ no page errors, and the full eight-case retry rerun passed. Its diagnostic now
 includes actual page errors if it recurs. No application fix or invented cause
 is attributed to that unreproduced failure.
 
-This does not establish real authenticated Firebase/server authorization,
-production-data, physical-device, live-latency or billing acceptance. No hosted
-PR CI, remote push, production preservation assembly, Functions/rules release or
-website deployment ran. The protected production baseline and release holds remain
-unchanged. Local logs, source fingerprints, failed attempts and screenshots are
-retained outside Git; generated output and credentials are not committed.
+Those source-only checks did not establish real authenticated Firebase/server
+authorization, production-data, physical-device, live-latency or billing acceptance.
+At that checkpoint, no hosted PR CI, remote push, production preservation assembly
+or website deployment had run. The subsequent hosted qualification and publication
+are recorded in the [release handoff](../releases/ADMIN_TAB_PERSISTENCE.md) and
+[production receipt](../releases/receipts/ADMIN_TAB_PERSISTENCE_PRODUCTION.json).
+No Functions or rules release is included. Local logs, source fingerprints, failed
+attempts and screenshots remain outside Git; generated output and credentials are
+not committed.
 
-## Evidence boundary
+## Original investigation boundary
 
 Website base: `65c77315fe786cab968ea23b2e0dba4d4ad3b6a7`.
 Backend checkout inspected: `bbe7cb4065c3d59c2bb91f210cd603a3ebbe77b7`.
@@ -127,7 +154,8 @@ released feature source `96a38e63550c2eb785a27a5bcc762ed96091dcc7`.
 The [release handoff](../releases/ADMIN_LAST_OBSERVED_FEATURE.md) records the
 exact v11 source/archive and approved website runtime `6d105a7`.
 
-This review used source, existing release receipts and current GitHub PR metadata.
+The original investigation used source, existing release receipts and then-current
+GitHub PR metadata.
 It did not query real athletes, reproduce live browser traffic, inspect current
 billing, or measure a new production latency distribution. Static read estimates
 are not billed-read measurements.
@@ -141,10 +169,11 @@ its small scoped feature-evidence checks.
 
 ## Current request path
 
-1. Directory choices download organization documents. This patch restricts that
-   query to the current format.
+1. Directory choices download current-format organization documents through the
+   qualified inclusive numeric point range, then enforce raw numeric version `2`
+   before mapping. Default legacy-aware callers retain the existing unfiltered read.
 2. Selecting an organization calls `getClubContext`, which reads its teams,
-   players, staff and invitations. `loadClubAccountData` then separately downloads
+   players, staff and invitations. `loadDirectoryRoster` then separately downloads
    that organization's player profiles (bounded at 2,000) to build the directory.
    Thus the context and browser overlap on player reads; the report then loads
    its own roster. Team selection still begins with the organization roster.

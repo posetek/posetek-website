@@ -14,39 +14,31 @@ corrects first-visit/expired summary blanking, clipped daily ranges, final table
 order and transferred-team station evidence.
 See [definitions, verification and release order](docs/features/ADMIN_REPORTING_REFRESH.md).
 
-## Admin tab persistence candidate — November 5, 2026
+## Admin tab persistence release — November 5, 2026
 
-The source candidate reuses the selected organization's shared context/roster and
-fresh exact report responses across admin tab roundtrips for up to 60 seconds.
-First loads and genuinely changed report requests retain their existing behavior.
-Refresh, expiry, auth/scope changes and known club mutations invalidate reuse;
-late pre-invalidation responses cannot repopulate the cache. Data remains only in
-bounded workspace memory, and original report observation times are preserved.
-See the [loading review](docs/features/ADMIN_REPORT_LOADING.md#client-tab-persistence--november-5-source-candidate)
-and actual-hook synthetic browser harness in `app/scripts/admin-persistence-fixtures/`.
-Local validation passed all current website lanes, including 2,272 frontend tests
-and 36 actual-hook synthetic persistence browser scenarios across Chromium/WebKit
-at phone and desktop widths. See the [validation ledger](docs/features/ADMIN_REPORT_LOADING.md#client-persistence-validation--november-5) for limits and retained failures.
-This is not deployed and does not implement the proposed backend cohort sessions,
-compact projections or SQL report reader. No production writes or release are included.
+Deployment `6aec430f45bc0d0841566ba7` was published at
+`2026-11-05T09:00:17.782Z` with runtime `6ea75c7`. People & organizations
+offers only current numeric-version-2 organizations and reuses fresh scoped
+context, roster and exact report responses across tab roundtrips for up to
+60 seconds. Refresh, expiry and Auth/scope boundaries invalidate reuse.
+The reconciled baseline protects 2,568 files with all 37 recovery mappings.
+[Release handoff](docs/releases/ADMIN_TAB_PERSISTENCE.md) ·
+[Production receipt](docs/releases/receipts/ADMIN_TAB_PERSISTENCE_PRODUCTION.json)
 
-## Current-format admin directory candidate — November 4, 2026
+Source [PR #124](https://github.com/posetek/posetek-website/pull/124) and
+[PR #125](https://github.com/posetek/posetek-website/pull/125) are merged. Only
+`application.html` changed among prior served files; 17 hashed assets were added.
+Marketing, feedback, coach enrollment and all six private-report files remain exact.
 
-People & organizations now queries and displays only `schemaVersion: 2`
-organizations in the source candidate. Legacy deep links show an unavailable
-organization; no data migration or deletion is performed. This is not deployed.
-The [loading review](docs/features/ADMIN_REPORT_LOADING.md) traces report read/write
-amplification and related migration work. [Local validation](docs/features/ADMIN_REPORT_LOADING.md#historical-directory-validation--november-4)
-passed the frontend, tooling, build and browser lanes, including 2,245 frontend
-tests and 48 synthetic directory browser scenarios. Synthetic browser coverage
-does not establish real authenticated Firebase or production acceptance; no
-production artifact or release is included.
+Earlier entries are historical release records.
 
-The [implementation plan](docs/engineering/ADMIN_REPORT_EFFICIENCY_PLAN.md) proposes
-phased read reductions and whole-cohort report sessions, with a measured choice
-between compact Firestore projections and the existing SQL replica program.
-It is a plan, not an implemented or production-approved reporting architecture.
-
+The client release does not implement backend cohort sessions, compact projections
+or a SQL report reader. The [implementation plan](docs/engineering/ADMIN_REPORT_EFFICIENCY_PLAN.md)
+keeps those phases proposed. Source and actual-hook synthetic evidence remain in
+the [loading review](docs/features/ADMIN_REPORT_LOADING.md); real hosted/live
+acceptance and the rejected equality-query draft are recorded in the release
+handoff. Held policy, session and Ball Striking candidates and report outreach
+remain held. Keep `[skip netlify]` on source/receipt integration.
 
 ## Admin Usage release — November 4, 2026
 
