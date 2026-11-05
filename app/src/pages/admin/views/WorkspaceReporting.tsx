@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import ExpandedReport from "../../insights/ExpandedReport";
+import WorkspaceTesting from "./WorkspaceTesting";
+import WorkspaceUsage from "./WorkspaceUsage";
+import WorkspaceWorkouts from "./WorkspaceWorkouts";
 import { minuteText, shortDate, TESTING_LABELS, WORKOUT_LABELS } from "../../insights/lib/expanded";
 import type { ExpandedInsights, ExpandedPlayer } from "../../insights/lib/expanded";
 import { dateInZone, hasPlayerFilters, shiftDate, TIMEZONES } from "../../insights/lib/expandedQuery";
@@ -17,15 +20,12 @@ export type WorkspaceSummaryProps = WorkspaceMetricState & { accountCount?: numb
 const views: [WorkspaceReportView, string][] = [["overview", "Overview"], ["testing", "Testing"], ["workouts", "Workouts"], ["usage", "Usage"]];
 
 /** Scope identity stays above the tabs; only evidence, never identity, waits for reporting. */
-export function WorkspaceScopeHeader({ data, accountCount, scopeLabel, request, breadcrumb, children, accountScopeIsSubset = false }: WorkspaceSummaryProps & { breadcrumb?: ReactNode; children: ReactNode; accountScopeIsSubset?: boolean }) {
+export function WorkspaceScopeHeader({ data, accountCount, scopeLabel, children, accountScopeIsSubset = false }: WorkspaceSummaryProps & { breadcrumb?: ReactNode; children: ReactNode; accountScopeIsSubset?: boolean }) {
   const completeScope = Boolean(data) && !accountScopeIsSubset;
   const count = completeScope ? data!.roster.total : accountCount;
   return <header className="workspace-scope-header" aria-label="Selected organization and team">
-    {breadcrumb && <nav className="workspace-scope-breadcrumb" aria-label="Selected scope">{breadcrumb}</nav>}
-    <div className="workspace-scope-heading"><div><p className="eyebrow">Current selection</p><h2>{scopeLabel}</h2></div>
+    <div className="workspace-scope-heading"><div><h2>{scopeLabel}</h2></div>
       {count !== undefined && <span className="workspace-scope-count">{count.toLocaleString()} {!completeScope && "loaded "}{count === 1 ? "player" : "players"}</span>}</div>
-    <p className="workspace-scope-period">{request.startDate} – {request.endDate}<span> · {request.timezone.replaceAll("_", " ")}</span></p>
-    {data && <p className="workspace-scope-coverage">{accountScopeIsSubset && <>Across {data.scope.label}: </>}{data.roster.included} included in reporting · {data.roster.excluded} excluded · usage collected for {data.usage.collectedPlayers}/{data.roster.filtered} reporting players</p>}
     {children}
   </header>;
 }
@@ -104,5 +104,8 @@ export function WorkspaceReportDetails({ data, request, onChange, showPlayers = 
   data: ExpandedInsights; request: ExpandedRequest; onChange(patch: Partial<ExpandedRequest>): void;
   showPlayers?: boolean; hideSummary?: boolean; onFirstPage?: () => void; onNextPage?: () => void; playerLink?: (player: ExpandedPlayer) => string;
 }) {
+  if (request.view === "testing") return <div className="workspace-report-details pt-insights"><WorkspaceTesting data={data} request={request} onChange={onChange} /></div>;
+  if (request.view === "workouts") return <div className="workspace-report-details pt-insights"><WorkspaceWorkouts data={data} request={request} onChange={onChange} /></div>;
+  if (request.view === "usage") return <div className="workspace-report-details pt-insights"><WorkspaceUsage data={data} request={request} onChange={onChange} /></div>;
   return <div className="workspace-report-details pt-insights"><ExpandedReport data={data} request={request} onChange={onChange} hidePlayerTable={!showPlayers} hideSummary={hideSummary} hidePlayerFilters page={request.page} previousLabel="First page" onPrevious={onFirstPage} onNext={onNextPage} playerLink={playerLink} /></div>;
 }

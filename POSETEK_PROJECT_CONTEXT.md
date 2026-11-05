@@ -1,5 +1,13 @@
 # PoseTek website project context
 
+## Admin reporting refresh — source candidate, November 5, 2026
+
+Organization reporting adds compact comparison cards, an age-by-drill Testing
+chart, station timing analytics and daily consolidated usage. This is not a
+production release. It coordinates with PR #124 tab persistence and requires a
+companion canonical Backend change; exact repeat-visit history is unavailable.
+See [definitions, verification and release order](docs/features/ADMIN_REPORTING_REFRESH.md).
+
 ## Admin Usage release — November 4, 2026
 
 Deployment `6aeb76624e362b0c48f30421` is live with runtime `6d105a7` and `getClubInsightsV2` version 11. Admin Usage shows each displayed player's last observed feature and its 15-minute activity window. The baseline protects 2,551 files and retains 37 recovery mappings. [Release handoff](docs/releases/ADMIN_LAST_OBSERVED_FEATURE.md) · [Production receipt](docs/releases/receipts/ADMIN_LAST_OBSERVED_FEATURE_PRODUCTION.json)

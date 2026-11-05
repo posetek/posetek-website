@@ -116,3 +116,16 @@ describe("shared workspace reporting", () => {
     await expect(createWorkspaceMetricsTransport(async () => data).load("admin", payload(), () => true)).rejects.toMatchObject({ code: "permission-denied" });
   });
 });
+
+
+describe('station analytics request isolation', () => {
+  it('requests bounded station analytics only in the explicit admin Testing view', () => {
+    const testing = workspaceMetricsPayload(search + '&view=testing', scope, undefined, now, true, false, true);
+    expect(testing.includeTestingAnalytics).toBe(true);
+    expect(testing.adminReporting).toBeDefined();
+    expect(workspaceMetricsPayload(search + '&view=overview', scope, undefined, now, true, false, true)).not.toHaveProperty('includeTestingAnalytics');
+    expect(workspaceMetricsPayload(search + '&view=testing', scope, undefined, now, false, false, true)).not.toHaveProperty('includeTestingAnalytics');
+    expect(workspaceMetricsPayload(search + '&view=testing', scope, undefined, now, true)).not.toHaveProperty('includeTestingAnalytics');
+    expect(workspacePayloadKey(testing)).not.toBe(workspacePayloadKey(workspaceMetricsPayload(search + '&view=testing', scope, undefined, now, true)));
+  });
+});

@@ -1,3 +1,4 @@
+import type { AdminTesting } from "../../admin/lib/workspaceTesting";
 import type { ExpandedRequest } from "./expandedQuery";
 import { shiftDate } from "./expandedQuery";
 import { workoutMinutes } from '../../../lib/workout-duration';
@@ -40,6 +41,7 @@ export interface ExpandedPlayer {
 export type RosterMetric = { playerId: string; status: "included"; player: ExpandedPlayer }
   | { playerId: string; status: "excluded" };
 export interface ExpandedInsights {
+  adminTesting?: AdminTesting;
   adminReporting?: AdminActivityReportData;
   schemaVersion: 2;
   scope: InsightScope & { label: string; access: InsightAccess; assignedTeamsOnly: boolean };
@@ -60,7 +62,7 @@ export interface ExpandedInsights {
   workouts: { statuses: CountGroup[]; started: number; completed: number; inProgress: number; endedEarly: number; abandoned: number; unknownEnding: number; outcomeEvents?: number; timerRecords?: number; estimatedRecords?: number; knownPrescription?: number; duplicateLogs: number; doneBlocks: number; partialBlocks: number; skippedBlocks: number; setsCompleted: number; timerMinutes: number; estimatedMinutes: number; unknownDuration: number; allPrescribedSetsCompleted: number; unknownPrescription: number;
     days: { date: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number }[] };
   usage: { statuses: CountGroup[]; collectedPlayers: number; notCollectedPlayers: number; webCollectedPlayers: number; iosCollectedPlayers: number; activePlayers: number; returningPlayers: number; activeMinutes: number; webMinutes: number; iosMinutes: number; overlapMinutes: number; collectionStartedAtMillis: number | null; webCollectionStartedAtMillis: number | null; iosCollectionStartedAtMillis: number | null; featureMinutes: Record<string, number>;
-    days: { date: string; activeMinutes: number | null; webMinutes: number | null; iosMinutes: number | null; collectedPlayers?: number; webCollectedPlayers?: number; iosCollectedPlayers?: number }[] };
+    days: { date: string; activeMinutes: number | null; webMinutes: number | null; iosMinutes: number | null; featureMinutes?: Record<string, number> | null; collectedPlayers?: number; webCollectedPlayers?: number; iosCollectedPlayers?: number }[] };
   players: ExpandedPlayer[];
   rosterMetrics?: RosterMetric[];
   pagination: { total: number; pageSize: number; nextCursor: string | null };

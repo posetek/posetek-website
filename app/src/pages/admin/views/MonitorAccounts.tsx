@@ -186,8 +186,9 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
   const visible = directoryPage(accountRows || [], state.page).rows;
   const playerIds = pane === "report" || !showPeople || attention ? undefined : supportedWorkspacePlayerIds(visible, scope, canonicalOrganizationIds);
   const metrics = useWorkspaceMetrics({ scope, search: workspaceReportSearch(state), playerIds, enabled,
-    adminReporting: !legacy && (activityView || !showPeople && Boolean(state.orgId)),
-    includeLastFeatureEvidence: !legacy && pane === "report" && view === "usage" });
+    adminReporting: !legacy && (pane === "report" || !showPeople && Boolean(state.orgId)),
+    includeLastFeatureEvidence: !legacy && pane === "report" && view === "usage",
+    includeTestingAnalytics: !legacy && pane === "report" && view === "testing" });
   const report = metrics.data;
   const focusReview = useRef(false);
   const focusActivity = useRef(false);
@@ -242,7 +243,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
       <DirectoryWorkspaceTabs active={activeView} listLabel={showPeople ? "People" : state.orgId ? "Teams" : "Organizations"} onChange={selected => choose({ reportCursor: undefined, reportPage: undefined, reportAdminSort: undefined, reportAdminFollowUp: undefined,
         ...(selected === "list" ? { directoryPane: "list" as const } : { directoryPane: "report" as const, reportView: selected, reportMode: "directory" as const }) })} />
     </WorkspaceScopeHeader>
-    <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : <p className="directory-period-summary">{request.startDate} – {request.endDate} · {request.timezone.replaceAll("_", " ")}</p>}</div>
+    <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : null}</div>
       {filters}
       {pane === "report" && !legacy && <button type="button" className="quiet-button" disabled={metrics.loading || metrics.refreshing} onClick={() => { metrics.refresh(); refreshQueue(); }}>Refresh reporting</button>}
     </div>
@@ -259,12 +260,14 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
       {report && activityView && <AdminActivityReport data={report} request={request} view={view as "overview" | "workouts" | "usage"} busy={metrics.refreshing}
         onChange={update} onExplore={patch => { focusActivity.current = true; update(patch); }} onFirstPage={firstPage} onNextPage={nextPage}
         playerLink={(id, panel) => adminPlayerPath(id, panel, state)}
-        teamLink={(orgId, teamId) => adminDirectoryPath(selectDirectoryScope(state, { orgId, teamId: teamId || undefined, directoryLevel: "people", directoryLookup: teamId ? undefined : "unassigned" }))} />}
+        teamLink={(orgId, teamId) => adminDirectoryPath(selectDirectoryScope(state, { orgId, teamId: teamId || undefined, directoryLevel: "people", directoryLookup: teamId ? undefined : "unassigned" }))}>
+        <div id="directory-report-graphs" tabIndex={-1} role="region" aria-label="Report graphs"><WorkspaceReportDetails data={report} request={request} onChange={update} hideSummary /></div>
+      </AdminActivityReport>}
       {report && view === "overview" && <WorkspaceAttention data={report} onChange={update} />}
-      <div id="directory-report-graphs" tabIndex={-1} role="region" aria-label="Report graphs">
-        {report && <WorkspaceReportDetails data={report} request={request} onChange={update} showPlayers={view === "testing" || !report.adminReporting}
+      {(!activityView || !report) && <div id="directory-report-graphs" tabIndex={-1} role="region" aria-label="Report graphs">
+        {report && <WorkspaceReportDetails data={report} request={request} onChange={update} showPlayers={false}
           hideSummary={activityView && Boolean(report.adminReporting)} onFirstPage={firstPage} onNextPage={nextPage} playerLink={player => adminPlayerPath(player.id, "results", state)} />}
-      </div>
+      </div>}
     </section>}
     {pane === "list" && <section id="workspace-report-panel-list" role="tabpanel" aria-labelledby="workspace-report-tab-list">
       {typeof afterGraphs === "function" ? afterGraphs(metricState) : afterGraphs}

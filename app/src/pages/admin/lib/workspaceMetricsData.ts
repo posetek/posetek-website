@@ -8,12 +8,12 @@ import { adminActivitySelection } from "./adminActivity";
 import type { AdminActivityRequest } from "./adminActivity";
 
 export type WorkspaceReportPayload = ReturnType<typeof reportPayload> & {
-  rosterPlayerIds?: string[]; adminReporting?: AdminActivityRequest; includeLastFeatureEvidence?: true;
+  rosterPlayerIds?: string[]; adminReporting?: AdminActivityRequest; includeLastFeatureEvidence?: true; includeTestingAnalytics?: true;
 };
 export type WorkspaceReportReader = (payload: WorkspaceReportPayload) => Promise<ExpandedInsights>;
 const invalid = (message: string) => Object.assign(new Error(message), { code: "failed-precondition" });
 
-export function workspaceMetricsPayload(search: string, scope: InsightScope, playerIds?: string[], now = new Date(), adminReporting = false, includeLastFeatureEvidence = false): WorkspaceReportPayload {
+export function workspaceMetricsPayload(search: string, scope: InsightScope, playerIds?: string[], now = new Date(), adminReporting = false, includeLastFeatureEvidence = false, includeTestingAnalytics = false): WorkspaceReportPayload {
   const request = expandedRequest(search, now);
   const ids = playerIds?.length ? [...playerIds].sort() : undefined;
   if (ids && (ids.length > 20 || new Set(ids).size !== ids.length || ids.some(id => typeof id !== "string" || !id || id.includes("/")))) {
@@ -21,6 +21,7 @@ export function workspaceMetricsPayload(search: string, scope: InsightScope, pla
   }
   return { ...reportPayload(request, scope, request.cursor), pageSize: 20, ...(ids ? { rosterPlayerIds: ids } : {}),
     ...(adminReporting ? { adminReporting: adminActivitySelection(request.view, request.adminFollowUp, request.adminSort) } : {}),
+    ...(adminReporting && includeTestingAnalytics && request.view === "testing" ? { includeTestingAnalytics: true } : {}),
     ...(adminReporting && includeLastFeatureEvidence && request.view === "usage" ? { includeLastFeatureEvidence: true } : {}) };
 }
 

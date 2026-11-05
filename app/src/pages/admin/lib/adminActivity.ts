@@ -1,3 +1,4 @@
+import type { AdminReportingMetrics } from "./adminReportingMetrics";
 import type { UsageFeature } from "../../../lib/insight-usage/clock";
 
 /** Optional admin-only reporting. Account and assignment facts are current at
@@ -30,6 +31,7 @@ export interface AdminActivityTeam {
   timerMinutes: number; estimatedMinutes: number; timerRecords: number; estimatedRecords: number;
 }
 export interface AdminActivityReportData {
+  metricsV2?: AdminReportingMetrics;
   version: 1; followUp: AdminActivityFollowUp; sort: AdminActivitySort; asOfMillis: number; population: number;
   summary: { noSignIn: number; noActivity: number; unfinishedAssigned: number; noCompletion: number; signInUnknown: number; usageNotCollected: number };
   topActivePlayers: { id: string; name: string; activeMinutes: number }[];
