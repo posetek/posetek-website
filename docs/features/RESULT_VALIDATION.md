@@ -5,6 +5,11 @@ Route: `/admin/result-validation`. Source: `app/src/pages/admin/views/ResultVali
 `app/src/pages/admin/lib/resultValidationData.ts`. The per-rep workbench is the
 existing rep tools (`views/RepTools.tsx`) in validation mode.
 
+Released November 6, 2026 in deployment `6aedefb93ea542305e9f49da`; see
+[the release handoff](../releases/RESULT_VALIDATION_RELEASE.md). On the released
+runtime, jump corrections go through the jump review panel, and Ball Striking stays
+held, so the admin menu has one link fewer than main.
+
 ## What it does
 
 1. Pick a team testing session (`testingEvents`, newest 60).
