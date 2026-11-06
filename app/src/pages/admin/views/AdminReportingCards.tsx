@@ -6,7 +6,7 @@ const CARDS = [
   ['iosDownloads', 'iOS downloads', 'Players with recorded iOS use'],
   ['repeatUsers', 'Repeat users', 'Active on 2+ days in the shown week'],
   ['weeklyUsers', 'Weekly users', 'Distinct players active in the shown week'],
-  ['platformMinutes', 'Time on platform', 'Estimated active website + iOS use'],
+  ['platformMinutes', 'Time on platform', 'Total estimated website + iOS use to date'],
 ] as const;
 const finite = (value: number | null | undefined) => value != null && Number.isFinite(value) && value >= 0 ? value : null;
 const format = (value: number | null | undefined, minutes = false) => value == null || !Number.isFinite(value) ? '—' : `${value.toLocaleString('en-US', { maximumFractionDigits: minutes ? 1 : 0 })}${minutes ? ' min' : ''}`;
@@ -27,7 +27,7 @@ export default function AdminReportingCards({ metrics }: { metrics?: AdminReport
       </div>;
     })}
   </dl><details className="activity-card-definitions"><summary>Metric definitions</summary>
-    {metrics && <p>Weekly activity: {metrics.windows.current.startDate}–{metrics.windows.current.endDate}. Comparison: {metrics.windows.previous.startDate}–{metrics.windows.previous.endDate}, the same weekdays last week. Players tested, accounts claimed and observed iOS users are cumulative through each cutoff. Partial coverage does not support a week-to-week trend.</p>}
+    {metrics && <p>Weekly activity: {metrics.windows.current.startDate}–{metrics.windows.current.endDate}. Comparison: {metrics.windows.previous.startDate}–{metrics.windows.previous.endDate}, the same weekdays last week. Players tested, accounts claimed, observed iOS users and time on platform are cumulative through each cutoff. Partial coverage does not support a week-to-week trend.</p>}
     <p>Repeat users counts players with recorded website or iOS use on at least two distinct local days in each shown week. Multiple visits on one day count as one active day.</p>
     <p>iOS downloads uses observed iOS activity as a proxy; it is not an App Store installation count. Estimated active time counts simultaneous website and iOS use once.</p>
     {CARDS.map(([key, title]) => metrics?.cards[key]?.note && <p key={key}><strong>{title}:</strong> {metrics.cards[key].note}</p>)}
