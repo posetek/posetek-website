@@ -1,11 +1,30 @@
 # PoseTek website project context
 
-## Admin rep tracking playback — source fix, November 5, 2026
+## Admin result validation release — November 6, 2026
+
+Deployment `6aedefb93ea542305e9f49da` was published at
+`2026-11-06T15:22:23.567Z` from runtime `e4c6403` (`runtime/result-validation`,
+based on accepted `bc6ed7c`). **Review tools → Result validation** steps through a
+testing session's reps to validate, adjust or flag each one, always with a reviewer
+note. A flag leaves the result displayed. Any decision can be undone, and notes
+export as JSON. Each rep shows per-drill evidence, focus mode and the organization
+age curve. Writes use the existing revision callables only.
+
+The saved tracking playback below shipped in the same artifact. All 2,603 artifact
+files match 2,604 provider records; only `/application.html` changed, with 20 hashed
+assets added. The reconciled baseline protects 2,601 files with all 37 recovery
+mappings. Signed-in hosted acceptance is not claimed.
+[Release handoff](docs/releases/RESULT_VALIDATION_RELEASE.md) ·
+[Production receipt](docs/releases/receipts/RESULT_VALIDATION_PRODUCTION.json) ·
+[Feature](docs/features/RESULT_VALIDATION.md)
+
+## Admin rep tracking playback — released November 6, 2026
 
 Rep Tools loads and displays saved tracking from the exact recording folder,
 with frame playback and clear video-unavailable/metadata-only states. Viewing
-tracking does not change measurements or annotations. This source is not a
-production release and does not recover original camera images. See the
+tracking does not change measurements or annotations. It does not recover
+original camera images. Merged as PR #128; released in deployment
+`6aedefb93ea542305e9f49da` with result validation. See the
 [behavior and validation handoff](docs/features/ADMIN_REP_TRACKING_PLAYBACK.md).
 
 ## Admin reporting refresh release — November 5, 2026

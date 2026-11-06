@@ -17,6 +17,25 @@ PR requirements and release/deployment holds remain unchanged. Runtime tool
 approval is separate from this policy; report exact tool rejections and never
 switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.md#website-worktree-local-lane).
 
+## Admin result validation release — November 6, 2026
+
+Deployment `6aedefb93ea542305e9f49da` was published at
+`2026-11-06T15:22:23.567Z` from runtime `e4c6403` on `runtime/result-validation`.
+It adds **Review tools → Result validation**: validate, adjust or flag each rep in a
+testing session, with reviewer notes, undo, per-drill evidence, focus mode and the
+organization age curve. Saved tracking playback (PR #128) ships with it.
+
+All 2,603 artifact files match 2,604 provider records; only `/application.html`
+changed, with 20 hashed assets added. Marketing, feedback, coach enrollment and
+private reports remain exact. The reconciled baseline protects 2,601 files with all
+37 recovery mappings. Signed-in hosted acceptance is not claimed.
+[Release handoff](docs/releases/RESULT_VALIDATION_RELEASE.md) ·
+[Production receipt](docs/releases/receipts/RESULT_VALIDATION_PRODUCTION.json)
+
+Website PR #132 is merged. No backend, rules, indexes, gateway, catalog or native
+release. Keep `[skip netlify]` on source/receipt integration; held candidates and
+report outreach remain held.
+
 ## Admin reporting refresh release — November 5, 2026
 
 Deployment `6aecbf94751cf215f811865f` was published at
