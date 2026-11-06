@@ -255,6 +255,9 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
       gender,
       benchmarkLabel: benchmarks ? `benchmarks/${benchmarks.tier ?? "d1"} gen ${benchmarks.generation ?? "?"}, ${gender}` : null,
       currentRepKey: current.key,
+      athleteName: current.playerName,
+      estimatedAge: estimateAge(rows, byPlayer, current),
+      athleteValues: rows.filter(row => row.playerId === current.playerId && row.drillKey === current.drillKey && row.key !== current.key && row.value !== null && row.status.state !== "rejected").map(row => row.value!),
       age: ageAt(profile, current.createdAtMillis || Date.now()),
     };
     return (
@@ -393,6 +396,15 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
       )}
     </div>
   );
+}
+
+/** The median age of the other athletes in this session, for placing an athlete whose profile has no age. */
+function estimateAge(rows: ValidationQueueRow[], profiles: Record<string, PlayerProfile>, current: ValidationQueueRow): { age: number; basis: string } | null {
+  const ages = [...new Set(rows.map(row => row.playerId))].filter(id => id !== current.playerId)
+    .map(id => ageAt(profiles[id], current.createdAtMillis || Date.now())?.age).filter((age): age is number => age !== undefined).sort((a, b) => a - b);
+  if (!ages.length) return null;
+  const middle = Math.floor(ages.length / 2);
+  return { age: ages.length % 2 ? ages[middle] : (ages[middle - 1] + ages[middle]) / 2, basis: `the median age of ${ages.length} athletes in this session` };
 }
 
 function Loading({ text }: { text: string }) {

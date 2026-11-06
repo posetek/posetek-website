@@ -37,6 +37,11 @@ export interface AgeCurveData {
   benchmarkLabel: string | null;
   /** `${playerId}/${repId}` of the rep under review (drawn separately, with its current value). */
   currentRepKey: string;
+  athleteName: string;
+  /** Where to place an athlete whose profile has no age: the median age of the session's athletes. */
+  estimatedAge: { age: number; basis: string } | null;
+  /** This athlete's other results for the drill in this session (shown as ticks even without an age). */
+  athleteValues: number[];
 }
 
 export default function AgeCurve({ drillKey, data, playerId, value, age }: {
@@ -49,19 +54,27 @@ export default function AgeCurve({ drillKey, data, playerId, value, age }: {
   const display = DISPLAY[drillKey];
   const higher = BENCHMARK_METRIC[drillKey]?.higherIsBetter ?? true;
   const [hover, setHover] = useState<AgePoint | null>(null);
+  // Without a profile age the rep is placed at an estimate, or wherever the reviewer types (not saved).
+  const [ageInput, setAgeInput] = useState("");
+  const typedAge = Number(ageInput);
+  const placement: { age: number; kind: "exact" | "whole-year" | "estimated" | "typed" } | null = age
+    ? { age: age.age, kind: age.exact ? "exact" : "whole-year" }
+    : ageInput.trim() !== "" && Number.isFinite(typedAge) && typedAge >= 5 && typedAge <= 40 ? { age: typedAge, kind: "typed" }
+      : data.estimatedAge ? { age: data.estimatedAge.age, kind: "estimated" } : null;
+  const placementAge = placement?.age ?? null;
   const width = 400, height = 250, left = 42, right = 10, top = 14, bottom = 30;
   const others = useMemo(() => data.points.filter(point => point.repKey !== data.currentRepKey), [data.points, data.currentRepKey]);
 
-  const domain = useMemo(() => {
-    const ages = [...others.map(p => p.age), ...(age ? [age.age] : [])];
-    const values = [...others.map(p => p.value), ...(value !== null ? [value] : [])];
+  const domain = (() => {
+    const ages = [...others.map(p => p.age), ...(placementAge !== null ? [placementAge] : [])];
+    const values = [...others.map(p => p.value), ...(value !== null ? [value] : []), ...data.athleteValues];
     let x0 = ages.length ? Math.floor(Math.min(...ages)) : 10, x1 = ages.length ? Math.ceil(Math.max(...ages)) : 18;
     if (x1 - x0 < 4) { x0 -= 2; x1 += 2; }
     let y0 = values.length ? Math.min(...values) : 0, y1 = values.length ? Math.max(...values) : 1;
     const pad = (y1 - y0) * 0.08 || y1 * 0.1 || 1;
     y0 -= pad; y1 += pad;
     return { x0, x1, y0: Math.max(0, y0), y1 };
-  }, [others, age, value]);
+  })();
 
   if (!display) return null;
   const x = (years: number) => left + ((years - domain.x0) / (domain.x1 - domain.x0)) * (width - left - right);
@@ -70,10 +83,11 @@ export default function AgeCurve({ drillKey, data, playerId, value, age }: {
   const xTicks = Array.from({ length: domain.x1 - domain.x0 + 1 }, (_, i) => domain.x0 + i).filter((_, i, all) => all.length <= 10 || i % 2 === 0);
   const yTicks = [domain.y0, (domain.y0 + domain.y1) / 2, domain.y1];
   const path = (pick: (point: CurvePoint) => number) => data.curve.map((point, i) => `${i ? "L" : "M"}${x(point.age).toFixed(1)},${y(pick(point)).toFixed(1)}`).join("");
-  const band = age ? bandForAge(data.bands, age.age) : null;
+  const band = placement ? bandForAge(data.bands, placement.age) : null;
   const overall = value !== null ? percentileAmong(others, value, higher, data.currentRepKey) : null;
-  const matched = value !== null && age ? percentileAmong(others, value, higher, data.currentRepKey, point => Math.abs(point.age - age.age) <= 1) : null;
-  const orgMedian = age ? curveAt(data.curve, age.age) : null;
+  const matched = value !== null && placement ? percentileAmong(others, value, higher, data.currentRepKey, point => Math.abs(point.age - placement.age) <= 1) : null;
+  const orgMedian = placement ? curveAt(data.curve, placement.age) : null;
+  const ageNote = placement?.kind === "estimated" ? " (estimated age)" : placement?.kind === "typed" ? " (age you entered)" : "";
   const pct = (a: number, b: number) => `${(a / b - 1) * 100 >= 0 ? "+" : ""}${((a / b - 1) * 100).toFixed(1)}%`;
   const scope = data.scopeLabel ?? "the organization";
 
@@ -107,19 +121,48 @@ export default function AgeCurve({ drillKey, data, playerId, value, age }: {
           </circle>
         ))}
         {data.curve.length > 1 && <path className="rv-age-median-path" d={path(p => p.median)} />}
-        {value !== null && age && <circle cx={x(age.age)} cy={y(value)} r={6} fill={THIS_REP} stroke="var(--surface-1, #fff)" strokeWidth={2} />}
+        {data.athleteValues.map((other, index) => (
+          <line key={`tick-${index}`} x1={width - right - 12} x2={width - right} y1={y(other)} y2={y(other)} stroke={THIS_REP} strokeWidth={2.5}>
+            <title>{`${data.athleteName}, another rep this session: ${shown(other)}`}</title>
+          </line>
+        ))}
+        {value !== null && (
+          <g className="rv-age-this">
+            <line x1={left} x2={width - right} y1={y(value)} y2={y(value)} stroke={THIS_REP} strokeWidth={1.5} strokeDasharray="6 4" />
+            <text x={left + 4} y={y(value) - 5} className="rv-age-this-label">this rep · {shown(value)}</text>
+            {placement && (
+              <>
+                <line x1={x(placement.age)} x2={x(placement.age)} y1={top} y2={height - bottom} stroke={THIS_REP} strokeWidth={1} strokeDasharray="3 4" opacity={0.7} />
+                <circle cx={x(placement.age)} cy={y(value)} r={8} fill={placement.kind === "estimated" ? "var(--surface-1, #fff)" : THIS_REP}
+                  stroke={placement.kind === "estimated" ? THIS_REP : "var(--surface-1, #fff)"} strokeWidth={placement.kind === "estimated" ? 3 : 2.5} strokeDasharray={placement.kind === "estimated" ? "3 2" : undefined} />
+                <g transform={`translate(${Math.min(width - right - 118, x(placement.age) + 11)}, ${Math.max(top + 2, y(value) - 30)})`}>
+                  <rect width={116} height={20} rx={4} fill={THIS_REP} />
+                  <text x={6} y={14} className="rv-age-callout">THIS REP · {data.athleteName.split(" ")[0].slice(0, 10)}</text>
+                </g>
+              </>
+            )}
+          </g>
+        )}
       </svg>
+      {!age && value !== null && (
+        <label className="rv-age-input">
+          <span>Age unknown{data.estimatedAge && !ageInput ? ` — placed at ${data.estimatedAge.basis} (${data.estimatedAge.age.toFixed(1)} y)` : ""}. Place at age:</span>
+          <input type="number" min={5} max={40} step={0.1} value={ageInput} placeholder={data.estimatedAge ? data.estimatedAge.age.toFixed(1) : "e.g. 13.5"} onChange={event => setAgeInput(event.target.value)} />
+        </label>
+      )}
       <p className="re-readout">
         {hover ? `${hover.name}: ${shown(hover.value)} at ${hover.age.toFixed(1)} y${hover.exactAge ? "" : " (whole-year age)"}`
-          : value !== null ? `This rep: ${primaryResultText(drillKey, value)}${age ? ` at ${age.age.toFixed(1)} y${age.exact ? "" : " (whole-year age)"}` : ""}` : "This rep has no result."}
+          : value !== null ? `This rep (${data.athleteName}): ${primaryResultText(drillKey, value)}${placement ? ` at ${placement.age.toFixed(1)} y${placement.kind === "whole-year" ? " (whole-year age)" : ageNote}` : ""}` : "This rep has no result."}
       </p>
       {value !== null && (
         <ul className="rv-age-facts">
-          {matched && <li>Age-matched (±1 year, {matched.n} reps): better than {matched.percent.toFixed(0)}% of {scope} reps.</li>}
+          {matched && <li>Age-matched (±1 year{ageNote}, {matched.n} reps): better than {matched.percent.toFixed(0)}% of {scope} reps.</li>}
           {overall && <li>All ages ({overall.n} reps): better than {overall.percent.toFixed(0)}%.</li>}
-          {orgMedian !== null && <li>{scope} median at this age: {shown(orgMedian)}; this rep {pct(value, orgMedian)}.</li>}
+          {orgMedian !== null && <li>{scope} median at this age{ageNote}: {shown(orgMedian)}; this rep {pct(value, orgMedian)}.</li>}
+          {data.athleteValues.length > 0 && <li>{data.athleteName}'s other reps this session (ticks at the right edge): {data.athleteValues.map(shown).join(", ")}.</li>}
           {band && <li>{band.label} benchmark median {shown(band.p50)}: this rep {pct(value, band.p50)}{band.derivation !== "measured" || band.athletes < 10 ? ` (benchmark ${band.derivation}, ${band.athletes} athlete${band.athletes === 1 ? "" : "s"}: provisional)` : ""}.</li>}
-          {!age && <li>This athlete's profile has no birth date or age, so the rep is not placed on the age axis.</li>}
+          {!age && <li>{data.athleteName}'s profile has no birth date or age; add one to the player record to place this athlete exactly.</li>}
+          {!others.some(point => point.playerId === playerId) && data.scopeLabel !== "this session" && !data.loading && <li>None of {data.athleteName}'s reps are among the {scope} reps: their player record may not be linked to this organization.</li>}
           {(data.missingAge > 0 || data.excluded > 0) && <li>Not plotted: {data.missingAge} reps from athletes without an age, {data.excluded} rejected, invalid or result-less reps.</li>}
         </ul>
       )}

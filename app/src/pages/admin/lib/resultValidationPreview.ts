@@ -243,8 +243,10 @@ function seed() {
 
 // MARK: - A synthetic organization for the age curve
 
+/** Cam has no birth date or age on file, like many real profiles. */
 const sessionProfile = (id: string) => {
   const index = Math.max(0, PLAYERS.findIndex(player => player.id === id));
+  if (id === "preview-cam") return { gender: "male" };
   return { birthDate: new Date(Date.UTC(2012, 8 - index * 5, 10)).toISOString().slice(0, 10), gender: "male" };
 };
 
@@ -277,8 +279,9 @@ function organizationReps(drillKey: string) {
       }
     }
   }
-  // The session's own athletes belong to the organization too.
+  // The session's own athletes belong to the organization too, except Cam (an unlinked player record).
   for (const entry of REPS.values()) {
+    if (entry.playerId === "preview-cam") continue;
     const player = PLAYERS.find(item => item.id === entry.playerId)!;
     out.push({ playerId: entry.playerId, playerName: player.name, profile: sessionProfile(entry.playerId), rep: entry.rep });
   }
