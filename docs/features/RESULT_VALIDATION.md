@@ -14,8 +14,10 @@ existing rep tools (`views/RepTools.tsx`) in validation mode.
 3. Each rep opens in the rep tools: video when stored, otherwise the saved pose,
    tracking and the drill's artifacts. A decision panel offers
    **Validate as recorded**, **Save adjustment** (any edit made with the rep
-   tools) and **Reject result**. Saving moves to the next unreviewed rep;
-   `[` and `]` step through the queue.
+   tools) and **Flag: needs fix** (the reading is wrong and the algorithm
+   needs work; the result itself is left alone). Every decision carries the
+   reviewer note. Saving moves to the next unreviewed rep; `[` and `]` step
+   through the queue. Any decision can be undone (restore callable).
 4. Broad jump draws the ground line, foot and torso paths, and the start and
    landing foot. Either foot can be moved on the video or the pose. The
    distance is re-derived the way the phone measures it
@@ -68,13 +70,37 @@ rules or index change is needed.
 | --- | --- | --- | --- |
 | Validated | the recorded primary metric | `resultsValid: true`, `processingStatus: complete`, `failedSteps: []` | `acceptedRevision` (source of truth) |
 | Adjusted | changed fields + the new primary metric | same as validated | `acceptedRevision` with the new value |
-| Rejected | none | `resultsValid: false`, `processingStatus: partial`, `failedSteps: ["admin.rejected"]` | no longer qualifies (`evidenceNotComplete`) |
+| Flagged | none | none | unchanged: the result displays and qualifies exactly as before |
+| Rejected (legacy, Nov 5 2026 only) | none | `resultsValid: false`, `processingStatus: partial`, `failedSteps: ["admin.rejected"]` | hidden (`evidenceNotComplete`); the rep shows **Undo rejection → flag for fix** |
 
 Primary metrics follow `insights-v2-qualification.js`: shooting `velocity`,
 sprint `max_velocity`, jump `jumpHeight`, broad jump `broadJumpDistance`,
 change of direction and dribbling `totalTime`. The revision note starts with
-`Validated`, `Adjusted` or `Rejected`; the queue reads the state back from
+`Validated`, `Adjusted`, `Flagged` (or legacy `Rejected`); a flag's issue tags
+follow in brackets (`Flagged · [Pose unreliable] …`). The queue reads the state back from
 `adminRevision.note` on the rep.
+
+## Reviewer notes (for people and agents iterating on the algorithms)
+
+Each decision's note is the reviewer's requirement for that rep: what the
+measurement got wrong and what it should do. To collect them:
+
+- **Per session:** the queue's **Export notes** downloads JSON
+  (`kind: posetek-result-validation-notes`). It has one entry per reviewed rep:
+  `drill`, `decision`, `note`, `issues`, `value`, `reviewer`,
+  `decidedAtMillis` and `firestorePath`.
+- **Source of truth (Firestore, read-only for analysis):**
+  - `players/{playerId}/reps/{repId}.adminRevision.note` holds the latest decision.
+  - `players/{playerId}/reps/{repId}/revisions/{revisionId}` holds every
+    decision: `note`, `fields`, `metadataPatch`, `previous` (the rep before
+    it) and `restoredAtMillis`.
+- **Storage `{repFolder}/admin_annotations.json`:** `validation` holds
+  `decision`, `issues`, `note`, `recordedValue`, `validatedValue` and
+  `previousState`. It also holds the reviewer's marks (frames, feet,
+  tracks), and `annotationHistory` keeps every earlier annotation file.
+
+Notes name athletes, who are minors. Keep exports and note digests out of Git;
+reference reps by `firestorePath` in any committed requirement.
 
 ## What is kept (training data)
 
