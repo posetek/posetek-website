@@ -43,9 +43,15 @@ existing rep tools (`views/RepTools.tsx`) in validation mode.
 7. **Two-marker drills** label the markers' measured separation (center distance ×
    each marker's own 5.875 in scale, planar) against the distance processing
    used and its source. The label turns amber beyond ±5%.
-8. **Age vs. performance**: each athlete's best in the session at their age on
-   the test date, the rep under review, its session rank, and the published
-   benchmark median / middle half per age band (`benchmarks/d1`, the phone's
+8. **Age vs. performance**: every rep of the drill across the session's
+   organization (`testingEvents.organizationId` → `loadOrganizationPlayers` →
+   each athlete's reps by `repType` and `drillType`, loaded once per drill), at
+   the athlete's age on that rep's date. Rejected, invalid-unless-validated and
+   result-less reps are left out and counted. The chart adds the organization's
+   median and middle half per year of age, and this rep's age-matched (±1 year)
+   and all-age percentile. Sessions without an organization fall back to
+   their own reps. The published benchmark is also drawn, as the median per
+   age band (`benchmarks/d1`, the phone's
    bands U12 <13, U14 13–14, U16 15–16, U18 17–18, college 19+). Projected
    cells, or cells with fewer than 10 athletes, are flagged as provisional. The
    bundled `D1Benchmarks.json` is a single-athlete placeholder, so the page
