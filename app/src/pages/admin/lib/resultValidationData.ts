@@ -10,6 +10,7 @@ import { DRILLS } from "../../athlete-portal/lib/drills";
 import { normalizeRep, repNumber, sessionNumber } from "../../athlete-portal/lib/metrics";
 import { primaryMetricValue, processingFlagged, validationStatus } from "./resultValidation";
 import type { ValidationStatus } from "./resultValidation";
+import type { PlayerProfile } from "./ageCurve";
 
 export interface TestingSessionRow {
   id: string;
@@ -131,4 +132,29 @@ export async function loadValidationQueue(eventId: string): Promise<ValidationQu
     }
   });
   return { eventId, rows: sortQueue(perPlayer.flat()), failedPlayers };
+}
+
+/** Age and gender fields for the age curve: birthDate / dateOfBirth / age / gender from each player document. */
+export async function loadPlayerProfiles(playerIds: string[]): Promise<Record<string, PlayerProfile>> {
+  const unique = [...new Set(playerIds)];
+  const entries = await mapLimited(unique, 6, async (id): Promise<[string, PlayerProfile]> => {
+    try {
+      const doc = await db.collection("players").doc(id).get();
+      const data = doc.exists ? doc.data() || {} : {};
+      return [id, { birthDate: data.birthDate ?? null, dateOfBirth: data.dateOfBirth ?? null, age: data.age ?? null, gender: data.gender ?? null }];
+    } catch {
+      return [id, {}];
+    }
+  });
+  return Object.fromEntries(entries);
+}
+
+/** The published benchmark standard the phone scores against (benchmarks/{tier}); null when unavailable. */
+export async function loadBenchmarks(tier = "d1"): Promise<any | null> {
+  try {
+    const doc = await db.collection("benchmarks").doc(tier).get();
+    return doc.exists ? doc.data() ?? null : null;
+  } catch {
+    return null;
+  }
 }

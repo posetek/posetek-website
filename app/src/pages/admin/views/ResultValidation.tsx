@@ -13,7 +13,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { DRILLS } from "../../athlete-portal/lib/drills";
-import { listTestingSessions, loadValidationQueue } from "../lib/resultValidationData";
+import { listTestingSessions, loadBenchmarks, loadPlayerProfiles, loadValidationQueue } from "../lib/resultValidationData";
+import { ageAt, benchmarkBands, cohortPoints, genderOf } from "../lib/ageCurve";
+import type { PlayerProfile } from "../lib/ageCurve";
 import type { TestingSessionRow, ValidationQueue, ValidationQueueRow } from "../lib/resultValidationData";
 import { primaryMetricValue, primaryResultText, processingFlagged, validationStatus } from "../lib/resultValidation";
 import type { ValidationDecision, ValidationState } from "../lib/resultValidation";
@@ -25,10 +27,12 @@ import "../result-validation.scss";
 interface ValidationBackend {
   listTestingSessions: () => Promise<TestingSessionRow[]>;
   loadValidationQueue: (eventId: string) => Promise<ValidationQueue>;
+  loadPlayerProfiles: (playerIds: string[]) => Promise<Record<string, PlayerProfile>>;
+  loadBenchmarks: () => Promise<any | null>;
   repTools: RepToolsSource;
 }
 
-const LIVE_BACKEND: ValidationBackend = { listTestingSessions, loadValidationQueue, repTools: LIVE_REP_TOOLS_SOURCE };
+const LIVE_BACKEND: ValidationBackend = { listTestingSessions, loadValidationQueue, loadPlayerProfiles, loadBenchmarks: () => loadBenchmarks("d1"), repTools: LIVE_REP_TOOLS_SOURCE };
 
 type Show = "open" | "done" | "all";
 
@@ -117,6 +121,25 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
     return () => { live = false; };
   }, [backend, eventId, queueGeneration]);
 
+  // Ages and the published benchmark, for the age × performance curve.
+  const [profiles, setProfiles] = useState<{ eventId: string; byPlayer: Record<string, PlayerProfile> } | null>(null);
+  const [benchmarks, setBenchmarks] = useState<any | null>(null);
+  useEffect(() => {
+    if (!backend) return;
+    let live = true;
+    void backend.loadBenchmarks().then(value => { if (live) setBenchmarks(value); });
+    return () => { live = false; };
+  }, [backend]);
+  useEffect(() => {
+    if (!backend || !queue) return;
+    let live = true;
+    const eventOf = queue.eventId;
+    void backend.loadPlayerProfiles([...new Set(queue.rows.map(row => row.playerId))]).then(byPlayer => { if (live) setProfiles({ eventId: eventOf, byPlayer }); });
+    return () => { live = false; };
+    // Only when the session's roster changes, not on every decision.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backend, queue?.eventId, queue?.rows.length]);
+
   useEffect(() => {
     if (!toast) return;
     const handle = window.setTimeout(() => setToast(null), 4000);
@@ -193,6 +216,17 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
     if (!current) return <ErrorCard text="That rep is not in this testing session." back={queueLink} />;
     const previous = index > 0 ? visibleRows[index - 1] : null;
     const next = index >= 0 && index < visibleRows.length - 1 ? visibleRows[index + 1] : null;
+    const byPlayer = profiles?.eventId === eventId ? profiles.byPlayer : {};
+    const cohort = cohortPoints(rows, byPlayer, current.drillKey);
+    const gender = genderOf(byPlayer[current.playerId]);
+    const ageCurve = {
+      points: cohort.points,
+      missingAge: cohort.missingAge,
+      bands: benchmarkBands(benchmarks, current.drillKey, gender),
+      gender,
+      benchmarkLabel: benchmarks ? `benchmarks/${benchmarks.tier ?? "d1"} gen ${benchmarks.generation ?? "?"}, ${gender}` : null,
+      age: ageAt(byPlayer[current.playerId], current.createdAtMillis || Date.now()),
+    };
     return (
       <div className={`rv-workbench${focus ? " focus" : ""}`} ref={workbenchRef}>
         {toast && <p className="admin-banner good rv-toast" role="status"><span className="material-symbols-outlined">check_circle</span>{toast}</p>}
@@ -211,6 +245,7 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
             onSaved,
             focus,
             onToggleFocus: toggleFocus,
+            ageCurve,
           }}
         />
       </div>

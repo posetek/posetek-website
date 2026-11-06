@@ -78,6 +78,8 @@ import {
 import type { FrameRange, Mark, Point, ShuttleFrames, StartingSide } from "../lib/repTools";
 import JumpTechniqueEditor from "./JumpTechniqueEditor";
 import { SavedEvidence, SeriesCharts } from "./RepEvidence";
+import AgeCurve from "./AgeCurve";
+import type { AgeCurveData } from "./AgeCurve";
 import { frameSeriesGroups, sceneEvidence } from "../lib/repEvidence";
 import { drillEvidence } from "../lib/drillEvidence";
 import { drawDrillEvidence } from "./drawDrillEvidence";
@@ -120,6 +122,8 @@ export interface RepValidationContext {
   /** Focus mode: the workbench fills the screen; toggled with F or the button. */
   focus?: boolean;
   onToggleFocus?: () => void;
+  /** The session's athletes by age, the athlete's age and the published benchmark bands. */
+  ageCurve?: AgeCurveData & { age: { age: number; exact: boolean } | null };
 }
 
 export interface RepToolsProps {
@@ -1246,6 +1250,10 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
                 A decision saves a revision: the validated value becomes the result, and the phone's original values, pose and files are kept for training. Saving moves to the next open rep. [ and ] step through the queue.
               </p>
             </section>
+          )}
+
+          {validation?.ageCurve && spec && (
+            <AgeCurve drillKey={drillKey} data={validation.ageCurve} playerId={playerId} value={adjusting ? afterPrimary : recordedPrimary} age={validation.ageCurve.age} />
           )}
 
           {isBroadJump && (

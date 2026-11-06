@@ -179,6 +179,15 @@
     .re-file-plain { margin: 0; padding: 6px 0; border-top: 1px solid var(--surface-border); font-size: 13px; }
   }
 
+  // MARK: age curve
+  .rv-age {
+    svg { width: 100%; height: auto; display: block; }
+    circle { cursor: default; }
+  }
+  .rv-age-band { fill: var(--text-muted); fill-opacity: 0.12; }
+  .rv-age-median { stroke: var(--text-muted); stroke-width: 2; stroke-dasharray: 5 3; }
+  .rv-age-facts { margin: 4px 0 0; padding-left: 18px; font-size: 12px; color: var(--text-muted); li { margin: 2px 0; } }
+
   // MARK: focus mode — the workbench fills the screen; video and data first.
   .rv-workbench.focus {
     position: fixed;
@@ -200,7 +209,6 @@
     .rt-stage { aspect-ratio: auto; height: calc(100vh - 190px); min-height: 320px; }
     > .admin-banner { display: none; }
     .rt-side .admin-card { margin-bottom: 10px; }
-    .rv-decision { position: sticky; top: 0; z-index: 2; }
   }
   .rv-workbench.focus:fullscreen { width: 100vw; height: 100vh; }
   @media (max-width: 900px) {

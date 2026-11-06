@@ -288,6 +288,19 @@ export function previewBackend() {
     restoreRepRevision: async () => { throw new Error("Restoring is not simulated in the preview."); },
   };
   return {
+    // Synthetic birth dates (ages 13–14 at the combine) and a synthetic benchmark with real spread.
+    loadPlayerProfiles: async (ids: string[]) => Object.fromEntries(ids.map((id, index) => [id, {
+      birthDate: new Date(Date.UTC(2012, 8 - index * 5, 10)).toISOString().slice(0, 10), gender: "male",
+    }])),
+    loadBenchmarks: async () => ({ schemaVersion: 1, tier: "preview", generation: 0, cells: Object.fromEntries(
+      ["u12", "u14", "u16", "u18", "senior"].map((band, index) => [`${band}|male`, {
+        broadJumpDistance: { derivation: "measured", athletes: 40 + index * 10, percentiles: { p25: 1.45 + index * 0.18, p50: 1.6 + index * 0.18, p75: 1.75 + index * 0.18 } },
+        sprintMaxSpeed: { derivation: "measured", athletes: 40, percentiles: { p25: 6.2 + index * 0.5, p50: 6.8 + index * 0.5, p75: 7.3 + index * 0.5 } },
+        verticalJumpHeight: { derivation: "scaled", athletes: 1, percentiles: { p25: 0.3 + index * 0.04, p50: 0.34 + index * 0.04, p75: 0.38 + index * 0.04 } },
+        codTotalTime: { derivation: "measured", athletes: 30, percentiles: { p25: 5.6 - index * 0.2, p50: 5.3 - index * 0.2, p75: 5.0 - index * 0.2 } },
+        ballSpeed: { derivation: "measured", athletes: 30, percentiles: { p25: 18 + index * 2, p50: 21 + index * 2, p75: 24 + index * 2 } },
+      }]))
+    }),
     listTestingSessions: async (): Promise<TestingSessionRow[]> => SESSIONS,
     loadValidationQueue: async (eventId: string): Promise<ValidationQueue> => {
       const rows = [...REPS.values()].filter(entry => entry.rep.testingEventId === eventId)
