@@ -45,6 +45,7 @@ import {
   primaryResultText,
   processingFlagged,
   validationNote,
+  noteBody,
   validationRevision,
   validationStatus,
   withAnnotationHistory,
@@ -91,7 +92,16 @@ describe("validation status", () => {
   it("prefixes notes with the decision and keeps them under the callable limit", () => {
     expect(validationNote("validated", "  ")).toBe("Validated");
     expect(validationNote("adjusted", "landing heel")).toBe("Adjusted · landing heel");
-    expect(validationNote("rejected", "x".repeat(3000)).length).toBe(2000);
+    expect(validationNote("flagged", "x".repeat(3000)).length).toBe(2000);
+    expect(validationNote("flagged", "ended early", ["Wrong start / end", "Pose unreliable"])).toBe("Flagged · [Wrong start / end, Pose unreliable] ended early");
+  });
+
+  it("reads the reviewer's words back without the decision prefix or issue tags", () => {
+    expect(noteBody("Rejected · ended too early")).toBe("ended too early");
+    expect(noteBody("Flagged · [Pose unreliable] barely visible")).toBe("barely visible");
+    expect(noteBody("Validated")).toBe("");
+    expect(noteBody(null)).toBe("");
+    expect(validationStatus({ adminRevision: { revisionId: "r", note: "Flagged · [Pose unreliable] x" } }).state).toBe("flagged");
   });
 });
 
@@ -135,13 +145,9 @@ describe("validation revision", () => {
     expect(plan).toHaveProperty("error");
   });
 
-  it("rejects without changing any recorded value", () => {
-    const plan = validationRevision({ drillKey: "changeOfDirection", decision: "rejected", original: { totalTime: 5 }, after: { totalTime: 4 }, changedFields: { totalTime: 4 }, note: "wrong athlete" });
-    expect(plan).toEqual({
-      fields: {},
-      metadataExtras: { resultsValid: false, processingStatus: "partial", failedSteps: ["admin.rejected"] },
-      note: "Rejected · wrong athlete",
-    });
+  it("flags a problem without changing the result or its flags, so it keeps displaying and qualifying", () => {
+    const plan = validationRevision({ drillKey: "changeOfDirection", decision: "flagged", original: { totalTime: 5 }, after: { totalTime: 4 }, changedFields: { totalTime: 4 }, note: "ended too early", issues: ["Wrong start / end"] });
+    expect(plan).toEqual({ fields: {}, metadataExtras: {}, note: "Flagged · [Wrong start / end] ended too early" });
   });
 });
 

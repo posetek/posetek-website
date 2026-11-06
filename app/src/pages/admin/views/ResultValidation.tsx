@@ -3,7 +3,7 @@
 // Choose a team testing session, then step through its reps one at a time:
 // each opens in the rep tools (video or saved pose, every overlay, the
 // drill's own measurement marks) with a decision panel on top. Validate the
-// recorded value, adjust it, or reject the rep; the decision is saved as an
+// recorded value, adjust it, or flag it as needing a fix; the decision is saved as an
 // admin revision and the queue moves on to the next rep that needs review.
 //
 // Results are shown everywhere whether or not they are validated. A saved
@@ -18,7 +18,7 @@ import type { OrganizationReps } from "../lib/resultValidationData";
 import { ageAt, ageMedianCurve, benchmarkBands, cohortPoints, genderOf, organizationPoints } from "../lib/ageCurve";
 import type { PlayerProfile } from "../lib/ageCurve";
 import type { TestingSessionRow, ValidationQueue, ValidationQueueRow } from "../lib/resultValidationData";
-import { primaryMetricValue, primaryResultText, processingFlagged, validationStatus } from "../lib/resultValidation";
+import { noteBody, primaryMetricValue, primaryResultText, processingFlagged, validationStatus } from "../lib/resultValidation";
 import type { ValidationDecision, ValidationState } from "../lib/resultValidation";
 import RepTools from "./RepTools";
 import { LIVE_REP_TOOLS_SOURCE } from "../lib/repToolsSource";
@@ -36,14 +36,15 @@ interface ValidationBackend {
 
 const LIVE_BACKEND: ValidationBackend = { listTestingSessions, loadValidationQueue, loadPlayerProfiles, loadBenchmarks: () => loadBenchmarks("d1"), loadOrganizationReps, repTools: LIVE_REP_TOOLS_SOURCE };
 
-type Show = "open" | "done" | "all";
+type Show = "open" | "fix" | "done" | "all";
 
 const STATE_LABEL: Record<ValidationState, string> = {
-  open: "Not reviewed", validated: "Validated", adjusted: "Adjusted", rejected: "Rejected", revised: "Revised",
+  open: "Not reviewed", validated: "Validated", adjusted: "Adjusted", flagged: "Needs fix", rejected: "Rejected (hidden)", revised: "Revised",
 };
 
 const isOpen = (row: ValidationQueueRow) => row.status.state === "open";
-const matchesShow = (row: ValidationQueueRow, show: Show) => show === "all" || (show === "open" ? isOpen(row) : !isOpen(row));
+const needsFix = (row: ValidationQueueRow) => row.status.state === "flagged" || row.status.state === "rejected";
+const matchesShow = (row: ValidationQueueRow, show: Show) => show === "all" || (show === "open" ? isOpen(row) : show === "fix" ? needsFix(row) : !isOpen(row) && !needsFix(row));
 
 const dateText = (millis: number | null) => millis === null ? "Date not recorded"
   : new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(millis);
@@ -53,7 +54,7 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
   const eventId = search.get("event");
   const repKey = search.get("rep");
   const drillFilter = search.get("drill") ?? "all";
-  const show = (["open", "done", "all"].includes(search.get("show") ?? "") ? search.get("show") : "open") as Show;
+  const show = (["open", "fix", "done", "all"].includes(search.get("show") ?? "") ? search.get("show") : "open") as Show;
 
   const [backend, setBackend] = useState<ValidationBackend | null>(preview ? null : LIVE_BACKEND);
   const [sessions, setSessions] = useState<TestingSessionRow[] | null>(null);
@@ -184,9 +185,9 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
   const index = current ? visibleRows.findIndex(row => row.key === current.key) : -1;
 
   const counts = useMemo(() => {
-    const result: Record<string, number> = { all: drillRows.length, open: 0, done: 0, flagged: 0 };
+    const result: Record<string, number> = { all: drillRows.length, open: 0, fix: 0, done: 0, flagged: 0 };
     for (const row of drillRows) {
-      if (isOpen(row)) result.open++; else result.done++;
+      if (isOpen(row)) result.open++; else if (needsFix(row)) result.fix++; else result.done++;
       if (row.flagged && isOpen(row)) result.flagged++;
     }
     return result;
@@ -201,6 +202,48 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
     }
     return result;
   }, [rows]);
+
+  /**
+   * Every reviewed rep in the session with its decision and the reviewer's note,
+   * as JSON for later algorithm work (people or agents). Firestore remains the
+   * source of truth: each entry names the rep document holding the revision.
+   */
+  function exportNotes() {
+    const reviewed = rows.filter(row => row.status.state !== "open");
+    const payload = {
+      schemaVersion: 1,
+      kind: "posetek-result-validation-notes",
+      exportedAt: new Date().toISOString(),
+      testingEventId: eventId,
+      sessionName: session?.name ?? null,
+      organizationId: session?.organizationId ?? null,
+      howToRead: "One entry per reviewed rep. decision: validated (recorded value confirmed), adjusted (value corrected), flagged (result kept as is; problem recorded for follow-up), rejected (legacy: result marked invalid), revised (changed in the rep tools). note is the reviewer's words; issues are the tags picked with a flag. value is the rep's current primary result in stored units (m, m/s, s). The full before/after record is players/{playerId}/reps/{repId}/revisions/{revisionId} and admin_annotations.json in the rep's storage folder.",
+      reps: reviewed.map(row => ({
+        playerId: row.playerId,
+        playerName: row.playerName,
+        repId: row.repId,
+        drill: row.drillKey,
+        sessionNumber: row.sessionNumber,
+        repNumber: row.repNumber,
+        recordedAtMillis: row.createdAtMillis || null,
+        decision: row.status.state,
+        note: noteBody(row.status.note),
+        issues: (row.status.note?.match(/^\w+\s*·\s*\[([^\]]*)\]/)?.[1] ?? "").split(",").map(item => item.trim()).filter(Boolean),
+        rawNote: row.status.note,
+        reviewer: row.status.byEmail,
+        decidedAtMillis: row.status.atMillis,
+        value: row.value,
+        firestorePath: `players/${row.playerId}/reps/${row.repId}`,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `review-notes-${(session?.name ?? eventId ?? "session").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   function openRep(row: ValidationQueueRow | null | undefined) {
     if (row) go({ rep: row.key });
@@ -276,6 +319,12 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
             onPrevious: previous ? () => openRep(previous) : null,
             onNext: next ? () => openRep(next) : null,
             onSaved,
+            onUpdated: rep => {
+              if (!rep) { setQueueGeneration(value => value + 1); return; }
+              const updated: ValidationQueueRow = { ...current, value: primaryMetricValue(current.drillKey, rep) ?? current.value, flagged: processingFlagged(rep), status: validationStatus(rep) };
+              setQueueState(state => state?.queue ? { ...state, queue: { ...state.queue, rows: state.queue.rows.map(row => (row.key === current.key ? updated : row)) } } : state);
+              setToast(`Decision undone · ${current.playerName} · ${current.drillLabel} ${current.sessionNumber}.${current.repNumber}`);
+            },
             focus,
             onToggleFocus: toggleFocus,
             ageCurve,
@@ -299,6 +348,9 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
           </div>
           <div className="admin-heading-actions">
             <button className="quiet-button" type="button" onClick={() => setQueueGeneration(value => value + 1)}><span className="material-symbols-outlined">refresh</span>Reload</button>
+            <button className="quiet-button" type="button" disabled={!rows.some(row => row.status.state !== "open")} onClick={exportNotes} title="Download every decision and reviewer note in this session as JSON">
+              <span className="material-symbols-outlined">download</span>Export notes
+            </button>
             <button className="primary-cta" type="button" disabled={!visibleRows.length} onClick={() => openRep(visibleRows.find(isOpen) ?? visibleRows[0])}>
               <span className="material-symbols-outlined">play_arrow</span>{counts.open ? `Review ${counts.open} open` : "Open the first rep"}
             </button>
@@ -320,7 +372,7 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
                 ))}
               </div>
               <div className="rv-segment" role="group" aria-label="Show">
-                {([["open", `Needs review · ${counts.open}`], ["done", `Reviewed · ${counts.done}`], ["all", `All · ${counts.all}`]] as [Show, string][]).map(([value, label]) => (
+                {([["open", `Needs review · ${counts.open}`], ["fix", `Needs fix · ${counts.fix}`], ["done", `Reviewed · ${counts.done}`], ["all", `All · ${counts.all}`]] as [Show, string][]).map(([value, label]) => (
                   <button key={value} type="button" className={show === value ? "active" : ""} onClick={() => go({ show: value === "open" ? null : value })}>{label}</button>
                 ))}
               </div>
@@ -341,7 +393,7 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
                         <td className="rv-value">{primaryResultText(row.drillKey, row.value)}</td>
                         <td>
                           <span className={`rv-status ${row.status.state}`}>{STATE_LABEL[row.status.state]}</span>
-                          {row.flagged && isOpen(row) && <span className="rv-status flagged">Flagged</span>}
+                          {row.flagged && isOpen(row) && <span className="rv-status phoneflag">Phone flagged</span>}
                         </td>
                       </tr>
                     ))}

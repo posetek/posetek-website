@@ -26,6 +26,8 @@ const SESSIONS: TestingSessionRow[] = [
 
 interface PreviewRep { playerId: string; rep: any; metadata: any; broadJump: any; pose: any[]; tracking: any; extra: Record<string, any>; sessionJson: Record<string, any>; adminAnnotations: any; revisions: RepRevisionRow[] }
 const REPS = new Map<string, PreviewRep>();
+/** What seeded legacy revisions replaced, for restoring them in the preview. */
+const PREVIEW_LEGACY = new Map<string, { rep: any; metadata: any }>();
 
 // MARK: - A synthetic athlete: MediaPipe's 33 landmarks as [x, y, z, visibility]
 
@@ -236,6 +238,13 @@ function seed() {
     addRep(player.id, `sh-${player.id}`, { repType: "deadballShot", sessionNumber: 5, repNumber: 1, velocity: 24.1, launch_angle: 18.2, strike_foot: "right" },
       kick.metadata, kick.pose, null, { extra: kick.extra });
   });
+  // A legacy rejection (saved before flagging existed): the result was marked invalid.
+  const rejected = REPS.get(`${PLAYERS[0].id}/vj-${PLAYERS[0].id}`)!;
+  PREVIEW_LEGACY.set("preview-rejected", { rep: structuredClone(rejected.rep), metadata: structuredClone(rejected.metadata) });
+  rejected.rep.adminRevision = { revisionId: "preview-rejected", method: "manual_annotation", byEmail: "admin@posetek.test", atMillis: Date.UTC(2026, 10, 5, 23), note: "Rejected · ended too early" };
+  rejected.metadata = { ...rejected.metadata, resultsValid: false, processingStatus: "partial", failedSteps: ["admin.rejected"] };
+  rejected.revisions.unshift({ id: "preview-rejected", createdAtMillis: Date.UTC(2026, 10, 5, 23), byEmail: "admin@posetek.test", note: "Rejected · ended too early", fields: {}, restored: false });
+
   // One rep already validated, as it would read back from Firestore.
   const done = REPS.get(`${PLAYERS[1].id}/bj-${PLAYERS[1].id}-1`)!;
   done.rep.adminRevision = { revisionId: "preview-earlier", method: "manual_annotation", byEmail: "coach@posetek.test", atMillis: Date.UTC(2026, 10, 4, 18), note: "Validated" };
@@ -298,6 +307,8 @@ function drillKeyMatches(rep: any, drillKey: string) {
 export function previewBackend() {
   seed();
   let revisionCounter = 0;
+  // What each revision replaced, so a restore can put it back (adminRestoreRepRevision).
+  const before = new Map<string, { rep: any; metadata: any }>(PREVIEW_LEGACY);
   const repTools: RepToolsSource = {
     loadRep: async (playerId, repId) => structuredClone(REPS.get(`${playerId}/${repId}`)?.rep ?? null),
     loadPlayer: async playerId => {
@@ -330,6 +341,7 @@ export function previewBackend() {
       await new Promise(resolve => setTimeout(resolve, 250));
       const revisionId = `preview-${++revisionCounter}`;
       const provenance = { revisionId, method: "manual_annotation", byEmail: "admin@posetek.test", atMillis: Date.now(), note: payload.note || null };
+      before.set(revisionId, { rep: structuredClone(entry.rep), metadata: structuredClone(entry.metadata) });
       entry.revisions.unshift({ id: revisionId, createdAtMillis: Date.now(), byEmail: "admin@posetek.test", note: payload.note, fields: payload.fields, restored: false });
       entry.rep = { ...entry.rep, ...payload.fields, adminRevision: provenance };
       entry.metadata = { ...entry.metadata, ...payload.metadata, adminRevision: provenance };
@@ -337,7 +349,18 @@ export function previewBackend() {
       console.info("[result validation preview] saved", payload);
       return { revisionId, folder: `${payload.playerId}/preview/${payload.repId}`, rep: structuredClone(entry.rep) };
     },
-    restoreRepRevision: async () => { throw new Error("Restoring is not simulated in the preview."); },
+    restoreRepRevision: async (playerId: string, repId: string, revisionId: string) => {
+      const entry = REPS.get(`${playerId}/${repId}`);
+      const previous = before.get(revisionId);
+      const row = entry?.revisions.find(item => item.id === revisionId);
+      if (!entry || !previous || !row) throw new Error("That revision does not exist.");
+      if (row.restored) throw new Error("That revision was already restored.");
+      await new Promise(resolve => setTimeout(resolve, 200));
+      entry.rep = previous.rep;
+      entry.metadata = previous.metadata;
+      row.restored = true;
+      return { revisionId, rep: structuredClone(entry.rep) };
+    },
   };
   return {
     // Synthetic birth dates (ages 13–14 at the combine) and a synthetic benchmark with real spread.

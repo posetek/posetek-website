@@ -92,7 +92,8 @@
     &.adjusted { color: #2b6fd6; border-color: rgba(43, 111, 214, 0.45); background: rgba(43, 111, 214, 0.1); }
     &.rejected { color: #c43d3d; border-color: rgba(196, 61, 61, 0.45); background: rgba(196, 61, 61, 0.1); }
     &.revised { color: #9a6a12; border-color: rgba(154, 106, 18, 0.45); background: rgba(154, 106, 18, 0.1); }
-    &.flagged { color: #9a6a12; border-style: dashed; }
+    &.flagged { color: #8a5a00; border-color: rgba(201, 133, 0, 0.6); background: rgba(237, 161, 0, 0.14); }
+    &.phoneflag { color: #9a6a12; border-style: dashed; }
   }
 
   // The workbench heading: previous / position / next.
@@ -129,7 +130,17 @@
     margin-top: 10px;
     .quiet-button, .primary-cta { margin: 0; }
   }
-  .rv-reject { color: #c43d3d; }
+  .rv-flag-button { color: #8a5a00; }
+  .rv-issues { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .rv-chip.small { padding: 4px 9px; font-size: 12px; }
+  .rv-rejected {
+    margin: 10px 0; padding: 10px 12px; border-radius: var(--radius-sm, 10px);
+    border: 1px solid rgba(196, 61, 61, 0.45); background: rgba(196, 61, 61, 0.08);
+    p { margin: 0 0 8px; font-size: 13px; }
+    blockquote { margin: 0 0 8px; padding-left: 10px; border-left: 3px solid rgba(196, 61, 61, 0.45); font-size: 13px; }
+    .primary-cta { margin: 0 0 6px; }
+  }
+  .link-button { border: 0; padding: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }
 
   .rv-feet .rt-annotate-row strong { display: inline-flex; align-items: center; gap: 6px; }
   .rv-dot {

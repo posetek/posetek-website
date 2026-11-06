@@ -39,6 +39,8 @@ import {
   processingFlagged,
   validationRevision,
   validationStatus,
+  FLAG_ISSUES,
+  noteBody,
   withAnnotationHistory,
   BROAD_JUMP_MAX_DISTANCE_METERS,
 } from "../lib/resultValidation";
@@ -119,6 +121,8 @@ export interface RepValidationContext {
   onPrevious: (() => void) | null;
   onNext: (() => void) | null;
   onSaved: (rep: any, decision: ValidationDecision) => void;
+  /** The rep changed without a new decision (a decision was undone); update the queue, stay on the rep. */
+  onUpdated?: (rep: any) => void;
   /** Focus mode: the workbench fills the screen; toggled with F or the button. */
   focus?: boolean;
   onToggleFocus?: () => void;
@@ -636,15 +640,18 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
   const status = validationStatus(rep);
   const flagged = processingFlagged(rep) || processingFlagged(metadata);
   const adjusting = changedCount > 0 || measurementsEdited || feetEdited;
-  const [saving, setSaving] = useState<ValidationDecision | null>(null);
+  const [saving, setSaving] = useState<ValidationDecision | "undo" | null>(null);
+  const [flagIssues, setFlagIssues] = useState<string[]>([]);
+  const toggleIssue = (key: string) => setFlagIssues(current => (current.includes(key) ? current.filter(item => item !== key) : [...current, key]));
 
-  async function saveValidation(decision: ValidationDecision) {
-    if (saving || run) return;
+  async function saveValidation(decision: ValidationDecision, noteOverride?: string) {
+    if ((saving && saving !== "undo") || run) return;
     if (decision === "adjusted" && measurementTimingBlocked) return;
     setPushError(null);
     const assembled = assembleRevision();
     const changedFields = Object.fromEntries(Object.entries(assembled.fields).filter(([, value]) => value !== undefined)) as Record<string, number | string | null>;
-    const plan = validationRevision({ drillKey, decision, original, after, changedFields: decision === "adjusted" ? changedFields : {}, note });
+    const issueLabels = decision === "flagged" ? FLAG_ISSUES.filter(issue => flagIssues.includes(issue.key)).map(issue => issue.label) : [];
+    const plan = validationRevision({ drillKey, decision, original, after, changedFields: decision === "adjusted" ? changedFields : {}, note: noteOverride ?? note, issues: issueLabels });
     if ("error" in plan) { setPushError(plan.error); return; }
     setSaving(decision);
     try {
@@ -657,7 +664,10 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
           decision,
           primaryMetric: key,
           recordedValue: recordedPrimary,
-          validatedValue: decision === "rejected" || !key ? null : plan.fields[key] ?? null,
+          validatedValue: decision === "flagged" || !key ? null : plan.fields[key] ?? null,
+          issues: decision === "flagged" ? flagIssues : [],
+          note: (noteOverride ?? note).trim(),
+          reviewerNoteVersion: 1,
           previousState: status.state,
           processingFlagged: flagged,
           testingEventId: typeof rep?.testingEventId === "string" ? rep.testingEventId : null,
@@ -675,6 +685,32 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       setPushError(error?.message || "The decision could not be saved.");
     } finally {
       setSaving(null);
+    }
+  }
+
+  /**
+   * Undo the current decision through the restore callable (the rep returns to
+   * exactly what it was before it). A rejection can be turned into a flag in
+   * the same step, keeping the reviewer's note.
+   */
+  async function undoDecision(thenFlag: boolean) {
+    const revisionId = rep?.adminRevision?.revisionId;
+    if (!revisionId || saving || run) return;
+    setSaving("undo");
+    setPushError(null);
+    try {
+      const restored = await source.restoreRepRevision(playerId, repId, revisionId);
+      if (thenFlag) {
+        const words = noteBody(status.note);
+        await saveValidation("flagged", [words, note.trim()].filter(Boolean).join(" · "));
+        return;
+      }
+      validation?.onUpdated?.(restored?.rep ?? null);
+      onReload();
+    } catch (error: any) {
+      setPushError(error?.message || "The decision could not be undone.");
+    } finally {
+      setSaving(current => (current === "undo" ? null : current));
     }
   }
 
@@ -1219,21 +1255,37 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
                   <dd>{primaryResultText(drillKey, adjusting ? afterPrimary : recordedPrimary)}</dd>
                 </div>
               </dl>
-              {status.state !== "open" && (
+              {status.state === "rejected" && (
+                <div className="rv-rejected" role="alert">
+                  <p><strong>This rep was rejected.</strong> Rejecting marked its result invalid, so it is hidden from athletes, coaches and Insights. Rejecting has been replaced by flagging, which leaves the result as it is.</p>
+                  {noteBody(status.note) && <blockquote>{noteBody(status.note)}</blockquote>}
+                  <button className="primary-cta" type="button" disabled={Boolean(saving) || Boolean(run)} onClick={() => undoDecision(true)}>
+                    <span className="material-symbols-outlined">undo</span>{saving === "undo" || saving === "flagged" ? "Restoring…" : "Undo rejection → flag for fix"}
+                  </button>
+                  <p className="admin-note">Restores the result exactly as the phone recorded it and saves your note{flagIssues.length ? " and the selected issues" : ""} as a flag. The rejection stays in the revision history.</p>
+                </div>
+              )}
+              {status.state !== "open" && status.state !== "rejected" && (
                 <p className="admin-note">
-                  {STATE_LABEL[status.state]}{status.byEmail ? ` by ${status.byEmail}` : ""}{status.atMillis ? ` · ${new Date(status.atMillis).toLocaleString()}` : ""}. Saving again keeps that decision in the revision history.
+                  {STATE_LABEL[status.state]}{status.byEmail ? ` by ${status.byEmail}` : ""}{status.atMillis ? ` · ${new Date(status.atMillis).toLocaleString()}` : ""}.{status.state === "flagged" && noteBody(status.note) ? ` “${noteBody(status.note)}”` : ""} Saving again keeps that decision in the revision history.
+                  {" "}<button className="link-button" type="button" disabled={Boolean(saving) || Boolean(run)} onClick={() => undoDecision(false)}>{saving === "undo" ? "Undoing…" : "Undo this decision"}</button>
                 </p>
               )}
               {flagged && <p className="admin-note rv-flag">The phone flagged this rep ({[metadata?.processingStatus, ...(Array.isArray(metadata?.failedSteps) ? metadata.failedSteps : [])].filter(Boolean).join(", ") || "results invalid"}). Validating marks the saved value as the result.</p>}
               {isBroadJump && footDistance !== null && footDistance > BROAD_JUMP_MAX_DISTANCE_METERS && <p className="form-message" role="alert">The feet are {footDistance.toFixed(2)} m apart, over the phone's {BROAD_JUMP_MAX_DISTANCE_METERS} m limit. Check the foot positions.</p>}
               <label className="admin-field">
-                <span>Note (optional, saved with the decision)</span>
-                <textarea value={note} maxLength={1900} rows={2} placeholder={adjusting ? "What was wrong and what you fixed." : "Anything worth knowing about this rep."} onChange={event => setNote(event.target.value)} />
+                <span>Reviewer note (saved with whichever decision you make, for later algorithm work)</span>
+                <textarea value={note} maxLength={1800} rows={3} placeholder={adjusting ? "What was wrong and what you fixed." : "What you see in this rep: what the algorithm got right or wrong, what it should do."} onChange={event => setNote(event.target.value)} />
               </label>
               {pushError && <p className="form-message" role="alert">{pushError}</p>}
+              <div className="rv-issues" role="group" aria-label="Issues for a flag">
+                {FLAG_ISSUES.map(issue => (
+                  <button key={issue.key} type="button" className={`rv-chip small${flagIssues.includes(issue.key) ? " active" : ""}`} aria-pressed={flagIssues.includes(issue.key)} onClick={() => toggleIssue(issue.key)}>{issue.label}</button>
+                ))}
+              </div>
               <div className="rv-actions">
-                <button className="quiet-button rv-reject" type="button" disabled={Boolean(saving) || Boolean(run)} onClick={() => saveValidation("rejected")}>
-                  <span className="material-symbols-outlined">block</span>{saving === "rejected" ? "Rejecting…" : "Reject result"}
+                <button className="quiet-button rv-flag-button" type="button" disabled={Boolean(saving) || Boolean(run) || (!note.trim() && !flagIssues.length)} title={!note.trim() && !flagIssues.length ? "Describe the problem or pick an issue first" : "Record the problem; the result stays as it is"} onClick={() => saveValidation("flagged")}>
+                  <span className="material-symbols-outlined">flag</span>{saving === "flagged" ? "Flagging…" : "Flag: needs fix"}
                 </button>
                 {adjusting ? (
                   <button className="primary-cta" type="button" disabled={Boolean(saving) || Boolean(run) || measurementTimingBlocked} onClick={() => saveValidation("adjusted")}>
@@ -1247,7 +1299,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
               </div>
               <p className="admin-note">
                 {adjusting ? `${changedCount} field${changedCount === 1 ? "" : "s"} change; the table below shows them. ` : ""}
-                A decision saves a revision: the validated value becomes the result, and the phone's original values, pose and files are kept for training. Saving moves to the next open rep. [ and ] step through the queue.
+                Validate or adjust: the saved value becomes the result. Flag: the result stays exactly as it is and the problem (note + issues) is recorded for follow-up. The phone's original values, pose and files are always kept. Saving moves to the next open rep; [ and ] step through the queue.
               </p>
             </section>
           )}
@@ -1625,7 +1677,8 @@ const STATE_LABEL: Record<string, string> = {
   open: "Not reviewed",
   validated: "Validated",
   adjusted: "Adjusted",
-  rejected: "Rejected",
+  rejected: "Rejected (hidden)",
+  flagged: "Needs fix",
   revised: "Revised in rep tools",
 };
 

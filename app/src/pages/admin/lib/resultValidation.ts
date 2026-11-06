@@ -20,8 +20,23 @@
 import { num, int } from "./repTools";
 import type { Point } from "./repTools";
 
-export type ValidationDecision = "validated" | "adjusted" | "rejected";
-export type ValidationState = ValidationDecision | "revised" | "open";
+/** What a reviewer decides. Flagging records a problem for follow-up and leaves the result exactly as it is. */
+export type ValidationDecision = "validated" | "adjusted" | "flagged";
+/** "rejected" remains only to read decisions saved before flagging replaced it (they marked the result invalid). */
+export type ValidationState = ValidationDecision | "rejected" | "revised" | "open";
+
+/** Quick issue tags for a flag, saved with it as training labels. */
+export const FLAG_ISSUES: { key: string; label: string }[] = [
+  { key: "start_end", label: "Wrong start / end" },
+  { key: "tracking", label: "Tracking lost / wrong person" },
+  { key: "pose", label: "Pose unreliable" },
+  { key: "calibration", label: "Calibration / marker distance" },
+  { key: "landing", label: "Landing / stability" },
+  { key: "over", label: "Over-estimate" },
+  { key: "under", label: "Under-estimate" },
+  { key: "athlete", label: "Athlete error, retest" },
+  { key: "other", label: "Other" },
+];
 
 /** The field Insights qualifies each drill by (insights-v2-qualification.js SPECS). */
 export const PRIMARY_METRIC: Record<string, { key: string; label: string }> = {
@@ -61,12 +76,17 @@ export function processingFlagged(rep: Record<string, any> | null | undefined): 
   return Array.isArray(rep.failedSteps) && rep.failedSteps.length > 0;
 }
 
-const NOTE_PREFIX: Record<ValidationDecision, string> = { validated: "Validated", adjusted: "Adjusted", rejected: "Rejected" };
+const NOTE_PREFIX: Record<ValidationDecision, string> = { validated: "Validated", adjusted: "Adjusted", flagged: "Flagged" };
 
 /** The revision note: a fixed decision prefix (which the queue reads back) plus the admin's words. */
-export function validationNote(decision: ValidationDecision, note: string): string {
-  const text = note.trim();
+export function validationNote(decision: ValidationDecision, note: string, issues: string[] = []): string {
+  const text = [issues.length ? `[${issues.join(", ")}]` : "", note.trim()].filter(Boolean).join(" ");
   return `${NOTE_PREFIX[decision]}${text ? ` · ${text}` : ""}`.slice(0, 2000);
+}
+
+/** The reviewer's words from a saved note, without its decision prefix. */
+export function noteBody(note: string | null | undefined): string {
+  return (note ?? "").replace(/^(Validated|Adjusted|Flagged|Rejected)\b(\s*·\s*)?/, "").replace(/^\[[^\]]*\]\s*/, "").trim();
 }
 
 export interface ValidationStatus {
@@ -85,8 +105,8 @@ export function validationStatus(rep: Record<string, any> | null | undefined): V
   const revision = rep?.adminRevision;
   if (!revision?.revisionId) return { state: "open", byEmail: null, atMillis: null, note: null };
   const note = typeof revision.note === "string" ? revision.note : null;
-  const match = note?.match(/^(Validated|Adjusted|Rejected)\b/);
-  const state: ValidationState = match ? (match[1].toLowerCase() as ValidationDecision) : "revised";
+  const match = note?.match(/^(Validated|Adjusted|Flagged|Rejected)\b/);
+  const state: ValidationState = match ? (match[1].toLowerCase() as ValidationState) : "revised";
   return { state, byEmail: typeof revision.byEmail === "string" ? revision.byEmail : null, atMillis: num(revision.atMillis), note };
 }
 
@@ -101,9 +121,9 @@ export interface ValidationRevision {
  *
  * - validated: the recorded primary result, unchanged, plus the valid flags.
  * - adjusted: every changed field plus the (new) primary result and the valid flags.
- * - rejected: no field changes; metadata.json is marked invalid so the result
- *   stops qualifying, while every recorded value stays on the rep and in the
- *   revision snapshot.
+ * - flagged: nothing about the result changes (no fields, no flags); the
+ *   revision only records the problem (note, issue tags) for follow-up, so the
+ *   result keeps displaying and qualifying exactly as before.
  */
 export function validationRevision(input: {
   drillKey: string;
@@ -112,18 +132,14 @@ export function validationRevision(input: {
   after: Record<string, any>;
   changedFields: Record<string, number | string | null>;
   note: string;
+  /** Issue tag labels for a flag; written into the note so they read back with it. */
+  issues?: string[];
 }): ValidationRevision | { error: string } {
-  const { drillKey, decision, original, after, changedFields, note } = input;
+  const { drillKey, decision, original, after, changedFields, note, issues = [] } = input;
   const key = primaryMetricKey(drillKey);
   const label = PRIMARY_METRIC[drillKey]?.label ?? "result";
   if (!key) return { error: "This drill has no result to validate." };
-  if (decision === "rejected") {
-    return {
-      fields: {},
-      metadataExtras: { resultsValid: false, processingStatus: "partial", failedSteps: ["admin.rejected"] },
-      note: validationNote(decision, note),
-    };
-  }
+  if (decision === "flagged") return { fields: {}, metadataExtras: {}, note: validationNote(decision, note, issues) };
   const valid = { resultsValid: true, processingStatus: "complete", failedSteps: [] as string[] };
   if (decision === "validated") {
     const value = primaryMetricValue(drillKey, original);
