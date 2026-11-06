@@ -15,6 +15,7 @@ export const ADMIN_WORKSPACE_GROUPS: { label: string; tools: AdminWorkspaceTool[
     { path: "/admin/drills", label: "Drill library", icon: "exercise", description: "Exercises, demonstrations and content", keywords: "catalog media videos publish exercises" },
   ] },
   { label: "Review tools", tools: [
+    { path: "/admin/result-validation", label: "Result validation", icon: "fact_check", description: "Validate or adjust testing results by session", keywords: "validate adjust correct annotate results testing cohort broad jump sprint review" },
     { path: "/admin/analysis", label: "Technique review", icon: "view_in_ar", description: "Recorded movement and reviewed analysis", keywords: "analysis reps evidence comparison" },
   ] },
   { label: "System & support", tools: [

@@ -33,6 +33,7 @@ const PlayerDetail = lazy(() => import("./views/PlayerDetail"));
 const WorkoutEditor = lazy(() => import("./views/WorkoutEditor"));
 const RepTools = lazy(() => import("./views/RepTools"));
 const JumpReviewDemo = import.meta.env.DEV ? lazy(() => import("./views/JumpReviewDemo")) : null;
+const ResultValidation = lazy(() => import("./views/ResultValidation"));
 const PlannerRedirect = lazy(() => import("./views/PlannerRedirect"));
 const AnalysisWorkspace = lazy(() => import("./views/AnalysisWorkspace"));
 const PersonalizedPrograms = lazy(() => import("./views/PersonalizedPrograms"));
@@ -132,6 +133,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="accounts/player/:playerId/results/:drillKey/:repId" element={<RepTools />} />
           <Route path="programs" element={<PersonalizedPrograms />} />
           <Route path="analysis" element={<AnalysisWorkspace />} />
+          <Route path="result-validation" element={<ResultValidation preview={preview} />} />
           <Route path="ai-incidents" element={<AiIncidents />} />
           <Route path="device-performance" element={<PhonePerformance preview={preview} />} />
           <Route path="device-performance/team-sessions" element={<TeamSessionPerformance preview={preview} />} />
