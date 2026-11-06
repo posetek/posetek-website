@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ageAt, bandForAge, benchmarkBands, cohortPoints, cohortRank, genderOf } from "./ageCurve";
+import { ageAt, ageMedianCurve, bandForAge, benchmarkBands, cohortPoints, cohortRank, curveAt, genderOf, organizationPoints, percentileAmong } from "./ageCurve";
 import type { ValidationQueueRow } from "./resultValidationData";
 
 const at = Date.UTC(2026, 10, 3);
@@ -55,5 +55,48 @@ describe("benchmark bands", () => {
     expect(bandForAge(bands, 15)?.key).toBe("u16");
     expect(benchmarkBands(null, "broadJump", "male")).toEqual([]);
     expect(benchmarkBands(dataset, "freeRecord", "male")).toEqual([]);
+  });
+});
+
+describe("organization-wide curve", () => {
+  const rep = (id: string, value: number | null, extra: Record<string, unknown> = {}) => ({ id, repType: "broadJump", createdAtMillis: at, broadJumpDistance: value, ...extra });
+  const profile = { birthDate: "2012-11-03" };
+
+  it("plots every rep at the athlete's age on that rep's date, leaving out rejected, invalid and result-less reps", () => {
+    const { points, missingAge, excluded } = organizationPoints([
+      { playerId: "a", playerName: "A", profile, rep: rep("1", 1.7) },
+      { playerId: "a", playerName: "A", profile, rep: rep("2", 1.8, { createdAtMillis: Date.UTC(2027, 10, 3) }) },
+      { playerId: "a", playerName: "A", profile, rep: rep("3", 2.6, { adminRevision: { revisionId: "r", note: "Rejected" } }) },
+      { playerId: "b", playerName: "B", profile, rep: rep("4", 1.9, { resultsValid: false }) },
+      { playerId: "b", playerName: "B", profile, rep: rep("5", 1.95, { resultsValid: false, adminRevision: { revisionId: "r", note: "Validated" } }) },
+      { playerId: "c", playerName: "C", profile: {}, rep: rep("6", 1.5) },
+      { playerId: "c", playerName: "C", profile, rep: rep("7", null) },
+    ], "broadJump");
+    expect(points.map(p => [p.repKey, p.value])).toEqual([["a/1", 1.7], ["a/2", 1.8], ["b/5", 1.95]]);
+    expect(points[0].age).toBeCloseTo(14, 2);
+    expect(points[1].age).toBeCloseTo(15, 2);
+    expect(missingAge).toBe(1);
+    expect(excluded).toBe(3);
+  });
+
+  it("bins by whole year for the median and middle half, and interpolates between bins", () => {
+    const points = [1, 2, 3, 4, 5].flatMap(v => [
+      { playerId: "x", name: "x", age: 12.2, exactAge: true, value: v, repKey: "a" + v },
+      { playerId: "x", name: "x", age: 13.7, exactAge: true, value: v + 1, repKey: "b" + v },
+    ]);
+    const curve = ageMedianCurve([...points, { playerId: "y", name: "y", age: 16.1, exactAge: true, value: 9, repKey: "lone" }]);
+    expect(curve.map(c => [c.age, c.median, c.p25, c.p75, c.n])).toEqual([[12.5, 3, 2, 4, 5], [13.5, 4, 3, 5, 5]]);
+    expect(curveAt(curve, 13)).toBeCloseTo(3.5);
+    expect(curveAt(curve, 20)).toBe(4);
+    expect(curveAt([], 13)).toBeNull();
+  });
+
+  it("gives the share of other reps a value beats, counting ties as half and leaving out the rep itself", () => {
+    const points = [1, 2, 3, 4].map(v => ({ playerId: "p", name: "p", age: 13 + v, exactAge: true, value: v, repKey: "k" + v }));
+    expect(percentileAmong(points, 3, true, "k3")).toEqual({ percent: (2 / 3) * 100, n: 3 });
+    expect(percentileAmong(points, 2, true, "none")).toEqual({ percent: 37.5, n: 4 });
+    expect(percentileAmong(points, 2, false, "k2")!.percent).toBeCloseTo((2 / 3) * 100);
+    expect(percentileAmong(points, 3, true, "k3", p => Math.abs(p.age - 16) <= 1)).toEqual({ percent: 50, n: 2 });
+    expect(percentileAmong([], 3, true, "x")).toBeNull();
   });
 });

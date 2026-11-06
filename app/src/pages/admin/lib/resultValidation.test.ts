@@ -12,6 +12,7 @@ vi.mock("../../../lib/firebase", () => {
   return {
     storage: {},
     cloud: {},
+    auth: {},
     db: {
       collection: (name: string) => ({
         doc: (id: string) => ({

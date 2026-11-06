@@ -5,7 +5,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { ValidationQueueRow } from "./resultValidationData";
+import type { OrganizationRep, ValidationQueueRow } from "./resultValidationData";
+import { primaryMetricValue, processingFlagged, validationStatus } from "./resultValidation";
 
 /** Drill → benchmark metric key (athlete-profile-spec / BenchmarkMetric). */
 export const BENCHMARK_METRIC: Record<string, { key: string; higherIsBetter: boolean }> = {
@@ -105,4 +106,64 @@ export function cohortRank(points: AgePoint[], playerId: string, value: number, 
   const values = points.filter(point => point.playerId !== playerId).map(point => point.value);
   const better = values.filter(other => (higherIsBetter ? other > value : other < value)).length;
   return { rank: better + 1, of: values.length + 1 };
+}
+
+// MARK: - Organization-wide: every rep, the age curve through them, percentiles
+
+/**
+ * One point per rep across the organization, at the athlete's age on the rep's
+ * date. Rejected reps are left out, and so are reps the phone flagged as
+ * invalid unless an admin validated or adjusted them.
+ */
+export function organizationPoints(reps: OrganizationRep[], drillKey: string): { points: AgePoint[]; missingAge: number; excluded: number } {
+  const points: AgePoint[] = [];
+  let missingAge = 0, excluded = 0;
+  for (const { playerId, playerName, profile, rep } of reps) {
+    const value = primaryMetricValue(drillKey, rep);
+    const state = validationStatus(rep).state;
+    if (value === null || state === "rejected" || (processingFlagged(rep) && state !== "validated" && state !== "adjusted")) { excluded++; continue; }
+    const age = ageAt(profile, rep.createdAtMillis || Date.now());
+    if (!age) { missingAge++; continue; }
+    points.push({ playerId, name: playerName, age: age.age, exactAge: age.exact, value, repKey: `${playerId}/${rep.id}` });
+  }
+  return { points, missingAge, excluded };
+}
+
+export interface CurvePoint { age: number; median: number; p25: number; p75: number; n: number }
+
+const quantile = (sorted: number[], q: number) => {
+  const position = (sorted.length - 1) * q, lower = Math.floor(position), upper = Math.ceil(position);
+  return sorted[lower] + (sorted[upper] - sorted[lower]) * (position - lower);
+};
+
+/** The organization's own curve: median and middle half per one-year age bin with at least `minimum` reps. */
+export function ageMedianCurve(points: AgePoint[], minimum = 5): CurvePoint[] {
+  const bins = new Map<number, number[]>();
+  for (const point of points) {
+    const bin = Math.floor(point.age);
+    bins.set(bin, [...(bins.get(bin) ?? []), point.value]);
+  }
+  return [...bins.entries()].filter(([, values]) => values.length >= minimum).sort((a, b) => a[0] - b[0]).map(([bin, values]) => {
+    const sorted = [...values].sort((a, b) => a - b);
+    return { age: bin + 0.5, median: quantile(sorted, 0.5), p25: quantile(sorted, 0.25), p75: quantile(sorted, 0.75), n: values.length };
+  });
+}
+
+/** The curve's median at an age, interpolated between bin centers (clamped at the ends). */
+export function curveAt(curve: CurvePoint[], age: number): number | null {
+  if (!curve.length) return null;
+  if (age <= curve[0].age) return curve[0].median;
+  if (age >= curve[curve.length - 1].age) return curve[curve.length - 1].median;
+  const i = curve.findIndex(point => point.age >= age);
+  const a = curve[i - 1], b = curve[i];
+  return a.median + ((age - a.age) / (b.age - a.age)) * (b.median - a.median);
+}
+
+/** Share of the other reps this value is better than (0–100), and how many it was compared with. */
+export function percentileAmong(points: AgePoint[], value: number, higherIsBetter: boolean, excludeKey: string, filter: (point: AgePoint) => boolean = () => true): { percent: number; n: number } | null {
+  const others = points.filter(point => point.repKey !== excludeKey && filter(point));
+  if (!others.length) return null;
+  const beaten = others.filter(point => (higherIsBetter ? point.value < value : point.value > value)).length;
+  const tied = others.filter(point => point.value === value).length;
+  return { percent: ((beaten + tied / 2) / others.length) * 100, n: others.length };
 }

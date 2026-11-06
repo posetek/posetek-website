@@ -13,8 +13,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { DRILLS } from "../../athlete-portal/lib/drills";
-import { listTestingSessions, loadBenchmarks, loadPlayerProfiles, loadValidationQueue } from "../lib/resultValidationData";
-import { ageAt, benchmarkBands, cohortPoints, genderOf } from "../lib/ageCurve";
+import { listTestingSessions, loadBenchmarks, loadOrganizationReps, loadPlayerProfiles, loadValidationQueue } from "../lib/resultValidationData";
+import type { OrganizationReps } from "../lib/resultValidationData";
+import { ageAt, ageMedianCurve, benchmarkBands, cohortPoints, genderOf, organizationPoints } from "../lib/ageCurve";
 import type { PlayerProfile } from "../lib/ageCurve";
 import type { TestingSessionRow, ValidationQueue, ValidationQueueRow } from "../lib/resultValidationData";
 import { primaryMetricValue, primaryResultText, processingFlagged, validationStatus } from "../lib/resultValidation";
@@ -29,10 +30,11 @@ interface ValidationBackend {
   loadValidationQueue: (eventId: string) => Promise<ValidationQueue>;
   loadPlayerProfiles: (playerIds: string[]) => Promise<Record<string, PlayerProfile>>;
   loadBenchmarks: () => Promise<any | null>;
+  loadOrganizationReps: (organizationId: string, drillKey: string) => Promise<OrganizationReps>;
   repTools: RepToolsSource;
 }
 
-const LIVE_BACKEND: ValidationBackend = { listTestingSessions, loadValidationQueue, loadPlayerProfiles, loadBenchmarks: () => loadBenchmarks("d1"), repTools: LIVE_REP_TOOLS_SOURCE };
+const LIVE_BACKEND: ValidationBackend = { listTestingSessions, loadValidationQueue, loadPlayerProfiles, loadBenchmarks: () => loadBenchmarks("d1"), loadOrganizationReps, repTools: LIVE_REP_TOOLS_SOURCE };
 
 type Show = "open" | "done" | "all";
 
@@ -161,6 +163,24 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
   const drillRows = useMemo(() => rows.filter(row => drillFilter === "all" || row.drillKey === drillFilter), [rows, drillFilter]);
   const visibleRows = useMemo(() => drillRows.filter(row => matchesShow(row, show) || row.key === repKey), [drillRows, show, repKey]);
   const current = repKey ? rows.find(row => row.key === repKey) ?? null : null;
+
+  // Every rep of the open drill across the session's organization, loaded once per drill.
+  const organizationId = session?.organizationId ?? null;
+  const currentDrill = current?.drillKey ?? null;
+  const [orgReps, setOrgReps] = useState<Record<string, { data: OrganizationReps | null; error: string | null }>>({});
+  const orgRequested = useRef(new Set<string>());
+  useEffect(() => {
+    if (!backend || !organizationId || !currentDrill) return;
+    const key = `${organizationId}|${currentDrill}`;
+    if (orgRequested.current.has(key)) return;
+    orgRequested.current.add(key);
+    backend.loadOrganizationReps(organizationId, currentDrill)
+      .then(data => setOrgReps(state => ({ ...state, [key]: { data, error: null } })))
+      .catch(error => {
+        orgRequested.current.delete(key);
+        setOrgReps(state => ({ ...state, [key]: { data: null, error: error?.message || "The organization's reps could not be loaded." } }));
+      });
+  }, [backend, organizationId, currentDrill]);
   const index = current ? visibleRows.findIndex(row => row.key === current.key) : -1;
 
   const counts = useMemo(() => {
@@ -217,15 +237,25 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
     const previous = index > 0 ? visibleRows[index - 1] : null;
     const next = index >= 0 && index < visibleRows.length - 1 ? visibleRows[index + 1] : null;
     const byPlayer = profiles?.eventId === eventId ? profiles.byPlayer : {};
-    const cohort = cohortPoints(rows, byPlayer, current.drillKey);
-    const gender = genderOf(byPlayer[current.playerId]);
+    const org = organizationId ? orgReps[`${organizationId}|${current.drillKey}`] : undefined;
+    // The organization's reps once loaded; meanwhile (or for sessions with no organization) this session's reps.
+    const scoped = org?.data ? organizationPoints(org.data.reps, current.drillKey) : { ...cohortPoints(rows, byPlayer, current.drillKey), excluded: 0 };
+    const profile = org?.data?.reps.find(item => item.playerId === current.playerId)?.profile ?? byPlayer[current.playerId];
+    const gender = genderOf(profile);
     const ageCurve = {
-      points: cohort.points,
-      missingAge: cohort.missingAge,
+      scopeLabel: org?.data ? org.data.organizationName : "this session",
+      points: scoped.points,
+      curve: ageMedianCurve(scoped.points),
+      missingAge: scoped.missingAge,
+      excluded: scoped.excluded,
+      athletes: new Set(scoped.points.map(point => point.playerId)).size,
+      loading: Boolean(organizationId && !org),
+      error: org?.error ?? (org?.data?.failedPlayers ? `Reps could not be read for ${org.data.failedPlayers} athletes; the curve is incomplete.` : null),
       bands: benchmarkBands(benchmarks, current.drillKey, gender),
       gender,
       benchmarkLabel: benchmarks ? `benchmarks/${benchmarks.tier ?? "d1"} gen ${benchmarks.generation ?? "?"}, ${gender}` : null,
-      age: ageAt(byPlayer[current.playerId], current.createdAtMillis || Date.now()),
+      currentRepKey: current.key,
+      age: ageAt(profile, current.createdAtMillis || Date.now()),
     };
     return (
       <div className={`rv-workbench${focus ? " focus" : ""}`} ref={workbenchRef}>

@@ -7,6 +7,7 @@
 
 import { db } from "../../../lib/firebase";
 import { DRILLS } from "../../athlete-portal/lib/drills";
+import { loadOrganizationPlayers } from "./accounts";
 import { normalizeRep, repNumber, sessionNumber } from "../../athlete-portal/lib/metrics";
 import { primaryMetricValue, processingFlagged, validationStatus } from "./resultValidation";
 import type { ValidationStatus } from "./resultValidation";
@@ -19,6 +20,7 @@ export interface TestingSessionRow {
   participantCount: number;
   createdAtMillis: number | null;
   teamIds: string[];
+  organizationId: string | null;
 }
 
 export interface ValidationQueueRow {
@@ -60,6 +62,7 @@ export async function listTestingSessions(limit = 60): Promise<TestingSessionRow
       participantCount: Number.isFinite(data.participantCount) ? data.participantCount : 0,
       createdAtMillis: millisOf(data.createdAtMillis) ?? millisOf(data.createdAt),
       teamIds: Array.isArray(data.teamIds) ? data.teamIds.filter((id: unknown) => typeof id === "string") : [],
+      organizationId: typeof data.organizationId === "string" && data.organizationId ? data.organizationId : null,
     };
   });
 }
@@ -157,4 +160,50 @@ export async function loadBenchmarks(tier = "d1"): Promise<any | null> {
   } catch {
     return null;
   }
+}
+
+export interface OrganizationRep { playerId: string; playerName: string; profile: PlayerProfile; rep: any }
+export interface OrganizationReps {
+  organizationId: string;
+  organizationName: string;
+  drillKey: string;
+  players: number;
+  reps: OrganizationRep[];
+  /** Athletes whose reps could not be read. */
+  failedPlayers: number;
+  truncated: boolean;
+}
+
+/**
+ * Every rep of one drill across an organization's athletes, for the age curve.
+ * Queries `repType` and `drillType` like the athlete portal (older reps carry
+ * only one of them); one pair of queries per athlete, six athletes at a time.
+ */
+export async function loadOrganizationReps(organizationId: string, drillKey: string): Promise<OrganizationReps> {
+  const drill = DRILLS.find(item => item.key === drillKey);
+  if (!drill) throw new Error("Unknown drill.");
+  const [roster, organization] = await Promise.all([
+    loadOrganizationPlayers(organizationId),
+    db.collection("organizations").doc(organizationId).get().catch(() => null),
+  ]);
+  let failedPlayers = 0;
+  const perPlayer = await mapLimited(roster.players, 6, async player => {
+    try {
+      const reps = db.collection("players").doc(player.id).collection("reps");
+      const snapshots = await Promise.all([reps.where("repType", "in", drill.types).get(), reps.where("drillType", "in", drill.types).get()]);
+      const byId = new Map<string, any>();
+      for (const doc of snapshots.flatMap(snapshot => snapshot.docs)) byId.set(doc.id, normalizeRep(doc));
+      const raw = player.raw || {};
+      const profile: PlayerProfile = { birthDate: raw.birthDate ?? null, dateOfBirth: raw.dateOfBirth ?? null, age: raw.age ?? null, gender: raw.gender ?? null };
+      return [...byId.values()].map(rep => ({ playerId: player.id, playerName: player.name, profile, rep }));
+    } catch {
+      failedPlayers++;
+      return [];
+    }
+  });
+  const name = organization?.exists ? (organization.data()?.name as string | undefined) : undefined;
+  return {
+    organizationId, organizationName: typeof name === "string" && name.trim() ? name.trim() : "This organization", drillKey,
+    players: roster.players.length, reps: perPlayer.flat(), failedPlayers, truncated: roster.truncated,
+  };
 }

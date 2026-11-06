@@ -20,8 +20,8 @@ const PLAYERS = [
 ];
 
 const SESSIONS: TestingSessionRow[] = [
-  { id: EVENT_ID, name: "U14 Boys — fall combine", status: "closed", participantCount: 3, createdAtMillis: Date.UTC(2026, 10, 3, 17), teamIds: ["preview-team"] },
-  { id: "preview-event-u12", name: "U12 Girls — preseason testing", status: "closed", participantCount: 0, createdAtMillis: Date.UTC(2026, 9, 28, 16), teamIds: ["preview-team-2"] },
+  { id: EVENT_ID, name: "U14 Boys — fall combine", status: "closed", participantCount: 3, createdAtMillis: Date.UTC(2026, 10, 3, 17), teamIds: ["preview-team"], organizationId: "preview-org" },
+  { id: "preview-event-u12", name: "U12 Girls — preseason testing", status: "closed", participantCount: 0, createdAtMillis: Date.UTC(2026, 9, 28, 16), teamIds: ["preview-team-2"], organizationId: "preview-org" },
 ];
 
 interface PreviewRep { playerId: string; rep: any; metadata: any; broadJump: any; pose: any[]; tracking: any; extra: Record<string, any>; sessionJson: Record<string, any>; adminAnnotations: any; revisions: RepRevisionRow[] }
@@ -241,6 +241,55 @@ function seed() {
   done.rep.adminRevision = { revisionId: "preview-earlier", method: "manual_annotation", byEmail: "coach@posetek.test", atMillis: Date.UTC(2026, 10, 4, 18), note: "Validated" };
 }
 
+// MARK: - A synthetic organization for the age curve
+
+const sessionProfile = (id: string) => {
+  const index = Math.max(0, PLAYERS.findIndex(player => player.id === id));
+  return { birthDate: new Date(Date.UTC(2012, 8 - index * 5, 10)).toISOString().slice(0, 10), gender: "male" };
+};
+
+/** Typical value by age in stored units, and how much it varies. */
+const TRENDS: Record<string, { field: string; type: string; at9: number; perYear: number; spread: number }> = {
+  broadJump: { field: "broadJumpDistance", type: "broadJump", at9: 1.25, perYear: 0.085, spread: 0.14 },
+  sprint: { field: "max_velocity", type: "sprint", at9: 5.4, perYear: 0.32, spread: 0.45 },
+  jump: { field: "jumpHeight", type: "jump", at9: 0.24, perYear: 0.022, spread: 0.04 },
+  changeOfDirection: { field: "totalTime", type: "changeOfDirection", at9: 6.3, perYear: -0.12, spread: 0.35 },
+  dribbling: { field: "totalTime", type: "dribbling", at9: 8.2, perYear: -0.16, spread: 0.5 },
+  shooting: { field: "velocity", type: "deadballShot", at9: 14, perYear: 1.4, spread: 2.2 },
+};
+
+function organizationReps(drillKey: string) {
+  seed();
+  const trend = TRENDS[drillKey];
+  let state = 1234567 + drillKey.length * 97;
+  const random = () => { state = (state * 1103515245 + 12345) % 2147483648; return state / 2147483648; };
+  const normal = () => Math.sqrt(-2 * Math.log(random() + 1e-9)) * Math.cos(2 * Math.PI * random());
+  const out: { playerId: string; playerName: string; profile: any; rep: any }[] = [];
+  if (trend) {
+    for (let athlete = 0; athlete < 60; athlete++) {
+      const age = 9 + random() * 9.5;
+      const birth = new Date(Date.UTC(2026, 10, 3) - age * 365.2425 * 86_400_000);
+      const talent = normal();
+      const profile = { birthDate: birth.toISOString().slice(0, 10), gender: "male" };
+      for (let rep = 0; rep < 2 + Math.floor(random() * 3); rep++) {
+        const value = trend.at9 + trend.perYear * (age - 9) + trend.spread * (0.8 * talent + 0.45 * normal());
+        out.push({ playerId: `org-${athlete}`, playerName: `Athlete ${athlete + 1}`, profile, rep: { id: `org-${athlete}-${rep}`, repType: trend.type, createdAtMillis: Date.UTC(2026, 9, 1 + rep * 7), [trend.field]: Math.max(0.05, value) } });
+      }
+    }
+  }
+  // The session's own athletes belong to the organization too.
+  for (const entry of REPS.values()) {
+    const player = PLAYERS.find(item => item.id === entry.playerId)!;
+    out.push({ playerId: entry.playerId, playerName: player.name, profile: sessionProfile(entry.playerId), rep: entry.rep });
+  }
+  return out.filter(item => drillKeyMatches(item.rep, drillKey));
+}
+
+function drillKeyMatches(rep: any, drillKey: string) {
+  const type = rep.repType || rep.drillType;
+  return drillKey === "shooting" ? ["deadballShot", "side_kick", "shooting"].includes(type) : type === drillKey;
+}
+
 // MARK: - The backend the page and the rep tools use in preview
 
 export function previewBackend() {
@@ -289,9 +338,11 @@ export function previewBackend() {
   };
   return {
     // Synthetic birth dates (ages 13–14 at the combine) and a synthetic benchmark with real spread.
-    loadPlayerProfiles: async (ids: string[]) => Object.fromEntries(ids.map((id, index) => [id, {
-      birthDate: new Date(Date.UTC(2012, 8 - index * 5, 10)).toISOString().slice(0, 10), gender: "male",
-    }])),
+    loadPlayerProfiles: async (ids: string[]) => Object.fromEntries(ids.map(id => [id, sessionProfile(id)])),
+    loadOrganizationReps: async (organizationId: string, drillKey: string) => {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      return { organizationId, organizationName: "Vacaville SC (synthetic)", drillKey, players: 63, reps: organizationReps(drillKey), failedPlayers: 0, truncated: false };
+    },
     loadBenchmarks: async () => ({ schemaVersion: 1, tier: "preview", generation: 0, cells: Object.fromEntries(
       ["u12", "u14", "u16", "u18", "senior"].map((band, index) => [`${band}|male`, {
         broadJumpDistance: { derivation: "measured", athletes: 40 + index * 10, percentiles: { p25: 1.45 + index * 0.18, p50: 1.6 + index * 0.18, p75: 1.75 + index * 0.18 } },
