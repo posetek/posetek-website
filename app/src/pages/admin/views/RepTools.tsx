@@ -77,6 +77,10 @@ import {
 } from "../lib/repTools";
 import type { FrameRange, Mark, Point, ShuttleFrames, StartingSide } from "../lib/repTools";
 import JumpTechniqueEditor from "./JumpTechniqueEditor";
+import { SavedEvidence, SeriesCharts } from "./RepEvidence";
+import { frameSeriesGroups, sceneEvidence } from "../lib/repEvidence";
+import { drillEvidence } from "../lib/drillEvidence";
+import { drawDrillEvidence } from "./drawDrillEvidence";
 import { resultsPath } from "../lib/results";
 import { ADMIN_RETURN_STATE } from '../lib/useAdminNavigation';
 import { drawTrackingFrame, parseTracking } from '../../../lib/replay-tracking';
@@ -113,6 +117,9 @@ export interface RepValidationContext {
   onPrevious: (() => void) | null;
   onNext: (() => void) | null;
   onSaved: (rep: any, decision: ValidationDecision) => void;
+  /** Focus mode: the workbench fills the screen; toggled with F or the button. */
+  focus?: boolean;
+  onToggleFocus?: () => void;
 }
 
 export interface RepToolsProps {
@@ -254,6 +261,11 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
   const hasTracking = Boolean(tracking?.frames.some(row => row.person || row.com || row.ball));
   const hasPose = metadata.poseComputed !== false && poseFrames.some(row => Array.isArray(row) && row.length >= 33);
   const hasVisualEvidence = Boolean(artifacts.mediaUrl || hasPose || hasTracking);
+  // Everything else the phone saved: markers, ground and gate geometry, per-frame series, every file.
+  const evidenceJson = useMemo(() => artifacts.json ?? {}, [artifacts.json]);
+  const scene = useMemo(() => sceneEvidence({ metadata, arucoCorners: artifacts.arucoCorners, json: evidenceJson }), [metadata, artifacts.arucoCorners, evidenceJson]);
+  const hasScene = scene.markers.length > 0 || scene.lines.length > 0 || scene.points.length > 0;
+  const [showScene, setShowScene] = useState(true);
   const timing = useMemo(
     () => resolveClipTiming({ metadata, reprocessContext: artifacts.reprocessContext, poseFrameCount: poseFrames.length, videoDuration, trackingFrameCount: tracking?.frames.length, trackingFPS: tracking?.fps }),
     [metadata, artifacts.reprocessContext, poseFrames.length, videoDuration, tracking],
@@ -414,6 +426,13 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
   const comMeters = useMemo(() => (gateUsable && comTrack && side ? trackToSignedMeters(comTrack, gate, side) : null), [gateUsable, comTrack, gate, side]);
   const ballMeters = useMemo(() => (gateUsable && ballTrack && side ? trackToSignedMeters(ballTrack, gate, side) : null), [gateUsable, ballTrack, gate, side]);
 
+  // MARK: what the drill's processing measured (paths, anchors, gates, ball, events)
+  const measured = useMemo(() => drillEvidence({ drillKey, json: evidenceJson, metadata, rep, pose: artifacts.pose, tracking: artifacts.tracking, frames, fps: timingMissing ? null : fps }),
+    [drillKey, evidenceJson, metadata, rep, artifacts.pose, artifacts.tracking, frames, timingMissing, fps]);
+  const seriesGroups = useMemo(() => [...measured.series, ...frameSeriesGroups(evidenceJson, measured.seriesHandled)], [measured, evidenceJson]);
+  const [showMeasured, setShowMeasured] = useState(true);
+  const groundLine = scene.lines.find(line => line.kind === "ground") ?? null;
+
   // MARK: broad jump — the start and landing foot the distance is measured between
   const isBroadJump = drillKey === "broadJump";
   const phoneFeet = useMemo(() => phoneBroadJumpFeet(artifacts.broadJump, metadata), [artifacts.broadJump, metadata]);
@@ -425,7 +444,6 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
   const feetEdited = isBroadJump && feetMoved(feet, initialFeet);
   const feetDifferFromPhone = isBroadJump && feetMoved(feet, phoneFeet);
   const footTrack = useMemo(() => parsePointSeries(artifacts.broadJump?.footCenters), [artifacts.broadJump]);
-  const comMidTrack = useMemo(() => parsePointSeries(artifacts.broadJump?.comMidpoints), [artifacts.broadJump]);
   const canPlaceFeet = isBroadJump && hasVisualEvidence && !videoError;
 
   function placeFoot(which: FootTarget, point: Point) {
@@ -715,8 +733,10 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       else if (event.key === " ") { event.preventDefault(); togglePlay(); }
       else if (event.key === "Backspace" && run) { event.preventDefault(); undoRun(run); }
       else if (event.key === "Escape" && placingFoot) { event.preventDefault(); setPlacingFoot(null); }
+      else if (event.key === "Escape" && validation?.focus && !run && !document.fullscreenElement) { event.preventDefault(); validation.onToggleFocus?.(); }
       else if (event.key === "]" && validation?.onNext && !saving) { event.preventDefault(); validation.onNext(); }
       else if (event.key === "[" && validation?.onPrevious && !saving) { event.preventDefault(); validation.onPrevious(); }
+      else if ((event.key === "f" || event.key === "F") && !event.metaKey && !event.ctrlKey && validation?.onToggleFocus) { event.preventDefault(); validation.onToggleFocus(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -750,6 +770,97 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
           const p = map({ x, y: 0 });
           ctx.strokeStyle = "rgba(255, 201, 105, 0.8)";
           ctx.beginPath(); ctx.moveTo(p.x, content.y); ctx.lineTo(p.x, content.y + content.h); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Scene: every ArUco marker (corner outline, its ground edge, id and role),
+      // the ground line and the gate points the phone measured with. Calibration
+      // photo markers are dashed; they came from a different image.
+      if (showScene && hasScene) {
+        ctx.save();
+        ctx.font = "700 11px Inter, system-ui, sans-serif";
+        for (const line of scene.lines) {
+          // Extend the segment across the frame.
+          const dx = line.b.x - line.a.x;
+          const slope = Math.abs(dx) > 1e-6 ? (line.b.y - line.a.y) / dx : 0;
+          const from = map({ x: 0, y: line.a.y - slope * line.a.x });
+          const to = map({ x: 1, y: line.a.y + slope * (1 - line.a.x) });
+          ctx.setLineDash([10, 6]);
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+          ctx.textAlign = "right";
+          ctx.fillText(line.label, to.x - 6, to.y - 6);
+        }
+        for (const marker of scene.markers) {
+          const calibration = marker.source === "session.calibration";
+          const color = calibration ? "rgba(160, 220, 255, 0.9)" : "rgba(255, 201, 105, 0.95)";
+          const corners = marker.corners.map(map);
+          if (corners.length >= 4) {
+            ctx.setLineDash(calibration ? [4, 4] : []);
+            ctx.fillStyle = calibration ? "rgba(160, 220, 255, 0.10)" : "rgba(255, 201, 105, 0.18)";
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            corners.forEach((p, index) => (index ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+            // OpenCV order TL, TR, BR, BL: BR→BL is the edge on the ground.
+            ctx.setLineDash([]);
+            ctx.strokeStyle = calibration ? "rgba(160, 220, 255, 0.9)" : "#ff9f43";
+            ctx.lineWidth = 3.5;
+            ctx.beginPath(); ctx.moveTo(corners[2].x, corners[2].y); ctx.lineTo(corners[3].x, corners[3].y); ctx.stroke();
+            corners.forEach((p, index) => {
+              ctx.fillStyle = index === 0 ? "#ffffff" : color;
+              ctx.beginPath(); ctx.arc(p.x, p.y, index === 0 ? 3.5 : 2.5, 0, Math.PI * 2); ctx.fill();
+            });
+          }
+          const center = marker.center ? map(marker.center) : null;
+          if (center) {
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.arc(center.x, center.y, 2.5, 0, Math.PI * 2); ctx.fill();
+            const top = corners.length ? Math.min(...corners.map(p => p.y)) : center.y;
+            const label = `${calibration ? "calib " : ""}ID ${marker.id ?? "?"}${marker.role ? ` · ${marker.role}` : ""}`;
+            const textWidth = ctx.measureText(label).width + 10;
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            ctx.fillRect(center.x - textWidth / 2, top - 22, textWidth, 16);
+            ctx.fillStyle = color;
+            ctx.textAlign = "center";
+            ctx.fillText(label, center.x, top - 10);
+          }
+        }
+        // Two markers: how far apart they measure vs. the distance processing used.
+        if (scene.separation) {
+          const { a, b, measuredMeters, configuredMeters, configuredSource, difference } = scene.separation;
+          const pa = map(a), pb = map(b);
+          const off = difference !== null && Math.abs(difference) > 0.05;
+          ctx.setLineDash([2, 5]);
+          ctx.strokeStyle = off ? "#ffb020" : "rgba(255, 255, 255, 0.85)";
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
+          ctx.setLineDash([]);
+          const ft = (m: number) => `${(m * 3.28084).toFixed(1)} ft`;
+          const text = `markers measure ${measuredMeters.toFixed(2)} m (${ft(measuredMeters)})${configuredMeters !== null ? ` · used ${configuredMeters.toFixed(2)} m${configuredSource ? ` (${configuredSource})` : ""} · ${difference! >= 0 ? "+" : ""}${(difference! * 100).toFixed(1)}%` : " · no configured distance saved"}`;
+          ctx.font = "800 12px Inter, system-ui, sans-serif";
+          const width = ctx.measureText(text).width + 16;
+          const cx = (pa.x + pb.x) / 2, cy = Math.max(content.y + 48, Math.min(pa.y, pb.y) - 40);
+          ctx.fillStyle = off ? "rgba(90, 55, 0, 0.88)" : "rgba(0, 0, 0, 0.75)";
+          ctx.fillRect(cx - width / 2, cy - 14, width, 22);
+          ctx.fillStyle = off ? "#ffd27a" : "#ffffff";
+          ctx.textAlign = "center";
+          ctx.fillText(text, cx, cy + 2);
+          ctx.font = "700 11px Inter, system-ui, sans-serif";
+        }
+        for (const gatePoint of scene.points) {
+          const p = map(gatePoint.point);
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, Math.PI * 2); ctx.moveTo(p.x - 11, p.y); ctx.lineTo(p.x + 11, p.y); ctx.moveTo(p.x, p.y - 11); ctx.lineTo(p.x, p.y + 11); ctx.stroke();
+          ctx.fillStyle = "#ffffff";
+          ctx.textAlign = "left";
+          ctx.fillText(gatePoint.label, p.x + 10, p.y + 16);
         }
         ctx.restore();
       }
@@ -792,6 +903,15 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
         ctx.restore();
       }
 
+      if (showMeasured) {
+        const groundAt = (x: number) => {
+          if (!groundLine) return null;
+          const dx = groundLine.b.x - groundLine.a.x;
+          return Math.abs(dx) < 1e-6 ? groundLine.a.y : groundLine.a.y + ((x - groundLine.a.x) * (groundLine.b.y - groundLine.a.y)) / dx;
+        };
+        drawDrillEvidence(ctx, map, content, frame, measured, groundAt);
+      }
+
       // Tracks: the interpolated path so far, and the marks.
       const drawTrack = (track: (Point | null)[] | null, marks: Mark[], color: string, radius: number) => {
         if (!showTracks || !track) return;
@@ -826,16 +946,6 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       // Broad jump: the ground line, the foot and torso paths so far, the
       // phone's measured feet (faint, once moved) and the feet being validated.
       if (isBroadJump) {
-        const ground = num(metadata?.ground_loc_y);
-        if (ground !== null && ground >= 0 && ground <= 1) {
-          const g = map({ x: 0, y: ground });
-          ctx.save();
-          ctx.setLineDash([4, 6]);
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.moveTo(content.x, g.y); ctx.lineTo(content.x + content.w, g.y); ctx.stroke();
-          ctx.restore();
-        }
         const path = (track: (Point | null)[], color: string, radius: number) => {
           if (!track.length) return;
           ctx.strokeStyle = color;
@@ -856,10 +966,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
             ctx.beginPath(); ctx.arc(m.x, m.y, radius, 0, Math.PI * 2); ctx.fill();
           }
         };
-        if (showTracks) {
-          path(comMidTrack, "rgba(102, 214, 232, 0.9)", 4);
-          path(footTrack, "#ffad5c", 3.5);
-        }
+        if (showTracks) path(footTrack, "#ffad5c", 3.5);
         const footLine = (mark: { x: number; y: number } | null, color: string, label: string, faint: boolean) => {
           if (!mark) return;
           const p = map(mark);
@@ -928,7 +1035,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
     observer.observe(stage);
     return () => observer.disconnect();
   }, [frame, videoSize, metadata, gate, gateUsable, poseFrames, poseTrack, hasPose, tracking, hasTracking, showRecordedTracking, showPose, showTracks, comTrack, ballTrack, comMarks, ballMarks, comSource, ballSource, run,
-    isBroadJump, feet, phoneFeet, feetDifferFromPhone, footTrack, comMidTrack, footDistance, placingFoot]);
+    isBroadJump, feet, phoneFeet, feetDifferFromPhone, footTrack, footDistance, placingFoot, scene, hasScene, showScene, measured, showMeasured, groundLine]);
 
   // MARK: derive buttons (shuttle)
   function deriveFromTrack(what: "apex" | "end" | "phases") {
@@ -970,6 +1077,11 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
             <button className="quiet-button" type="button" disabled={!validation.onNext || Boolean(saving)} onClick={() => validation.onNext?.()} title="Next rep ( ] )">
               Next<span className="material-symbols-outlined">chevron_right</span>
             </button>
+            {validation.onToggleFocus && (
+              <button className="quiet-button" type="button" onClick={() => validation.onToggleFocus?.()} title={validation.focus ? "Exit focus mode (F or Esc)" : "Focus mode: fill the screen (F)"} aria-pressed={Boolean(validation.focus)}>
+                <span className="material-symbols-outlined">{validation.focus ? "close_fullscreen" : "open_in_full"}</span>{validation.focus ? "Exit focus" : "Focus"}
+              </button>
+            )}
           </div>
         ) : <>{drillKey === "shooting" && <Link className="quiet-button" to={`/admin/analysis?player=${encodeURIComponent(playerId)}&rep=${encodeURIComponent(repId)}`}><span className="material-symbols-outlined">edit_note</span>Technique review</Link>}<Link className="quiet-button" to={`/athlete?player=${encodeURIComponent(playerId)}`}><span className="material-symbols-outlined">open_in_new</span>Their portal</Link></>}
       />
@@ -1055,9 +1167,19 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
               <label><input type="checkbox" checked={showPose} onChange={event => setShowPose(event.target.checked)} />Pose skeleton</label>
               <label><input type="checkbox" checked={showTracks} onChange={event => setShowTracks(event.target.checked)} />Tracks</label>
               {hasTracking && <label><input type="checkbox" checked={showRecordedTracking} onChange={event => setShowRecordedTracking(event.target.checked)} />Recorded tracking</label>}
+              {hasScene && <label><input type="checkbox" checked={showScene} onChange={event => setShowScene(event.target.checked)} />Markers &amp; ground</label>}
+              <label><input type="checkbox" checked={showMeasured} onChange={event => setShowMeasured(event.target.checked)} />Measured evidence</label>
             </div>
+            <p className="admin-note">Measured evidence: {[...measured.trails.map(trail => trail.label), ...measured.anchors.map(anchor => anchor.label), ...measured.gates.map(gate => gate.label), measured.kick ? "ball rest + flight" : "", measured.ballBoxes ? "ball" : ""].filter(Boolean).join(" · ") || "nothing saved for this drill"}.</p>
+            {measured.notes.map(text => <p className="admin-note rv-flag" key={text}>{text}</p>)}
+            {hasScene && <p className="admin-note">Markers: yellow outline = detected in this clip, dashed blue = from the session calibration photo; the thick edge is the side on the ground, the white corner is the marker's top-left. Dashed white = ground line; crosshairs = gate points.</p>}
             {hasTracking && <p className="admin-note">Recorded tracking: green athlete box, white center point, orange ball box. Missing detections remain blank. Viewing this overlay does not change results or replace annotations.</p>}
             <div className="frame-markers">
+              {measured.events.map(event => (
+                <button key={event.key} className="frame-marker re-event-chip" type="button" title={`From ${event.source}`} onClick={() => seekTo(event.frame)}>
+                  {event.label} · {event.frame}
+                </button>
+              ))}
               {(spec?.frameFields ?? []).map(field => (
                 <button key={field.key} className="frame-marker" type="button" disabled={!hasVisualEvidence || frames[field.key] === null || frames[field.key] === undefined} onClick={() => seekTo(frames[field.key] ?? 0)}>
                   {field.label}{frames[field.key] !== null && frames[field.key] !== undefined ? ` · ${frames[field.key]}` : ""}
@@ -1066,9 +1188,17 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
             </div>
             <p className="admin-note">
               ← → step one frame, shift for {stride * 3}; space plays; backspace undoes the last mark while annotating.
-              {artifacts.mediaName ? ` Video: ${artifacts.mediaName}.` : ""} Files: {artifacts.files.length ? artifacts.files.join(", ") : "none listed"}.
+              {artifacts.mediaName ? ` Video: ${artifacts.mediaName}.` : ""}
             </p>
           </section>
+
+          <SeriesCharts groups={seriesGroups} frame={frame} lastFrame={lastFrame} fps={timingMissing ? null : fps} seekTo={seekTo}
+            events={[
+              ...measured.events.map(event => ({ label: event.label, frame: event.frame })),
+              ...(spec?.frameFields ?? []).flatMap(field => (frames[field.key] === null || frames[field.key] === undefined ? [] : [{ label: field.label, frame: frames[field.key]! }])),
+            ].filter((event, index, all) => all.findIndex(other => other.frame === event.frame) === index)} />
+          <SavedEvidence scene={scene} files={artifacts.files} json={evidenceJson} sessionFiles={artifacts.sessionFiles ?? []} sessionJson={artifacts.sessionJson ?? {}}
+            folder={artifacts.folder} sessionRoot={artifacts.sessionRoot} />
         </div>
 
         <aside className="rt-side">

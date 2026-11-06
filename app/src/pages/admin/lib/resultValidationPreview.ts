@@ -24,7 +24,7 @@ const SESSIONS: TestingSessionRow[] = [
   { id: "preview-event-u12", name: "U12 Girls — preseason testing", status: "closed", participantCount: 0, createdAtMillis: Date.UTC(2026, 9, 28, 16), teamIds: ["preview-team-2"] },
 ];
 
-interface PreviewRep { playerId: string; rep: any; metadata: any; broadJump: any; pose: any[]; adminAnnotations: any; revisions: RepRevisionRow[] }
+interface PreviewRep { playerId: string; rep: any; metadata: any; broadJump: any; pose: any[]; tracking: any; extra: Record<string, any>; sessionJson: Record<string, any>; adminAnnotations: any; revisions: RepRevisionRow[] }
 const REPS = new Map<string, PreviewRep>();
 
 // MARK: - A synthetic athlete: MediaPipe's 33 landmarks as [x, y, z, visibility]
@@ -71,16 +71,132 @@ function footCenters(pose: any[]): number[][] {
   });
 }
 
-function standingPose(x: number, drift = 0): any[] {
-  return Array.from({ length: FRAMES }, (_, f) => figure(x + drift * f, 0.56, 0, 0));
+// MARK: - Synthetic markers and tracks, in the formats the phone writes
+
+const W = 1920, H = 1080;
+
+/** ArucoMarkerObservation.jsonPayload: a square marker (in pixels) whose bottom edge sits at `bottom`. */
+function marker(id: number, centerX: number, bottom: number, role: string | null = null, sizePx = 70) {
+  const hw = sizePx / 2 / W, hh = sizePx / 2 / H, cy = bottom - hh;
+  const corners = [{ x: centerX - hw, y: cy - hh }, { x: centerX + hw, y: cy - hh }, { x: centerX + hw, y: bottom }, { x: centerX - hw, y: bottom }];
+  return {
+    id, dictionary: "DICT_4X4_100", role,
+    cornersNormalized: corners, cornersPixels: corners.map(p => ({ x: p.x * W, y: p.y * H })),
+    centerNormalized: { x: centerX, y: cy }, centerPixel: { x: centerX * W, y: cy * H },
+  };
 }
 
-function addRep(playerId: string, id: string, rep: any, metadata: any, pose: any[], broadJump: any = null) {
+function trackingFrom(com: ([number, number] | null)[], fps = FPS) {
+  return {
+    schemaVersion: 1, drill: "preview", fps, frameCount: com.length, coordinates: "normalized-top-left",
+    frames: com.map((point, index) => ({
+      index, timestampMs: Math.round((index / fps) * 1000),
+      person: point ? { x: point[0] - 0.025, y: point[1] - 0.21, w: 0.05, h: 0.42 } : null,
+      com: point ? { x: point[0], y: point[1] } : null, ball: null,
+    })),
+  };
+}
+
+function sprintEvidence(topSpeed: number) {
+  const start = 8, onset = 12, end = 84;
+  const left = marker(3, 0.1, 0.8, null, 24), right = marker(7, 0.88, 0.8, null, 24);
+  const velocity = Array.from({ length: FRAMES }, (_, f) => (f < onset ? 0 : topSpeed * (1 - Math.exp(-(f - onset) / FPS / 1.1))));
+  let x = 0;
+  const travelled = velocity.map(v => (x += v / FPS));
+  const atEnd = travelled[end] || 1;
+  const com: [number, number][] = travelled.map(d => [0.1 + (d / atEnd) * 0.78, 0.56 + Math.sin(d * 3) * 0.004]);
+  const acceleration = velocity.map((v, f) => (f === 0 ? 0 : (v - velocity[f - 1]) * FPS));
+  return {
+    extra: {
+      "COM.json": com,
+      "velocity.json": velocity,
+      "kalman_velocity.json": velocity.map((v, f) => Math.max(0, v + Math.sin(f * 1.7) * 0.25)),
+      "model_velocity.json": velocity.map((v, f) => (f >= start && f <= end ? v : null)),
+      "acceleration.json": acceleration,
+      "sprint_model_fit.json": { status: "model", metric_source: "model", vMax: topSpeed, tau: 1.1, rmse: 0.18, rejected_frames: [41, 42] },
+      "aruco_points.json": {
+        frame_shape: { x: W, y: H }, markers: [left, right],
+        point1: left.centerNormalized, point2: right.centerNormalized,
+        ground_line: { point1: { x: 0.1, y: 0.8 }, point2: { x: 0.88, y: 0.8 } }, ground_y: 0.8,
+        distance: 10, marker_distance: 10, marker_distance_source: "manual", starting_side: "left",
+        start_frame: start, motion_onset_frame: onset, end_frame: end,
+      },
+    },
+    tracking: trackingFrom(com),
+    metadata: { fps: FPS, frameWidth: W, frameHeight: H, poseComputed: false, poseSkippedReason: "poseForReplay=off", markerSource: "video", tracker: "local_yolov3_scout_then_dense", resultsValid: true, processingStatus: "complete", failedSteps: [] },
+  };
+}
+
+function shuttleEvidence() {
+  const left = marker(2, 0.18, 0.82, null, 34), right = marker(5, 0.82, 0.82, null, 34);
+  const frames = { startFrame: 6, phase1EndFrame: 40, apexFrame: 46, phase2EndFrame: 52, endFrame: 88 };
+  const com: [number, number][] = Array.from({ length: FRAMES }, (_, f) => {
+    const t = f < 6 ? 0 : f <= 46 ? (f - 6) / 40 : Math.max(0, 1 - (f - 46) / 42);
+    return [0.18 + 0.66 * Math.sin((t * Math.PI) / 2), 0.58];
+  });
+  return {
+    frames,
+    tracking: trackingFrom(com),
+    metadata: {
+      ...frames, arucoMarkers: [left, right], markerDistance: 9.144, poseComputed: false, markerSource: "video",
+      arucoGate: { startXNorm: 0.18, stopXNorm: 0.82, groundYNorm: 0.82, groundLine: { point1: { x: 0.18, y: 0.82 }, point2: { x: 0.82, y: 0.82 } } },
+    },
+  };
+}
+
+/** Load, extend, fly straight up and land. Ground at y 0.83; marker beside the athlete. */
+function verticalJump() {
+  const scale = 2.2;
+  const pose = Array.from({ length: FRAMES }, (_, f) => {
+    if (f < 16) return figure(0.45, 0.56, 0, 0);
+    if (f < 28) return figure(0.45, 0.56 + ((f - 16) / 12) * 0.06, (f - 16) / 12, 0);
+    if (f < 34) return figure(0.45, 0.62 - ((f - 28) / 6) * 0.07, 1 - (f - 28) / 6, 0);
+    if (f <= 58) { const t = (f - 34) / 24; return figure(0.45, 0.55 - Math.sin(Math.PI * t) * 0.13, 0, Math.sin(Math.PI * t) * 0.3); }
+    return figure(0.45, 0.56 + Math.max(0, 1 - (f - 58) / 12) * 0.05, Math.max(0, 1 - (f - 58) / 12), 0);
+  });
+  const torso = pose.map(frame => [(frame[11][0] + frame[12][0] + frame[23][0] + frame[24][0]) / 4, 0.4 * (frame[11][1] + frame[12][1]) / 2 + 0.6 * (frame[23][1] + frame[24][1]) / 2]);
+  const chestY0 = torso.slice(0, 10).reduce((sum, p) => sum + p[1], 0) / 10;
+  const offsets = torso.map(p => [0, (p[1] - chestY0) * scale]);
+  const keyFrames = [27, 31, 34, 46];
+  const offset = Math.max(0, keyFrames[0] - 100);
+  const velocity = offsets.slice(offset, keyFrames[2] + 1).map((p, i, all) => [0, i ? (p[1] - all[i - 1][1]) * FPS : 0]);
+  const acceleration = velocity.map((p, i, all) => [0, i ? (p[1] - all[i - 1][1]) * FPS : 0]);
+  const grf = acceleration.map(p => 1.5 * 45 * (9.81 - p[1]));
+  const peakRise = -Math.min(...offsets.map(p => p[1]));
+  return {
+    pose, jumpHeight: peakRise,
+    extra: {
+      "torso_midpoints.json": torso, "key_frames.json": keyFrames, "chest_offsets.json": offsets,
+      "velocity.json": velocity, "acceleration.json": acceleration, "grf.json": grf,
+      "joint_angles_key_frames.json": [[62, 95, 88, 20, 160], [70, 120, 130, 40, 150], [85, 172, 175, 160, 170], [88, 178, 178, 170, 175]],
+    },
+    metadata: { m_to_normalized_units: scale, ground_loc_y: 0.83, chest_starting_loc: chestY0, arucoMarkers: [marker(11, 0.68, 0.83)] },
+  };
+}
+
+function kickEvidence() {
+  const contact = 40, transition = 30;
+  const rest = [0.48, 0.79, 0.505, 0.835];
+  const t: number[] = [], xs: number[] = [], ys: number[] = [];
+  for (let f = contact; f <= contact + 30; f++) { const k = f - contact; t.push(f); xs.push(0.4925 + k * 0.014); ys.push(0.8125 - k * 0.012 + k * k * 0.00012); }
+  return {
+    pose: Array.from({ length: FRAMES }, (_, f) => figure(0.42 + Math.max(0, Math.min(1, (f - transition) / 10)) * 0.03, 0.56, 0, 0)),
+    extra: {
+      "orig_ball.json": rest,
+      "ball_boxes.json": Array.from({ length: FRAMES }, () => rest),
+      "ball_trajectory.json": { t_values: t, x_values: xs, y_values: ys, contact_frame: contact, transition_frame: transition, direction: "left_to_right" },
+      "ball_information.json": { ball_speed_ms: 24.1, ball_speed_mph: 53.9, launch_angle: 18.2, contact_frame: contact },
+    },
+    metadata: { frameWidth: W, frameHeight: H, m_per_px: 0.0021, aruco_marker_length_m: 0.149225, arucoMarkers: [marker(9, 0.75, 0.84, "deadball")], tracker: "kalman", resultsValid: true, processingStatus: "complete" },
+  };
+}
+
+function addRep(playerId: string, id: string, rep: any, metadata: any, pose: any[], broadJump: any = null, more: { tracking?: any; extra?: Record<string, any>; sessionJson?: Record<string, any> } = {}) {
   REPS.set(`${playerId}/${id}`, {
     playerId,
     rep: { id, createdAtMillis: SESSIONS[0].createdAtMillis! + REPS.size * 60_000, testingEventId: EVENT_ID, testingParticipantId: playerId, ...rep },
-    metadata: { framesPerSecond: FPS, totalFrames: FRAMES, videoDisplayWidth: 1920, videoDisplayHeight: 1080, ...metadata },
-    broadJump, pose, adminAnnotations: null, revisions: [],
+    metadata: { framesPerSecond: FPS, totalFrames: FRAMES, videoDisplayWidth: W, videoDisplayHeight: H, ...metadata },
+    broadJump, pose, tracking: more.tracking ?? null, extra: more.extra ?? {}, sessionJson: more.sessionJson ?? {}, adminAnnotations: null, revisions: [],
   });
 }
 
@@ -88,6 +204,8 @@ function seed() {
   if (REPS.size) return;
   const jumpPose = broadJumpPose();
   const feet = footCenters(jumpPose);
+  const comMidpoints = jumpPose.map(frame => [(frame[11][0] + frame[23][0]) / 2, 0.4 * frame[11][1] + 0.6 * frame[23][1]]);
+  const baselineY = comMidpoints.slice(0, 10).reduce((sum, p) => sum + p[1], 0) / 10;
   PLAYERS.forEach((player, index) => {
     // The phone measured the landing foot after it slid forward: 0.035 too far for Ava.
     const slide = index === 0 ? 0.035 : 0.004 * index;
@@ -101,13 +219,22 @@ function seed() {
       const flaggedRep = index === 2 && rep === 2;
       addRep(player.id, id,
         { repType: "broadJump", sessionNumber: 1, repNumber: rep, broadJumpDistance: flaggedRep ? null : distance + shift, takeoffFrame: 34, landingFrame: 58, ...(flaggedRep ? { resultsValid: false, processingStatus: "partial" } : {}) },
-        { broadJumpDistance: flaggedRep ? null : distance + shift, m_to_normalized_units: scale, ground_loc_y: 0.832, footSide: "right", resultsValid: !flaggedRep, ...(flaggedRep ? { processingStatus: "partial", failedSteps: ["broadJump.fit"] } : {}) },
-        jumpPose, { fit, footCenters: feet, comMidpoints: jumpPose.map(frame => [frame[23][0], (frame[11][1] + frame[23][1]) / 2]) });
+        { broadJumpDistance: flaggedRep ? null : distance + shift, m_to_normalized_units: scale, ground_loc_y: 0.832, baselineComYNorm: baselineY, footSide: "right", arucoMarkers: [marker(4, 0.2, 0.832)], resultsValid: !flaggedRep, ...(flaggedRep ? { processingStatus: "partial", failedSteps: ["broadJump.fit"] } : {}) },
+        jumpPose, { fit, footCenters: feet, comMidpoints },
+        { extra: { "key_frames.json": [34, 58], "com_height.json": comMidpoints.map(p => (baselineY - p[1]) * scale) } });
     }
-    addRep(player.id, `sp-${player.id}`, { repType: "sprint", sessionNumber: 2, repNumber: 1, max_velocity: 6.4 + index * 0.4, totalTime: 2.9 - index * 0.1, startFrame: 4, endFrame: 88 },
-      { max_velocity: 6.4 + index * 0.4 }, standingPose(0.15, 0.007));
-    addRep(player.id, `cod-${player.id}`, { repType: "changeOfDirection", sessionNumber: 3, repNumber: 1, totalTime: 5.1 + index * 0.2, startFrame: 6, endFrame: 90 },
-      { totalTime: 5.1 + index * 0.2 }, standingPose(0.5));
+    const sprint = sprintEvidence(7.4 + index * 0.4);
+    addRep(player.id, `sp-${player.id}`, { repType: "sprint", sessionNumber: 2, repNumber: 1, max_velocity: 7.2 + index * 0.4, totalTime: 2.9 - index * 0.1, distance: 10 },
+      sprint.metadata, [], null, { tracking: sprint.tracking, extra: sprint.extra });
+    const shuttle = shuttleEvidence();
+    addRep(player.id, `cod-${player.id}`, { repType: "changeOfDirection", sessionNumber: 3, repNumber: 1, totalTime: 5.1 + index * 0.2, ...shuttle.frames },
+      { totalTime: 5.1 + index * 0.2, ...shuttle.metadata }, [], null, { tracking: shuttle.tracking });
+    const jump = verticalJump();
+    addRep(player.id, `vj-${player.id}`, { repType: "jump", sessionNumber: 4, repNumber: 1, jumpHeight: jump.jumpHeight },
+      jump.metadata, jump.pose, null, { extra: jump.extra });
+    const kick = kickEvidence();
+    addRep(player.id, `sh-${player.id}`, { repType: "deadballShot", sessionNumber: 5, repNumber: 1, velocity: 24.1, launch_angle: 18.2, strike_foot: "right" },
+      kick.metadata, kick.pose, null, { extra: kick.extra });
   });
   // One rep already validated, as it would read back from Firestore.
   const done = REPS.get(`${PLAYERS[1].id}/bj-${PLAYERS[1].id}-1`)!;
@@ -127,11 +254,21 @@ export function previewBackend() {
     },
     loadRepArtifacts: async (_drill, rep, playerId): Promise<RepArtifactBundle> => {
       const entry = REPS.get(`${playerId}/${rep.id}`)!;
+      const json: Record<string, any> = {
+        ...(entry.pose.length ? { "pose.json": entry.pose } : {}), "metadata.json": structuredClone(entry.metadata),
+        ...(entry.tracking ? { "tracking.json": entry.tracking } : {}),
+        ...(entry.broadJump ? { "foot_centers.json": entry.broadJump.footCenters, "foot_piecewise_fit.json": entry.broadJump.fit, "com_midpoints.json": entry.broadJump.comMidpoints } : {}),
+        ...entry.extra,
+      };
       return {
         folder: `${playerId}/preview/${rep.id}`, sessionRoot: `${playerId}/preview`, mediaUrl: null, mediaName: null,
-        pose: entry.pose, tracking: null, trackingLoadError: false, metadata: structuredClone(entry.metadata), reprocessContext: null,
-        arucoCorners: null, markerConfig: null, adminAnnotations: structuredClone(entry.adminAnnotations), ballBoxes: null, jumpTechnique: {},
-        broadJump: entry.broadJump, files: ["pose.json", "metadata.json", ...(entry.broadJump ? ["foot_centers.json", "foot_piecewise_fit.json", "com_midpoints.json"] : [])],
+        pose: entry.pose.length ? entry.pose : null, tracking: entry.tracking, trackingLoadError: false, metadata: structuredClone(entry.metadata), reprocessContext: null,
+        arucoCorners: null, markerConfig: null, adminAnnotations: structuredClone(entry.adminAnnotations), ballBoxes: entry.extra["ball_boxes.json"] ?? null, jumpTechnique: {},
+        broadJump: entry.broadJump,
+        files: Object.keys(json),
+        json,
+        sessionJson: entry.sessionJson,
+        sessionFiles: Object.keys(entry.sessionJson),
       };
     },
     loadRepRevisions: async (playerId, repId) => structuredClone(REPS.get(`${playerId}/${repId}`)?.revisions ?? []),

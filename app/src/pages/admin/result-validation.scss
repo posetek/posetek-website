@@ -147,4 +147,69 @@
     .rv-results { grid-template-columns: 1fr; }
     .rv-nav { flex-wrap: wrap; }
   }
+
+  // MARK: evidence panel (charts and saved files)
+  .re-charts { display: flex; flex-direction: column; gap: 10px; }
+  .re-chart {
+    margin: 0;
+    figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; font-size: 13px; }
+    svg { width: 100%; height: auto; display: block; cursor: crosshair; }
+  }
+  .re-legend {
+    display: inline-flex; flex-wrap: wrap; gap: 4px 12px; color: var(--text-muted); font-size: 12px;
+    span { display: inline-flex; align-items: center; gap: 5px; }
+    i { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+  }
+  .re-grid { stroke: var(--text-muted); stroke-opacity: 0.2; stroke-width: 1; }
+  .re-axis { fill: var(--text-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+  .re-event { stroke: var(--text-muted); stroke-opacity: 0.45; stroke-dasharray: 3 3; }
+  .re-cursor { stroke: var(--text-primary); stroke-width: 1.5; }
+  .re-hover { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 2 2; }
+  .re-dot { stroke: var(--surface-1, #fff); stroke-width: 2; }
+  .re-readout { margin: 2px 0 0; color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .re-event-chip { border-style: dashed; }
+
+  .re-scene { margin: 0 0 12px; padding-left: 18px; font-size: 13px; li { margin: 3px 0; } }
+  .re-files {
+    margin-top: 10px;
+    h4 { margin: 0 0 6px; font-size: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+    details { border-top: 1px solid var(--surface-border); padding: 6px 0; }
+    summary { cursor: pointer; font-size: 13px; }
+    pre { max-height: 320px; overflow: auto; margin: 6px 0 0; padding: 8px; font-size: 11px; background: var(--surface-2, rgba(0, 0, 0, 0.04)); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .re-file-plain { margin: 0; padding: 6px 0; border-top: 1px solid var(--surface-border); font-size: 13px; }
+  }
+
+  // MARK: focus mode — the workbench fills the screen; video and data first.
+  .rv-workbench.focus {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px 12px;
+    overflow: hidden;
+    background: var(--admin-bg, var(--surface-0, #f3f4f1));
+    > .admin-heading { flex: none; margin: 0 0 8px; padding: 0 0 8px; h1 { font-size: 20px; } .eyebrow { margin: 0; } }
+    > .admin-banner, > .form-message { flex: none; margin: 0 0 6px; padding: 6px 10px; font-size: 12px; }
+    .rt-layout { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(360px, 420px); gap: 12px; }
+    .rt-main, .rt-side { height: 100%; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
+    // Fixed-height scrolling columns would otherwise shrink their cards (the stage card to nothing).
+    .rt-main > *, .rt-side > * { flex-shrink: 0; }
+    .rt-main { gap: 10px; }
+    // The video (or pose) is the point of focus mode: nearly the full height, playback bar just below.
+    .rt-stage { aspect-ratio: auto; height: calc(100vh - 190px); min-height: 320px; }
+    > .admin-banner { display: none; }
+    .rt-side .admin-card { margin-bottom: 10px; }
+    .rv-decision { position: sticky; top: 0; z-index: 2; }
+  }
+  .rv-workbench.focus:fullscreen { width: 100vw; height: 100vh; }
+  @media (max-width: 900px) {
+    .rv-workbench.focus {
+      overflow-y: auto;
+      .rt-layout { grid-template-columns: 1fr; }
+      .rt-main, .rt-side { height: auto; overflow: visible; }
+      .rt-stage { height: 56vh; }
+      .rv-decision { position: static; }
+    }
+  }
 }

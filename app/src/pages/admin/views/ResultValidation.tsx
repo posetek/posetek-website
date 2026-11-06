@@ -10,7 +10,7 @@
 // decision becomes the source of truth; see ../lib/resultValidation.ts for
 // what is written and what is kept.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { DRILLS } from "../../athlete-portal/lib/drills";
 import { listTestingSessions, loadValidationQueue } from "../lib/resultValidationData";
@@ -59,6 +59,32 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
   const [queueGeneration, setQueueGeneration] = useState(0);
   const [filterText, setFilterText] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  // Focus mode: the workbench fills the screen and stays that way from rep to rep.
+  const workbenchRef = useRef<HTMLDivElement | null>(null);
+  const [focus, setFocus] = useState(false);
+  const focusRef = useRef(false);
+  const toggleFocus = useCallback(() => {
+    const next = !focusRef.current;
+    focusRef.current = next;
+    setFocus(next);
+    const element = workbenchRef.current as (HTMLDivElement & { webkitRequestFullscreen?: () => void }) | null;
+    if (next && element && !document.fullscreenElement) {
+      // Browser fullscreen where allowed; the full-window layout applies either way.
+      try {
+        const request = element.requestFullscreen?.bind(element) ?? element.webkitRequestFullscreen?.bind(element);
+        const result = request?.();
+        if (result && typeof (result as Promise<void>).catch === "function") (result as Promise<void>).catch(() => undefined);
+      } catch { /* full-window layout only */ }
+    }
+    if (!next && document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    // Leaving browser fullscreen (Esc) leaves focus mode too.
+    const onChange = () => { if (!document.fullscreenElement && focusRef.current) { focusRef.current = false; setFocus(false); } };
+    document.addEventListener("fullscreenchange", onChange);
+    document.addEventListener("webkitfullscreenchange", onChange);
+    return () => { document.removeEventListener("fullscreenchange", onChange); document.removeEventListener("webkitfullscreenchange", onChange); };
+  }, []);
 
   useEffect(() => {
     if (!preview || !import.meta.env.DEV) return;
@@ -168,7 +194,7 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
     const previous = index > 0 ? visibleRows[index - 1] : null;
     const next = index >= 0 && index < visibleRows.length - 1 ? visibleRows[index + 1] : null;
     return (
-      <div className="rv-workbench">
+      <div className={`rv-workbench${focus ? " focus" : ""}`} ref={workbenchRef}>
         {toast && <p className="admin-banner good rv-toast" role="status"><span className="material-symbols-outlined">check_circle</span>{toast}</p>}
         <RepTools
           key={current.key}
@@ -183,6 +209,8 @@ export default function ResultValidation({ preview = false }: { preview?: boolea
             onPrevious: previous ? () => openRep(previous) : null,
             onNext: next ? () => openRep(next) : null,
             onSaved,
+            focus,
+            onToggleFocus: toggleFocus,
           }}
         />
       </div>
