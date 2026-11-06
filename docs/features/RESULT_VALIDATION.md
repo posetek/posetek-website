@@ -23,6 +23,34 @@ existing rep tools (`views/RepTools.tsx`) in validation mode.
    `BroadJumpProcessingMath.jumpDistanceMeters`); the phone's own feet stay
    visible faintly once moved.
 
+5. **Focus mode** (button or `F`; Esc leaves) fills the screen with the
+   stage and the decision panel and stays on from rep to rep.
+6. **Evidence for every drill**, drawn as the phone's replay draws it (sources:
+   `lib/drillEvidence.ts`, `lib/repEvidence.ts`):
+   - ArUco marker outlines with id, role and ground edge.
+   - The ground line through the markers' lowest corners, else the saved ground line or ground y.
+   - Gate points and verticals.
+   - COM paths:
+     - sprint `COM.json`
+     - change of direction / dribbling `tracking.json`, coloured out / turn / back
+     - jump `torso_midpoints.json`
+     - broad jump `com_midpoints.json`
+   - Starting, takeoff, peak and landing COM.
+   - The kick's resting ball and flight.
+   - Sprint start, motion onset and finish from `aruco_points.json`.
+   - Per-frame charts synced to the cursor. The jump's velocity, acceleration and GRF are aligned from `max(0, maxCoil − 100)`.
+   - Every JSON file in the rep folder and the session root, expandable.
+7. **Two-marker drills** label the markers' measured separation (center distance ×
+   each marker's own 5.875 in scale, planar) against the distance processing
+   used and its source. The label turns amber beyond ±5%.
+8. **Age vs. performance**: each athlete's best in the session at their age on
+   the test date, the rep under review, its session rank, and the published
+   benchmark median / middle half per age band (`benchmarks/d1`, the phone's
+   bands U12 <13, U14 13–14, U16 15–16, U18 17–18, college 19+). Projected
+   cells, or cells with fewer than 10 athletes, are flagged as provisional. The
+   bundled `D1Benchmarks.json` is a single-athlete placeholder, so the page
+   reads only the Firestore document.
+
 Results display everywhere whether or not they are validated.
 
 ## What a decision writes
