@@ -29,6 +29,8 @@ describe('participation and usage cards', () => {
     expect(html).toContain('Multiple visits on one day count as one active day.');
     expect(card(html, 'Time on platform')).toContain('132.5 min');
     expect(card(html, 'Time on platform')).toContain('aria-label="Increase 11.3 min"');
+    expect(card(html, 'Time on platform')).toContain('Total estimated website + iOS use to date');
+    expect(html).toContain('observed iOS users and time on platform are cumulative through each cutoff');
     expect(html).toContain('2026-11-02–2026-11-05');
     expect(html).toContain('2026-10-26–2026-10-29');
     expect(html).toContain('same weekdays last week');
