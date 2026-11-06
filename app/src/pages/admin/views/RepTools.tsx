@@ -943,7 +943,8 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
         ctx.restore();
       }
 
-      if (showMeasured) {
+      // Measured evidence is drawn over a recording only; a metadata-only rep keeps an empty stage.
+      if (showMeasured && hasVisualEvidence) {
         const groundAt = (x: number) => {
           if (!groundLine) return null;
           const dx = groundLine.b.x - groundLine.a.x;
@@ -1075,7 +1076,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
     observer.observe(stage);
     return () => observer.disconnect();
   }, [frame, videoSize, metadata, gate, gateUsable, poseFrames, poseTrack, hasPose, tracking, hasTracking, showRecordedTracking, showPose, showTracks, comTrack, ballTrack, comMarks, ballMarks, comSource, ballSource, run,
-    isBroadJump, feet, phoneFeet, feetDifferFromPhone, footTrack, footDistance, placingFoot, scene, hasScene, showScene, measured, showMeasured, groundLine]);
+    isBroadJump, feet, phoneFeet, feetDifferFromPhone, footTrack, footDistance, placingFoot, scene, hasScene, showScene, measured, showMeasured, hasVisualEvidence, groundLine]);
 
   // MARK: derive buttons (shuttle)
   function deriveFromTrack(what: "apex" | "end" | "phases") {
