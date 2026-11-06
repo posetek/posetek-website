@@ -22,6 +22,7 @@ const paths: Record<string, string> = {
   calendar_month: "M5 5h14a2 2 0 0 1 2 2v13H3V7a2 2 0 0 1 2-2ZM7 3v4M17 3v4M3 10h18M7 14h3M14 14h3M7 17h3",
   exercise: "m6 3-3 3 15 15 3-3M3 10l7-7M14 21l7-7M2 5l3-3M19 22l3-3",
   view_in_ar: "M12 3 3 8v9l9 5 9-5V8l-9-5ZM3 8l9 5 9-5M12 13v9",
+  fact_check: "M3 4h18v16H3V4ZM6 9l1.5 1.5L10 8M6 15l1.5 1.5L10 14M13 9h5M13 15h5",
   sports_soccer: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 6-4 3 2 5h4l2-5-4-3Zm0-6v6M3 8l5 3M6 20l4-4M18 20l-4-4M21 8l-5 3",
   shield: "m12 2 8 3v6c0 5-3 8-8 11-5-3-8-6-8-11V5l8-3Zm0 5v6M12 17h.01",
   devices: "M4 16H2V4h15v4M7 16v4M3 20h8M14 8h8v14h-8V8ZM17 19h2",

@@ -79,7 +79,8 @@ describe("rep artifact tracking reads", () => {
     expect(bundle.trackingLoadError).toBe(false);
     expect(bundle.mediaUrl).toBeNull();
     expect(bundle.mediaName).toBeNull();
-    expect(listings).toEqual([folder]);
+    // The rep folder, then the session root (its top-level calibration files only; never a sibling capture).
+    expect(listings).toEqual([folder, sessionRoot]);
     expect(downloads.filter(path => path.endsWith("/tracking.json"))).toEqual([`${folder}/tracking.json`]);
     expect(fetch).toHaveBeenCalledWith(urlFor(`${folder}/tracking.json`), { cache: "no-store" });
   });
