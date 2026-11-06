@@ -15,6 +15,7 @@ import { artifactFolder } from "../../athlete-portal/lib/metrics";
 import { JUMP_ARTIFACTS, type JumpSources } from "./jumpTechnique";
 import { parseArtifactJson } from "./repTools";
 import type { RevisionPayload } from "./repTools";
+import type { BroadJumpEvidence } from "./resultValidation";
 
 export interface RepArtifactBundle {
   folder: string;
@@ -31,6 +32,8 @@ export interface RepArtifactBundle {
   adminAnnotations: any;
   ballBoxes: any;
   jumpTechnique: JumpSources;
+  /** foot_piecewise_fit.json, foot_centers.json and com_midpoints.json for a broad jump. */
+  broadJump: BroadJumpEvidence | null;
   /** Artifact names found directly in the rep folder. */
   files: string[];
 }
@@ -90,7 +93,11 @@ export async function loadRepArtifacts(drill: Drill, rep: any, playerId: string)
   ]);
 
   const jumpTechnique = drill.key === "jump" ? Object.fromEntries(await Promise.all(JUMP_ARTIFACTS.map(async name => [name, await readJsonAt(base.child(name))]))) : {};
-  return { folder, sessionRoot, mediaUrl, mediaName, pose, tracking, trackingLoadError: files.includes("tracking.json") && tracking === null, metadata, reprocessContext, arucoCorners, markerConfig, adminAnnotations, ballBoxes, jumpTechnique, files };
+  const broadJump = drill.key === "broadJump"
+    ? await Promise.all(["foot_piecewise_fit.json", "foot_centers.json", "com_midpoints.json"].map(name => readJsonAt(base.child(name))))
+      .then(([fit, footCenters, comMidpoints]) => ({ fit, footCenters, comMidpoints }))
+    : null;
+  return { folder, sessionRoot, mediaUrl, mediaName, pose, tracking, trackingLoadError: files.includes("tracking.json") && tracking === null, metadata, reprocessContext, arucoCorners, markerConfig, adminAnnotations, ballBoxes, jumpTechnique, broadJump, files };
 }
 
 export interface RepRevisionRow {

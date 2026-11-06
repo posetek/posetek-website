@@ -1,0 +1,150 @@
+// Result validation: the session list, the queue and the decision panel inside
+// the rep tools. Colors come from the admin theme tokens so light and dark
+// themes both work.
+
+.pt-admin {
+  .rv-sessions .admin-field { max-width: 420px; margin-bottom: 12px; }
+
+  .rv-session-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+    button {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
+      align-items: center;
+      gap: 4px 12px;
+      text-align: left;
+      padding: 12px 14px;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-sm, 10px);
+      background: var(--surface-1);
+      color: var(--text-primary);
+      cursor: pointer;
+      &:hover, &:focus-visible { border-color: var(--accent); }
+      .material-symbols-outlined { grid-row: 1 / span 2; grid-column: 2; color: var(--text-muted); }
+    }
+  }
+  .rv-session-name { font-weight: 700; overflow-wrap: anywhere; }
+
+  .rv-filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .rv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rv-chip {
+    border: 1px solid var(--surface-border);
+    border-radius: 999px;
+    padding: 6px 12px;
+    background: var(--surface-1);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    span { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-left: 4px; }
+    &.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+  }
+  .rv-segment {
+    display: inline-flex;
+    border: 1px solid var(--surface-border);
+    border-radius: 999px;
+    overflow: hidden;
+    button {
+      border: 0;
+      padding: 6px 12px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      &.active { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text-primary); font-weight: 700; }
+    }
+  }
+
+  .rv-table-wrap { overflow-x: auto; }
+  .rv-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--surface-border); text-align: left; white-space: nowrap; }
+    th { color: var(--text-muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover, tbody tr:focus-visible { background: color-mix(in srgb, var(--accent) 8%, transparent); outline: none; }
+    .rv-value { font-variant-numeric: tabular-nums; }
+  }
+
+  .rv-status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 3px 9px;
+    margin-right: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--surface-border);
+    color: var(--text-muted);
+    &.validated { color: #1f8a4c; border-color: rgba(31, 138, 76, 0.45); background: rgba(31, 138, 76, 0.1); }
+    &.adjusted { color: #2b6fd6; border-color: rgba(43, 111, 214, 0.45); background: rgba(43, 111, 214, 0.1); }
+    &.rejected { color: #c43d3d; border-color: rgba(196, 61, 61, 0.45); background: rgba(196, 61, 61, 0.1); }
+    &.revised { color: #9a6a12; border-color: rgba(154, 106, 18, 0.45); background: rgba(154, 106, 18, 0.1); }
+    &.flagged { color: #9a6a12; border-style: dashed; }
+  }
+
+  // The workbench heading: previous / position / next.
+  .rv-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    .quiet-button { margin: 0; }
+  }
+  .rv-position { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rv-toast { margin-bottom: 12px; }
+
+  .rv-decision {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--surface-border));
+    .rv-decision-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .rv-decision-head h3 { margin: 0; }
+  }
+  .rv-results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+    div { border: 1px solid var(--surface-border); border-radius: var(--radius-sm, 10px); padding: 10px 12px; }
+    div.changed { border-color: #2b6fd6; }
+    dt { color: var(--text-muted); font-size: 12px; }
+    dd { margin: 4px 0 0; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  }
+  .rv-flag { color: #9a6a12; }
+  .rv-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+    .quiet-button, .primary-cta { margin: 0; }
+  }
+  .rv-reject { color: #c43d3d; }
+
+  .rv-feet .rt-annotate-row strong { display: inline-flex; align-items: center; gap: 6px; }
+  .rv-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    &.start { background: #71d39b; }
+    &.landing { background: #ff7d7d; }
+  }
+  .rt-mode-chip.rv-foot-chip.start { background: rgba(113, 211, 155, 0.92); }
+  .rt-mode-chip.rv-foot-chip.landing { background: rgba(255, 125, 125, 0.92); }
+
+  @media (max-width: 640px) {
+    .rv-results { grid-template-columns: 1fr; }
+    .rv-nav { flex-wrap: wrap; }
+  }
+}
