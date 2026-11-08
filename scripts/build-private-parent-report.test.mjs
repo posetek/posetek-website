@@ -72,12 +72,12 @@ async function addExistingReports(f) {
   return existing;
 }
 
-async function initialReaderTransitionFixture(t) {
+async function initialReaderTransitionFixture(t, pathway = false) {
   const f = await fixture(t), existing = await addExistingReports(f);
   for (const name of ['index.html', 'render.mjs', 'report.css']) {
     const path = '/report/' + name;
     const oldBytes = await readFile(new URL('./fixtures/private-parent-report-reader-v1/' + name, import.meta.url));
-    const newBytes = await readFile(new URL('../app/private-report/' + name, import.meta.url));
+    const newBytes = await readFile(new URL((pathway ? '../app/private-report/' : './fixtures/private-parent-report-reader-workouts-v1/') + name, import.meta.url));
     existing[path] = oldBytes;
     Object.assign(f.rows.find(row => row.path === path), { sha: sha(oldBytes), size: oldBytes.length });
     await put(f.predecessor, path, oldBytes);
@@ -304,4 +304,32 @@ test('detects predecessor tampering during the guard, leaves no partial report o
   await assert.rejects(readFile(join(f.root, 'production-dist/report/loader.mjs')), { code: 'ENOENT' });
   await assert.rejects(readFile(join(f.evidenceDirectory, 'build-receipt.json')), { code: 'ENOENT' });
   await assert.rejects(readdir(join(f.root, '.private-parent-report-stage')), { code: 'ENOENT' });
+});
+
+
+test('explicit pathway transition preserves all predecessor content outside the three pinned reader files', async t => {
+  const f = await initialReaderTransitionFixture(t, true);
+  await assert.rejects(f.run({sealedDirectory: f.sealedDirectory, append: true, updateWorkoutEntry: true}), /pinned original and reviewed replacement/);
+  const receipt = await f.run({sealedDirectory: f.sealedDirectory, append: true, updatePathwayCharts: true});
+  assert.equal(receipt.readerTransition, 'pathways-v1');
+  assert.equal(receipt.requiresSeparateNativeAcceptance, true);
+  assert.deepEqual(receipt.changedFiles, ['/report/index.html', '/report/render.mjs', '/report/report.css']);
+  assert.equal(receipt.addedFiles.length, 1);
+  assert.equal(receipt.existingEncryptedReportsUnchanged, true);
+  for (const [path, bytes] of Object.entries(f.existing)) {
+    if (!receipt.changedFiles.includes(path)) assert.deepEqual(await readFile(join(f.root, 'production-dist', path)), bytes);
+  }
+  for (const [path, value] of Object.entries(files)) assert.equal(await readFile(join(f.root, 'production-dist', path), 'utf8'), value);
+});
+
+test('pathway transition cannot bypass explicit selection, predecessor pins, or source pins', async t => {
+  const f = await initialReaderTransitionFixture(t, true), sealedDirectory = f.sealedDirectory;
+  await assert.rejects(f.run({sealedDirectory, updatePathwayCharts: true}), /requires explicit append/);
+  await assert.rejects(f.run({sealedDirectory, append: true, updatePathwayCharts: 'true'}), /requires explicit append/);
+  await assert.rejects(f.run({sealedDirectory, append: true, updatePathwayCharts: true, updateWorkoutEntry: true}), /only one pinned/);
+  await assert.rejects(f.run({sealedDirectory, append: true, updatePathwayCharts: true, updateEntryLabel: true}), /only one pinned/);
+  const target = join(f.root, 'app/private-report/render.mjs');
+  await writeFile(target, (await readFile(target)) + '\nchanged');
+  await assert.rejects(f.run({sealedDirectory, append: true, updatePathwayCharts: true}), /pinned original and reviewed replacement/);
+  await assert.rejects(readFile(join(f.evidenceDirectory, 'guard-ran')), {code: 'ENOENT'});
 });

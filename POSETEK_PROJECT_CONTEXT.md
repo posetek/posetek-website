@@ -1,3 +1,17 @@
+## November 7 private report pathway preparation — local only
+
+An isolated extension of reviewed report source `5d8a9c65` adds optional aggregate age-group
+charts for speed at 5 m, vertical jump and broad jump. Legacy reports retain their team charts;
+the deliberate native/TestFlight/browser flow, ciphertext envelope and HTTPS PDF targets stay
+unchanged. Sparse/unverified groups cannot show density or percentiles, and median lines do
+not bridge gaps. See [the payload and design contract](docs/features/PRIVATE_PARENT_PATHWAY_CHARTS.md).
+
+The baseline records already-serving `6aedefb93ea542305e9f49da` with 2,601 protected files and
+37 recovery mappings. A separate pinned `--update-pathway-charts` transition replaces only
+three reader files and appends an explicit encrypted selection over a fresh captured artifact.
+No source push, merge, production promotion, family send or native build is included. A private
+example draft requires exact artifact review and hosted acceptance before the user tests it.
+
 # PoseTek website project context
 
 ## Private report app entry — held preparation, November 5, 2026

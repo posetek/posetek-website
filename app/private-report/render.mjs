@@ -52,6 +52,170 @@ function ordinal(value) {
   return `${integer}${({1: 'st', 2: 'nd', 3: 'rd'})[integer % 10] || 'th'}`;
 }
 
+
+const PATHWAY_METRICS = [
+  {key: 'speedAt5m', unit: 'mph'},
+  {key: 'verticalJump', unit: 'in'},
+  {key: 'broadJump', unit: 'ft'},
+];
+const PLACEMENT_STATES = ['placed', 'age-unverified', 'sex-unverified', 'no-valid-result', 'sparse-reference', 'no-reference'];
+function measured(value) { return Number.isFinite(value) && value >= 0 && value <= 1000; }
+function ageGroup(value) { return Number.isInteger(value) && value >= 8 && value <= 17; }
+
+/** Optional aggregate-only extension. Legacy v1 payloads keep their existing presentation. */
+export function validatePathwayCharts(charts, version) {
+  if (charts === undefined && version === undefined) return false;
+  if (version !== 1 || !Array.isArray(charts) || charts.length !== 3) throw new Error('Invalid pathway charts');
+  for (const [index, chart] of charts.entries()) {
+    const metric = PATHWAY_METRICS[index];
+    if (!chart || chart.key !== metric.key || chart.unit !== metric.unit || chart.direction !== 'higher') throw new Error('Invalid pathway metric');
+    string(chart.label, 'pathway label', 160);
+    const reference = chart.reference, athlete = chart.athlete;
+    if (!reference || !['girls', 'boys', null].includes(reference.sexReferenceGroup)) throw new Error('Invalid reference group');
+    for (const key of ['label', 'sourceDate', 'selectionRule']) string(reference[key], 'reference ' + key, 600);
+    if (!athlete || !PLACEMENT_STATES.includes(athlete.placementStatus) ||
+        (athlete.ageGroup !== null && !ageGroup(athlete.ageGroup)) ||
+        (athlete.value !== null && !measured(athlete.value)) ||
+        (athlete.percentile !== null && (!Number.isFinite(athlete.percentile) || athlete.percentile < 0 || athlete.percentile > 100))) throw new Error('Invalid athlete placement');
+    if (!Array.isArray(chart.groups) || chart.groups.length !== 10) throw new Error('Invalid age groups');
+    for (const [i, group] of chart.groups.entries()) {
+      if (!group || group.ageGroup !== i + 8 || !Number.isInteger(group.n) || group.n < 0 || group.n > 10000) throw new Error('Invalid age group');
+      const status = group.n === 0 ? 'missing' : group.n < 5 ? 'sparse' : 'available';
+      if (group.status !== status) throw new Error('Invalid group status');
+      if (group.status !== 'available') {
+        if (group.median !== null || (group.density !== undefined && (!Array.isArray(group.density) || group.density.length))) throw new Error('Sparse groups cannot show a distribution');
+      } else {
+        if (!measured(group.median) || !Array.isArray(group.density) || group.density.length < 2 || group.density.length > 64) throw new Error('Invalid distribution');
+        let previous = -1, nonzero = false;
+        for (const point of group.density) {
+          if (!point || !measured(point.value) || point.value <= previous || !Number.isFinite(point.weight) || point.weight < 0 || point.weight > 1) throw new Error('Invalid density point');
+          previous = point.value; nonzero ||= point.weight > 0;
+        }
+        if (!nonzero || group.median < group.density[0].value || group.median > group.density.at(-1).value) throw new Error('Invalid distribution range');
+      }
+      if (reference.sexReferenceGroup === null && group.n !== 0) throw new Error('Unverified reference group');
+      if ('values' in group || 'players' in group || 'rows' in group) throw new Error('Raw peer results are not permitted');
+    }
+    const ownGroup = chart.groups.find(group => group.ageGroup === athlete.ageGroup);
+    const plotted = ['placed', 'sparse-reference', 'no-reference'].includes(athlete.placementStatus);
+    if (plotted && (!ageGroup(athlete.ageGroup) || !measured(athlete.value) || reference.sexReferenceGroup === null)) throw new Error('Unverified plotted placement');
+    if (athlete.placementStatus === 'placed' && ownGroup?.status !== 'available') throw new Error('Insufficient comparison');
+    if (athlete.placementStatus === 'sparse-reference' && ownGroup?.status !== 'sparse') throw new Error('Invalid sparse placement');
+    if (athlete.placementStatus === 'no-reference' && ownGroup?.status !== 'missing') throw new Error('Invalid missing placement');
+    if (athlete.placementStatus === 'age-unverified' && athlete.ageGroup !== null) throw new Error('Unverified age must be absent');
+    if (athlete.placementStatus === 'no-valid-result' && athlete.value !== null) throw new Error('Unqualified result must be absent');
+    if (athlete.percentile !== null && athlete.placementStatus !== 'placed') throw new Error('Unsupported percentile');
+    for (const note of array(chart.notes, 'pathway notes', 6)) string(note, 'pathway note', 600);
+  }
+  return true;
+}
+
+function svgElement(tag, attributes = {}, text) {
+  const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function numberLabel(value) { return new Intl.NumberFormat('en-US', {maximumFractionDigits: 1}).format(value); }
+function placementText(chart) {
+  const athlete = chart.athlete;
+  if (athlete.placementStatus === 'placed') {
+    const group = chart.groups.find(group => group.ageGroup === athlete.ageGroup);
+    return athlete.percentile === null
+      ? `Shown with ${group.n} tested U${athlete.ageGroup} ${chart.reference.sexReferenceGroup}.`
+      : `About the ${ordinal(athlete.percentile)} percentile among ${group.n} tested U${athlete.ageGroup} ${chart.reference.sexReferenceGroup}.`;
+  }
+  return {
+    'age-unverified': 'Age group needs confirmation, so this result is not placed on the chart.',
+    'sex-unverified': 'The reference group needs confirmation, so this result is not placed on the chart.',
+    'no-valid-result': 'No qualified result is available for this test yet.',
+    'sparse-reference': 'Fewer than 5 comparable athletes in this age group; no percentile is shown.',
+    'no-reference': 'No comparable results are available for this age group yet.',
+  }[athlete.placementStatus];
+}
+
+function makePathwayChart(chart, firstName) {
+  const section = element('section', 'pt-pathway');
+  section.dataset.metric = chart.key;
+  const heading = element('div', 'pt-pathway-heading');
+  heading.append(element('h3', '', chart.label), element('span', 'pt-pathway-result', chart.athlete.value === null ? 'Not available' : `${numberLabel(chart.athlete.value)} ${chart.unit}`));
+  section.append(heading, element('p', 'pt-pathway-placement', placementText(chart)));
+  const plotted = ['placed', 'sparse-reference', 'no-reference'].includes(chart.athlete.placementStatus);
+  const values = chart.groups.flatMap(group => group.density?.map(point => point.value) || []);
+  if (plotted) values.push(chart.athlete.value);
+  const low = values.length ? Math.min(...values) : 0, high = values.length ? Math.max(...values) : 1;
+  const padding = Math.max((high - low) * 0.08, high * 0.04, 0.1);
+  const minimum = Math.max(0, low - padding), maximum = high + padding;
+  const left = 38, top = 12, bottom = 195, width = 350, column = width / 10;
+  const y = value => bottom - (value - minimum) / (maximum - minimum) * (bottom - top);
+  const x = age => left + (age - 8 + 0.5) * column;
+  const svg = svgElement('svg', {viewBox: '0 0 400 250', role: 'img', 'aria-label': `${chart.label}, ${chart.unit}, by age group. ${placementText(chart)} Blank columns have fewer than 5 comparable results.`});
+  svg.append(svgElement('title', {}, `${chart.label}: ${firstName} and tested Vacaville age groups`));
+  for (let tick = 0; values.length && tick <= 4; tick++) {
+    const value = minimum + (maximum - minimum) * tick / 4;
+    svg.append(svgElement('line', {x1: left, x2: left + width, y1: y(value), y2: y(value), class: 'pt-pathway-grid'}));
+    svg.append(svgElement('text', {x: left - 6, y: y(value) + 4, 'text-anchor': 'end', class: 'pt-pathway-axis'}, numberLabel(value)));
+  }
+  let previous;
+  for (const group of chart.groups) {
+    const center = x(group.ageGroup);
+    if (group.status === 'available') {
+      for (let i = 0; i < group.density.length - 1; i++) {
+        const point = group.density[i], next = group.density[i + 1];
+        svg.append(svgElement('rect', {x: center - column * 0.39, y: y(next.value), width: column * 0.78, height: Math.max(0.1, y(point.value) - y(next.value) + 0.1), 'fill-opacity': ((point.weight + next.weight) / 2) * 0.85, class: 'pt-pathway-density', 'data-age': group.ageGroup}));
+      }
+      if (previous) svg.append(svgElement('line', {x1: x(previous.ageGroup), y1: y(previous.median), x2: center, y2: y(group.median), class: 'pt-pathway-median'}));
+      svg.append(svgElement('circle', {cx: center, cy: y(group.median), r: 2.5, class: 'pt-pathway-median-dot'}));
+      previous = group;
+    } else {
+      previous = undefined; // Never interpolate or connect across sparse or missing ages.
+    }
+    svg.append(svgElement('text', {x: center, y: 214, 'text-anchor': 'middle', class: 'pt-pathway-axis'}, `U${group.ageGroup}`));
+    svg.append(svgElement('text', {x: center, y: 229, 'text-anchor': 'middle', class: 'pt-pathway-count'}, group.n ? `n=${group.n}` : '—'));
+  }
+  if (plotted) svg.append(svgElement('circle', {cx: x(chart.athlete.ageGroup), cy: y(chart.athlete.value), r: 5.5, class: 'pt-pathway-athlete'}));
+  const scroll = element('div', 'pt-pathway-scroll');
+  scroll.setAttribute('tabindex', '0'); scroll.setAttribute('role', 'region'); scroll.setAttribute('aria-label', `${chart.label} chart; scroll horizontally on small screens`);
+  if (plotted && chart.athlete.ageGroup >= 13) scroll.dataset.preferEnd = 'true';
+  scroll.append(svg);
+  section.append(scroll, element('p', 'pt-pathway-axis-title', `${chart.unit} · higher is better · age group`));
+  for (const note of chart.notes) section.append(element('p', 'pt-pathway-note', note));
+  return section;
+}
+
+function makePathways(report) {
+  const section = element('section', 'pt-pathways');
+  section.append(element('h2', 'pt-practice-title', 'Your results by age group'));
+  section.append(element('p', 'pt-provisional', 'Compared with tested Vacaville players. These charts describe today’s results, not future progress.'));
+  const legend = element('div', 'pt-pathway-legend');
+  for (const [className, label] of [['pt-density-key', 'More results here'], ['pt-median-key', 'Age-group middle'], ['pt-athlete-key', report.firstName]]) {
+    const item = element('span'); item.append(element('i', className), document.createTextNode(label)); legend.append(item);
+  }
+  section.append(legend, element('p', 'pt-pathway-note', 'Each shaded column uses its own scale. Gaps mean fewer than 5 comparable athletes; — means no results.'));
+  for (const chart of report.pathwayCharts) section.append(makePathwayChart(chart, report.firstName));
+  return section;
+}
+
+function makeCorrectedResults(report) {
+  const section = element('section', 'pt-corrected-results');
+  section.append(element('h2', 'pt-practice-title', 'This testing session'));
+  const list = element('dl');
+  for (const metric of report.metrics) {
+    list.append(element('dt', '', metric.label), element('dd', '', metric.result || 'Not available'));
+  }
+  section.append(list);
+  const details = element('details', 'pt-details');
+  details.append(element('summary', '', 'About these results'));
+  const content = element('div', 'pt-detail-content');
+  for (const chart of report.pathwayCharts) {
+    content.append(element('p', '', `${chart.label}: ${chart.reference.label}. Reference checked ${chart.reference.sourceDate}. ${chart.reference.selectionRule}`));
+  }
+  for (const note of report.methodNotes) content.append(element('p', '', note));
+  for (const metric of report.metrics) if (metric.note) content.append(element('p', '', `${metric.label}: ${metric.note}`));
+  details.append(content); section.append(details);
+  return section;
+}
+
 function validate(report) {
   if (!report || typeof report !== 'object' || report.version !== 1) throw new Error('Invalid report');
   for (const field of ['name', 'firstName', 'team', 'coach', 'testDate', 'focusTitle', 'focusText', 'playerId']) {
@@ -78,6 +242,11 @@ function validate(report) {
     for (const field of ['title', 'tag', 'dose', 'instruction']) string(exercise[field], `exercise ${field}`);
   }
   for (const note of array(report.methodNotes, 'method notes', 16)) string(note, 'method note', 1800);
+  validatePathwayCharts(report.pathwayCharts, report.pathwayVersion);
+  if (report.pathwayCoverage !== undefined) {
+    if (!report.pathwayCharts || !report.pathwayCoverage || typeof report.pathwayCoverage.broaderComparisonsPending !== 'boolean') throw new Error('Invalid pathway coverage');
+    string(report.pathwayCoverage.note, 'pathway coverage', 300);
+  }
   const encoded = string(report.pdfBase64, 'PDF', 1_800_000);
   if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) throw new Error('Invalid PDF encoding');
   const decoded = atob(encoded);
@@ -215,9 +384,10 @@ export function renderReport(report) {
   const phone = element('article', 'pt-phone');
   const header = element('header', 'pt-top');
   header.append(element('div', 'pt-brand', 'POSETEK'));
-  header.append(element('h1', '', `${report.firstName}’s team snapshot`));
+  header.append(element('h1', '', `${report.firstName}’s ${report.pathwayCharts ? 'testing' : 'team'} snapshot`));
   header.append(element('p', '', `${report.name} · ${report.team}`));
   header.append(element('p', '', `Coach ${report.coach} · Tested ${report.testDate}`));
+  if (report.pathwayCoverage) header.append(element('p', 'pt-coverage', report.pathwayCoverage.note));
   const main = element('main', 'pt-body');
   const focus = element('section', 'pt-focus');
   focus.append(element('h2', '', report.focusTitle), element('p', '', report.focusText));
@@ -242,6 +412,9 @@ export function renderReport(report) {
   actions.append(downloadRow);
   main.append(actions);
 
+  if (report.pathwayCharts) {
+    main.append(makePathways(report), makeCorrectedResults(report));
+  } else {
   const sectionTitle = element('div', 'pt-section-title');
   const personal = element('span', 'pt-you');
   personal.append(element('span', 'pt-dot'), element('span', '', report.firstName));
@@ -252,6 +425,7 @@ export function renderReport(report) {
   for (const zone of ['Practice', 'Team middle', 'Strong']) zones.append(element('span', '', zone));
   main.append(zones);
   for (const metric of report.metrics) main.append(makeMetric(metric));
+  }
   const meaning = element('section', 'pt-meaning');
   meaning.setAttribute('aria-label', 'What to work on next');
   for (const summary of report.summary) {
@@ -259,7 +433,8 @@ export function renderReport(report) {
     row.append(element('strong', '', summary.label), element('span', '', summary.text));
     meaning.append(row);
   }
-  main.append(meaning, makeDetails(report));
+  main.append(meaning);
+  if (!report.pathwayCharts) main.append(makeDetails(report));
   if (report.exercises.length) {
     const practice = element('section');
     practice.append(element('h2', 'pt-practice-title', 'A little practice to get started'));
@@ -278,6 +453,7 @@ export function renderReport(report) {
   pdfUrl = URL.createObjectURL(new Blob([pdf], {type: 'application/pdf'}));
   mount.replaceChildren(phone);
   mount.hidden = false;
+  for (const scroll of mount.querySelectorAll('.pt-pathway-scroll[data-prefer-end]')) scroll.scrollLeft = 400;
   const status = document.getElementById('report-status');
   if (status) status.hidden = true;
 }

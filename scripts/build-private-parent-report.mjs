@@ -29,6 +29,12 @@ const WORKOUT_ENTRY_UPDATE = {
     after: { sha: '639290753226a76116f97d83d77515088af8e7ad', size: 7708 },
   },
 };
+// Separate, pinned November 7 age-group chart transition; no arbitrary viewer replacement.
+const PATHWAY_CHART_UPDATE = {
+  "index.html": {before: WORKOUT_ENTRY_UPDATE["index.html"].before, after: {"sha": "52284a92871e0e2f795cfbc060e2f80746a90230", "size": 816}},
+  "render.mjs": {before: WORKOUT_ENTRY_UPDATE["render.mjs"].before, after: {"sha": "168eb552e2f45a9f2920a1f1396a04ed22932ba8", "size": 25380}},
+  "report.css": {before: WORKOUT_ENTRY_UPDATE["report.css"].before, after: {"sha": "32d2fbcf52202c9731968b078416df86b1592ec3", "size": 10279}},
+};
 const hash = bytes => createHash('sha1').update(bytes).digest('hex');
 const collisionKey = name => name.normalize('NFC').toLowerCase();
 const fail = message => { throw new Error(message); };
@@ -116,12 +122,13 @@ function overlaps(a, b) {
 
 // root is injectable only through this module API for filesystem fixture tests.
 // The CLI always uses this repository and has no guard-skip option.
-export async function buildPrivateParentReport({ root = repository, evidenceDirectory, sealedDirectory, append = false, updateEntryLabel = false, updateWorkoutEntry = false }) {
+export async function buildPrivateParentReport({ root = repository, evidenceDirectory, sealedDirectory, append = false, updateEntryLabel = false, updateWorkoutEntry = false, updatePathwayCharts = false }) {
   root = resolve(root);
   if (typeof append !== 'boolean') fail('Append mode must be boolean');
   if (typeof updateEntryLabel !== 'boolean' || (updateEntryLabel && !append)) fail('Entry label transition requires explicit append mode');
   if (typeof updateWorkoutEntry !== 'boolean' || (updateWorkoutEntry && !append)) fail('Workout entry transition requires explicit append mode');
-  if (updateEntryLabel && updateWorkoutEntry) fail('Choose only one pinned reader transition');
+  if (typeof updatePathwayCharts !== 'boolean' || (updatePathwayCharts && !append)) fail('Pathway chart transition requires explicit append mode');
+  if ([updateEntryLabel, updateWorkoutEntry, updatePathwayCharts].filter(Boolean).length > 1) fail('Choose only one pinned reader transition');
   if (append && !sealedDirectory) fail('Append mode requires new sealed reports');
   if (!evidenceDirectory) fail('An evidence directory is required');
   const evidence = resolve(root, evidenceDirectory), output = join(root, 'production-dist');
@@ -168,7 +175,7 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
       // Normal append cannot replace the viewer. Each explicit transition pins
       // both its old and new bytes, with no arbitrary replacement option.
       const previous = prior.get(path);
-      const transition = updateWorkoutEntry ? WORKOUT_ENTRY_UPDATE[name]
+      const transition = updatePathwayCharts ? PATHWAY_CHART_UPDATE[name] : updateWorkoutEntry ? WORKOUT_ENTRY_UPDATE[name]
         : name === 'index.html' && updateEntryLabel ? ENTRY_LABEL_UPDATE : null;
       if (transition) {
         if (!previous || previous.sha !== transition.before.sha || previous.size !== transition.before.size ||
@@ -239,8 +246,8 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
     const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
     const receipt = {
       mode: append ? 'append-encrypted-reports' : 'initial-reader',
-      readerTransition: updateWorkoutEntry ? 'workouts-v1' : updateEntryLabel ? 'neutral-label' : null,
-      requiresSeparateNativeAcceptance: !append || updateWorkoutEntry,
+      readerTransition: updatePathwayCharts ? 'pathways-v1' : updateWorkoutEntry ? 'workouts-v1' : updateEntryLabel ? 'neutral-label' : null,
+      requiresSeparateNativeAcceptance: !append || updateWorkoutEntry || updatePathwayCharts,
       previousDeploymentId: baseline.deploymentId,
       inventorySha256: createHash('sha256').update(inventoryBytes).digest('hex'),
       baselineSha256: createHash('sha256').update(baselineBytes).digest('hex'),
@@ -269,7 +276,9 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2), updateWorkoutEntry = args.at(-1) === '--update-workout-entry';
+  const args = process.argv.slice(2), updatePathwayCharts = args.at(-1) === '--update-pathway-charts';
+  if (updatePathwayCharts) args.pop();
+  const updateWorkoutEntry = args.at(-1) === '--update-workout-entry';
   if (updateWorkoutEntry) args.pop();
   const updateEntryLabel = args.at(-1) === '--update-entry-label';
   if (updateEntryLabel) args.pop();
@@ -277,8 +286,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (append) args.pop();
   const [evidenceDirectory, flag, sealedDirectory, ...extra] = args;
   if (!evidenceDirectory || (flag && (flag !== '--sealed-dir' || !sealedDirectory)) || extra.length) {
-    fail('Use: build-private-parent-report.mjs <evidence-directory> [--sealed-dir <binary-only-directory>] [--append] [--update-entry-label | --update-workout-entry]');
+    fail('Use: build-private-parent-report.mjs <evidence-directory> [--sealed-dir <binary-only-directory>] [--append] [--update-entry-label | --update-workout-entry | --update-pathway-charts]');
   }
-  const receipt = await buildPrivateParentReport({ evidenceDirectory, sealedDirectory, append, updateEntryLabel, updateWorkoutEntry });
+  const receipt = await buildPrivateParentReport({ evidenceDirectory, sealedDirectory, append, updateEntryLabel, updateWorkoutEntry, updatePathwayCharts });
   console.log(`[private-report] Preserved ${receipt.preservedFiles} predecessor files; added ${receipt.addedFiles.length} report files. No upload performed.`);
 }
