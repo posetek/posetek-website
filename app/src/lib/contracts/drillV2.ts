@@ -52,6 +52,48 @@ export interface CatalogDrill {
   trainingPolicy?: Record<string, unknown>;
   /** Additive, source-bound personal-workout resource requirements. Server checks remain authoritative. */
   accessRequirements?: Record<string, any>;
+  /**
+   * Read-only copy of the server-written validation gate (database-first catalog
+   * contract §3.1). Absent means "not required". The web console never writes it.
+   */
+  validation?: CatalogValidation;
+}
+
+export interface CatalogValidation {
+  required: boolean;
+  result: "pending" | "pass" | "fail";
+  profileVersion?: string;
+  runId?: string;
+  exemptReason?: string;
+}
+
+/**
+ * True while a drill must pass validation before it may be published: the rules
+ * refuse `status: published` when `validation.required == true` and
+ * `validation.result != "pass"`, so the editor mirrors that and never offers it.
+ */
+export function publishBlockedByValidation(validation: CatalogValidation | null | undefined): boolean {
+  return validation?.required === true && validation.result !== "pass";
+}
+
+/** The editor's save error for a `published` status the validation gate does not allow, or null. */
+export function publishGateError(status: DrillStatus, validation: CatalogValidation | null | undefined): string | null {
+  return status === "published" && publishBlockedByValidation(validation)
+    ? "This drill needs a passing validation before it can be published. Keep it as a draft; it publishes automatically on a pass."
+    : null;
+}
+
+export function normalizeCatalogValidation(raw: unknown): CatalogValidation | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const value = raw as Record<string, unknown>;
+  const result = value.result === "pass" || value.result === "fail" ? value.result : "pending";
+  return {
+    required: value.required === true,
+    result,
+    ...(typeof value.profileVersion === "string" ? { profileVersion: value.profileVersion } : {}),
+    ...(typeof value.runId === "string" ? { runId: value.runId } : {}),
+    ...(typeof value.exemptReason === "string" ? { exemptReason: value.exemptReason } : {}),
+  };
 }
 
 // MARK: - Legacy domain mapping (§2)
@@ -142,7 +184,7 @@ function stringList(value: unknown): string[] {
   return Array.isArray(value) ? value.map(entry => String(entry)) : [];
 }
 
-function normalizeStatus(value: unknown): DrillStatus {
+export function normalizeStatus(value: unknown): DrillStatus {
   return value === "draft" || value === "archived" || value === "published" ? value : "published";
 }
 
@@ -214,6 +256,7 @@ export function normalizeCatalogDrill(id: string, raw: any): CatalogDrill {
     productionBatchId: typeof raw?.productionBatchId === "string" ? raw.productionBatchId : undefined,
     trainingPolicy: raw?.trainingPolicy && typeof raw.trainingPolicy === "object" ? raw.trainingPolicy : undefined,
     ...(raw?.accessRequirements && typeof raw.accessRequirements === 'object' ? { accessRequirements: raw.accessRequirements } : {}),
+    ...(normalizeCatalogValidation(raw?.validation) ? { validation: normalizeCatalogValidation(raw?.validation) } : {}),
   };
 }
 
