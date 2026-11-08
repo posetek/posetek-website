@@ -25,3 +25,5 @@ functions/.env*
 # Editor and OS clutter
 *.code-workspace
 *.lnk
+
+app/player-signin-dist/

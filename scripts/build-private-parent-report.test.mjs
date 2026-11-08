@@ -333,3 +333,35 @@ test('pathway transition cannot bypass explicit selection, predecessor pins, or 
   await assert.rejects(f.run({sealedDirectory, append: true, updatePathwayCharts: true}), /pinned original and reviewed replacement/);
   await assert.rejects(readFile(join(f.evidenceDirectory, 'guard-ran')), {code: 'ENOENT'});
 });
+
+async function signupFixture(t) {
+ const f=await initialReaderTransitionFixture(t,true);
+ await put(f.root,'deployment/private-player-signup.netlify.toml',await readFile(new URL('../deployment/private-player-signup.netlify.toml',import.meta.url)));
+ await put(f.root,'app/node_modules/astro/bin/astro.mjs','// Synthetic compiler boundary. Only prepared fixture output may be packaged.');
+ await put(f.root,'app/player-signin-dist/player-signin.html','<!-- posetek-player-signin-entry --><script>window.__posetekPlayerInvitation=null</script><astro-island component-url="/_astro/PlayerSignInRoot.fixture.js"></astro-island>');
+ await put(f.root,'app/player-signin-dist/_astro/PlayerSignInRoot.fixture.js','export const fixture=true;');
+ await put(f.root,'app/player-signin-dist/_astro/AdminPage.unused.js','neverPackage();');
+ return f;
+}
+test('explicit signup assembly preserves predecessor SPA and packages only the isolated closure with pinned candidate configuration',async t=>{
+ const f=await signupFixture(t);
+ const receipt=await f.run({sealedDirectory:f.sealedDirectory,append:true,updatePathwayCharts:true,withPlayerSignup:true});
+ assert.equal(receipt.isolatedPlayerSignupEntry,true);assert.equal(receipt.configurationPath,'deployment/private-player-signup.netlify.toml');
+ assert.equal(receipt.addedFiles.length,3);assert(receipt.addedFiles.includes('/player-signin.html'));
+ assert.equal(await readFile(join(f.root,'production-dist/application.html'),'utf8'),files['/application.html']);
+ assert(!receipt.addedFiles.some(path=>/AdminPage/.test(path)));
+});
+test('signup packaging requires explicit mode and exact reviewed routing before running the guard',async t=>{
+ const f=await signupFixture(t),sealedDirectory=f.sealedDirectory;
+ await assert.rejects(f.run({sealedDirectory,append:true,withPlayerSignup:true}),/explicit reviewed/);
+ await put(f.root,'deployment/private-player-signup.netlify.toml','unreviewed route');
+ await assert.rejects(f.run({sealedDirectory,append:true,updatePathwayCharts:true,withPlayerSignup:true}),/reviewed configuration/);
+ await assert.rejects(readFile(join(f.evidenceDirectory,'guard-ran')),{code:'ENOENT'});
+});
+test('signup closure collision cannot replace an existing predecessor asset',async t=>{
+ const f=await signupFixture(t),path='/_astro/PlayerSignInRoot.fixture.js',bytes=Buffer.from('previous application module');
+ const row={path,deploy_id:'prior-deploy',sha:sha(bytes),size:bytes.length};f.rows.push(row);f.baseline.files.push(row);
+ await put(f.predecessor,path,bytes);await f.saveRows();await put(f.root,'deployment/homepage-baseline.json',JSON.stringify(f.baseline));
+ await assert.rejects(f.run({sealedDirectory:f.sealedDirectory,append:true,updatePathwayCharts:true,withPlayerSignup:true}),/collides with predecessor/);
+ await assert.rejects(readFile(join(f.evidenceDirectory,'build-receipt.json')),{code:'ENOENT'});
+});

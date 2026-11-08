@@ -13,7 +13,9 @@ The Revamp release completed before this artifact was assembled and published.
 
 ## Access model
 
-The report is a read-only bearer link: anyone with the complete link can read it.
+Legacy reports are read-only bearer links: anyone with the complete link can read
+them. The optional signup-first payload described below additionally carries an
+existing player signup invitation and can enable claiming that exact profile.
 It does not verify a guardian or sign someone into PoseTek. A new random 256-bit
 AES-GCM key and 96-bit nonce protect each snapshot; a random 192-bit opaque ID
 selects the encrypted payload. The version and ID are authenticated as additional
@@ -31,14 +33,13 @@ fails closed when controlled by a service worker and uses no-store, no-referrer,
 noindex, frame-denial and a restrictive CSP. Invalid/missing/tampered data shows a
 generic message without revealing an athlete.
 
-The published browser-only workout button builds
+The original published browser-only workout button builds
 `https://posetek.net/athlete?player=<id>&view=training`. This is a locator, not an
 access grant. Existing account authorization continues to decide access. The
 reader never claims an account, starts a workout, writes activity or transfers
-credentials. Signed-out users use the existing sign-in flow. Unclaimed accounts
-still need their existing private invitation; first signup currently opens
-Profile rather than preserving the Workouts destination. No recovery token or
-invitation is embedded in the report.
+credentials. Signed-out users use the existing sign-in flow. Legacy unclaimed accounts still need their separate private invitation. The
+original signup flow opens Profile. The optional signup-first candidate below
+adds a reviewed existing invitation and an exact-child Training continuation.
 
 ## Installed app boundary
 
@@ -80,11 +81,13 @@ No timer, iframe, visibility check, automatic launch or delayed redirect is used
 Absent/old apps, declined prompts and blocked schemes share the visible recovery
 choices. Scheme registration is not exclusive ownership or access authorization.
 The native implementation must validate the exact locator and authorize the signed-in
-actor before selecting that child's Training view. New accounts still need their
-private invitation; no new signup destination guarantee is introduced.
+actor before selecting that child's Training view. Legacy payloads still need a
+separate invitation; the optional signup-first branch below opens browser signup
+before offering installed-app choices. It does not change the native contract.
 
-The existing PDF button/QR keep HTTPS. No report plaintext, PDF bytes, encrypted
-envelopes or complete private links change in this source candidate. PDF install
+The existing PDF button/QR keep HTTPS. The original app-entry change did not alter report plaintext, PDF bytes, encrypted
+envelopes or complete private links. A later optional signup-first envelope carries
+an explicitly authorized existing invitation; its PDF can remain byte-identical. PDF install
 instructions await a separately reviewed revision. The five-file reader, cryptography,
 no-tracking isolation, PDF download and chart behavior remain intact. The batch
 append builder does not authorize arbitrary reader replacement; a reviewed pinned
@@ -179,3 +182,65 @@ Each child's measurements, cohort, missing-data handling, PDF and exact workout
 target must be reviewed before sealing. Keep recipient identity and tone evidence
 with a private batch ledger. Preparing or publishing private links does not send
 texts; each proposed group of ten messages awaits the user's explicit go.
+
+
+## Optional signup-first report entry — November 7 candidate
+
+A selected encrypted v1 payload may include `playerSignupUrl`: the canonical
+existing `https://posetek.net/signin#playerCode=…` returned by a freshly checked,
+exact-player saved invitation. Do not construct a code from a report/player ID.
+The renderer validates its origin, path, fragment and player locator and produces
+`/signin?reportPlayer=<id>#playerCode=…` on the current host. The report key and
+opaque report ID never enter that URL. Only the encrypted payload contains the
+invitation; no plaintext invitation, name, account or report link is tracked.
+
+Possession of this optional invitation-bearing report enables the canonical
+signup/claim flow for that player. It is therefore a signup capability as well
+as a readable report, not merely a locator. The code is checked and redeemed by
+existing server endpoints; opening the report itself makes no Auth/backend
+request. Existing ready-invitation evidence is separate from public validation,
+account creation, sign-in, app use and workout availability. Stale or claimed
+invitations show sign-in guidance and do not create duplicate Auth accounts.
+Recipient holds and explicit sharing approval apply to this expanded capability.
+
+Results, summaries and practice remain above the bottom action group. The primary
+workout button opens signup first; the code is prefilled and removed from the
+address bar before imports. It lives only in page memory, never query persistence,
+referrers, analytics or local/session storage. Already-created player accounts can
+sign in without the code. The fixed continuation accepts only the requested
+canonical child and the server-returned redeemed child; arbitrary `returnTo`
+values do not redirect report flows. Staff and another player's account are
+blocked with explicit switch-account guidance, never silently signed out or
+redirected into admin. The native/TestFlight choices remain in a secondary
+already-set-up disclosure, with the same exact-child locator and return/tap steps.
+
+The isolated sign-in document uses the existing canonical LandingPage, Auth,
+invitation and account-access helpers. It does not package the application routes.
+Successful continuation makes a full-document navigation to the preserved
+application's exact-child Training page. A matching active plan, native installed
+build and physical-device acceptance are separate evidence; fixture navigation
+alone establishes none of them.
+
+The current production source cannot be proven from the manual deploy receipt.
+Accordingly this candidate appends only the sign-in dependency closure, replaces
+the three pinned reader files and adds the explicitly selected ciphertext. It
+preserves `application.html`, all marketing, all historical assets and old reports.
+Canonical `netlify.toml` remains unchanged: the candidate-only reviewed config is
+`deployment/private-player-signup.netlify.toml`. Its only differences are the
+`/signin` rewrite to `/player-signin.html` and private security headers for those
+two paths. Normal builds therefore retain their existing routing. This optional
+assembly requires all three flags:
+
+```sh
+node scripts/build-private-parent-report.mjs <evidence-dir> --sealed-dir <binary-only-dir> --append --update-pathway-charts --with-player-signup
+```
+
+The builder pins the candidate config hash and rejects changed or colliding
+predecessor assets. Draft upload must explicitly use that exact config with
+`--config deployment/private-player-signup.netlify.toml`, `--no-build`, the reviewed
+artifact and an empty functions directory; never `--prod`. A source commit or
+successful assembly does not authorize promotion, source release or outreach.
+Review effective hosted routing/headers, ordinary sign-in behavior, isolated
+bootstrap/full navigation, report/PDF equality and production identity separately.
+Tests use synthetic invitations and mock account boundaries; never submit real
+invitations or register a child as automated acceptance.

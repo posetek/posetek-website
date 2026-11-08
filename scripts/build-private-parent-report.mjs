@@ -5,6 +5,7 @@ import { resolve, join, dirname, relative, isAbsolute, parse } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { playerSignInAssets } from './private-player-signin-assets.mjs';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const REPORT_FILES = ['index.html', 'report.css', 'render.mjs', 'crypto.mjs', 'loader.mjs'];
@@ -32,9 +33,10 @@ const WORKOUT_ENTRY_UPDATE = {
 // Separate, pinned November 7 age-group chart transition; no arbitrary viewer replacement.
 const PATHWAY_CHART_UPDATE = {
   "index.html": {before: WORKOUT_ENTRY_UPDATE["index.html"].before, after: {"sha": "52284a92871e0e2f795cfbc060e2f80746a90230", "size": 816}},
-  "render.mjs": {before: WORKOUT_ENTRY_UPDATE["render.mjs"].before, after: {"sha": "4f099d9972fa454ff7ef733e9a1c0ec558e6f4b2", "size": 25422}},
+  "render.mjs": {before: WORKOUT_ENTRY_UPDATE["render.mjs"].before, after: {"sha": "a433ddae33c57ce7fb966a70934ccea8925b9b6e", "size": 27303}},
   "report.css": {before: WORKOUT_ENTRY_UPDATE["report.css"].before, after: {"sha": "32d2fbcf52202c9731968b078416df86b1592ec3", "size": 10279}},
 };
+const PLAYER_SIGNUP_CONFIG_SHA256 = '3b4ad4637ba331ff415ad5843279e17a6d1f1a81c3e7628bef1c5e16f4166947';
 const hash = bytes => createHash('sha1').update(bytes).digest('hex');
 const collisionKey = name => name.normalize('NFC').toLowerCase();
 const fail = message => { throw new Error(message); };
@@ -122,8 +124,9 @@ function overlaps(a, b) {
 
 // root is injectable only through this module API for filesystem fixture tests.
 // The CLI always uses this repository and has no guard-skip option.
-export async function buildPrivateParentReport({ root = repository, evidenceDirectory, sealedDirectory, append = false, updateEntryLabel = false, updateWorkoutEntry = false, updatePathwayCharts = false }) {
+export async function buildPrivateParentReport({ root = repository, evidenceDirectory, sealedDirectory, append = false, updateEntryLabel = false, updateWorkoutEntry = false, updatePathwayCharts = false, withPlayerSignup = false }) {
   root = resolve(root);
+  if (typeof withPlayerSignup !== 'boolean' || withPlayerSignup && (!append || !updatePathwayCharts)) fail('Player signup entry requires the explicit reviewed reader transition');
   if (typeof append !== 'boolean') fail('Append mode must be boolean');
   if (typeof updateEntryLabel !== 'boolean' || (updateEntryLabel && !append)) fail('Entry label transition requires explicit append mode');
   if (typeof updateWorkoutEntry !== 'boolean' || (updateWorkoutEntry && !append)) fail('Workout entry transition requires explicit append mode');
@@ -133,6 +136,8 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
   if (!evidenceDirectory) fail('An evidence directory is required');
   const evidence = resolve(root, evidenceDirectory), output = join(root, 'production-dist');
   const predecessor = join(evidence, 'previous-artifact'), source = join(root, 'app/private-report');
+  const signupConfig = withPlayerSignup ? await regularFile(join(root, 'deployment/private-player-signup.netlify.toml')) : null;
+  if (signupConfig && createHash('sha256').update(signupConfig).digest('hex') !== PLAYER_SIGNUP_CONFIG_SHA256) fail('Player signup routing must match reviewed configuration');
   const stage = join(root, '.private-parent-report-stage');
   if (overlaps(output, evidence) || overlaps(evidence, output) || overlaps(stage, evidence) || overlaps(evidence, stage) ||
       overlaps(source, evidence) || overlaps(evidence, source)) {
@@ -217,6 +222,19 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
   if (!(await regularFile(guard)).equals(guardBytes) || !(await regularFile(join(root, 'deployment/homepage-baseline.json'))).equals(baselineBytes)) {
     fail('Guard or baseline changed during build');
   }
+  if (withPlayerSignup) {
+    if (prior.has('/player-signin.html')) fail('This signup transition requires an additive entry');
+    const build = spawnSync(process.execPath, [join(root, 'app/node_modules/astro/bin/astro.mjs'), 'build', '--config', 'astro.player-signin.config.mjs'], {cwd: join(root, 'app'), stdio: 'inherit', env: {...process.env, ASTRO_TELEMETRY_DISABLED: '1'}});
+    if (build.error || build.status !== 0) fail('Isolated player signup build failed');
+    if (!(await regularFile(join(root, 'deployment/private-player-signup.netlify.toml'))).equals(signupConfig)) fail('Signup configuration changed during build');
+    const closure = await playerSignInAssets(join(root, 'app/player-signin-dist'));
+    for (const [path, bytes] of closure) {
+      const previous = [...prior.values()].find(row => collisionKey(row.path) === collisionKey(path));
+      if (previous) { if (!matches(bytes, previous)) fail('Signup dependency collides with predecessor'); continue; }
+      if (additionKeys.has(collisionKey(path))) fail('Signup path collides with report addition');
+      additionKeys.add(collisionKey(path)); additions.set(path, bytes);
+    }
+  }
   const generated = await listFiles(output);
   const preserved = [...prior.values()].filter(row => row.path !== METADATA);
   await mkdir(stage, { mode: 0o700 });
@@ -246,6 +264,9 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
     const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2) + '\n');
     const receipt = {
       mode: append ? 'append-encrypted-reports' : 'initial-reader',
+      isolatedPlayerSignupEntry: withPlayerSignup,
+      configurationPath: withPlayerSignup ? 'deployment/private-player-signup.netlify.toml' : null,
+      configurationSha256: signupConfig ? createHash('sha256').update(signupConfig).digest('hex') : null,
       readerTransition: updatePathwayCharts ? 'pathways-v1' : updateWorkoutEntry ? 'workouts-v1' : updateEntryLabel ? 'neutral-label' : null,
       requiresSeparateNativeAcceptance: !append || updateWorkoutEntry || updatePathwayCharts,
       previousDeploymentId: baseline.deploymentId,
@@ -276,7 +297,9 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2), updatePathwayCharts = args.at(-1) === '--update-pathway-charts';
+  const args = process.argv.slice(2), withPlayerSignup = args.at(-1) === '--with-player-signup';
+  if (withPlayerSignup) args.pop();
+  const updatePathwayCharts = args.at(-1) === '--update-pathway-charts';
   if (updatePathwayCharts) args.pop();
   const updateWorkoutEntry = args.at(-1) === '--update-workout-entry';
   if (updateWorkoutEntry) args.pop();
@@ -286,8 +309,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (append) args.pop();
   const [evidenceDirectory, flag, sealedDirectory, ...extra] = args;
   if (!evidenceDirectory || (flag && (flag !== '--sealed-dir' || !sealedDirectory)) || extra.length) {
-    fail('Use: build-private-parent-report.mjs <evidence-directory> [--sealed-dir <binary-only-directory>] [--append] [--update-entry-label | --update-workout-entry | --update-pathway-charts]');
+    fail('Use: build-private-parent-report.mjs <evidence-directory> [--sealed-dir <binary-only-directory>] [--append] [--update-entry-label | --update-workout-entry | --update-pathway-charts] [--with-player-signup]');
   }
-  const receipt = await buildPrivateParentReport({ evidenceDirectory, sealedDirectory, append, updateEntryLabel, updateWorkoutEntry, updatePathwayCharts });
+  const receipt = await buildPrivateParentReport({ evidenceDirectory, sealedDirectory, append, updateEntryLabel, updateWorkoutEntry, updatePathwayCharts, withPlayerSignup });
   console.log(`[private-report] Preserved ${receipt.preservedFiles} predecessor files; added ${receipt.addedFiles.length} report files. No upload performed.`);
 }

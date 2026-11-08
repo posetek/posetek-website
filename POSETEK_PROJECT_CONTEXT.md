@@ -1,5 +1,16 @@
 ## November 7 private report action order — local only
 
+## Local signup-first report candidate — November 7, 2026
+
+The isolated report branch adds optional, explicitly authorized existing player
+invitation support and exact-child Training continuation. It uses an additive
+sign-in document and a separate candidate-only Netlify configuration; canonical
+production routing and the served SPA remain unchanged. This is local source,
+not a source or production release. See
+[the feature contract](docs/features/PRIVATE_PARENT_REPORTS.md#optional-signup-first-report-entry--november-7-candidate)
+for capability handling, assembly, verification and held release/send gates.
+
+
 The workout button, TestFlight install/update and browser choices, and PDF download now follow
 the results and practice cards. The compact report payloads, measurements, summaries, practice
 cards and exact-child routes are unchanged. Account registration remains a separate private

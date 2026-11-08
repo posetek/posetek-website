@@ -22,6 +22,17 @@ export function workoutLinks(playerId) {
   };
 }
 
+/** Verified canonical invitation URLs are carried only inside authorized encrypted reports. */
+export function playerSignupLink(signupUrl, playerId) {
+  if (!workoutLinks(playerId) || typeof signupUrl !== 'string' || signupUrl.length > 600) throw new Error('Invalid player signup entry');
+  const url = new URL(signupUrl);
+  const fragment = new URLSearchParams(url.hash.slice(1));
+  const codes = fragment.getAll('playerCode');
+  if (url.origin !== 'https://posetek.net' || url.pathname !== '/signin' || url.username || url.password || url.search ||
+      [...fragment.keys()].length !== 1 || codes.length !== 1 || !/^[A-Za-z0-9-]{6,64}$/.test(codes[0])) throw new Error('Invalid player signup entry');
+  return `/signin?reportPlayer=${encodeURIComponent(playerId)}#playerCode=${encodeURIComponent(codes[0])}`;
+}
+
 function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -247,6 +258,7 @@ function validate(report) {
     if (!report.pathwayCharts || !report.pathwayCoverage || typeof report.pathwayCoverage.broaderComparisonsPending !== 'boolean') throw new Error('Invalid pathway coverage');
     string(report.pathwayCoverage.note, 'pathway coverage', 300);
   }
+  if (report.playerSignupUrl !== undefined) playerSignupLink(report.playerSignupUrl, report.playerId);
   const encoded = string(report.pdfBase64, 'PDF', 1_800_000);
   if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) throw new Error('Invalid PDF encoding');
   const decoded = atob(encoded);
@@ -338,6 +350,21 @@ function makeWorkoutEntry(report) {
     return entry;
   }
   const platform = workoutPlatform();
+  if (report.playerSignupUrl !== undefined) {
+    entry.append(workoutAnchor(`Open ${report.firstName}’s workouts`, playerSignupLink(report.playerSignupUrl, report.playerId), 'pt-primary'));
+    entry.append(element('p', 'pt-cta-note', `First, create ${report.firstName}’s player login with the filled-in code, or sign in if it’s already set up.`));
+    const signIn = `/signin?reportPlayer=${encodeURIComponent(report.playerId)}`;
+    entry.append(workoutAnchor('Already have the player login? Sign in', signIn));
+    if (platform !== 'android') {
+      const recovery = element('details', 'pt-app-options');
+      recovery.append(element('summary', '', 'Already set up? Open the iPhone or iPad app'));
+      const choices = element('div', 'pt-recovery-links');
+      choices.append(workoutAnchor('Open in the PoseTek app', links.native));
+      recovery.append(choices, makeInstallSteps(links));
+      entry.append(recovery);
+    }
+    return entry;
+  }
   if (platform === 'ios') {
     // Keep install guidance visible before a tap; platform hints cannot detect installation.
     entry.append(workoutAnchor('Open in the PoseTek app', links.native, 'pt-primary'));
