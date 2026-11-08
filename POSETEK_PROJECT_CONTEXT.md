@@ -1,5 +1,29 @@
 # PoseTek website project context
 
+## Database-first catalog compatibility release — November 7, 2026
+
+Deployment `6aeffb31ae4da62a62fc6356` was published at
+`2026-11-08T04:34:35.550Z` from runtime `dbb380f` (`runtime/catalog-db-first-compat`,
+based on accepted `51106ec`, whose application equals live runtime `e4c6403`).
+It ships PR #134:
+- The admin drill editor offers `published` only when catalog validation allows it,
+  and refuses stale saves.
+- The workout picker is uncapped.
+- The coach dashboard lists published drills only.
+- The athlete workout player card shows the v2 how-to.
+
+Main itself was not shipped. Its `app/` still carries held Ball Striking and
+policy source and lacks the runtime's jump review and reviewed results.
+
+The release preserves the prior live deploy `6aeff48b`, Dylan Keller's November
+cohort reports. That includes the isolated `/player-signin.html`, the `/signin`
+rewrite and headers, which this record also brings to main's `netlify.toml`. All
+2,697 artifact files match 2,698 provider records; only `/application.html` changed,
+with 20 hashed assets added. The reconciled baseline protects 2,695 files with all 37
+recovery mappings. Signed-in hosted acceptance is not claimed.
+[Release handoff](docs/releases/CATALOG_DB_FIRST_COMPAT_RELEASE.md) ·
+[Production receipt](docs/releases/receipts/CATALOG_DB_FIRST_COMPAT_PRODUCTION.json)
+
 ## Admin result validation release — November 6, 2026
 
 Deployment `6aedefb93ea542305e9f49da` was published at

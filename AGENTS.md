@@ -17,6 +17,29 @@ PR requirements and release/deployment holds remain unchanged. Runtime tool
 approval is separate from this policy; report exact tool rejections and never
 switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.md#website-worktree-local-lane).
 
+## Database-first catalog compatibility release — November 7, 2026
+
+Deployment `6aeffb31ae4da62a62fc6356` was published at
+`2026-11-08T04:34:35.550Z` from runtime `dbb380f` on
+`runtime/catalog-db-first-compat`. That runtime is accepted runtime `51106ec`
+plus PR #134's six commits. The admin drill editor follows the catalog validation
+gate and refuses stale saves. The workout picker is uncapped. Coaches see published
+drills only, and the athlete workout player shows the v2 how-to.
+
+It preserves the prior live deploy `6aeff48b` byte for byte. That deploy is Dylan
+Keller's November cohort reports, including `/player-signin.html` and its `/signin`
+rewrite and headers. All 2,697 artifact files match 2,698 provider records; only
+`/application.html` changed, with 20 hashed assets added. The reconciled baseline
+protects 2,695 files with all 37 recovery mappings. Signed-in hosted acceptance is
+not claimed.
+[Release handoff](docs/releases/CATALOG_DB_FIRST_COMPAT_RELEASE.md) ·
+[Production receipt](docs/releases/receipts/CATALOG_DB_FIRST_COMPAT_PRODUCTION.json)
+
+The #134 merge lacked `[skip netlify]` and auto-published Git build `6aefe7d5`.
+That build rebuilt the marketing pages, with only the astro-island uid changing.
+**Every merge to main must carry `[skip netlify]`.** No backend, rules, indexes,
+gateway, catalog data or native release. Held candidates and report outreach remain held.
+
 ## Admin result validation release — November 6, 2026
 
 Deployment `6aedefb93ea542305e9f49da` was published at
