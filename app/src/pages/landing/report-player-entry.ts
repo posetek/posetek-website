@@ -14,7 +14,7 @@ export function readReportPlayerEntry(search: string): ReportPlayerEntry {
 
 export function reportTrainingPath(playerId: string): string {
   if (!playerIdPattern.test(playerId)) throw new ReportPlayerEntryError("Reopen the original report link to continue.");
-  return `/athlete?player=${encodeURIComponent(playerId)}&view=training`;
+  return `/athlete?player=${encodeURIComponent(playerId)}&userType=player&view=training`;
 }
 
 // Ignores generic returnTo completely for report entry. Only the authenticated,

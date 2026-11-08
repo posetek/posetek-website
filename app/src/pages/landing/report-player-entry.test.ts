@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { readReportPlayerEntry, reportPlayerDestination, reportSignupDestination, initialReportPlayerDestination } from "./report-player-entry";
 import { createInvitedPlayer } from "./player-invitation-link";
 const entry = readReportPlayerEntry("?reportPlayer=canonical-child");
-const target = "/athlete?player=canonical-child&view=training";
+const target = "/athlete?player=canonical-child&userType=player&view=training";
 
 describe("report player continuation", () => {
   it("continues the same authenticated player to Training, ignoring arbitrary returnTo", () => {
