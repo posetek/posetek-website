@@ -334,16 +334,20 @@ function makeDetails(report) {
   return details;
 }
 
-function workoutAnchor(text, href, className = 'pt-recovery-link') {
+function workoutAnchor(text, href, className = 'pt-recovery-link', onActivate) {
   const link = element('a', className, text);
   link.href = href;
   if (href.startsWith('https://')) link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.referrerPolicy = 'no-referrer';
+  if (onActivate) {
+    link.addEventListener('click', onActivate);
+    link.addEventListener('auxclick', event => { if (event.button === 1) onActivate(); });
+  }
   return link;
 }
 
-function makeWorkoutEntry(report) {
+function makeWorkoutEntry(report, record) {
   const links = workoutLinks(report.playerId);
   const entry = element('div', 'pt-workout-entry');
   if (!links) {
@@ -352,7 +356,11 @@ function makeWorkoutEntry(report) {
   }
   const platform = workoutPlatform();
   if (report.playerSignupUrl !== undefined) {
-    entry.append(workoutAnchor(`Open ${report.firstName}’s workouts`, playerSignupLink(report.playerSignupUrl, report.playerId), 'pt-primary'));
+    const workout = workoutAnchor(`Open ${report.firstName}’s workouts`, playerSignupLink(report.playerSignupUrl, report.playerId), 'pt-primary', record && (() => record('workouts')));
+    // Keep the report open while signup starts. WebKit can cancel the event
+    // during same-tab navigation even when the request has keepalive enabled.
+    if (record) workout.target = '_blank';
+    entry.append(workout);
     entry.append(element('p', 'pt-cta-note', `First, create ${report.firstName}’s player login with the filled-in code, or sign in if it’s already set up.`));
     const signIn = `/signin?reportPlayer=${encodeURIComponent(report.playerId)}`;
     entry.append(workoutAnchor('Already have the player login? Sign in', signIn));
@@ -361,7 +369,7 @@ function makeWorkoutEntry(report) {
       recovery.append(element('summary', '', 'Already set up? Open the iPhone or iPad app'));
       const choices = element('div', 'pt-recovery-links');
       choices.append(workoutAnchor('Open in the PoseTek app', links.native));
-      recovery.append(choices, makeInstallSteps(links));
+      recovery.append(choices, makeInstallSteps(links, record));
       entry.append(recovery);
     }
     return entry;
@@ -392,19 +400,19 @@ function makeWorkoutEntry(report) {
   return entry;
 }
 
-function makeInstallSteps(links) {
+function makeInstallSteps(links, record) {
   const steps = element('div', 'pt-install');
   steps.append(element('p', 'pt-install-title', 'Don’t have PoseTek yet?'));
   const list = element('ol', 'pt-install-list');
   const install = element('li');
-  install.append(workoutAnchor('Install or update PoseTek', links.install), ' through Apple’s TestFlight.');
+  install.append(workoutAnchor('Install or update PoseTek', links.install, undefined, record && (() => record('testflight'))), ' through Apple’s TestFlight.');
   list.append(install, element('li', '', 'Come back to this report and tap Open in the PoseTek app.'));
   steps.append(list);
   return steps;
 }
 
 /** Render only an already-decrypted report. Report strings are always plain text. */
-export function renderReport(report) {
+export function renderReport(report, record) {
   clearReport();
   const pdf = validate(report);
   const mount = document.getElementById('report-root');
@@ -424,7 +432,7 @@ export function renderReport(report) {
   }
 
   const actions = element('div', 'pt-actions');
-  actions.append(makeWorkoutEntry(report));
+  actions.append(makeWorkoutEntry(report, record));
   const downloadRow = element('div', 'pt-download-row');
   const download = element('button', 'pt-quiet-button', 'Download PDF');
   download.type = 'button';
@@ -479,6 +487,7 @@ export function renderReport(report) {
   }
   main.append(actions);
   main.append(element('p', 'pt-private-note', 'Keep this link within your family.'));
+  if (record) main.append(element('p', 'pt-private-note', 'PoseTek records when this report link is opened and when its Workouts and TestFlight buttons are used.'));
   phone.append(header, main);
   pdfUrl = URL.createObjectURL(new Blob([pdf], {type: 'application/pdf'}));
   mount.replaceChildren(phone);
