@@ -27,7 +27,7 @@ export interface AdminDirectoryState extends WorkspaceReportState {
   directoryPane?: DirectoryPane;
 }
 export function supportsOnePagerTracking(state: Partial<AdminDirectoryState>): boolean {
-  return state.orgId === ONE_PAGER_ORGANIZATION && !state.teamId && state.directoryLookup !== "unassigned" && state.directoryTab === "players";
+  return state.orgId === ONE_PAGER_ORGANIZATION && !state.teamId && state.directoryLookup !== "unassigned" && state.directoryTab === "players" && state.directoryLevel === "people";
 }
 const queryOf = (search: string | URLSearchParams) => typeof search === "string" ? new URLSearchParams(search) : search;
 const REPORT_FIELDS = {
@@ -57,14 +57,15 @@ function reportState(query: URLSearchParams): WorkspaceReportState {
 export function parseAdminDirectoryState(search: string | URLSearchParams): AdminDirectoryState {
   const query = queryOf(search), tab = query.get("directoryTab");
   const directoryTab = DIRECTORY_TABS.includes(tab as DirectoryTab) ? tab as DirectoryTab : "players";
-  const pane = query.get("directoryPane");
+  const pane = query.get("directoryPane"), level = query.get("directoryLevel");
+  const directoryLevel = level === "organizations" || level === "teams" || level === "people" ? level : undefined;
   const context = accountContext(query), unassigned = !context.teamId && query.get("directoryLookup") === "unassigned";
   return { ...context, ...reportState(query), directoryTab,
     search: (query.get("search") || "").slice(0, 120), page: Math.min(1000, Math.max(0, Math.floor(Number(query.get("page")) || 0))),
     ...(validatedAdminReturn(query.get("returnTo")) ? { returnTo: validatedAdminReturn(query.get("returnTo")) } : {}),
     ...(query.get("preview") === "1" ? { preview: true } : {}),
-    ...(pane === "list" || pane === "report" || pane === "one-pagers" && supportsOnePagerTracking({ ...context, directoryTab, directoryLookup: unassigned ? "unassigned" : undefined }) ? { directoryPane: pane } : {}),
-    ...(["organizations", "teams", "people"].includes(query.get("directoryLevel") || "") ? { directoryLevel: query.get("directoryLevel") as DirectoryLevel } : {}),
+    ...(pane === "list" || pane === "report" || pane === "one-pagers" && supportsOnePagerTracking({ ...context, directoryTab, directoryLevel, directoryLookup: unassigned ? "unassigned" : undefined }) ? { directoryPane: pane } : {}),
+    ...(directoryLevel ? { directoryLevel } : {}),
     ...(query.get("directoryLookup") === "all" || unassigned ? { directoryLookup: query.get("directoryLookup") as "all" | "unassigned" } : {}),
     ...(context.orgId && unassigned ? { reportTeamAssignment: "unassigned", directoryLevel: "people" } : {}),
     ...(context.teamId && query.get("directoryLookup") === "unassigned" && query.get("reportTeamAssignment") === "unassigned" ? { reportTeamAssignment: undefined } : {}) };

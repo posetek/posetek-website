@@ -51,7 +51,7 @@ try {
       await panel.getByText('The 90-day tracking period has ended.').waitFor();
       await choose('error');
       await panel.getByRole('alert').getByText('Could not load one-pager tracking.', { exact: false }).waitFor();
-      for (const scope of [club + '&teamId=synthetic-team', 'orgId=northfield&directoryLevel=people']) {
+      for (const scope of [club + '&teamId=synthetic-team', 'orgId=vacaville-united-soccer-club', 'orgId=northfield&directoryLevel=people']) {
         await page.goto(url(scope + '&directoryPane=one-pagers'));
         await tabs.waitFor();
         assert.equal(await tracking.count(), 0);

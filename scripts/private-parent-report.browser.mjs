@@ -23,7 +23,7 @@ const server=createServer(async(req,res)=>{
  try {
   if(path==='/api/one-pager-event') {
    const parts=[]; for await (const part of req) parts.push(part);
-   events.push({ method:req.method, referrer:req.headers.referer, cookie:req.headers.cookie, body:JSON.parse(Buffer.concat(parts).toString()) });
+   events.push({ method:req.method, origin:req.headers.origin, referrer:req.headers.referer, cookie:req.headers.cookie, body:JSON.parse(Buffer.concat(parts).toString()) });
    res.writeHead(trackingUnavailable?503:204,headers);res.end();return;
   }
   if(path==='/signin'){res.writeHead(200,{'Content-Type':'text/html'});res.end('<h1>Synthetic signup destination</h1>');return;}
@@ -113,7 +113,7 @@ try {
    for(let attempt=0;events.length<baseline+3&&attempt<40;attempt++) await delay(50);
    const [id,key]=tracked.fragment.split('.');
    const token=createHmac('sha256',Buffer.from(key,'base64url')).update('posetek-one-pager-tracking:v1:'+id).digest('base64url');
-   assert.deepEqual(events.slice(baseline),['opened','testflight','workouts'].map(action=>({method:'POST',referrer:undefined,cookie:undefined,body:{token,action}})));
+   assert.deepEqual(events.slice(baseline),['opened','testflight','workouts'].map(action=>({method:'POST',origin,referrer:undefined,cookie:undefined,body:{token,action}})));
    trackingUnavailable=false;
    assert.equal(baseline,name==='chromium'?0:3,'Untracked and invalid reports do not emit engagement');
    results.at(-1).tracking='visible opens, private payload and both navigation paths under outage';

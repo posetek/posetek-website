@@ -359,9 +359,13 @@ function makeWorkoutEntry(report, record) {
     const workout = workoutAnchor(`Open ${report.firstName}’s workouts`, playerSignupLink(report.playerSignupUrl, report.playerId), 'pt-primary', record && (() => record('workouts')));
     // Keep the report open while signup starts. WebKit can cancel the event
     // during same-tab navigation even when the request has keepalive enabled.
-    if (record) workout.target = '_blank';
-    entry.append(workout);
-    entry.append(element('p', 'pt-cta-note', `First, create ${report.firstName}’s player login with the filled-in code, or sign in if it’s already set up.`));
+    const guidance = element('p', 'pt-cta-note', `First, create ${report.firstName}’s player login with the filled-in code, or sign in if it’s already set up.${record ? ' Opens in a new tab.' : ''}`);
+    if (record) {
+      workout.target = '_blank';
+      guidance.id = 'pt-workouts-guidance';
+      workout.setAttribute('aria-describedby', guidance.id);
+    }
+    entry.append(workout, guidance);
     const signIn = `/signin?reportPlayer=${encodeURIComponent(report.playerId)}`;
     entry.append(workoutAnchor('Already have the player login? Sign in', signIn));
     if (platform !== 'android') {
