@@ -19,6 +19,7 @@
   .workspace-scope-accounts strong { color:var(--accent); font-weight:600; }
   .workspace-scope-summary p { margin:0; }
   .workspace-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:20px 0; }
+  .one-pager-summary { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .workspace-summary-card { min-width:0; padding:18px 14px; background:var(--surface-1); border:1px solid var(--surface-border); border-radius:var(--radius-sm); }
   .workspace-summary-card > span { color:var(--text-muted); font-size:12px; line-height:1.5; }
   .workspace-summary-card strong { display:block; margin:12px 0; color:var(--accent); font-size:25px; font-weight:600; line-height:1.25; overflow-wrap:anywhere; }

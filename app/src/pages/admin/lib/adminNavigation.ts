@@ -8,6 +8,8 @@ export const DIRECTORY_TABS = ["players", "staff", "teams", "settings"] as const
 export type DirectoryTab = typeof DIRECTORY_TABS[number];
 export type DirectoryLevel = "organizations" | "teams" | "people";
 export type PlayerPanel = "results" | "workouts" | "profile" | "ai-incidents";
+export const ONE_PAGER_ORGANIZATION = "vacaville-united-soccer-club";
+export type DirectoryPane = "list" | "report" | "one-pagers";
 export type WorkspaceReportView = "overview" | "testing" | "workouts" | "usage";
 export interface WorkspaceReportState {
   reportAdminFollowUp?: AdminActivityFollowUp; reportAdminSort?: AdminActivitySort;
@@ -22,7 +24,10 @@ export interface AdminDirectoryState extends WorkspaceReportState {
   directoryTab: DirectoryTab; search: string; page: number;
   directoryLevel?: DirectoryLevel;
   returnTo?: string; preview?: boolean; directoryLookup?: "all" | "unassigned";
-  directoryPane?: "list" | "report";
+  directoryPane?: DirectoryPane;
+}
+export function supportsOnePagerTracking(state: Partial<AdminDirectoryState>): boolean {
+  return state.orgId === ONE_PAGER_ORGANIZATION && !state.teamId && state.directoryLookup !== "unassigned" && state.directoryTab === "players" && state.directoryLevel === "people";
 }
 const queryOf = (search: string | URLSearchParams) => typeof search === "string" ? new URLSearchParams(search) : search;
 const REPORT_FIELDS = {
@@ -51,13 +56,16 @@ function reportState(query: URLSearchParams): WorkspaceReportState {
 }
 export function parseAdminDirectoryState(search: string | URLSearchParams): AdminDirectoryState {
   const query = queryOf(search), tab = query.get("directoryTab");
+  const directoryTab = DIRECTORY_TABS.includes(tab as DirectoryTab) ? tab as DirectoryTab : "players";
+  const pane = query.get("directoryPane"), level = query.get("directoryLevel");
+  const directoryLevel = level === "organizations" || level === "teams" || level === "people" ? level : undefined;
   const context = accountContext(query), unassigned = !context.teamId && query.get("directoryLookup") === "unassigned";
-  return { ...context, ...reportState(query), directoryTab: DIRECTORY_TABS.includes(tab as DirectoryTab) ? tab as DirectoryTab : "players",
+  return { ...context, ...reportState(query), directoryTab,
     search: (query.get("search") || "").slice(0, 120), page: Math.min(1000, Math.max(0, Math.floor(Number(query.get("page")) || 0))),
     ...(validatedAdminReturn(query.get("returnTo")) ? { returnTo: validatedAdminReturn(query.get("returnTo")) } : {}),
     ...(query.get("preview") === "1" ? { preview: true } : {}),
-    ...(["list", "report"].includes(query.get("directoryPane") || "") ? { directoryPane: query.get("directoryPane") as "list" | "report" } : {}),
-    ...(["organizations", "teams", "people"].includes(query.get("directoryLevel") || "") ? { directoryLevel: query.get("directoryLevel") as DirectoryLevel } : {}),
+    ...(pane === "list" || pane === "report" || pane === "one-pagers" && supportsOnePagerTracking({ ...context, directoryTab, directoryLevel, directoryLookup: unassigned ? "unassigned" : undefined }) ? { directoryPane: pane } : {}),
+    ...(directoryLevel ? { directoryLevel } : {}),
     ...(query.get("directoryLookup") === "all" || unassigned ? { directoryLookup: query.get("directoryLookup") as "all" | "unassigned" } : {}),
     ...(context.orgId && unassigned ? { reportTeamAssignment: "unassigned", directoryLevel: "people" } : {}),
     ...(context.teamId && query.get("directoryLookup") === "unassigned" && query.get("reportTeamAssignment") === "unassigned" ? { reportTeamAssignment: undefined } : {}) };
@@ -88,7 +96,8 @@ export function directoryLevelOf(state: Partial<AdminDirectoryState>): Directory
 }
 
 /** Explicit old report links still open their report; fresh browsing leads with the list. */
-export function directoryWorkspacePaneOf(state: Partial<AdminDirectoryState>): "list" | "report" {
+export function directoryWorkspacePaneOf(state: Partial<AdminDirectoryState>): DirectoryPane {
+  if (state.directoryPane === "one-pagers") return supportsOnePagerTracking(state) ? "one-pagers" : "list";
   return state.directoryPane || (state.reportView && state.reportMode !== "attention" ? "report" : "list");
 }
 
@@ -143,7 +152,7 @@ export function legacyAdminWorkspacePath(search: string): string {
     else if (legacy.has(field)) query.set(field, legacy.get(field)!);
   }
   if (legacy.get("preview") === "1") query.set("preview", "1");
-  if (["list", "report"].includes(legacy.get("directoryPane") || "")) query.set("directoryPane", legacy.get("directoryPane")!);
+  if (["list", "report", "one-pagers"].includes(legacy.get("directoryPane") || "")) query.set("directoryPane", legacy.get("directoryPane")!);
   if (["organizations", "teams", "people"].includes(legacy.get("directoryLevel") || "")) query.set("directoryLevel", legacy.get("directoryLevel")!);
   if (legacy.get("reportMode") === "attention" || Number(legacy.get("page")) > 0 || ["rosterSearch", "cursor", "division", "ageBand", "testingStatus", "workoutStatus", "usageStatus", "usagePlatform", "usageFeature", "teamAssignment"].some(key => legacy.get(key))) query.set("reportMode", "attention");
   return adminDirectoryPath(parseAdminDirectoryState(query));
