@@ -30,6 +30,7 @@ The approved Leia report supplies the typography, surfaces, cyan own-result mark
 native/TestFlight/browser flow. Nolan’s age-column mockup supplies only the chart structure:
 per-age aggregate density, median and explicit sample sizes. Its fictional values are never
 used. Compact corrected results follow the three charts; older reports remain unchanged.
+Shared chart methods appear once in the About these results disclosure; each chart retains its own value and placement. Empty summaries add no section.
 Charts are accessible SVG with text descriptions and bounded horizontal scrolling on small
 screens. Report strings use textContent only. No extra runtime resource, network request,
 storage or native launch is introduced.

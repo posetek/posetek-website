@@ -23,6 +23,7 @@ const sample = {
   pdfBase64: Buffer.from('%PDF-1.4\n% Synthetic fixture\n%%EOF').toString('base64'),
 };
 const legacy = sealReport({...sample, firstName: 'Legacy', playerId: 'player.1'});
+sample.summary = [];
 sample.pathwayVersion = 1; sample.pathwayCharts = pathwayFixture();
 sample.pathwayCoverage = {broaderComparisonsPending: true, note: 'Broader Vacaville comparisons pending; only corrected groups shown.'};
 const sealed = sealReport(sample);
@@ -101,6 +102,9 @@ try {
           assert.equal(await page.locator('.pt-pathway-density').count(), 24);
           assert.equal(await page.locator('.pt-pathway-median').count(), 6);
           assert.equal(await page.locator('.pt-coverage').count(), 1);
+          assert.equal(await page.locator('.pt-pathway .pt-pathway-note').count(), 0);
+          assert.equal(await page.getByText('Synthetic fixture. Gaps are intentional.', {exact: true}).count(), 1);
+          assert.equal(await page.locator('.pt-meaning').count(), 0);
           assert.equal(await page.locator('.pt-marker').count(), 0);
           assert.equal(await page.locator('.pt-retest').count(), 0);
           if (entry.android) {
@@ -175,6 +179,7 @@ try {
           assert(await page.getByText('Workouts aren’t available from this report.', {exact: true}).isVisible());
           assert.equal(await page.locator('#report-root a').count(), 0);
           assert.equal(await page.locator('.pt-marker').count(), 1);
+          assert.equal(await page.locator('.pt-meaning').count(), 1);
           const [legacyPDF] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', {name: 'Download PDF'}).click()]);
           assert.deepEqual(await readFile(await legacyPDF.path()), Buffer.from(sample.pdfBase64, 'base64'));
           await legacyPDF.delete();

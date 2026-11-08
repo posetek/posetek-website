@@ -32,7 +32,7 @@ const WORKOUT_ENTRY_UPDATE = {
 // Separate, pinned November 7 age-group chart transition; no arbitrary viewer replacement.
 const PATHWAY_CHART_UPDATE = {
   "index.html": {before: WORKOUT_ENTRY_UPDATE["index.html"].before, after: {"sha": "52284a92871e0e2f795cfbc060e2f80746a90230", "size": 816}},
-  "render.mjs": {before: WORKOUT_ENTRY_UPDATE["render.mjs"].before, after: {"sha": "168eb552e2f45a9f2920a1f1396a04ed22932ba8", "size": 25380}},
+  "render.mjs": {before: WORKOUT_ENTRY_UPDATE["render.mjs"].before, after: {"sha": "e2cb8bb84c78bf46cd9d1c66ac081e03232c9dad", "size": 25422}},
   "report.css": {before: WORKOUT_ENTRY_UPDATE["report.css"].before, after: {"sha": "32d2fbcf52202c9731968b078416df86b1592ec3", "size": 10279}},
 };
 const hash = bytes => createHash('sha1').update(bytes).digest('hex');

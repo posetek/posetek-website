@@ -179,7 +179,6 @@ function makePathwayChart(chart, firstName) {
   if (plotted && chart.athlete.ageGroup >= 13) scroll.dataset.preferEnd = 'true';
   scroll.append(svg);
   section.append(scroll, element('p', 'pt-pathway-axis-title', `${chart.unit} · higher is better · age group`));
-  for (const note of chart.notes) section.append(element('p', 'pt-pathway-note', note));
   return section;
 }
 
@@ -210,7 +209,8 @@ function makeCorrectedResults(report) {
   for (const chart of report.pathwayCharts) {
     content.append(element('p', '', `${chart.label}: ${chart.reference.label}. Reference checked ${chart.reference.sourceDate}. ${chart.reference.selectionRule}`));
   }
-  for (const note of report.methodNotes) content.append(element('p', '', note));
+  const sharedNotes = new Set([...report.pathwayCharts.flatMap(chart => chart.notes), ...report.methodNotes]);
+  for (const note of sharedNotes) content.append(element('p', '', note));
   for (const metric of report.metrics) if (metric.note) content.append(element('p', '', `${metric.label}: ${metric.note}`));
   details.append(content); section.append(details);
   return section;
@@ -433,7 +433,7 @@ export function renderReport(report) {
     row.append(element('strong', '', summary.label), element('span', '', summary.text));
     meaning.append(row);
   }
-  main.append(meaning);
+  if (report.summary.length) main.append(meaning);
   if (!report.pathwayCharts) main.append(makeDetails(report));
   if (report.exercises.length) {
     const practice = element('section');
