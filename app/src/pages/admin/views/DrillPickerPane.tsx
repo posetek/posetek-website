@@ -9,7 +9,8 @@
 import { useMemo, useState } from "react";
 import { fitFor } from "../../../lib/contracts/drillV2";
 import type { AthleteContext, CatalogDrill } from "../../../lib/contracts/drillV2";
-import { DOMAINS, domainLabel, domainSortIndex } from "../../../lib/contracts/types";
+import { DOMAINS, domainLabel } from "../../../lib/contracts/types";
+import { pickerRows } from "../lib/drillPicker";
 
 export const DRAG_DRILL_PREFIX = "posetek-drill:";
 export const DRAG_BLOCK_PREFIX = "posetek-block:";
@@ -27,22 +28,10 @@ export default function DrillPickerPane({ drills, athlete, exposures, onAdd }: P
   const [domain, setDomain] = useState("all");
   const [eligibleOnly, setEligibleOnly] = useState(true);
 
-  const shown = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return drills
-      .filter(drill => drill.status === "published")
-      .filter(drill => domain === "all" || drill.domain === domain)
-      .filter(drill => !term
-        || drill.name.toLowerCase().includes(term)
-        || drill.drillId.toLowerCase().includes(term))
-      .filter(drill => {
-        if (!eligibleOnly) return true;
-        const fit = fitFor(drill, athlete);
-        return fit.ageOk && fit.difficultyOk && fit.partnerOk && fit.positionOk;
-      })
-      .sort((a, b) => domainSortIndex(a.domain) - domainSortIndex(b.domain) || a.name.localeCompare(b.name))
-      .slice(0, 200);
-  }, [drills, search, domain, eligibleOnly, athlete]);
+  const shown = useMemo(
+    () => pickerRows(drills, search, domain, eligibleOnly, athlete),
+    [drills, search, domain, eligibleOnly, athlete],
+  );
 
   return (
     <aside className="admin-picker" aria-label="Drill catalog">

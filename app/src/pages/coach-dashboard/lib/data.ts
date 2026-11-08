@@ -11,6 +11,7 @@ import type { ClubTeam } from "../../../lib/organization";
 import { readAccessibleLegacyRoster } from "../../../lib/legacy-roster";
 import { auth, cloud, db } from "../../../lib/firebase";
 import { findCoach as findCoachByUid } from "../../../lib/identity";
+import { normalizeStatus } from "../../../lib/contracts/drillV2";
 import { allStatsReps, normalizeRep, accepted } from "../../athlete-portal/lib/metrics";
 import { DRILLS } from "../../athlete-portal/lib/drills";
 import { submitLlmJob } from "../../athlete-portal/lib/loaders";
@@ -102,10 +103,37 @@ export async function loadAthleteBundle(playerId: string): Promise<AthleteBundle
 
 let catalogCache: any[] | null = null;
 
+// The only fields the coach picker, the dose popup and `drillRowFromCatalog`
+// read. The catalog also carries heavy detector, keyframe and pool fields for the
+// app; none of it belongs in coach state.
+const COACH_CATALOG_FIELDS = [
+  "name", "domain", "targetQuality", "dose", "estimatedMinutes",
+  "execution", "intensityIntent", "cues", "status", "schemaVersion",
+] as const;
+
+/**
+ * Coaches pick from published drills only. Drafts (the library awaiting
+ * validation) and archived drills are never offered; a document with no `status`
+ * counts as published, the same default `normalizeCatalogDrill` applies.
+ */
+export function coachCatalogRows(docs: { id: string; data: () => any }[]): any[] {
+  const rows: any[] = [];
+  for (const doc of docs) {
+    const data = doc.data() || {};
+    if (normalizeStatus(data.status) !== "published") continue;
+    const row: Record<string, any> = { id: doc.id, drillId: doc.id };
+    for (const field of COACH_CATALOG_FIELDS) {
+      if (data[field] !== undefined) row[field] = data[field];
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
 export async function loadDrillCatalog(): Promise<any[]> {
   if (catalogCache) return catalogCache;
   const snapshot = await db.collection("drillCatalog").get();
-  catalogCache = snapshot.docs.map(doc => ({ id: doc.id, drillId: doc.id, ...doc.data() }));
+  catalogCache = coachCatalogRows(snapshot.docs);
   return catalogCache;
 }
 

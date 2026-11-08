@@ -52,6 +52,81 @@ export interface CatalogDrill {
   trainingPolicy?: Record<string, unknown>;
   /** Additive, source-bound personal-workout resource requirements. Server checks remain authoritative. */
   accessRequirements?: Record<string, any>;
+  /**
+   * Read-only copy of the server-written validation gate (database-first catalog
+   * contract §3.1). Absent means "not required". The web console never writes it.
+   */
+  validation?: CatalogValidation;
+}
+
+export interface CatalogValidation {
+  required: boolean;
+  result: "pending" | "pass" | "fail";
+  profileVersion?: string;
+  runId?: string;
+  exemptReason?: string;
+}
+
+/**
+ * True while a drill must pass validation before it may be published: it has
+ * `validation.required == true` and `validation.result != "pass"`.
+ */
+export function publishBlockedByValidation(validation: CatalogValidation | null | undefined): boolean {
+  return validation?.required === true && validation.result !== "pass";
+}
+
+/**
+ * Only the TRANSITION to published is gated. A drill that is already published
+ * (even one whose later validation failed) stays saveable, so a typo fix is not
+ * blocked; `loadedStatus` is the status the editor loaded.
+ */
+export function publishTransitionBlocked(
+  nextStatus: DrillStatus,
+  loadedStatus: DrillStatus | undefined,
+  validation: CatalogValidation | null | undefined,
+): boolean {
+  return nextStatus === "published" && loadedStatus !== "published" && publishBlockedByValidation(validation);
+}
+
+/** The editor's save error for a status change the validation gate does not allow, or null. */
+export function publishGateError(
+  nextStatus: DrillStatus,
+  loadedStatus: DrillStatus | undefined,
+  validation: CatalogValidation | null | undefined,
+): string | null {
+  return publishTransitionBlocked(nextStatus, loadedStatus, validation)
+    ? "This drill needs a passing validation before it can be published. Keep it as a draft; it publishes automatically on a pass."
+    : null;
+}
+
+/**
+ * The editor's staleness baseline after the page itself wrote (a clip upload or
+ * removal). Display data comes from `found`, but an own media write must never
+ * advance the status or version baseline: an automatic publish that landed in the
+ * meantime would otherwise be absorbed while the form still says "draft", and the
+ * next save would silently unpublish. `stale` is true when status or version moved.
+ */
+export function baselineAfterOwnWrite(
+  current: CatalogDrill,
+  found: CatalogDrill,
+): { drill: CatalogDrill; stale: boolean } {
+  const stale = found.status !== current.status || found.catalogVersion !== current.catalogVersion;
+  return stale
+    ? { drill: { ...found, status: current.status, catalogVersion: current.catalogVersion, updatedAt: current.updatedAt }, stale }
+    : { drill: found, stale };
+}
+
+export function normalizeCatalogValidation(raw: unknown): CatalogValidation | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const value = raw as Record<string, unknown>;
+  const result = value.result === "pass" || value.result === "fail" ? value.result : "pending";
+  return {
+    required: value.required === true,
+    result,
+    ...(typeof value.profileVersion === "string" ? { profileVersion: value.profileVersion } : {}),
+    ...(typeof value.runId === "string" ? { runId: value.runId } : {}),
+    ...(typeof value.exemptReason === "string" ? { exemptReason: value.exemptReason } : {}),
+  };
 }
 
 // MARK: - Legacy domain mapping (§2)
@@ -142,7 +217,7 @@ function stringList(value: unknown): string[] {
   return Array.isArray(value) ? value.map(entry => String(entry)) : [];
 }
 
-function normalizeStatus(value: unknown): DrillStatus {
+export function normalizeStatus(value: unknown): DrillStatus {
   return value === "draft" || value === "archived" || value === "published" ? value : "published";
 }
 
@@ -214,6 +289,7 @@ export function normalizeCatalogDrill(id: string, raw: any): CatalogDrill {
     productionBatchId: typeof raw?.productionBatchId === "string" ? raw.productionBatchId : undefined,
     trainingPolicy: raw?.trainingPolicy && typeof raw.trainingPolicy === "object" ? raw.trainingPolicy : undefined,
     ...(raw?.accessRequirements && typeof raw.accessRequirements === 'object' ? { accessRequirements: raw.accessRequirements } : {}),
+    ...(normalizeCatalogValidation(raw?.validation) ? { validation: normalizeCatalogValidation(raw?.validation) } : {}),
   };
 }
 
