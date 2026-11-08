@@ -10,6 +10,8 @@ import {
   formatDoseText,
   formatRestText,
   normalizeCatalogDrill,
+  normalizeCatalogValidation,
+  publishBlockedByValidation,
   stepsFromExecution,
 } from "./drillV2";
 import { ageBand, domainLabel, domainSortIndex, resolveEligibility } from "./types";
@@ -244,5 +246,79 @@ describe("dose and rest text (§1.2)", () => {
 
   it("falls back to the workbook prose when no range is structured", () => {
     expect(formatRestText({ restText: "Natural retrieval" })).toBe("Natural retrieval");
+  });
+});
+
+// Database-first catalog contract (§3.1): additive top-level fields on a v2 document.
+describe("database-first catalog fields (contract §3.1)", () => {
+  const libraryDraft = {
+    schemaVersion: 2,
+    drillId: "GYM-001",
+    name: "Goblet squat",
+    domain: "strength",
+    minAge: 12,
+    maxAge: 19,
+    difficultyLevel: 2,
+    equipment: ["dumbbells", "bench"],
+    requiresPartner: false,
+    positionSpecific: null,
+    howTo: { setup: "Hold one dumbbell at the chest.", steps: ["Sit between the hips."] },
+    dose: { setsMin: 3, setsMax: 3, repsMin: 8, repsMax: 10, repUnit: "reps", intervalSecondsMin: 20, intervalSecondsMax: 40 },
+    maxFrequencyPerWeek: 3,
+    coachComments: [],
+    adaptiveLevers: [],
+    status: "draft",
+    catalogVersion: "1.0.9",
+    pools: { gym: { category: "squat", secondary: ["core"] } },
+    cameraView: "Side",
+    familyId: "squat-family",
+    profileVersion: "core-movement-2",
+    minimumClient: { build: 40 },
+    validation: { required: true, result: "pending" },
+  };
+
+  it("reads a library draft as a current v2 document, never as one needing migration", () => {
+    const drill = normalizeCatalogDrill("GYM-001", libraryDraft);
+    expect(drill.schemaVersion).toBe(2);
+    expect(drill.needsMigration).toBe(false);
+    expect(drill.domain).toBe("strength");
+    expect(drill.status).toBe("draft");
+    expect(drill.howTo.steps).toEqual(["Sit between the hips."]);
+    expect(drill.dose.intervalSecondsMax).toBe(40);
+  });
+
+  it("gives the same view model with or without the additive fields, apart from validation", () => {
+    const { pools, cameraView, familyId, profileVersion, minimumClient, validation, ...plain } = libraryDraft;
+    void pools; void cameraView; void familyId; void profileVersion; void minimumClient; void validation;
+    const { validation: seen, ...withFields } = normalizeCatalogDrill("GYM-001", libraryDraft);
+    expect(withFields).toEqual(normalizeCatalogDrill("GYM-001", plain));
+    expect(seen).toEqual({ required: true, result: "pending" });
+  });
+
+  it("keeps an explicit status, and treats a missing one as published (why every new document must carry one)", () => {
+    expect(normalizeCatalogDrill("GYM-001", libraryDraft).status).toBe("draft");
+    const { status, ...withoutStatus } = libraryDraft;
+    void status;
+    expect(normalizeCatalogDrill("GYM-001", withoutStatus).status).toBe("published");
+  });
+
+  it("reads exempt and absent validation", () => {
+    const exempt = normalizeCatalogDrill("COR-001", {
+      ...libraryDraft, validation: { required: false, exemptReason: "published-before-gate-2026-11-07" },
+    });
+    expect(exempt.validation).toEqual({ required: false, result: "pending", exemptReason: "published-before-gate-2026-11-07" });
+    expect(publishBlockedByValidation(exempt.validation)).toBe(false);
+    const { validation, ...soccer } = libraryDraft;
+    void validation;
+    expect(normalizeCatalogDrill("DRB-001", soccer).validation).toBeUndefined();
+  });
+
+  it("blocks publishing only while validation is required and not passed", () => {
+    expect(publishBlockedByValidation(undefined)).toBe(false);
+    expect(publishBlockedByValidation({ required: false, result: "pending" })).toBe(false);
+    expect(publishBlockedByValidation({ required: true, result: "pending" })).toBe(true);
+    expect(publishBlockedByValidation({ required: true, result: "fail" })).toBe(true);
+    expect(publishBlockedByValidation({ required: true, result: "pass" })).toBe(false);
+    expect(normalizeCatalogValidation({ required: true })).toEqual({ required: true, result: "pending" });
   });
 });
