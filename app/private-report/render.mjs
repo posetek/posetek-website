@@ -259,6 +259,7 @@ function validate(report) {
     string(report.pathwayCoverage.note, 'pathway coverage', 300);
   }
   if (report.playerSignupUrl !== undefined) playerSignupLink(report.playerSignupUrl, report.playerId);
+  if (report.resultsFirst !== undefined && typeof report.resultsFirst !== 'boolean') throw new Error('Invalid results-first presentation');
   const encoded = string(report.pdfBase64, 'PDF', 1_800_000);
   if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) throw new Error('Invalid PDF encoding');
   const decoded = atob(encoded);
@@ -416,9 +417,11 @@ export function renderReport(report) {
   header.append(element('p', '', `Coach ${report.coach} · Tested ${report.testDate}`));
   if (report.pathwayCoverage) header.append(element('p', 'pt-coverage', report.pathwayCoverage.note));
   const main = element('main', 'pt-body');
-  const focus = element('section', 'pt-focus');
-  focus.append(element('h2', '', report.focusTitle), element('p', '', report.focusText));
-  main.append(focus);
+  if (!report.resultsFirst) {
+    const focus = element('section', 'pt-focus');
+    focus.append(element('h2', '', report.focusTitle), element('p', '', report.focusText));
+    main.append(focus);
+  }
 
   const actions = element('div', 'pt-actions');
   actions.append(makeWorkoutEntry(report));

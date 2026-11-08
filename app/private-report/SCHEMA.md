@@ -47,3 +47,12 @@ report data. PDF downloads use a temporary local blob URL and a
 generic filename. Keep real child data, account IDs, encrypted payloads and PDFs
 outside the public source checkout. Synthetic browser verification belongs in
 local test fixtures or the report delivery tests, not a shipped example report.
+
+### Results-first presentation
+
+`resultsFirst` is an optional boolean. When true, omit the introductory focus
+card and begin the classic body with “Where [firstName] stands”. Legacy payloads
+keep their focus card. The publisher supplies all three summary bands with the
+actual test names and displayed results; never replace more than three results
+with a count. Keep existing unrounded-percentile band assignments and exclude
+unavailable or insufficient-comparison results. Empty bands must say so.

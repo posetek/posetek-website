@@ -11,7 +11,8 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const sample={version:1,name:'Sample Athlete',firstName:'Sample',team:'Example Team',coach:'Example Coach',testDate:'Oct 29, 2026',focusTitle:'This week: ball control',focusText:'Small touches through turns.',playerId:'syntheticPlayer123',metrics:[{label:'Dribble',result:'7.10 s',percentile:50,band:'middle',average:'7.20 s',count:12},{label:'Broad jump',result:null,percentile:null,band:'retest',average:'1.10 m',count:10,note:'Another recording is needed.'}],summary:[{label:'Team middle',text:'Dribble'}],exercises:[{title:'Figure-8 dribble',tag:'Example',dose:'3 × 20 sec · rest 60 sec',instruction:'Walk the ball through turns.'}],methodNotes:['Further right means a more favorable result.'],pdfBase64:Buffer.from('%PDF-1.4\n% Synthetic acceptance fixture\n%%EOF').toString('base64')};
 const a=sealReport(sample), b=sealReport({...sample,name:'Second Athlete',firstName:'Second',playerId:'secondSynthetic123'});
 const malicious=sealReport({...sample,name:'<img src=x onerror=alert(1)>',firstName:'<script>alert(1)</script>'});
-const reports=new Map([a,b,malicious].map(x=>[x.id,x.envelope]));
+const resultsFirst=sealReport({...sample,resultsFirst:true,summary:[{label:'Practice next',text:'No tested results in this band.'},{label:'Team middle',text:'Dribble: 7.10 s; Sprint: 2.52 s; Vertical jump: 7.8 in; Broad jump: 5.12 ft'},{label:'Strong today',text:'No tested results in this band.'}]});
+const reports=new Map([a,b,malicious,resultsFirst].map(x=>[x.id,x.envelope]));
 const headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"};
 const requests=[];
 let corrupt=false;
@@ -77,6 +78,18 @@ try {
    await page.locator('#report-root').waitFor({state:'visible'});
    assert.equal(await page.locator('#report-root img,#report-root script').count(),0);
    assert((await page.locator('#report-root').textContent()).includes('<img src=x onerror=alert(1)>'));
+   assert.equal(await page.locator('.pt-focus').count(),1,'Legacy focus is preserved');
+   await page.goto(origin+'/report/#'+resultsFirst.fragment);
+   await page.locator('#report-root').waitFor({state:'visible'});
+   assert.equal(await page.locator('.pt-focus').count(),0);
+   assert.equal(await page.locator('.pt-body h2').first().textContent(),'Where Sample stands');
+   assert.equal(await page.locator('.pt-meaning p').count(),3);
+   assert((await page.locator('.pt-meaning').textContent()).includes('Broad jump: 5.12 ft'));
+   assert.equal(await page.locator('.pt-retest').count(),1,'Unavailable result stays unranked');
+   for(const width of [320,390,768]) {
+    await page.setViewportSize({width,height:844});
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Results-first overflow');
+   }
    assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
    results.push({browser:name,status:'passed',viewports:[320,360,390,430,768],colorSchemes:['light','dark'],pdfExact:true,wrongKeysRejected:true,tamperingRejected:true,linkSwitchClearsPriorChild:true,htmlInjectionRejected:true,externalRequests:0,storageWrites:0});
    await context.close();
