@@ -236,9 +236,11 @@ node scripts/build-private-parent-report.mjs <evidence-dir> --sealed-dir <binary
 ```
 
 The builder pins the candidate config hash and rejects changed or colliding
-predecessor assets. Draft upload must explicitly use that exact config with
-`--config deployment/private-player-signup.netlify.toml`, `--no-build`, the reviewed
-artifact and an empty functions directory; never `--prod`. A source commit or
+predecessor assets. The installed CLI selects configuration from its working directory. Copy that
+exact config to `netlify.toml` in a separate upload directory and use explicit
+`--cwd <upload-directory>`, `--no-build`, the absolute reviewed artifact path and
+an empty functions directory; never `--prod`. Verify the copied config hash
+before upload. Do not replace the canonical source configuration. A source commit or
 successful assembly does not authorize promotion, source release or outreach.
 Review effective hosted routing/headers, ordinary sign-in behavior, isolated
 bootstrap/full navigation, report/PDF equality and production identity separately.
