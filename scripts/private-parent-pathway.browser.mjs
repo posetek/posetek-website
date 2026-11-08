@@ -95,6 +95,10 @@ try {
           page.on('console', message => { if (message.type() === 'error') errors.push('consoleerror'); });
           await page.goto(`${origin}/report/#${sealed.fragment}`);
           await page.getByRole('heading', {name: 'Sample’s testing snapshot'}).waitFor();
+          assert(await page.evaluate(() => {
+            const actions = document.querySelector('.pt-actions').getBoundingClientRect();
+            return [...document.querySelectorAll('.pt-pathways, .pt-corrected-results, .pt-drill, .pt-safety')].every(node => node.getBoundingClientRect().bottom <= actions.top);
+          }), 'Results and practice must precede workout actions');
           assert.equal(await page.locator('.pt-primary').count(), 1);
           assert.equal(await page.locator('.pt-primary').getAttribute('href'), entry.ios ? nativeURL : browserURL);
           assert.equal(await page.locator('.pt-pathway').count(), 3);

@@ -410,7 +410,6 @@ export function renderReport(report) {
   });
   downloadRow.append(download);
   actions.append(downloadRow);
-  main.append(actions);
 
   if (report.pathwayCharts) {
     main.append(makePathways(report), makeCorrectedResults(report));
@@ -448,6 +447,7 @@ export function renderReport(report) {
     practice.append(element('p', 'pt-safety', 'Clear, flat space. Stop if anything hurts.'));
     main.append(practice);
   }
+  main.append(actions);
   main.append(element('p', 'pt-private-note', 'Keep this link within your family.'));
   phone.append(header, main);
   pdfUrl = URL.createObjectURL(new Blob([pdf], {type: 'application/pdf'}));

@@ -1,3 +1,11 @@
+## November 7 private report action order — local only
+
+The workout button, TestFlight install/update and browser choices, and PDF download now follow
+the results and practice cards. The compact report payloads, measurements, summaries, practice
+cards and exact-child routes are unchanged. Account registration remains a separate private
+workflow; no signup link or authorization is added. This is an isolated preview candidate,
+with source integration, production publication, sends and native acceptance still separate.
+
 ## November 7 private report pathway preparation — local only
 
 An isolated extension of reviewed report source `5d8a9c65` adds optional aggregate age-group

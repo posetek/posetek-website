@@ -47,6 +47,7 @@ try {
    await page.goto(origin+'/report#'+a.fragment);
    await page.getByText('Sample’s team snapshot',{exact:true}).waitFor();
    assert.equal(await page.title(),'Private parent report | PoseTek');
+   assert(await page.evaluate(()=>{const actions=document.querySelector('.pt-actions').getBoundingClientRect();return [...document.querySelectorAll('.pt-metric,.pt-retest,.pt-meaning,.pt-details,.pt-drill,.pt-safety')].every(node=>node.getBoundingClientRect().bottom<=actions.top);}), 'Results and practice must precede workout actions');
    assert.equal(await page.getByRole('link',{name:'Open Sample’s workouts'}).getAttribute('href'),'https://posetek.net/athlete?player=syntheticPlayer123&view=training');
    const [download]=await Promise.all([page.waitForEvent('download'),page.getByText('Download PDF',{exact:true}).click()]);
    const pdf=await readFile(await download.path());
