@@ -207,7 +207,12 @@ Results, summaries and practice remain above the bottom action group. The primar
 workout button opens signup first; the code is prefilled and removed from the
 address bar before imports. It lives only in page memory, never query persistence,
 referrers, analytics or local/session storage. Already-created player accounts can
-sign in without the code. The fixed continuation accepts only the requested
+sign in without the code. An initially restored signed-in session is resolved
+against canonical account access; only the matching player goes directly to
+Training without a second Continue tap. Signed-out visits keep their signup or
+sign-in flow. New sign-in/signup Auth callbacks do not trigger this initial-session
+automation. An account switch or unmount cancels pending lookup/navigation; the
+automatic lookup does not write last-login or staff profile data. The fixed continuation accepts only the requested
 canonical child and the server-returned redeemed child; arbitrary `returnTo`
 values do not redirect report flows. Staff and another player's account are
 blocked with explicit switch-account guidance, never silently signed out or

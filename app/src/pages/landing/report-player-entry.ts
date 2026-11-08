@@ -1,4 +1,5 @@
 import type { AccountRole } from "./account-entry";
+import type { AccessUser, AccountAccess } from "../../lib/account-access";
 
 export type ReportPlayerEntry = { present: boolean; playerId: string | null };
 export class ReportPlayerEntryError extends Error {}
@@ -31,4 +32,17 @@ export function reportSignupDestination(entry: ReportPlayerEntry, redeemedPlayer
     throw new ReportPlayerEntryError("Your account was created, but it does not match this report. Keep your login and contact PoseTek before continuing.");
   }
   return reportTrainingPath(redeemedPlayerId);
+}
+
+/** Initial restored sessions can enter only after canonical exact-player resolution. */
+export async function initialReportPlayerDestination(
+  entry: ReportPlayerEntry,
+  user: AccessUser | null,
+  load: (user: AccessUser, isCurrent: () => boolean) => Promise<AccountAccess>,
+  isCurrent: () => boolean,
+): Promise<string | null> {
+  if (!entry.present || !user || !isCurrent()) return null;
+  const access = await load(user, isCurrent);
+  if (!isCurrent()) return null;
+  return reportPlayerDestination(entry, access.kind === "active" ? access.role : null, access.kind === "active" ? access.playerId || null : null);
 }

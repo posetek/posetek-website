@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { readReportPlayerEntry, reportPlayerDestination, reportSignupDestination } from "./report-player-entry";
+import { readReportPlayerEntry, reportPlayerDestination, reportSignupDestination, initialReportPlayerDestination } from "./report-player-entry";
 import { createInvitedPlayer } from "./player-invitation-link";
 const entry = readReportPlayerEntry("?reportPlayer=canonical-child");
 const target = "/athlete?player=canonical-child&view=training";
@@ -39,5 +39,36 @@ describe("report player continuation", () => {
     active=null;steps.create.mockClear();steps.validate.mockResolvedValue(false);
     await expect(createInvitedPlayer({code:"USED-CODE",email:"child@example.test",password:"fixture-password"},steps)).rejects.toThrow("already been used");
     expect(steps.create).not.toHaveBeenCalled();
+  });
+});
+
+
+describe("initial restored report session", () => {
+  const user = { uid: "current-user", reload: async () => {}, getIdTokenResult: async () => ({claims: {}}) };
+  it("enters the matching canonical player directly without a signup or login action", async () => {
+    const load = vi.fn(async () => ({kind: "active" as const, role: "player" as const, playerId: "canonical-child"}));
+    expect(await initialReportPlayerDestination(entry, user, load, () => true)).toBe(target);
+    expect(load).toHaveBeenCalledOnce();
+  });
+  it("does not resolve signed-out users or ordinary sign-in visits", async () => {
+    const load = vi.fn();
+    expect(await initialReportPlayerDestination(entry, null, load, () => true)).toBeNull();
+    expect(await initialReportPlayerDestination({present: false, playerId: null}, user, load, () => true)).toBeNull();
+    expect(load).not.toHaveBeenCalled();
+  });
+  it.each([
+    {kind: "active" as const, role: "player" as const, playerId: "other-child"},
+    {kind: "active" as const, role: "admin" as const},
+    {kind: "activation" as const, reason: "unlinked" as const},
+  ])("refuses automatic entry for another child, staff or unresolved account", async access => {
+    await expect(initialReportPlayerDestination(entry, user, async () => access, () => true)).rejects.toThrow("player's login");
+  });
+  it("cancels a resolved target if the account changes while lookup is pending", async () => {
+    let current=true;
+    const load=vi.fn(async () => { current=false; return {kind: "active" as const, role: "player" as const, playerId: "canonical-child"}; });
+    expect(await initialReportPlayerDestination(entry,user,load,()=>current)).toBeNull();
+    current=false;load.mockClear();
+    expect(await initialReportPlayerDestination(entry,user,load,()=>current)).toBeNull();
+    expect(load).not.toHaveBeenCalled();
   });
 });

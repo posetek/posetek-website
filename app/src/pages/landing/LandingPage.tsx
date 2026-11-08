@@ -16,7 +16,7 @@ import { findCoach, findPlayer } from "../../lib/identity";
 import { useThemeColor } from "../../lib/use-theme-color";
 import { refreshAdminIdentity, upsertAdminProfile } from "../admin/lib/identity";
 import { capturePlayerInvitationLink, createInvitedPlayer, forgetPlayerInvitationLink, initialPlayerInvitationLink, readPlayerInvitationLink, unavailablePlayerInvitation } from "./player-invitation-link";
-import { readReportPlayerEntry, reportPlayerDestination, reportSignupDestination, ReportPlayerEntryError } from "./report-player-entry";
+import { readReportPlayerEntry, reportPlayerDestination, reportSignupDestination, initialReportPlayerDestination, ReportPlayerEntryError } from "./report-player-entry";
 import { accountDestination, accountError } from "./account-entry";
 import type { AccountRole } from "./account-entry";
 import {
@@ -175,17 +175,36 @@ export default function LandingPage() {
   // returnTo gets the login panel brought into view)
   useEffect(() => {
     loginMounted.current = true;
+    // Only the initial restored session may enter automatically. New password
+    // sign-ins and signup/redemption retain their own guarded continuations.
+    let initialObservation = true;
+    const requestedEntry = readReportPlayerEntry(window.location.search);
     const unsubscribe = auth.onAuthStateChanged((user: any) => {
+      const restoredSession = initialObservation;
+      initialObservation = false;
       const nextUid = user?.uid || null;
       if (observedUid.current !== nextUid) {
         observedUid.current = nextUid;
+        setContinueLoading(false);
         setLoginError(""); setLoginSuccess("");
       }
-      ++authEpoch.current;
+      const revision = ++authEpoch.current;
       setSignedIn(Boolean(user));
       setAuthReady(true);
       setPendingActivation(false);
       if (!user && getSafeReturnToUrl()) showLoginPanel();
+      if (restoredSession && user && requestedEntry.present) {
+        const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
+        setContinueLoading(true); setSignupOpen(false);
+        void initialReportPlayerDestination(requestedEntry, user, loadAccountAccess, isCurrent)
+          .then(destination => { if (destination && isCurrent()) navigate(destination); })
+          .catch(error => {
+            if (!isCurrent()) return;
+            setLoginError(error instanceof ReportPlayerEntryError ? error.message : accountError(error, "We could not confirm this player's account. Try Continue again, or use a different account."));
+            showLoginPanel();
+          })
+          .finally(() => { if (isCurrent()) setContinueLoading(false); });
+      }
     });
     return () => { loginMounted.current = false; ++authEpoch.current; unsubscribe(); };
   }, []);
