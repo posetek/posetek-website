@@ -10,8 +10,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { formatDoseText, formatRestText } from "../../../lib/contracts/drillV2";
-import type { CatalogDrill } from "../../../lib/contracts/drillV2";
+import { formatDoseText, formatRestText, publishBlockedByValidation, publishGateError } from "../../../lib/contracts/drillV2";
+import type { CatalogDrill, CatalogValidation } from "../../../lib/contracts/drillV2";
 import {
   DOMAINS,
   DRILL_STATUSES,
@@ -37,7 +37,7 @@ import type { DrillWrite } from "../lib/catalog";
 import DrillProductionPanel from "./DrillProductionPanel";
 import Icon from "./AdminWorkspaceIcon";
 
-interface FormState {
+export interface FormState {
   name: string;
   domain: Domain;
   minAge: number;
@@ -146,8 +146,10 @@ function cleaned(list: string[], max: number, maxChars: number): string[] {
   return list.map(entry => entry.trim().slice(0, maxChars)).filter(Boolean).slice(0, max);
 }
 
-function formErrors(form: FormState): string[] {
+function formErrors(form: FormState, validation?: CatalogValidation): string[] {
   const errors: string[] = [];
+  const gate = publishGateError(form.status, validation);
+  if (gate) errors.push(gate);
   const name = form.name.trim();
   if (name.length < 1 || name.length > 80) errors.push("The name must be 1–80 characters.");
   if (form.setup.length > 400) errors.push("The set-up is limited to 400 characters.");
@@ -211,7 +213,7 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
       .finally(() => setLoading(false));
   }, [mode, drillId]);
 
-  const errors = useMemo(() => formErrors(form), [form]);
+  const errors = useMemo(() => formErrors(form, drill?.validation), [form, drill]);
   const previewDose = useMemo(() => doseFrom(form), [form]);
   const set = <K extends keyof FormState>(key: K) => (value: FormState[K]) =>
     setForm(current => ({ ...current, [key]: value }));
@@ -227,7 +229,7 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
         setMessage({ kind: "success", text: `Created ${newId}. Add its clips below when you have them.` });
       } else {
         const { updateDrill } = await import("../lib/catalog");
-        const version = await updateDrill(drillId, writeFrom(form), drill?.catalogVersion);
+        const version = await updateDrill(drillId, writeFrom(form), drill?.catalogVersion, drill?.updatedAt);
         setDrill(await loadDrill(drillId));
         setMessage({ kind: "success", text: `Saved. The catalog is now version ${version}, so every device refetches.` });
       }
@@ -286,12 +288,12 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
                   {DOMAINS.map(value => <option key={value} value={value}>{domainLabel(value)}</option>)}
                 </select>
               </label>
-              <label className="admin-field">
-                <span>Status</span>
-                <select value={form.status} onChange={event => set("status")(event.target.value as DrillStatus)}>
-                  {DRILL_STATUSES.map(value => <option key={value} value={value} disabled={value === "published" && Boolean(drill?.productionBatchId)}>{value}</option>)}
-                </select>
-              </label>
+              <StatusField
+                value={form.status}
+                validation={drill?.validation}
+                managed={Boolean(drill?.productionBatchId)}
+                onChange={set("status")}
+              />
             </div>
             <label className="admin-field">
               <span>Position-specific</span>
@@ -513,6 +515,31 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
       )}
       {mode === "edit" && drill && <DrillProductionPanel drill={drill} onChanged={() => void loadDrill(drillId).then(found => found && setDrill(found))} />}
     </>
+  );
+}
+
+/**
+ * The status select. `published` is unavailable for a reviewed production drill
+ * and, per the database-first catalog contract, while validation is required and
+ * not passed: only the validation pass publishes those.
+ */
+export function StatusField({ value, validation, managed, onChange }: {
+  value: DrillStatus;
+  validation?: CatalogValidation;
+  managed: boolean;
+  onChange: (value: DrillStatus) => void;
+}) {
+  const awaitingValidation = publishBlockedByValidation(validation);
+  return (
+    <label className="admin-field">
+      <span>Status</span>
+      <select value={value} onChange={event => onChange(event.target.value as DrillStatus)}>
+        {DRILL_STATUSES.map(option => (
+          <option key={option} value={option} disabled={option === "published" && (managed || awaitingValidation)}>{option}</option>
+        ))}
+      </select>
+      {awaitingValidation && <small className="admin-note">Publishes automatically when validation passes.</small>}
+    </label>
   );
 }
 

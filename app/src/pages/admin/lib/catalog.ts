@@ -11,7 +11,11 @@
 
 import firebase, { auth, db, storage, cloud } from "../../../lib/firebase";
 import { captureIssue } from "../../../lib/user-issues";
-import { normalizeCatalogDrill } from "../../../lib/contracts/drillV2";
+import {
+  normalizeCatalogDrill,
+  normalizeCatalogValidation,
+  publishBlockedByValidation,
+} from "../../../lib/contracts/drillV2";
 import type { CatalogDrill } from "../../../lib/contracts/drillV2";
 import { DOMAIN_CODES, MEDIA_SLOTS } from "../../../lib/contracts/types";
 import type { Domain, MediaSlot, Position } from "../../../lib/contracts/types";
@@ -154,12 +158,55 @@ export async function createDrill(write: DrillWrite): Promise<string> {
   });
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+/**
+ * The stored equipment order wins whenever the set is unchanged (Core documents
+ * carry an `accessRequirements.sourceHash` computed over that order). Items the
+ * admin removed drop out; newly ticked items follow in the form's order.
+ */
+export function keepEquipmentOrder(stored: unknown, next: string[]): string[] {
+  const before = Array.isArray(stored) ? stored.map(String) : [];
+  return [...before.filter(item => next.includes(item)), ...next.filter(item => !before.includes(item))];
+}
+
+/** A comparable key for a Firestore Timestamp, Date or millisecond number; absent values compare equal. */
+function stampKey(value: unknown): string {
+  if (value === null || value === undefined) return "none";
+  const stamp = value as { seconds?: unknown; nanoseconds?: unknown; toMillis?: () => number };
+  if (typeof stamp.seconds === "number") return `${stamp.seconds}.${Number(stamp.nanoseconds ?? 0)}`;
+  if (typeof stamp.toMillis === "function") return String(stamp.toMillis());
+  if (value instanceof Date) return String(value.getTime());
+  return String(value);
+}
+
+export function sameStamp(a: unknown, b: unknown): boolean {
+  return stampKey(a) === stampKey(b);
+}
+
+export const STALE_DRILL_MESSAGE =
+  "This drill changed since you opened it (another edit, a clip upload or an automatic publish). Reload it and make your change again.";
+
 /**
  * Edit an existing **v2** drill. Refuses a v1 document: the migration is agent
  * 02's, and writing a v2 shape over half of one from here would make the
  * migration's "fill unresolved fields only" rerun ambiguous.
+ *
+ * Database-first catalog contract (§3.1, §3.4): the save refuses when the
+ * document's `catalogVersion` or `updatedAt` moved since the form loaded it (the
+ * server may have published the drill meanwhile, and `status` is written back
+ * from form state); it keeps unknown `dose`/`howTo` sub-keys and the stored
+ * equipment order; it never writes `validation`; and it refuses `published`
+ * while validation is required and not passed.
  */
-export async function updateDrill(drillId: string, write: DrillWrite, expectedCatalogVersion?: string): Promise<string> {
+export async function updateDrill(
+  drillId: string,
+  write: DrillWrite,
+  expectedCatalogVersion?: string,
+  expectedUpdatedAt?: unknown,
+): Promise<string> {
   const uid = requireAdminUid();
   const current = await db.collection(CATALOG).doc(drillId).get();
   if (current.data()?.productionBatchId) {
@@ -180,9 +227,24 @@ export async function updateDrill(drillId: string, write: DrillWrite, expectedCa
         `${drillId} has not been migrated to catalog v2 yet. Editing becomes available once the migration has run.`,
       );
     }
+    const stored = asRecord(drillDoc.data());
+    if (expectedCatalogVersion === undefined) throw new Error("Reload this drill before editing it.");
+    if (String(stored.catalogVersion ?? "") !== expectedCatalogVersion || !sameStamp(stored.updatedAt, expectedUpdatedAt)) {
+      throw new Error(STALE_DRILL_MESSAGE);
+    }
+    if (write.status === "published" && publishBlockedByValidation(normalizeCatalogValidation(stored.validation))) {
+      throw new Error(`${drillId} must pass validation before it can be published.`);
+    }
     const catalogVersion = bumpPatch(currentDoc.data()?.catalogVersion);
-    const kind = write.status === "archived" && drillDoc.data()?.status !== "archived" ? "archived" : "edited";
-    transaction.update(drillRef, drillPayload(drillId, write, catalogVersion, uid) as any);
+    const kind = write.status === "archived" && stored.status !== "archived" ? "archived" : "edited";
+    const payload = drillPayload(drillId, write, catalogVersion, uid);
+    transaction.update(drillRef, {
+      ...payload,
+      // `update` replaces a map wholesale, so carry the stored sub-keys across.
+      dose: { ...asRecord(stored.dose), ...payload.dose },
+      howTo: { ...asRecord(stored.howTo), ...payload.howTo },
+      equipment: keepEquipmentOrder(stored.equipment, payload.equipment),
+    } as any);
     transaction.set(currentRef, metaPatch(catalogVersion, uid, drillId, kind), { merge: true });
     return catalogVersion;
   });
