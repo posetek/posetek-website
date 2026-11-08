@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { formatDoseText, formatRestText, publishBlockedByValidation, publishGateError } from "../../../lib/contracts/drillV2";
+import { formatDoseText, formatRestText, baselineAfterOwnWrite, publishGateError, publishTransitionBlocked } from "../../../lib/contracts/drillV2";
 import type { CatalogDrill, CatalogValidation } from "../../../lib/contracts/drillV2";
 import {
   DOMAINS,
@@ -31,6 +31,8 @@ import {
   loadDrill,
   mediaFileErrors,
   removeDrillMedia,
+  STALE_DRILL_MESSAGE,
+  updateLoadedDrill,
   uploadDrillMedia,
 } from "../lib/catalog";
 import type { DrillWrite } from "../lib/catalog";
@@ -146,9 +148,9 @@ function cleaned(list: string[], max: number, maxChars: number): string[] {
   return list.map(entry => entry.trim().slice(0, maxChars)).filter(Boolean).slice(0, max);
 }
 
-function formErrors(form: FormState, validation?: CatalogValidation): string[] {
+function formErrors(form: FormState, loaded?: CatalogDrill | null): string[] {
   const errors: string[] = [];
-  const gate = publishGateError(form.status, validation);
+  const gate = publishGateError(form.status, loaded?.status, loaded?.validation);
   if (gate) errors.push(gate);
   const name = form.name.trim();
   if (name.length < 1 || name.length > 80) errors.push("The name must be 1–80 characters.");
@@ -213,10 +215,30 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
       .finally(() => setLoading(false));
   }, [mode, drillId]);
 
-  const errors = useMemo(() => formErrors(form, drill?.validation), [form, drill]);
+  const errors = useMemo(() => formErrors(form, drill), [form, drill]);
   const previewDose = useMemo(() => doseFrom(form), [form]);
   const set = <K extends keyof FormState>(key: K) => (value: FormState[K]) =>
     setForm(current => ({ ...current, [key]: value }));
+
+  // A clip upload/removal is the page's own write. It may refresh what is shown,
+  // but never advances the status/version baseline: an automatic publish that
+  // landed meanwhile must surface as a stale save, not be absorbed.
+  async function afterMediaWrite() {
+    const found = await loadDrill(drillId);
+    if (!found || !drill) return;
+    const next = baselineAfterOwnWrite(drill, found);
+    setDrill(next.drill);
+    if (next.stale) setMessage({ kind: "error", text: STALE_DRILL_MESSAGE });
+  }
+
+  // The production panel's own publish/approve actions legitimately change the
+  // status, so the form follows the stored status rather than reverting it.
+  async function afterProductionAction() {
+    const found = await loadDrill(drillId);
+    if (!found) return;
+    setDrill(found);
+    setForm(current => ({ ...current, status: found.status }));
+  }
 
   async function save() {
     if (errors.length) return;
@@ -228,8 +250,8 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
         navigate(`/admin/drills/${newId}/edit`, { replace: true });
         setMessage({ kind: "success", text: `Created ${newId}. Add its clips below when you have them.` });
       } else {
-        const { updateDrill } = await import("../lib/catalog");
-        const version = await updateDrill(drillId, writeFrom(form), drill?.catalogVersion, drill?.updatedAt);
+        if (!drill) throw new Error("Reload this drill before editing it.");
+        const version = await updateLoadedDrill(drillId, writeFrom(form), drill);
         setDrill(await loadDrill(drillId));
         setMessage({ kind: "success", text: `Saved. The catalog is now version ${version}, so every device refetches.` });
       }
@@ -291,6 +313,7 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
               <StatusField
                 value={form.status}
                 validation={drill?.validation}
+                loadedStatus={drill?.status}
                 managed={Boolean(drill?.productionBatchId)}
                 onChange={set("status")}
               />
@@ -507,29 +530,32 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
                 slot={slot}
                 asset={(drill.media as any)?.[slot]}
                 managed={Boolean(drill.productionBatchId)}
-                onChanged={() => loadDrill(drillId).then(found => found && setDrill(found))}
+                onChanged={afterMediaWrite}
               />
             ))}
           </fieldset>
         </section>
       )}
-      {mode === "edit" && drill && <DrillProductionPanel drill={drill} onChanged={() => void loadDrill(drillId).then(found => found && setDrill(found))} />}
+      {mode === "edit" && drill && <DrillProductionPanel drill={drill} onChanged={() => void afterProductionAction()} />}
     </>
   );
 }
 
 /**
  * The status select. `published` is unavailable for a reviewed production drill
- * and, per the database-first catalog contract, while validation is required and
- * not passed: only the validation pass publishes those.
+ * and, per the database-first catalog contract, for a drill that is not yet
+ * published while validation is required and not passed: only the validation pass
+ * publishes those. An already-published drill keeps `published` selectable.
  */
-export function StatusField({ value, validation, managed, onChange }: {
+export function StatusField({ value, validation, loadedStatus, managed, onChange }: {
   value: DrillStatus;
   validation?: CatalogValidation;
+  /** The status the editor loaded; absent when creating. */
+  loadedStatus?: DrillStatus;
   managed: boolean;
   onChange: (value: DrillStatus) => void;
 }) {
-  const awaitingValidation = publishBlockedByValidation(validation);
+  const awaitingValidation = publishTransitionBlocked("published", loadedStatus, validation);
   return (
     <label className="admin-field">
       <span>Status</span>

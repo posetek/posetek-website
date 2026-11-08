@@ -14,6 +14,7 @@ import { captureIssue } from "../../../lib/user-issues";
 import {
   normalizeCatalogDrill,
   normalizeCatalogValidation,
+  normalizeStatus,
   publishBlockedByValidation,
 } from "../../../lib/contracts/drillV2";
 import type { CatalogDrill } from "../../../lib/contracts/drillV2";
@@ -186,6 +187,33 @@ export function sameStamp(a: unknown, b: unknown): boolean {
   return stampKey(a) === stampKey(b);
 }
 
+/**
+ * `maxFrequencyPerWeek` is a form field, but Core documents also carry it inside
+ * the preserved `dose` (`frequencyPerWeekMax`, and `frequencyText` such as
+ * "1-3x/week"); the publisher asserts the two agree. Keep those keys in step when
+ * they exist, and leave a free-text `frequencyText` of another shape alone.
+ */
+export function syncFrequency(dose: Record<string, unknown>, maxPerWeek: number): Record<string, unknown> {
+  const synced = { ...dose };
+  if (typeof synced.frequencyPerWeekMax === "number") synced.frequencyPerWeekMax = maxPerWeek;
+  if (typeof synced.frequencyPerWeekMin === "number" && synced.frequencyPerWeekMin > maxPerWeek) {
+    synced.frequencyPerWeekMin = maxPerWeek;
+  }
+  if (typeof synced.frequencyText === "string") {
+    const match = /^(\d+)-(\d+)x\/week$/.exec(synced.frequencyText.trim());
+    if (match) {
+      const low = Math.min(Number(match[1]), maxPerWeek);
+      synced.frequencyText = low >= maxPerWeek ? `${maxPerWeek}x/week` : `${low}-${maxPerWeek}x/week`;
+    }
+  }
+  return synced;
+}
+
+/** Save an edit against the document state the form loaded (its version and `updatedAt` are the staleness baseline). */
+export function updateLoadedDrill(drillId: string, write: DrillWrite, loaded: CatalogDrill): Promise<string> {
+  return updateDrill(drillId, write, loaded.catalogVersion, loaded.updatedAt);
+}
+
 export const STALE_DRILL_MESSAGE =
   "This drill changed since you opened it (another edit, a clip upload or an automatic publish). Reload it and make your change again.";
 
@@ -198,8 +226,8 @@ export const STALE_DRILL_MESSAGE =
  * document's `catalogVersion` or `updatedAt` moved since the form loaded it (the
  * server may have published the drill meanwhile, and `status` is written back
  * from form state); it keeps unknown `dose`/`howTo` sub-keys and the stored
- * equipment order; it never writes `validation`; and it refuses `published`
- * while validation is required and not passed.
+ * equipment order; it never writes `validation`; and it refuses the transition
+ * to `published` while validation is required and not passed.
  */
 export async function updateDrill(
   drillId: string,
@@ -232,7 +260,13 @@ export async function updateDrill(
     if (String(stored.catalogVersion ?? "") !== expectedCatalogVersion || !sameStamp(stored.updatedAt, expectedUpdatedAt)) {
       throw new Error(STALE_DRILL_MESSAGE);
     }
-    if (write.status === "published" && publishBlockedByValidation(normalizeCatalogValidation(stored.validation))) {
+    // Only the TRANSITION to published is gated: a drill that is already published
+    // (even one whose later validation failed) stays editable and saveable.
+    if (
+      write.status === "published"
+      && normalizeStatus(stored.status) !== "published"
+      && publishBlockedByValidation(normalizeCatalogValidation(stored.validation))
+    ) {
       throw new Error(`${drillId} must pass validation before it can be published.`);
     }
     const catalogVersion = bumpPatch(currentDoc.data()?.catalogVersion);
@@ -241,7 +275,7 @@ export async function updateDrill(
     transaction.update(drillRef, {
       ...payload,
       // `update` replaces a map wholesale, so carry the stored sub-keys across.
-      dose: { ...asRecord(stored.dose), ...payload.dose },
+      dose: syncFrequency({ ...asRecord(stored.dose), ...payload.dose }, payload.maxFrequencyPerWeek),
       howTo: { ...asRecord(stored.howTo), ...payload.howTo },
       equipment: keepEquipmentOrder(stored.equipment, payload.equipment),
     } as any);

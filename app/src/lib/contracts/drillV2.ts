@@ -68,19 +68,52 @@ export interface CatalogValidation {
 }
 
 /**
- * True while a drill must pass validation before it may be published: the rules
- * refuse `status: published` when `validation.required == true` and
- * `validation.result != "pass"`, so the editor mirrors that and never offers it.
+ * True while a drill must pass validation before it may be published: it has
+ * `validation.required == true` and `validation.result != "pass"`.
  */
 export function publishBlockedByValidation(validation: CatalogValidation | null | undefined): boolean {
   return validation?.required === true && validation.result !== "pass";
 }
 
-/** The editor's save error for a `published` status the validation gate does not allow, or null. */
-export function publishGateError(status: DrillStatus, validation: CatalogValidation | null | undefined): string | null {
-  return status === "published" && publishBlockedByValidation(validation)
+/**
+ * Only the TRANSITION to published is gated. A drill that is already published
+ * (even one whose later validation failed) stays saveable, so a typo fix is not
+ * blocked; `loadedStatus` is the status the editor loaded.
+ */
+export function publishTransitionBlocked(
+  nextStatus: DrillStatus,
+  loadedStatus: DrillStatus | undefined,
+  validation: CatalogValidation | null | undefined,
+): boolean {
+  return nextStatus === "published" && loadedStatus !== "published" && publishBlockedByValidation(validation);
+}
+
+/** The editor's save error for a status change the validation gate does not allow, or null. */
+export function publishGateError(
+  nextStatus: DrillStatus,
+  loadedStatus: DrillStatus | undefined,
+  validation: CatalogValidation | null | undefined,
+): string | null {
+  return publishTransitionBlocked(nextStatus, loadedStatus, validation)
     ? "This drill needs a passing validation before it can be published. Keep it as a draft; it publishes automatically on a pass."
     : null;
+}
+
+/**
+ * The editor's staleness baseline after the page itself wrote (a clip upload or
+ * removal). Display data comes from `found`, but an own media write must never
+ * advance the status or version baseline: an automatic publish that landed in the
+ * meantime would otherwise be absorbed while the form still says "draft", and the
+ * next save would silently unpublish. `stale` is true when status or version moved.
+ */
+export function baselineAfterOwnWrite(
+  current: CatalogDrill,
+  found: CatalogDrill,
+): { drill: CatalogDrill; stale: boolean } {
+  const stale = found.status !== current.status || found.catalogVersion !== current.catalogVersion;
+  return stale
+    ? { drill: { ...found, status: current.status, catalogVersion: current.catalogVersion, updatedAt: current.updatedAt }, stale }
+    : { drill: found, stale };
 }
 
 export function normalizeCatalogValidation(raw: unknown): CatalogValidation | undefined {

@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { STALE_DRILL_MESSAGE, keepEquipmentOrder, mediaPlaybackUrl, sameStamp, updateDrill, type DrillWrite } from './catalog';
+import {
+  STALE_DRILL_MESSAGE, keepEquipmentOrder, mediaPlaybackUrl, sameStamp, syncFrequency, updateDrill, updateLoadedDrill,
+  type DrillWrite,
+} from './catalog';
+import { baselineAfterOwnWrite, normalizeCatalogDrill } from '../../../lib/contracts/drillV2';
 
 const harness = vi.hoisted(() => ({
   save: vi.fn(), transaction: vi.fn(), media: vi.fn(), txUpdate: vi.fn(), txSet: vi.fn(),
@@ -145,6 +149,63 @@ describe('direct admin save against database-first catalog documents', () => {
     await expect(save({ status: 'published' })).resolves.toBe('1.0.9');
   });
 
+  it('gates only the transition: an already-published drill whose validation failed still saves', async () => {
+    harness.stored = libraryDoc({ status: 'published', validation: { required: true, result: 'fail' } });
+    await expect(save({ status: 'published', howTo: { setup: 'fixed typo', steps: ['Squat.'] } })).resolves.toBe('1.0.9');
+    const [, payload] = harness.txUpdate.mock.calls[0];
+    expect(payload).toMatchObject({ status: 'published', howTo: { setup: 'fixed typo' } });
+    expect(payload).not.toHaveProperty('validation');
+    // Moving it back to draft or archived is allowed too; a draft cannot jump to published.
+    await expect(save({ status: 'draft' })).resolves.toBe('1.0.9');
+    harness.stored = libraryDoc({ status: 'archived', validation: { required: true, result: 'fail' } });
+    await expect(save({ status: 'published' })).rejects.toThrow('must pass validation');
+  });
+
+  it('lets a clearing of a form-managed dose field win over the stored value', async () => {
+    harness.stored = libraryDoc({ dose: { setsMin: 3, restBetweenSetsSecondsMin: 90, restBetweenSetsSecondsMax: 90, doseNote: 'keep' } });
+    await save({ dose: { setsMin: 3, restBetweenSetsSecondsMin: null, restBetweenSetsSecondsMax: null } });
+    expect(harness.txUpdate.mock.calls[0][1].dose).toEqual({
+      setsMin: 3, restBetweenSetsSecondsMin: null, restBetweenSetsSecondsMax: null, doseNote: 'keep',
+    });
+  });
+
+  it('keeps the preserved frequency keys in step with maxFrequencyPerWeek', async () => {
+    harness.stored = libraryDoc({
+      maxFrequencyPerWeek: 3,
+      dose: { setsMin: 3, frequencyPerWeekMin: 1, frequencyPerWeekMax: 3, frequencyText: '1-3x/week', frequencyNote: null },
+    });
+    await save({ maxFrequencyPerWeek: 5 });
+    expect(harness.txUpdate.mock.calls[0][1].dose).toMatchObject({
+      frequencyPerWeekMin: 1, frequencyPerWeekMax: 5, frequencyText: '1-5x/week', frequencyNote: null,
+    });
+    expect(harness.txUpdate.mock.calls[0][1].maxFrequencyPerWeek).toBe(5);
+  });
+
+  it('saves against the version and updatedAt of the drill the form loaded (updateLoadedDrill)', async () => {
+    const loaded = normalizeCatalogDrill('GYM-001', libraryDoc());
+    await expect(updateLoadedDrill('GYM-001', write, loaded)).resolves.toBe('1.0.9');
+    harness.txUpdate.mockReset();
+    const olderStamp = { ...loaded, updatedAt: { seconds: 1_799_999_000, nanoseconds: 0 } };
+    await expect(updateLoadedDrill('GYM-001', write, olderStamp)).rejects.toThrow(STALE_DRILL_MESSAGE);
+    await expect(updateLoadedDrill('GYM-001', write, { ...loaded, catalogVersion: '1.0.1' })).rejects.toThrow(STALE_DRILL_MESSAGE);
+    expect(harness.txUpdate).not.toHaveBeenCalled();
+  });
+
+  it('does not let an own clip upload absorb an automatic publish and then unpublish on the next save', async () => {
+    const loaded = normalizeCatalogDrill('GYM-001', libraryDoc());
+    // The validation pass publishes, then the admin uploads a clip (which bumps updatedAt only).
+    harness.stored = libraryDoc({
+      status: 'published', catalogVersion: '1.0.7', updatedAt: { seconds: 1_800_000_500, nanoseconds: 0 },
+      validation: { required: true, result: 'pass' },
+    });
+    const refreshed = normalizeCatalogDrill('GYM-001', harness.stored);
+    const { drill, stale } = baselineAfterOwnWrite(loaded, refreshed);
+    expect(stale).toBe(true);
+    expect(drill).toMatchObject({ status: 'draft', catalogVersion: '1.0.5', updatedAt: loaded.updatedAt });
+    await expect(updateLoadedDrill('GYM-001', { ...write, status: 'draft' }, drill)).rejects.toThrow(STALE_DRILL_MESSAGE);
+    expect(harness.txUpdate).not.toHaveBeenCalled();
+  });
+
   it('refuses a v1 document', async () => {
     harness.stored = libraryDoc({ schemaVersion: 1 });
     await expect(save()).rejects.toThrow('not been migrated');
@@ -157,6 +218,19 @@ describe('save helpers', () => {
     expect(keepEquipmentOrder(['a', 'b', 'c'], ['c', 'a'])).toEqual(['a', 'c']);
     expect(keepEquipmentOrder(['a', 'b'], ['z', 'b'])).toEqual(['b', 'z']);
     expect(keepEquipmentOrder(undefined, ['x', 'y'])).toEqual(['x', 'y']);
+  });
+  it('syncs frequency keys only where they exist and leaves other text alone', () => {
+    expect(syncFrequency({ frequencyPerWeekMax: 3, frequencyText: '1-3x/week' }, 2))
+      .toEqual({ frequencyPerWeekMax: 2, frequencyText: '1-2x/week' });
+    expect(syncFrequency({ frequencyPerWeekMin: 3, frequencyPerWeekMax: 4, frequencyText: '3-4x/week' }, 2))
+      .toEqual({ frequencyPerWeekMin: 2, frequencyPerWeekMax: 2, frequencyText: '2x/week' });
+    expect(syncFrequency({ frequencyText: 'twice a week if fresh' }, 5)).toEqual({ frequencyText: 'twice a week if fresh' });
+    expect(syncFrequency({ setsMin: 3 }, 5)).toEqual({ setsMin: 3 });
+  });
+  it('keeps the baseline when status and version are unchanged by an own media write', () => {
+    const base = normalizeCatalogDrill('GYM-001', { schemaVersion: 2, status: 'draft', catalogVersion: '1.0.5', updatedAt: { seconds: 1, nanoseconds: 0 } });
+    const found = normalizeCatalogDrill('GYM-001', { schemaVersion: 2, status: 'draft', catalogVersion: '1.0.5', updatedAt: { seconds: 9, nanoseconds: 0 } });
+    expect(baselineAfterOwnWrite(base, found)).toEqual({ drill: found, stale: false });
   });
   it('compares timestamps by value and treats absent as equal to absent', () => {
     expect(sameStamp({ seconds: 1, nanoseconds: 2 }, { seconds: 1, nanoseconds: 2 })).toBe(true);
