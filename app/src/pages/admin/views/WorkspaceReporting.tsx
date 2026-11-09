@@ -15,7 +15,7 @@ import "./workspace-report.scss";
 
 export type WorkspacePlayerMetric = { playerId: string; status: "included"; player: ExpandedPlayer } | { playerId: string; status: "excluded" };
 export type WorkspaceReport = ExpandedInsights & { rosterMetrics?: WorkspacePlayerMetric[] };
-export interface WorkspaceMetricState { data: WorkspaceReport | null; loading: boolean; error: string; rebuilding?: boolean; legacy?: boolean; refresh?: () => void }
+export interface WorkspaceMetricState { data: WorkspaceReport | null; loading: boolean; error: string; rebuilding?: boolean; legacy?: boolean; refresh?: () => void; settling?: boolean }
 export type WorkspaceSummaryProps = WorkspaceMetricState & { accountCount?: number; scopeLabel: string; request: ExpandedRequest };
 const views: [WorkspaceReportView, string][] = [["overview", "Overview"], ["testing", "Testing"], ["workouts", "Workouts"], ["usage", "Usage"]];
 

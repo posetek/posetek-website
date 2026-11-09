@@ -125,6 +125,14 @@ describe("unified workspace reporting", () => {
     expect(html).toContain("playerTab=workouts"); expect(html).toContain("playerTab=profile"); expect(html).toContain("reportView=usage"); expect(html).toContain("reportTestingWindow=period");
     expect(html).not.toContain("Player p20");
   });
+  it("shows rows outside a not-yet-requested id set as loading, never as unavailable or another row's metrics", () => {
+    const players = [account("known"), account("typed")];
+    const known = { playerId: "known", status: "excluded" as const };
+    const html = renderToStaticMarkup(<MemoryRouter><DirectoryPlayersTable players={players} state={state} choose={() => {}} metrics={{ ...metricState, settling: true }} metricRows={[known]} /></MemoryRouter>);
+    expect(html.match(/Excluded from reporting/g)).toHaveLength(3);
+    expect(html.match(/Loading…/g)).toHaveLength(3);
+    expect(html).not.toContain("Unavailable");
+  });
   it("does not reinterpret server queue pages as account roster pages", () => {
     const players = Array.from({ length: 20 }, (_, index) => account(`q${index}`));
     const html = renderToStaticMarkup(<MemoryRouter><DirectoryPlayersTable players={players} state={{ ...state, page: 3 }} choose={() => {}} metrics={metricState} serverPage /></MemoryRouter>);

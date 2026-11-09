@@ -29,7 +29,7 @@ export default function PlayerSummary({ player, refreshKey = 0, onBusy, onRefres
   const validate = useCallback((data: ExpandedInsights) => {
     if (expected) assertPlayerWorkoutTotalsAgree(data, player.id, expected);
   }, [player.id, expected]);
-  const report = useWorkspaceMetrics({ ...request, playerIds: [player.id], enabled: canonical, refreshKey, foreground, ...(workoutEvidence ? { validate } : {}) });
+  const report = useWorkspaceMetrics({ ...request, playerIds: [player.id], lookupOnly: true, enabled: canonical, refreshKey, foreground, ...(workoutEvidence ? { validate } : {}) });
   const synchronizing = Boolean(report.data && expected && !playerWorkoutTotalsAgree(report.data, player.id, expected));
   useEffect(() => { onBusy?.(organization.state.kind === 'loading' || report.refreshing || report.loading); }, [onBusy, organization.state.kind, report.loading, report.refreshing]);
   const metric = report.data?.rosterMetrics?.find(row => row.playerId === player.id);

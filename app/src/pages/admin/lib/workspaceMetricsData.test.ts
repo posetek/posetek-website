@@ -366,3 +366,21 @@ describe('same-cohort display-only summaries', () => {
     expect(transport.peekSummary('admin', input())).toBeNull();
   });
 });
+
+describe("lookup-only roster requests", () => {
+  const lookup = (ids?: string[], lookupOnly?: boolean) => workspaceMetricsPayload(search, scope, ids, now, false, false, false, lookupOnly);
+  it("sends rosterLookupOnly only when requested with visible ids", () => {
+    expect(lookup(["a"], true)).toMatchObject({ rosterPlayerIds: ["a"], rosterLookupOnly: true });
+    expect(lookup(["a"])).not.toHaveProperty("rosterLookupOnly");
+    expect(lookup(["a"], false)).not.toHaveProperty("rosterLookupOnly");
+    expect(lookup(undefined, true)).not.toHaveProperty("rosterLookupOnly");
+  });
+  it("keys lookup-only requests separately from full reports", () => {
+    expect(workspacePayloadKey(lookup(["a"], true))).not.toBe(workspacePayloadKey(lookup(["a"])));
+    expect(workspacePayloadKey(lookup(["a"], true))).toBe(workspacePayloadKey(lookup(["a"], true)));
+  });
+  it("validates a plain full response against a lookup-only request, so either backend works", () => {
+    const input = lookup(["a"], true);
+    expect(() => assertWorkspaceMetrics(report(input), input)).not.toThrow();
+  });
+});
