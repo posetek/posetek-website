@@ -1,3 +1,36 @@
+## November 7 private report action order — local only
+
+## Local signup-first report candidate — November 7, 2026
+
+The isolated report branch adds optional, explicitly authorized existing player
+invitation support and exact-child Training continuation. It uses an additive
+sign-in document and a separate candidate-only Netlify configuration; canonical
+production routing and the served SPA remain unchanged. This is local source,
+not a source or production release. See
+[the feature contract](docs/features/PRIVATE_PARENT_REPORTS.md#optional-signup-first-report-entry--november-7-candidate)
+for capability handling, assembly, verification and held release/send gates.
+
+
+The workout button, TestFlight install/update and browser choices, and PDF download now follow
+the results and practice cards. The compact report payloads, measurements, summaries, practice
+cards and exact-child routes are unchanged. Account registration remains a separate private
+workflow; no signup link or authorization is added. This is an isolated preview candidate,
+with source integration, production publication, sends and native acceptance still separate.
+
+## November 7 private report pathway preparation — local only
+
+An isolated extension of reviewed report source `5d8a9c65` adds optional aggregate age-group
+charts for speed at 5 m, vertical jump and broad jump. Legacy reports retain their team charts;
+the deliberate native/TestFlight/browser flow, ciphertext envelope and HTTPS PDF targets stay
+unchanged. Sparse/unverified groups cannot show density or percentiles, and median lines do
+not bridge gaps. See [the payload and design contract](docs/features/PRIVATE_PARENT_PATHWAY_CHARTS.md).
+
+The baseline records already-serving `6aedefb93ea542305e9f49da` with 2,601 protected files and
+37 recovery mappings. A separate pinned `--update-pathway-charts` transition replaces only
+three reader files and appends an explicit encrypted selection over a fresh captured artifact.
+No source push, merge, production promotion, family send or native build is included. A private
+example draft requires exact artifact review and hosted acceptance before the user tests it.
+
 # PoseTek website project context
 
 ## Admin reporting fixes and one-pager time on page — November 10, 2026
@@ -55,6 +88,19 @@ mappings. Signed-in hosted acceptance is not claimed.
 [Feature](docs/features/RESULT_VALIDATION.md)
 
 ## Admin rep tracking playback — released November 6, 2026
+## Private report app entry — held preparation, November 5, 2026
+
+The report reader prepares an explicit iOS app-opening button using the mobile
+owner's versioned workout locator, with visible TestFlight install/update and
+browser recovery. Android keeps web workouts; unknown platforms get an iOS choice.
+This is source only: the current production report still uses browser workouts.
+Compatible signed TestFlight and physical-phone acceptance remain required before
+delivery. No parent or coach text follows from source integration. Read the
+[feature contract](docs/features/PRIVATE_PARENT_REPORTS.md#installed-app-boundary).
+Keep `[skip netlify]`; the existing production artifact and application runtime
+remain preserved.
+
+## Admin rep tracking playback — source fix, November 5, 2026
 
 Rep Tools loads and displays saved tracking from the exact recording folder,
 with frame playback and clear video-unavailable/metadata-only states. Viewing
