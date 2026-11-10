@@ -66,7 +66,7 @@ export default function OnePagerTrendChart({ points }: { points: OnePagerTrendPo
             ticks: { color: ink, maxRotation: 0, autoSkip: true, callback: value => ticks.label(Number(value)) },
           },
           y: {
-            beginAtZero: true, suggestedMax: latest.sent + 2, border: { display: false }, grid: { color: rule },
+            beginAtZero: true, suggestedMax: latest.sent + Math.max(1, Math.round(latest.sent * 0.06)), border: { display: false }, grid: { color: rule },
             ticks: { color: ink, precision: 0 }, title: { display: true, text: "Reports", color: ink },
           },
         },
@@ -76,7 +76,7 @@ export default function OnePagerTrendChart({ points }: { points: OnePagerTrendPo
   }, [points, ticks, start, end, latest.sent]);
   return <section className="one-pager-trend" aria-labelledby={id}>
     <h4 id={id}>Opens and clicks over time</h4>
-    <p className="admin-note">Running count of reports with a first open or click, against the number sent. Times are Pacific.</p>
+    <p className="admin-note">Running count of reports with a first open or click, against the number sent so far. Times are Pacific.</p>
     <ul className="one-pager-legend" aria-label="Chart lines and current counts">
       {SERIES.map(series => <li key={series.field}><i aria-hidden="true" style={{ background: series.color }} />{series.label}<strong>{latest[series.field]}</strong></li>)}
     </ul>

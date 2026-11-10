@@ -19,7 +19,7 @@ import {
 } from "../../../lib/contracts/drillV2";
 import type { CatalogDrill } from "../../../lib/contracts/drillV2";
 import { DOMAIN_CODES, MEDIA_SLOTS } from "../../../lib/contracts/types";
-import type { Domain, MediaSlot, Position } from "../../../lib/contracts/types";
+import type { Domain, DrillStatus, MediaSlot, Position } from "../../../lib/contracts/types";
 import { ADMIN_CLIENT_VERSION } from "./identity";
 
 const CATALOG = "drillCatalog";
@@ -281,6 +281,150 @@ export async function updateDrill(
     } as any);
     transaction.set(currentRef, metaPatch(catalogVersion, uid, drillId, kind), { merge: true });
     return catalogVersion;
+  });
+}
+
+// MARK: - Status-only writes (drills and yoga poses)
+
+/** The document state a status control loaded: the staleness baseline. */
+export interface StatusBaseline {
+  status: DrillStatus | null;
+  catalogVersion: string;
+  updatedAt?: unknown;
+}
+
+export interface StatusOnlyWrite {
+  collection: string;
+  docId: string;
+  /** The version document under `drillCatalogMeta` this collection bumps. */
+  metaDoc: string;
+  status: DrillStatus;
+  expected: StatusBaseline;
+  /** How this collection reads a stored status (drills: absent is published; yoga: absent is null). */
+  readStatus: (raw: unknown) => DrillStatus | null;
+  staleMessage: string;
+  /** Throw to refuse a document this console must not status-edit (schema, managed batch). */
+  refuse?: (stored: Record<string, unknown>) => void;
+  lastChange: (stored: Record<string, unknown>) => unknown;
+}
+
+/** The only keys a status-only write sends. Every other stored key is untouched by construction. */
+export function statusOnlyPayload(status: DrillStatus, catalogVersion: string, uid: string) {
+  return {
+    status,
+    catalogVersion,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedBy: uid,
+  };
+}
+
+/**
+ * Change one document's `status` in ONE transaction: re-read it, refuse if its
+ * status, `catalogVersion` or `updatedAt` moved since it was loaded (the same
+ * staleness rule as the full editor), refuse the transition to published while
+ * validation is required and not passed, then write only the four status keys
+ * and bump the collection's version document with `lastChange`. An unchanged
+ * status writes nothing.
+ */
+export async function writeStatusOnly(write: StatusOnlyWrite): Promise<string> {
+  const uid = requireAdminUid();
+  return db.runTransaction(async transaction => {
+    const ref = db.collection(write.collection).doc(write.docId);
+    const metaRef = db.collection(META).doc(write.metaDoc);
+    const [doc, metaDoc] = await Promise.all([transaction.get(ref), transaction.get(metaRef)]);
+    if (!doc.exists) throw new Error(`${write.docId} no longer exists.`);
+    const stored = asRecord(doc.data());
+    const storedStatus = write.readStatus(stored.status);
+    if (
+      storedStatus !== write.expected.status
+      || String(stored.catalogVersion ?? "") !== write.expected.catalogVersion
+      || !sameStamp(stored.updatedAt, write.expected.updatedAt)
+    ) {
+      throw new Error(write.staleMessage);
+    }
+    write.refuse?.(stored);
+    if (stored.status === write.status) return String(metaDoc.data()?.catalogVersion ?? stored.catalogVersion ?? "");
+    if (
+      write.status === "published"
+      && storedStatus !== "published"
+      && publishBlockedByValidation(normalizeCatalogValidation(stored.validation))
+    ) {
+      throw new Error(`${write.docId} must pass validation before it can be published.`);
+    }
+    const catalogVersion = bumpPatch(metaDoc.data()?.catalogVersion);
+    transaction.update(ref, statusOnlyPayload(write.status, catalogVersion, uid));
+    transaction.set(metaRef, {
+      catalogVersion,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: uid,
+      lastChange: write.lastChange(stored),
+    }, { merge: true });
+    return catalogVersion;
+  });
+}
+
+export interface CommittedChange<T> {
+  /** The re-read document, or the committed values applied locally when the re-read failed. */
+  item: T | null;
+  version: string;
+  /** The write committed but the re-read did not: the item's `updatedAt` is the old baseline. */
+  refreshFailed: boolean;
+}
+
+export const SAVED_REFRESH_FAILED_MESSAGE = "Saved. Reload before changing it again.";
+
+/**
+ * Run a status write, then re-read the document for its server `updatedAt` (the
+ * next change's baseline). A write failure throws; a re-read failure after a
+ * committed write does not: the committed status and version are applied
+ * locally and `refreshFailed` says the page must reload before the next change.
+ */
+export async function commitThenRefresh<T>(
+  write: () => Promise<string>,
+  refresh: () => Promise<T | null>,
+  committed: (version: string) => T,
+): Promise<CommittedChange<T>> {
+  const version = await write();
+  try {
+    return { item: await refresh(), version, refreshFailed: false };
+  } catch (error) {
+    console.warn("[admin] status saved; refresh failed", error);
+    return { item: committed(version), version, refreshFailed: true };
+  }
+}
+
+/** True when the library's status control may write this drill directly. */
+export function drillStatusEditable(drill: CatalogDrill): boolean {
+  return !drill.needsMigration && !drill.productionBatchId;
+}
+
+/**
+ * Change only a drill's status, against the state the page loaded. Keeps the
+ * full editor's guards: v2 only, the validation publish gate and the
+ * `drillCatalogMeta/current` bump. A reviewed production drill keeps its
+ * callable path (the editor and production panel), so it is refused here.
+ */
+export function updateDrillStatus(drill: CatalogDrill, status: DrillStatus): Promise<string> {
+  return writeStatusOnly({
+    collection: CATALOG,
+    docId: drill.drillId,
+    metaDoc: "current",
+    status,
+    expected: { status: drill.status, catalogVersion: drill.catalogVersion, updatedAt: drill.updatedAt },
+    readStatus: normalizeStatus,
+    staleMessage: STALE_DRILL_MESSAGE,
+    refuse: stored => {
+      if (Number(stored.schemaVersion) !== 2) {
+        throw new Error(
+          `${drill.drillId} has not been migrated to catalog v2 yet. Editing becomes available once the migration has run.`,
+        );
+      }
+      if (stored.productionBatchId) throw new Error(`${drill.drillId} is a reviewed production drill. Change its status from Edit drill.`);
+    },
+    lastChange: stored => ({
+      drillId: drill.drillId,
+      kind: status === "archived" && stored.status !== "archived" ? "archived" : "edited",
+    }),
   });
 }
 

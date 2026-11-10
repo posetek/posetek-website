@@ -49,9 +49,11 @@ one running total per report, credits a first update as sent (up to 60 seconds) 
 after that never more than the clock time since the previous update, so two people
 reading one link at the same moment count once. It writes at most once a second per
 report. Time before this version was published is not recovered, and the
-last few seconds of a visit can be lost if the browser closes abruptly. The chart is
-drawn from each report's first-event times; the sent line is level because the
-November 4–5 send times are not part of the tracking record. The reader's on-page
+last few seconds of a visit can be lost if the browser closes abruptly. The cards, chart
+and table describe the selected cohort. The chart is drawn from each report's
+first-event times. Its sent line steps up at each verified send time saved when a
+send is recorded; the original November 4–5 cohort was registered together after
+its sends, so its sent line is level. The reader's on-page
 notice names every recorded action, including viewing time.
 The reader stays open in its own tab while signup or TestFlight opens. Both
 destinations continue to work if tracking is unavailable.

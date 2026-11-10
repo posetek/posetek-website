@@ -23,6 +23,23 @@ describe("onePagerTrend", () => {
     ]);
   });
 
+  it("steps the sent line where a report joined the cohort after tracking started", () => {
+    const points = onePagerTrend([
+      report("a", { sentAt: START - HOUR, openedAt: START + 3 * HOUR }),
+      report("b", { sentAt: START + 2 * HOUR }),
+      report("c", { sentAt: START + 2 * HOUR }),
+      report("d", { sentAt: null }),
+      report("e", { sentAt: START + 9 * HOUR }),
+    ], 5, START, START + 5 * HOUR);
+    expect(points).toEqual([
+      { at: START, sent: 2, openedAt: 0, workoutsAt: 0, testflightAt: 0 },
+      { at: START + 2 * HOUR, sent: 4, openedAt: 0, workoutsAt: 0, testflightAt: 0 },
+      { at: START + 3 * HOUR, sent: 4, openedAt: 1, workoutsAt: 0, testflightAt: 0 },
+      // A send time past the viewer's clock still reaches the total at the right edge.
+      { at: START + 5 * HOUR, sent: 5, openedAt: 1, workoutsAt: 0, testflightAt: 0 },
+    ]);
+  });
+
   it("starts and ends flat with no activity and never runs past the two ends", () => {
     expect(onePagerTrend([report("a")], 33, START, START + HOUR)).toEqual([
       { at: START, sent: 33, openedAt: 0, workoutsAt: 0, testflightAt: 0 },

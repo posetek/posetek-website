@@ -8,8 +8,9 @@ export const ONE_PAGER_METRICS = [
 ] as const;
 export const ONE_PAGER_SENT_COLOR = "#657b70";
 export type OnePagerMetric = typeof ONE_PAGER_METRICS[number]["field"];
-/** `viewSeconds` is absent until the tracking service that measures it is published. */
-export type OnePagerReport = { id: string; name: string; viewSeconds?: number } & Record<OnePagerMetric, number | null>;
+/** `viewSeconds` and `sentAt` are absent until the tracking service that reports them is published.
+ * `sentAt` is when the report joined its cohort's sent total; `null` means from the start. */
+export type OnePagerReport = { id: string; name: string; viewSeconds?: number; sentAt?: number | null } & Record<OnePagerMetric, number | null>;
 export type OnePagerTrendPoint = { at: number; sent: number } & Record<OnePagerMetric, number>;
 
 const HOUR = 3_600_000;
@@ -17,18 +18,23 @@ const HOUR = 3_600_000;
 /**
  * Cumulative first-event counts at every moment one of them changed, from the
  * start of tracking through `now`. Every series shares the same times so one
- * hover position reads all of them. Sent stays level: send times are not tracked.
+ * hover position reads all of them. Sent ends at `total` and steps up where a
+ * report joined the cohort after tracking started; without send times it is level.
  */
 export function onePagerTrend(reports: OnePagerReport[], total: number, startAt: number, now: number): OnePagerTrendPoint[] {
   const end = Math.max(now, startAt + 1);
   const clamp = (at: number) => Math.min(Math.max(at, startAt), end);
   const events = Object.fromEntries(ONE_PAGER_METRICS.map(({ field }) => [field,
     reports.map(row => row[field]).filter((at): at is number => typeof at === "number" && Number.isFinite(at)).map(clamp).sort((a, b) => a - b)])) as Record<OnePagerMetric, number[]>;
-  const times = [...new Set([startAt, ...ONE_PAGER_METRICS.flatMap(({ field }) => events[field]), end])].sort((a, b) => a - b);
+  // Reports sent after tracking started; every other report counts from the start.
+  const later = reports.map(row => row.sentAt).filter((at): at is number => typeof at === "number" && Number.isFinite(at) && at > startAt).map(clamp).sort((a, b) => a - b);
+  const times = [...new Set([startAt, ...ONE_PAGER_METRICS.flatMap(({ field }) => events[field]), ...later, end])].sort((a, b) => a - b);
   const cursor = { openedAt: 0, workoutsAt: 0, testflightAt: 0 };
+  let sent = 0;
   return times.map(at => {
     for (const { field } of ONE_PAGER_METRICS) while (cursor[field] < events[field].length && events[field][cursor[field]] <= at) cursor[field]++;
-    return { at, sent: total, ...cursor };
+    while (sent < later.length && later[sent] <= at) sent++;
+    return { at, sent: Math.max(0, total - later.length + sent), ...cursor };
   });
 }
 
