@@ -36,6 +36,19 @@ The 33 sent November 4–5 links use first-party engagement tracking after activ
 tracking** shows the first visible open, workout-button click and TestFlight click
 per report. The event sends only the action and a separate write-only capability.
 A forwarded link still counts for the original report. Records expire after 90 days.
+
+The tab also shows **Reports sent**, an estimated **time on page** per report and a
+chart of cumulative opens, workout clicks and TestFlight clicks against the number
+sent. Time on page counts only while the report is the visible tab and someone has
+touched, scrolled or typed in the last two minutes. The reader sends whole seconds
+every 15 seconds and when the page is hidden or closed, and stores nothing in the
+browser. The server keeps one running total per report and never credits more than
+the clock time since the previous update, so two people reading one link at the same
+moment count once. Time before this version was published is not recovered, and the
+last few seconds of a visit can be lost if the browser closes abruptly. The chart is
+drawn from each report's first-event times; the sent line is level because the
+November 4–5 send times are not part of the tracking record. The reader's on-page
+notice names every recorded action, including viewing time.
 The reader stays open in its own tab while signup or TestFlight opens. Both
 destinations continue to work if tracking is unavailable.
 

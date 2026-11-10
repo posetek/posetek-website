@@ -41,12 +41,43 @@ try {
       const choose = async value => { await page.evaluate(state => { window.fixtureTrackingState = state; }, value); await refresh.click(); };
       await choose('active');
       await panel.getByText(/Tracking started Nov 8, 2026.*12:00\s*PM Pacific/).waitFor();
-      assert.equal(await panel.getByText('1 of 33', { exact: true }).count(), 1);
-      assert.equal(await panel.getByText('0 of 33', { exact: true }).count(), 2);
-      assert.equal(await panel.locator('tbody tr').count(), 33);
+      const cards = panel.getByRole('region', { name: 'One-pager engagement totals' }).locator('.workspace-summary-card');
+      const cardValues = async () => Object.fromEntries(await cards.evaluateAll(nodes => nodes.map(node => [node.querySelector('span').textContent, node.querySelector('strong').textContent])));
+      assert.deepEqual(await cardValues(), { 'Reports sent': '33', 'Reports opened': '3 of 33', 'Workout button clicks': '1 of 33',
+        'TestFlight clicks': '1 of 33', 'Average time on page': '2 min 30 sec' });
+      await cards.last().getByText('2 reports with recorded time · 5 min in total', { exact: true }).waitFor();
+      const players = panel.getByRole('table', { name: 'First recorded activity per player report' }).locator('tbody tr');
+      assert.equal(await players.count(), 33);
+      assert.equal(await players.nth(0).locator('td').last().textContent(), '4 min 10 sec');
+      assert.equal(await players.nth(2).locator('td').last().textContent(), 'None recorded');
+      // The chart runs from the start of tracking to now: sent stays level and each line steps at a first event.
+      const trend = panel.getByRole('region', { name: 'Opens and clicks over time' });
+      assert.deepEqual(await trend.locator('.one-pager-legend li').allTextContents(),
+        ['Reports sent33', 'Reports opened3', 'Workout button clicks1', 'TestFlight clicks1']);
+      const painted = await trend.locator('canvas').evaluate(node => {
+        const pixels = node.getContext('2d').getImageData(0, 0, node.width, node.height).data;
+        let drawn = 0; for (let index = 3; index < pixels.length; index += 4) if (pixels[index]) drawn++;
+        return { width: node.clientWidth, drawn };
+      });
+      assert(painted.width > 300 && painted.drawn > 500, 'The trend chart is drawn');
+      await trend.getByText('View chart data', { exact: true }).click();
+      const changes = trend.locator('details tbody tr');
+      assert.equal(await changes.count(), 7);
+      const cells = row => changes.nth(row).locator('td').allTextContents();
+      assert.match((await cells(0))[0], /^Nov 8, 12:00\s*PM$/);
+      assert.deepEqual((await cells(0)).slice(1), ['33', '0', '0', '0']);
+      assert.match((await cells(2))[0], /^Nov 8, 2:00\s*PM$/);
+      assert.deepEqual((await cells(2)).slice(1), ['33', '1', '1', '0']);
+      assert.deepEqual((await cells(6)).slice(1), ['33', '3', '1', '1']);
       assert.equal(await page.getByRole('button', { name: 'Filters & period' }).count(), 0);
       await page.setViewportSize({ width: 390, height: 844 });
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+      // A tracking service published before time on page reports it as unavailable, never as zero.
+      await choose('legacy');
+      await cards.last().getByText('Time on page is not being collected yet.', { exact: true }).waitFor();
+      assert.equal((await cardValues())['Average time on page'], 'Not available');
+      assert.equal((await cardValues())['Reports opened'], '1 of 33');
+      assert.equal(await players.nth(0).locator('td').last().textContent(), 'Not available');
       await choose('expired');
       await panel.getByText('The 90-day tracking period has ended.').waitFor();
       await choose('error');
