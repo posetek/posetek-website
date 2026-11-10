@@ -5,7 +5,7 @@ import { expandedRequest } from "../../insights/lib/expandedQuery";
 import { assertReportScope, reportPayload } from "../../insights/lib/expanded";
 import type { ExpandedInsights, InsightScope } from "../../insights/lib/expanded";
 import { adminActivitySelection } from "./adminActivity";
-import type { AdminActivityReportData, AdminActivityRequest } from "./adminActivity";
+import type { AdminActivityReportData, AdminActivityRequest, AdminPlayerWorkout } from "./adminActivity";
 
 export type WorkspaceReportPayload = ReturnType<typeof reportPayload> & {
   rosterPlayerIds?: string[]; adminReporting?: AdminActivityRequest; includeLastFeatureEvidence?: true; includeTestingAnalytics?: true;
@@ -95,9 +95,14 @@ export function assertAdminActivity(data: ExpandedInsights, payload: WorkspaceRe
       }
     }
     if (row.assigned.status === "available" && ![row.assigned.remaining, row.assigned.notStarted, row.assigned.noEnding].every(count)) throw invalid("Assignment coverage is unavailable.");
-    const latest = row.workouts.latest;
-    if (latest && (!["workoutLogs", "personalWorkoutLogs"].includes(latest.source) || !latest.logId || !stamp(latest.startedAtMillis) || !stamp(latest.endedAtMillis)
-      || latest.timerMinutes !== null && !minutes(latest.timerMinutes) || latest.estimatedMinutes !== null && !minutes(latest.estimatedMinutes))) throw invalid("Latest workout evidence is unavailable.");
+    // A saved log names its record; a session recorded on the phone has none to name.
+    const workout = (value: AdminPlayerWorkout | null | undefined) => Boolean(value)
+      && (value!.source === "onDevice" ? value!.logId === null : ["workoutLogs", "personalWorkoutLogs"].includes(value!.source) && Boolean(value!.logId))
+      && stamp(value!.startedAtMillis) && stamp(value!.endedAtMillis)
+      && (value!.timerMinutes === null || minutes(value!.timerMinutes)) && (value!.estimatedMinutes === null || minutes(value!.estimatedMinutes));
+    const latest = row.workouts.latest, recent = row.workouts.recent;
+    if (latest && !workout(latest)) throw invalid("Latest workout evidence is unavailable.");
+    if (recent !== undefined && (!Array.isArray(recent) || recent.length > 8 || !recent.every(workout))) throw invalid("Recent workout evidence is unavailable.");
   }
 }
 

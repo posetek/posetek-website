@@ -36,6 +36,16 @@ describe('saved history / reporting projection consistency', () => {
     expect(() => assertPlayerWorkoutsAgree(prior, 'one', [{ ...base, activeSeconds: 725 }], now)).toThrow(expect.objectContaining({ code: 'unavailable' }));
     expect(playerWorkoutsAgree(report([{ ...base, activeSeconds: 725 }]), 'one', [{ ...base, activeSeconds: 725 }], now)).toBe(true);
   });
+  it('compares saved logs with the report\'s saved-log totals when the report also counts sessions recorded on the phone', () => {
+    const saved = workoutEvidenceTotals([base], period, now);
+    const withPhone = (savedLogs: typeof saved | undefined) => ({ period, rosterMetrics: [{ playerId: 'one', status: 'included',
+      player: { workouts: { ...saved, completed: saved.completed + 3, timerMinutes: saved.timerMinutes + 45, timerRecords: saved.timerRecords + 3, onDeviceEvents: 3, savedLogs } } as ExpandedPlayer }] }) as ExpandedInsights;
+    expect(playerWorkoutsAgree(withPhone(saved), 'one', [base], now)).toBe(true);
+    // A newly saved log is still caught against the saved-log totals.
+    expect(() => assertPlayerWorkoutsAgree(withPhone(saved), 'one', [base, { ...base, id: 'new', workoutId: 'new' }], now)).toThrow(/synchronizing/);
+    // Without saved-log totals the combined figures are all there is to compare, as before.
+    expect(playerWorkoutsAgree(withPhone(undefined), 'one', [base], now)).toBe(false);
+  });
   it('keeps an excluded or unavailable player distinct instead of deriving private summary metrics', () => {
     expect(playerWorkoutsAgree({ period, rosterMetrics: [{ playerId: 'one', status: 'excluded' }] } as ExpandedInsights, 'one', [base], now)).toBe(true);
     expect(playerWorkoutsAgree(report([base]), 'another', [base], now)).toBe(true);
