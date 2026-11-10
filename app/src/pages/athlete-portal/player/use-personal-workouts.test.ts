@@ -73,9 +73,9 @@ describe('recoverable workout setup assessment', () => {
     const logging = { ...config, capabilities: { update_personal_workout_log: { enabled: true, dailyLimitPerUser: 10 } } };
     const saved = () => ({ workoutId: 'session1', revision: 3, elapsedSeconds: 40, endedAt: null,
       workoutSnapshot: { blocks: [{ blockId: 'a', sets: 2 }, { blockId: 'b', sets: 2 }] }, blocks: [{ blockId: 'a', status: 'done', setsCompleted: 2 }] });
-    const submit = async (rows: any[], action: (adapter: any) => Promise<void>) => {
-      harness.storage.clear(); harness.set.mockClear();
-      const store = usePersonalWorkouts('synthetic-player', false, logging);
+    // Each request gets a fresh store, as after the previous request's receipt has cleared.
+    const fresh = () => { harness.storage.clear(); harness.set.mockClear(); };
+    const submit = async (store: ReturnType<typeof usePersonalWorkouts>, rows: any[], action: (adapter: any) => Promise<void>) => {
       // The hook's log map is the object the adapter reads; seed it as the service's snapshot would.
       (store.logs as any).session1 = { ...saved(), blocks: rows };
       const pending = action(store.adapter); pending.catch(() => {});
@@ -88,15 +88,15 @@ describe('recoverable workout setup assessment', () => {
     };
     const done = { blockId: 'a', status: 'done', setsCompleted: 2 };
     // Skipping as "No space or equipment" is saved under the service's own reason.
-    const skip = await submit([done], adapter => adapter.saveBlock('personal_session1', 'b', skippedLogRow({ blockId: 'b', sets: 2 }, 0, 'noSpace'), 60));
+    const skip = await submit((fresh(), usePersonalWorkouts('synthetic-player', false, logging)), [done], adapter => adapter.saveBlock('personal_session1', 'b', skippedLogRow({ blockId: 'b', sets: 2 }, 0, 'noSpace'), 60));
     expect(skip.blocks).toEqual([done, { blockId: 'b', status: 'skipped', setsCompleted: 0, skipReason: 'equipment' }]);
     expect(skip).not.toHaveProperty('endReason');
     // Every drill done or skipped is "completed" on the screen; with a skipped drill the service only accepts an early finish.
-    const skipped = await submit([done, { blockId: 'b', status: 'skipped', setsCompleted: 0, skipReason: 'equipment' }], adapter => adapter.finish('personal_session1', 'completed', 90));
+    const skipped = await submit((fresh(), usePersonalWorkouts('synthetic-player', false, logging)), [done, { blockId: 'b', status: 'skipped', setsCompleted: 0, skipReason: 'equipment' }], adapter => adapter.finish('personal_session1', 'completed', 90));
     expect(skipped.endReason).toBe('stopped'); expect(skipped.expectedLogRevision).toBe(3); expect(skipped.elapsedSeconds).toBe(90);
     // The finish reason follows the saved rows and the prescribed exercise count, not the number of rows sent.
-    expect((await submit([done], adapter => adapter.finish('personal_session1', 'completed', 90))).endReason).toBe('stopped');
-    expect((await submit([done, { blockId: 'b', status: 'done', setsCompleted: 2 }], adapter => adapter.finish('personal_session1', 'completed', 90))).endReason).toBe('completed');
+    expect((await submit((fresh(), usePersonalWorkouts('synthetic-player', false, logging)), [done], adapter => adapter.finish('personal_session1', 'completed', 90))).endReason).toBe('stopped');
+    expect((await submit((fresh(), usePersonalWorkouts('synthetic-player', false, logging)), [done, { blockId: 'b', status: 'done', setsCompleted: 2 }], adapter => adapter.finish('personal_session1', 'completed', 90))).endReason).toBe('completed');
   });
   it('stops a timed-out observer but preserves its job for a completed-result retry', async () => {
     const store = usePersonalWorkouts('synthetic-player', false, config), pending = store.assess(params);
