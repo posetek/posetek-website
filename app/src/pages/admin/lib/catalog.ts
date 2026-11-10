@@ -343,7 +343,7 @@ export async function writeStatusOnly(write: StatusOnlyWrite): Promise<string> {
       throw new Error(write.staleMessage);
     }
     write.refuse?.(stored);
-    if (stored.status === write.status) return String(stored.catalogVersion ?? "");
+    if (stored.status === write.status) return String(metaDoc.data()?.catalogVersion ?? stored.catalogVersion ?? "");
     if (
       write.status === "published"
       && storedStatus !== "published"
@@ -361,6 +361,36 @@ export async function writeStatusOnly(write: StatusOnlyWrite): Promise<string> {
     }, { merge: true });
     return catalogVersion;
   });
+}
+
+export interface CommittedChange<T> {
+  /** The re-read document, or the committed values applied locally when the re-read failed. */
+  item: T | null;
+  version: string;
+  /** The write committed but the re-read did not: the item's `updatedAt` is the old baseline. */
+  refreshFailed: boolean;
+}
+
+export const SAVED_REFRESH_FAILED_MESSAGE = "Saved. Reload before changing it again.";
+
+/**
+ * Run a status write, then re-read the document for its server `updatedAt` (the
+ * next change's baseline). A write failure throws; a re-read failure after a
+ * committed write does not: the committed status and version are applied
+ * locally and `refreshFailed` says the page must reload before the next change.
+ */
+export async function commitThenRefresh<T>(
+  write: () => Promise<string>,
+  refresh: () => Promise<T | null>,
+  committed: (version: string) => T,
+): Promise<CommittedChange<T>> {
+  const version = await write();
+  try {
+    return { item: await refresh(), version, refreshFailed: false };
+  } catch (error) {
+    console.warn("[admin] status saved; refresh failed", error);
+    return { item: committed(version), version, refreshFailed: true };
+  }
 }
 
 /** True when the library's status control may write this drill directly. */

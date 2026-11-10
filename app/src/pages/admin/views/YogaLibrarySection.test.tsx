@@ -2,9 +2,15 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../lib/firebase', () => ({ default: {}, auth: {}, db: {}, storage: {}, cloud: {} }));
+vi.mock('../lib/yogaLibrary', () => ({
+  updateYogaPoseStatus: async () => { throw new Error('offline write'); },
+  loadYogaPose: async () => null, loadYogaLibrary: async () => [], loadYogaLibraryVersion: async () => '1.0.0',
+}));
+import { MemoryRouter } from 'react-router-dom';
 import { normalizeYogaPose } from '../../../lib/contracts/yogaLibrary';
 import YogaLibrarySection, { YogaPoseRows } from './YogaLibrarySection';
-import { filterYogaPoses } from '../lib/useYogaLibrary';
+import DrillLibrary from './DrillLibrary';
+import { filterYogaPoses, yogaStatusChange } from '../lib/useYogaLibrary';
 import { StatusField } from './StatusField';
 
 const pose = (id: string, name: string, posture: string, status?: string, validation?: Record<string, unknown>) =>
@@ -28,11 +34,40 @@ describe('yoga library section', () => {
     for (const name of ['Boat', 'Mountain', 'Low lunge', 'Child&#x27;s pose']) expect(html).toContain(`<strong>${name}</strong>`);
     expect(html).toContain('athlete_boat');
     expect(html).toContain('>Seated<');
-    expect(html.match(/aria-label="Status"/g)).toHaveLength(4);
+    // Each select is named for its pose, so 128 controls are distinguishable.
+    expect(html).not.toContain('aria-label="Status"');
+    for (const name of ['Boat', 'Mountain', 'Low lunge', 'Child&#x27;s pose']) expect(html).toContain(`aria-label="${name} status"`);
     expect(html).toContain('data-status="archived"');
     expect(html).toContain('data-status="none"');
     expect(selected(html, 'Mountain')).toBe('published');
     expect(selected(html, 'Boat')).toBe('archived');
+  });
+
+  it('after a failed write, keeps the row on its stored status and shows the error inside that row', async () => {
+    const failed = await yogaStatusChange({ kind: 'ready', poses, version: '1.0.0' }, poses[1], 'archived');
+    const html = renderToStaticMarkup(<YogaPoseRows poses={failed.load.poses} busy={null} message={failed.message} onStatus={() => {}} />);
+    expect(selected(html, 'Mountain')).toBe('published');
+    const mountainRow = html.split('data-status=').find(part => part.includes('<strong>Mountain</strong>')) ?? '';
+    expect(mountainRow).toContain('<p class="form-message" role="alert">offline write</p>');
+    expect(html.match(/form-message/g)).toHaveLength(1);
+  });
+
+  it('shows a saved-but-not-refreshed notice as status, not as an error', () => {
+    const html = renderToStaticMarkup(<YogaPoseRows poses={poses} busy={null}
+      message={{ drillId: 'athlete_boat', kind: 'notice', text: 'Saved. Reload before changing it again.' }} onStatus={() => {}} />);
+    expect(html).toContain('<p class="form-message" role="status">Saved. Reload before changing it again.</p>');
+    expect(html).not.toContain('role="alert"');
+  });
+
+  it('renders the library tabs with the shared keyboard tab model and their panels (preview data)', () => {
+    const html = renderToStaticMarkup(<MemoryRouter initialEntries={['/admin/drills?section=yoga&preview=1']}><DrillLibrary preview /></MemoryRouter>);
+    expect(html).toContain('role="tablist" aria-label="Library sections"');
+    expect(html).toContain('id="library-tab-yoga" role="tab" aria-selected="true" aria-controls="library-panel-yoga" tabindex="0"');
+    expect(html).toContain('id="library-tab-drills" role="tab" aria-selected="false" aria-controls="library-panel-drills" tabindex="-1"');
+    expect(html).toContain('id="library-panel-yoga" role="tabpanel" aria-labelledby="library-tab-yoga"');
+    expect(html).toMatch(/id="library-panel-drills" role="tabpanel" aria-labelledby="library-tab-drills" hidden/);
+    expect(html).toContain('aria-label="Mountain status"');
+    expect(html).toContain('5 poses');
   });
 
   it('shows a pose with no status as unset, never as published', () => {
@@ -62,13 +97,13 @@ describe('yoga library section', () => {
   });
 
   it('renders the toolbar with posture counts and a no-status filter only when needed, and the load error', () => {
-    const html = renderToStaticMarkup(<YogaLibrarySection load={{ kind: 'ready', poses, version: '1.0.3' }} busy={null} error={null} onStatus={() => {}} />);
+    const html = renderToStaticMarkup(<YogaLibrarySection load={{ kind: 'ready', poses, version: '1.0.3' }} busy={null} message={null} onStatus={() => {}} />);
     expect(html).toContain('Search poses by name or id');
     expect(html).toContain('Kneeling (2)');
     expect(html).toContain('No status (1)');
-    const clean = renderToStaticMarkup(<YogaLibrarySection load={{ kind: 'ready', poses: poses.slice(0, 3), version: '1.0.3' }} busy={null} error={null} onStatus={() => {}} />);
+    const clean = renderToStaticMarkup(<YogaLibrarySection load={{ kind: 'ready', poses: poses.slice(0, 3), version: '1.0.3' }} busy={null} message={null} onStatus={() => {}} />);
     expect(clean).not.toContain('No status');
-    const failed = renderToStaticMarkup(<YogaLibrarySection load={{ kind: 'error', message: 'Missing or insufficient permissions.' }} busy={null} error={null} onStatus={() => {}} />);
+    const failed = renderToStaticMarkup(<YogaLibrarySection load={{ kind: 'error', message: 'Missing or insufficient permissions.' }} busy={null} message={null} onStatus={() => {}} />);
     expect(failed).toContain('Missing or insufficient permissions.');
   });
 

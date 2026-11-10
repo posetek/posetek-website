@@ -112,8 +112,8 @@ describe('yoga pose status-only write', () => {
     expect(harness.txUpdate).not.toHaveBeenCalled();
   });
 
-  it('writes nothing for an unchanged status', async () => {
-    await expect(updateYogaPoseStatus(loaded(), 'published')).resolves.toBe('1.0.4');
+  it('writes nothing for an unchanged status and returns the library version', async () => {
+    await expect(updateYogaPoseStatus(loaded(), 'published')).resolves.toBe('1.0.7');
     expect(harness.txUpdate).not.toHaveBeenCalled();
     expect(harness.txSet).not.toHaveBeenCalled();
   });

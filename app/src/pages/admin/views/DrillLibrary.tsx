@@ -21,6 +21,7 @@ import { loadDrillAuthoring } from "../lib/trainingAuthoring";
 import { filmingProgress, type DrillAuthoring } from "../lib/wholeBodyTraining";
 import { TrainingReviewerDesignation } from "./TrainingReadinessPanel";
 import YogaLibrarySection from "./YogaLibrarySection";
+import AdminTabs from "./AdminTabs";
 import { useYogaLibrary } from "../lib/useYogaLibrary";
 
 // A stable empty array: a fresh `[]` per render would make every memo below
@@ -33,7 +34,7 @@ type Load =
   | { kind: "error"; message: string };
 
 type Section = "drills" | "yoga";
-const SECTIONS: [Section, string][] = [["drills", "Drills"], ["yoga", "Yoga"]];
+const SECTIONS = [["drills", "Drills"], ["yoga", "Yoga"]] as const satisfies readonly (readonly [Section, string])[];
 
 export default function DrillLibrary({ preview = false }: { preview?: boolean }) {
   const [params, setParams] = useSearchParams();
@@ -112,14 +113,15 @@ export default function DrillLibrary({ preview = false }: { preview?: boolean })
         )}
       </section>
 
-      <div className="training-library-tabs" role="tablist" aria-label="Library sections">
-        {SECTIONS.map(([id, label]) => (
-          <button key={id} type="button" role="tab" aria-selected={section === id} onClick={() => chooseSection(id)}>{label}</button>
-        ))}
-      </div>
+      <AdminTabs className="training-library-tabs" label="Library sections" idPrefix="library"
+                 tabs={SECTIONS} active={section} onChange={chooseSection} />
+      {SECTIONS.filter(([id]) => id !== section).map(([id]) => (
+        <section key={id} id={`library-panel-${id}`} role="tabpanel" aria-labelledby={`library-tab-${id}`} hidden />
+      ))}
 
+      <section id={`library-panel-${section}`} role="tabpanel" aria-labelledby={`library-tab-${section}`}>
       {section === "yoga" ? (
-        <YogaLibrarySection load={yoga.load} busy={yoga.busy} error={yoga.error}
+        <YogaLibrarySection load={yoga.load} busy={yoga.busy} message={yoga.message}
                             onStatus={(pose, next) => void yoga.changeStatus(pose, next)} />
       ) : <>
       {unmigrated > 0 && (
@@ -215,6 +217,7 @@ export default function DrillLibrary({ preview = false }: { preview?: boolean })
       )}
       <TrainingReviewerDesignation />
       </>}
+      </section>
     </>
   );
 }

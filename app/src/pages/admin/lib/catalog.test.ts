@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  STALE_DRILL_MESSAGE, drillStatusEditable, keepEquipmentOrder, mediaPlaybackUrl, sameStamp, syncFrequency, updateDrill,
+  SAVED_REFRESH_FAILED_MESSAGE, STALE_DRILL_MESSAGE, commitThenRefresh, drillStatusEditable, keepEquipmentOrder, mediaPlaybackUrl, sameStamp, syncFrequency, updateDrill,
   updateDrillStatus, updateLoadedDrill, type DrillWrite,
 } from './catalog';
 import { baselineAfterOwnWrite, normalizeCatalogDrill } from '../../../lib/contracts/drillV2';
@@ -301,9 +301,35 @@ describe('drill status-only write', () => {
     await expect(updateDrillStatus(loaded({ status: undefined }), 'published')).resolves.toBe('1.0.9');
     expect(harness.txUpdate.mock.calls[0][1].status).toBe('published');
     harness.txUpdate.mockReset();
+    harness.txSet.mockReset();
     harness.stored = drillDoc();
-    await expect(updateDrillStatus(loaded(), 'published')).resolves.toBe('1.0.5');
+    // An unchanged status returns the catalog (meta) version, not the document's own stamp.
+    await expect(updateDrillStatus(loaded(), 'published')).resolves.toBe('1.0.8');
     expect(harness.txUpdate).not.toHaveBeenCalled();
+    expect(harness.txSet).not.toHaveBeenCalled();
+  });
+});
+
+describe('commit, then refresh', () => {
+  const committed = (version: string) => ({ status: 'archived', catalogVersion: version, updatedAt: 'old' });
+
+  it('returns the re-read document after a committed write', async () => {
+    const change = await commitThenRefresh(async () => '1.0.9', async () => ({ status: 'archived', catalogVersion: '1.0.9', updatedAt: 'new' }), committed);
+    expect(change).toEqual({ item: { status: 'archived', catalogVersion: '1.0.9', updatedAt: 'new' }, version: '1.0.9', refreshFailed: false });
+  });
+
+  it('reports a committed write as saved when only the re-read fails, with the committed values', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const change = await commitThenRefresh(async () => '1.0.9', async () => { throw new Error('offline'); }, committed);
+    expect(change).toEqual({ item: { status: 'archived', catalogVersion: '1.0.9', updatedAt: 'old' }, version: '1.0.9', refreshFailed: true });
+    expect(SAVED_REFRESH_FAILED_MESSAGE).toContain('Saved');
+    warn.mockRestore();
+  });
+
+  it('throws a failed write and never re-reads', async () => {
+    const refresh = vi.fn();
+    await expect(commitThenRefresh(async () => { throw new Error(STALE_DRILL_MESSAGE); }, refresh, committed)).rejects.toThrow(STALE_DRILL_MESSAGE);
+    expect(refresh).not.toHaveBeenCalled();
   });
 });
 
