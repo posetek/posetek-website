@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6af362397a8e341ea91b5788",
+  "deploymentId": "6af39c12b5d6443ec57767ec",
   "sourceCommit": null,
-  "url": "https://6af362397a8e341ea91b5788--posetek.netlify.app",
+  "url": "https://6af39c12b5d6443ec57767ec--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "2e687b2fc7962a426d9b49f11952dddc6d464442",
-    "size": 6392,
+    "sha": "67bf7e506341da73f98730327154503c0d691f00",
+    "size": 6671,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -471,6 +471,11 @@
       "size": 6496
     },
     {
+      "path": "/_astro/admin-directory-lightning.dnn9ozeq.js",
+      "sha": "3a20922c8b097c67ef6fc40fe6a183f28a5fbd8b",
+      "size": 15343
+    },
+    {
       "path": "/_astro/admin-directory-lightning.oc4ulwkh.js",
       "sha": "03f1c407171f2bcdb2389335705306d5ec471425",
       "size": 13388
@@ -891,6 +896,11 @@
       "size": 14794
     },
     {
+      "path": "/_astro/adminpage.stgccl3v.js",
+      "sha": "367cc32b39900b9fe2c691e1c613fbce7316daaf",
+      "size": 14711
+    },
+    {
       "path": "/_astro/adminpage.wgz5xgdl.js",
       "sha": "032b63274e26938935f67ea2cd00952c07443173",
       "size": 14051
@@ -944,6 +954,11 @@
       "path": "/_astro/adminrecentworkouts.mly2mli-.js",
       "sha": "fd4aec964aeff88f9d81eef4226d194f610a4cd9",
       "size": 1033
+    },
+    {
+      "path": "/_astro/adminrecentworkouts.nlv0jwer.js",
+      "sha": "7b9bf27c9d871123d74994bb92b08c6d5af6ec7f",
+      "size": 1167
     },
     {
       "path": "/_astro/adminrecentworkouts.zcyddybb.js",
@@ -1496,6 +1511,11 @@
       "size": 17617
     },
     {
+      "path": "/_astro/applicationroot.d5oa4sjl.js",
+      "sha": "6e75c023bec2d4d12fb57f8af112210a97f43229",
+      "size": 15835
+    },
+    {
       "path": "/_astro/applicationroot.d8vnghli.js",
       "sha": "faf1119f1f91323e53ac27041422c49ef35bb520",
       "size": 18124
@@ -1659,6 +1679,11 @@
       "path": "/_astro/athleteportalpage.btiezosc.js",
       "sha": "587a456befd447be2ff0d91a58968c61112ef492",
       "size": 344587
+    },
+    {
+      "path": "/_astro/athleteportalpage.bwnc-exh.js",
+      "sha": "7ddba7714732b8e11ee48fddd339a6fe9779fb81",
+      "size": 346796
     },
     {
       "path": "/_astro/athleteportalpage.bxqdetby.js",
@@ -2089,6 +2114,11 @@
       "path": "/_astro/coachdetail.b1jxajfm.js",
       "sha": "9ec75145d7c8ee2cd773d5df55ee519b14b77b1e",
       "size": 4726
+    },
+    {
+      "path": "/_astro/coachdetail.b2fhl-7h.js",
+      "sha": "16c0c2db088626f2bcf8ce21787f6a8862fef42f",
+      "size": 4735
     },
     {
       "path": "/_astro/coachdetail.b2psdlws.js",
@@ -3161,6 +3191,11 @@
       "size": 7313
     },
     {
+      "path": "/_astro/expanded.b1iekpkd.js",
+      "sha": "6b6acfa5bd3d1918ce4bdc626e2e4f7996400082",
+      "size": 7482
+    },
+    {
       "path": "/_astro/expanded.b6zmc-4t.js",
       "sha": "c58eee2260d4058b1df649d2ea5a17583d26c612",
       "size": 7313
@@ -3636,6 +3671,11 @@
       "size": 38623
     },
     {
+      "path": "/_astro/insights.b9zlf43j.js",
+      "sha": "f29ef7c3e8faaa1600b91cdcb3f901db52d0f364",
+      "size": 35309
+    },
+    {
       "path": "/_astro/insights.ba5ggcsk.js",
       "sha": "7e167c83c4d9a75aa65ec0b40e74b28726458e8f",
       "size": 35087
@@ -3844,6 +3884,11 @@
       "path": "/_astro/insightspage.cturj1oq.js",
       "sha": "3e37122c69afc6d776659af2c9e4f242cf800951",
       "size": 89114
+    },
+    {
+      "path": "/_astro/insightspage.cvxoabfz.js",
+      "sha": "1e6fbfa016cd486da84eed78179153bfdd4c9b44",
+      "size": 89117
     },
     {
       "path": "/_astro/insightspage.d2_bkfue.js",
@@ -4276,6 +4321,11 @@
       "size": 60082
     },
     {
+      "path": "/_astro/monitoraccounts.bdf1lj5s.js",
+      "sha": "881dcd65f1a043c36c82fdf8554a347da0589c9e",
+      "size": 132106
+    },
+    {
       "path": "/_astro/monitoraccounts.bfvvttfp.js",
       "sha": "9ba3c5bc9d789965e0e88f9999fced2f6aab85cc",
       "size": 12880
@@ -4374,6 +4424,11 @@
       "path": "/_astro/monitoraccounts.dagnyeka.css",
       "sha": "1b8f7c522826890ab82cd6052ae0d4b3ba4c05d9",
       "size": 41698
+    },
+    {
+      "path": "/_astro/monitoraccounts.dbbftix3.css",
+      "sha": "881d09d478ce83ddd3d5c60f59fdbb0e14e811e2",
+      "size": 50877
     },
     {
       "path": "/_astro/monitoraccounts.dhrcrcvn.js",
@@ -5326,6 +5381,11 @@
       "size": 38856
     },
     {
+      "path": "/_astro/playerdetail.ca0jf5j1.js",
+      "sha": "688fe8024ab6a0620424fdd020b0d3b6be694d0e",
+      "size": 37013
+    },
+    {
       "path": "/_astro/playerdetail.cayrsory.js",
       "sha": "ac513826b3ae4b59e97a8cc18d72ccdacaa7c961",
       "size": 36721
@@ -5609,6 +5669,11 @@
       "path": "/_astro/playerworkouthistory.b1jxtnjx.js",
       "sha": "eb8a149ca69b0d2e808ddad6ea4c382539b66f56",
       "size": 10142
+    },
+    {
+      "path": "/_astro/playerworkouthistory.bn71rrfk.js",
+      "sha": "e76d4e7a5b29cc567cf11524d685112eb687a719",
+      "size": 10132
     },
     {
       "path": "/_astro/playerworkouthistory.bu5mxzn6.js",
@@ -6641,6 +6706,11 @@
       "size": 10366
     },
     {
+      "path": "/_astro/supportpage.dzd2v4mj.js",
+      "sha": "ea77f9fee4a37f05b870845061b3ead6fd0fed47",
+      "size": 10814
+    },
+    {
       "path": "/_astro/supportpage.fsfsb7uq.js",
       "sha": "3fda715f2472e4b2843913f2cc3b2c8c95328058",
       "size": 10366
@@ -7386,6 +7456,11 @@
       "size": 3913
     },
     {
+      "path": "/_astro/workouthistory.dloj9yi7.js",
+      "sha": "570cafdff3394ef40a47627bb5ed98e182b51f92",
+      "size": 4303
+    },
+    {
       "path": "/_astro/workouthistory.dovbogrz.js",
       "sha": "bbad3528435ac18472f40de3e2296e5c2034b7f9",
       "size": 4312
@@ -7487,8 +7562,8 @@
     },
     {
       "path": "/application.html",
-      "sha": "2c06bce8478c1de085ebec67bfca8877bc47a1db",
-      "size": 16113
+      "sha": "78dd0434be7133010fe3b829ddb23aa5b4d6d4ca",
+      "size": 16112
     },
     {
       "path": "/assets/accesslinkcard-bwk4cx6k.css",
@@ -13491,23 +13566,43 @@
     },
     {
       "path": "/report/data/_2q6s9aocvyd4hnnogv_lo0_kbeu-zdd.bin",
-      "sha": "bb96518b833bfae5b13640c16de5b0da8458d994",
-      "size": 50138
+      "sha": "d284e3a71efcf707384f906c5890e8b3be631f88",
+      "size": 11051
     },
     {
       "path": "/report/data/-ghiqovc9rsyah7x39nk88stotxsdxnz.bin",
-      "sha": "c3a95712c726e924aece39a2882a50bc29bbaaaa",
-      "size": 58065
+      "sha": "5945bbf1041e709953a1e45e1457535b5c40597f",
+      "size": 11190
     },
     {
       "path": "/report/data/-iovreomykzpwrjfdeuky-v7hgxaoiqt.bin",
-      "sha": "0e974c95dcfb5d11f0a5addc15d533fe1a3880ff",
-      "size": 50206
+      "sha": "9076c0b1cd09f5fa0c046badea25df0fac1fc50b",
+      "size": 11051
     },
     {
       "path": "/report/data/5s_vf3lqujwbfuojgpetigfxopqlppz9.bin",
-      "sha": "a1b05402b87c5689a266d19b700f4a37e3c80838",
-      "size": 57489
+      "sha": "878f9c7dbb5145b77f31cb3548bf5fc38a21a9c5",
+      "size": 10588
+    },
+    {
+      "path": "/report/data/6tuknfh6w1bu2sjmzmp-exqvrio9mot6.bin",
+      "sha": "9ff08a091eb3a386d06d737bfada79ca053dd5f3",
+      "size": 11165
+    },
+    {
+      "path": "/report/data/7i0c8pzv1xctftch-_w7alv76u-jcqz7.bin",
+      "sha": "5c3032a95cf9a0214fc00b1962d0b8aa4897edf9",
+      "size": 10806
+    },
+    {
+      "path": "/report/data/8og0kevose5rk2hylo0na5v_jfxpbekg.bin",
+      "sha": "33a8b6d6cb19207e45396a95556ff6b5b1d10862",
+      "size": 11052
+    },
+    {
+      "path": "/report/data/8p2nyqigbggtos1yjcz-xvinrb3uz-o6.bin",
+      "sha": "8b91409ad8e937793d00bf0958fe5906127ec0d5",
+      "size": 11211
     },
     {
       "path": "/report/data/94youb1h8ydlbimkem6eecy7zyhx72b-.bin",
@@ -13516,148 +13611,193 @@
     },
     {
       "path": "/report/data/abnqk_j2uc8vikx-bh9vsyiluz5zskrf.bin",
-      "sha": "5d7d3ea58cd59517dbfd8d55cd44db7f2443f32b",
-      "size": 56648
+      "sha": "1ecf72f679b908657f6eb681d45ae65ca4dcc823",
+      "size": 10151
     },
     {
       "path": "/report/data/cdw35pqci0fwxmvy18scgua6spddxjx_.bin",
-      "sha": "fcf0a308bf8b087e5797ebaf824c4b56899ff278",
-      "size": 57927
+      "sha": "c004591e934c3f93732f704305f69dacfb8d791c",
+      "size": 10978
     },
     {
       "path": "/report/data/czmq5btlua0t-fykfacy5hxwdyorsdyo.bin",
-      "sha": "d96714a9b35e6514ce57ae6ade2b380542159984",
-      "size": 50444
+      "sha": "82dab32fd107410ef41836d74fe74fcdf194a5ba",
+      "size": 11409
     },
     {
       "path": "/report/data/d6r2xahikz2jv3fgloxazljvpouz28lj.bin",
-      "sha": "fa929a27b8e820897f8b26f9c0384c759f661d38",
-      "size": 56623
+      "sha": "c3b0e67340a5dc08ce384522c0e0152b6d07d669",
+      "size": 10101
+    },
+    {
+      "path": "/report/data/dcrq7bwj8ytbuy71ppvgjkp0smn_lhcj.bin",
+      "sha": "5d4712bd72149cc998ab88144caf8a191a184b48",
+      "size": 10651
+    },
+    {
+      "path": "/report/data/dtwuad8cre8_axij1ww7efjy3bznaxpk.bin",
+      "sha": "9db61a6b5fddbcc542dc867f95a3f825b01bde52",
+      "size": 10697
     },
     {
       "path": "/report/data/e6ornbjyxttoj-f31zopwve4-3y0mjqp.bin",
-      "sha": "f239d9ab33db6f9fe1ceda4bd0741beaf79b76d5",
-      "size": 50206
+      "sha": "ff95beb7950ac71b86e8790b4174591b4c434d04",
+      "size": 11159
     },
     {
       "path": "/report/data/eab9bos9iecmjyclqnkxe-jvivgxfk4v.bin",
-      "sha": "6102c699203a343b5f3df7671b1b9ce3489bc176",
-      "size": 58298
+      "sha": "2546d791feb75b4c3b86e8b91532bd21459b7b45",
+      "size": 11412
     },
     {
       "path": "/report/data/edzlyij0v7ocoxldiv95xkmjgd9xzpie.bin",
-      "sha": "fc37b0b70c30586b2d8a4977120768a30684ce7a",
-      "size": 48690
+      "sha": "2131bd02bff2a604ca863b38ded6f58fc583d3f7",
+      "size": 10015
     },
     {
       "path": "/report/data/eg9wb2dbvhrsluo3la53lqb5f3ipdgcs.bin",
-      "sha": "32ac9716000d1ebe88ab5a4a9b697881ef8b5a0b",
-      "size": 50143
+      "sha": "f1c2a80095a16671c70a5218063704102d1c790e",
+      "size": 11051
     },
     {
       "path": "/report/data/g9xzya_-oe3r82u5itm_fhceqhilyj1_.bin",
-      "sha": "0463775a67b2c2f6036f7fc0892fc2c7190e5a55",
-      "size": 57645
+      "sha": "f2ae366a3de4256c288fbd92c85290e4625fb827",
+      "size": 10791
     },
     {
       "path": "/report/data/gcrzxy1jsies9yvar-6ti0gwa9xtnlsq.bin",
-      "sha": "e2aafab79118169914fc769541bc263522a7abaf",
-      "size": 58176
+      "sha": "46acb85d978df5ebe4cf42102aacd9b54a2ebdc0",
+      "size": 11301
     },
     {
       "path": "/report/data/heb-exqx-w6pgvjo7ga5nowxmkaikbkk.bin",
-      "sha": "1af73de1a2b1cae302de9fec026a432dc92935d4",
-      "size": 50076
+      "sha": "a26419c7a7d82f94a04c7adc5cefa2a33328cae4",
+      "size": 10951
     },
     {
       "path": "/report/data/ivyypuxcq9a-ftvpzbymscwxt1u5l7tn.bin",
-      "sha": "bca9a50536cc63cf1976fe8739c41d8c5666e945",
-      "size": 58340
+      "sha": "15c9ba2901002d7c1708112431302a9d3810d2f1",
+      "size": 11450
     },
     {
       "path": "/report/data/j6jjmzi_tfdcncx_r0ene-vhdxfw2sry.bin",
-      "sha": "7189cf088094d667f98ad2d832d94e3648e12df6",
-      "size": 50058
+      "sha": "b723e38180663d2cf4a32674c2dc67c8177960ae",
+      "size": 11116
+    },
+    {
+      "path": "/report/data/k5wwipxbbffcvfh_ydragl2yvdirjhkc.bin",
+      "sha": "ab28d88502e3f4fe0ed4b831ad22357e0a08b68e",
+      "size": 11327
     },
     {
       "path": "/report/data/kj_a2nu0wieadie_1si-kgvoawrfjmqx.bin",
-      "sha": "49b4d4478127cb9edf8d9412889f0d142006833a",
-      "size": 58069
+      "sha": "82022798c76022c4d60af012851537441c335474",
+      "size": 11160
+    },
+    {
+      "path": "/report/data/ks0znohbix0zst1ki3tsqhb32kyvo0g_.bin",
+      "sha": "9d9d24779dd0431b34912353d941818e89df8136",
+      "size": 11048
     },
     {
       "path": "/report/data/ly0tes2angrjbidxdybdj24wltvmlz0x.bin",
-      "sha": "4ced5c02b8f84f1971acc7663919ba49b8230d7f",
-      "size": 58251
+      "sha": "2a79e8be03637d72d41f8795c78e421ea3e94cab",
+      "size": 11339
+    },
+    {
+      "path": "/report/data/mbdqzytr4byw_bpyals8e1ro_lfskytp.bin",
+      "sha": "1d631c63f876dfbef7f5ee8cda443cf77d61d1f3",
+      "size": 10794
     },
     {
       "path": "/report/data/mdr9_bd3xtbjczof0ccafdcxcgtqohmx.bin",
-      "sha": "cb189db0a40a8b1a0ba47b455842067ec4d41503",
-      "size": 58299
+      "sha": "da9d1cbaec543e55ebcf7ec4897311131b0188f5",
+      "size": 11456
+    },
+    {
+      "path": "/report/data/moqk5rel7u8h2esnvud22nu2trv_tldi.bin",
+      "sha": "e4a84db8007bd8e3f78364e96adcc8bbba580410",
+      "size": 10912
     },
     {
       "path": "/report/data/mpenocjvceqnolpvvhi8tx4t64qorp0-.bin",
-      "sha": "4880a516c4d30d6e192311a600e306149a1b818c",
-      "size": 58325
+      "sha": "e8a550e9f697be764a8cb5127659572b6907c37f",
+      "size": 11430
     },
     {
       "path": "/report/data/mxa2i5tkzwqikled8n1dq-tj3yyovyh1.bin",
-      "sha": "d064291bd48013aae4f76a1dd49daa3e4fce60f7",
-      "size": 50317
+      "sha": "317472c770a7c3e4d36a489fbd234aa437059899",
+      "size": 11414
     },
     {
       "path": "/report/data/omrp_cvatoptoh0zf7quqrkpfpzqrhek.bin",
-      "sha": "2d2248662f31270dd63c6eabd3ed3f9f903be1f5",
-      "size": 57972
+      "sha": "05710465a5ee0e399cae212afc9e5c7f276ed85b",
+      "size": 11158
     },
     {
       "path": "/report/data/pgdsbyltyp1h2n4cxfwe8awtsef3iz-k.bin",
-      "sha": "bd8a2210e4eda35693eed5758173ffe67e9ec979",
-      "size": 49894
+      "sha": "eadb763f93605a07076f34f3124b70e09a4ee823",
+      "size": 11108
     },
     {
       "path": "/report/data/qmzsl5ulw_nwpbocfn0x_nxvdy16_2qx.bin",
-      "sha": "7619d1d7a5926bcc41ff350ca2e42f324700f497",
-      "size": 58038
+      "sha": "5859058d9ca17c2cf6805c0a9f96b8425c8aef1f",
+      "size": 11159
     },
     {
       "path": "/report/data/setrocgdn3sgijajmtbb8vtj7lbuoeye.bin",
-      "sha": "a20f21daeafa897f1b2835267be1812735f4d57a",
-      "size": 49247
+      "sha": "276bcdfb65f83cb4209a989547641de5f0df1e7f",
+      "size": 10142
     },
     {
       "path": "/report/data/udl-0cjj-oszjxh5kft-f-g-jmcl6sqj.bin",
-      "sha": "2fe38a500cda519afe06cf9683f31a60b546a9a3",
-      "size": 56934
+      "sha": "b9e4a75939606fd5a1d234ebc445d5b72368d27c",
+      "size": 10446
+    },
+    {
+      "path": "/report/data/v9kpigl1bvg-owpajbhu2ox5b4dmbkfm.bin",
+      "sha": "2379a6b545827ef12ad14d7bd4aff506e1dc3427",
+      "size": 10657
     },
     {
       "path": "/report/data/vjzyt-oxglvfgttzv1oumxzsv-jf6al4.bin",
-      "sha": "8369b02f2e00bda5ebf4df97b9ff9bb0411b6eb8",
-      "size": 58010
+      "sha": "105d16de6d1bc9dac97e75f2174fb5b188b58e00",
+      "size": 11093
+    },
+    {
+      "path": "/report/data/vm3avzjbw-cpgryeef2y-rlc4yefc1gp.bin",
+      "sha": "89432344b31a874ad0a2829a73715513aebe661b",
+      "size": 11046
     },
     {
       "path": "/report/data/wuovoqf5qdwxccny8grf_hfhm2kuhsxm.bin",
-      "sha": "c68a68b11a3650a37b0dc106e59852e27319660d",
-      "size": 58273
+      "sha": "d9593e447f3fb4aa78451c9e47c92952a605e8fe",
+      "size": 11365
     },
     {
       "path": "/report/data/wwykmsaidmq-5vxb6hzapjlusvt4tmek.bin",
-      "sha": "1d84b52afe7ecb2e7c192c335597a655170a7434",
-      "size": 57736
+      "sha": "b9b4a5b93670b51bb2fb8606543267e210d88564",
+      "size": 10803
     },
     {
       "path": "/report/data/wxxs8rnuiu0ccbqdsogofqlpuuqmnlqd.bin",
-      "sha": "c41bbfe7ed52fde59911e8b8d0ccbead6beef17a",
-      "size": 58246
+      "sha": "c72f81fb5d45550ccd7eb746cc50b304949207c7",
+      "size": 11179
     },
     {
       "path": "/report/data/x3vhmcsc-c5vx1rxjbfnxfrpzlfmgyje.bin",
-      "sha": "c84a79ac9651f9ee24ca8787158bc151a64ac8e9",
-      "size": 57951
+      "sha": "0c64054f7a647da4c87f01129d265792ef5fb3d7",
+      "size": 11020
+    },
+    {
+      "path": "/report/data/ys_oawdi-nmgh5im9a-k1o6n0dl0ol8q.bin",
+      "sha": "a8d9608a0751f7e057a874724563175d10e23cd1",
+      "size": 10978
     },
     {
       "path": "/report/data/zawclrex83zmfxt-bgnrr11q9e6n82nr.bin",
-      "sha": "0d71298e69fa0423572315dcd7758c4454fe205d",
-      "size": 58585
+      "sha": "01309e953c1a38d581692e7ead62c41d744f0702",
+      "size": 11498
     },
     {
       "path": "/report/index.html",
@@ -13666,18 +13806,18 @@
     },
     {
       "path": "/report/loader.mjs",
-      "sha": "3019851c94999f3dde399969a0633b820a84bc13",
-      "size": 2994
+      "sha": "64132c464822546f421958d059c1822e31be463b",
+      "size": 5277
     },
     {
       "path": "/report/render.mjs",
-      "sha": "59bbdb9b94a7442a19667a4bbca327bad64412cd",
-      "size": 32271
+      "sha": "266157deccf4e0117a79f088057b5fb85a8a4b0f",
+      "size": 34640
     },
     {
       "path": "/report/report.css",
-      "sha": "29f9ee6150276a7eab81c0cc01dcea0e0f344acd",
-      "size": 11054
+      "sha": "6e4fd86ba9fbc16fb7d8b0458837594521d296f3",
+      "size": 11905
     },
     {
       "path": "/sessions 2.html",

@@ -1,5 +1,11 @@
 # PoseTek website project context
 
+## Admin reporting fixes and one-pager time on page — November 10, 2026
+
+Deployment `6af39c12b5d6443ec57767ec` makes "Last week" on the admin cards the whole previous week, counts sessions recorded on the phone as workouts (with a by-type chart and per-player lists), and adds reports sent, time on page, accounts created through the Workouts button and a trend chart to one-pager tracking. Web personal workouts can save a skip and finish.
+
+The exact production artifact preserves 2,758 prior files, including the report project's current encrypted reports. Three files changed: the application document, the reader's `loader.mjs`, and its `render.mjs`, which is the live file with one notice sentence changed. 15 hashed assets were added. The tracking Functions are at version 3 and `getClubInsightsV2` at version 14. The live reader is newer than this repository's copy, and the report project's next deploy overwrites the two reader files unless its source merges main first. Keep `[skip netlify]` on source and receipt merges. [Release handoff](docs/releases/ADMIN_REPORTING_FIXES.md) · [Production receipt](docs/releases/receipts/ADMIN_REPORTING_FIXES_PRODUCTION.json)
+
 ## One-pager cohort tracking release — November 10, 2026
 
 Deployment `6af362397a8e341ea91b5788` adds a Cohort selector after Usage in each organization's All teams player view. The original 33 Vacaville reports retain their recorded activity and expiry. The verified-send closeout enrolls later reports as approved messages are recorded. The 13 November 9 drafts remain held.
