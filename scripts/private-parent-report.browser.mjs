@@ -110,13 +110,32 @@ try {
    const [signup]=await Promise.all([trackingPage.waitForEvent('popup'),trackingPage.getByRole('link',{name:'Open Sample’s workouts'}).click()]);
    await signup.getByRole('heading',{name:'Synthetic signup destination'}).waitFor();
    assert.match(signup.url(),/\/signin\?reportPlayer=syntheticPlayer123#playerCode=FIXTURE-CODE$/);
-   for(let attempt=0;events.length<baseline+3&&attempt<40;attempt++) await delay(50);
+   // Time on page arrives as separate "viewing" beats; first-event assertions ignore them.
+   const firsts=()=>events.slice(baseline).filter(event=>event.body.action!=='viewing');
+   const views=()=>events.slice(baseline).filter(event=>event.body.action==='viewing');
+   for(let attempt=0;firsts().length<3&&attempt<40;attempt++) await delay(50);
    const [id,key]=tracked.fragment.split('.');
    const token=createHmac('sha256',Buffer.from(key,'base64url')).update('posetek-one-pager-tracking:v1:'+id).digest('base64url');
-   assert.deepEqual(events.slice(baseline),['opened','testflight','workouts'].map(action=>({method:'POST',origin,referrer:undefined,cookie:undefined,body:{token,action}})));
+   assert.deepEqual(firsts(),['opened','testflight','workouts'].map(action=>({method:'POST',origin,referrer:undefined,cookie:undefined,body:{token,action}})));
    trackingUnavailable=false;
-   assert.equal(baseline,name==='chromium'?0:3,'Untracked and invalid reports do not emit engagement');
-   results.at(-1).tracking='visible opens, private payload and both navigation paths under outage';
+   // Hiding the report sends the visible seconds so far, with the same private payload shape.
+   await delay(1200);
+   const beat=nextEvent();
+   await trackingPage.evaluate(()=>{window.syntheticVisibility='hidden';document.dispatchEvent(new Event('visibilitychange'));});
+   assert.equal((await beat).status(),204);
+   for(let attempt=0;!views().length&&attempt<40;attempt++) await delay(50);
+   const view=views().at(-1), seconds=view.body.seconds;
+   assert(Number.isInteger(seconds)&&seconds>=1&&seconds<=60,'Viewing beats carry whole, bounded seconds');
+   assert.deepEqual(view,{method:'POST',origin,referrer:undefined,cookie:undefined,body:{token,action:'viewing',seconds}});
+   // Time while hidden is never counted: returning and leaving at once sends nothing.
+   const counted=views().length;
+   await delay(1500);
+   await trackingPage.evaluate(()=>{for(const state of ['visible','hidden']){window.syntheticVisibility=state;document.dispatchEvent(new Event('visibilitychange'));}});
+   await delay(300);
+   assert.equal(views().length,counted,'Hidden time is not counted');
+   assert.equal(events.slice(0,baseline).filter(event=>event.body.action!=='viewing').length,name==='chromium'?0:3,'Untracked and invalid reports do not emit engagement');
+   assert(events.every(event=>event.body.token===token),'Only the tracked report sends events');
+   results.at(-1).tracking='visible opens, visible-only time on page, private payload and both navigation paths under outage';
    await context.close();
   }finally{await browser.close();}
  }
