@@ -4,11 +4,15 @@
 // search bar so you can search for drills by name and you should be able to
 // sort by 'domain'."
 //
-// One `drillCatalog` read, filtered client-side: the catalog is ~120 documents,
-// so a query per keystroke would cost more than it saves.
+// One `drillCatalog` read, filtered client-side: the catalog is a few hundred
+// documents, so a query per keystroke would cost more than it saves.
+//
+// Two sections, Drills and Yoga (`?section=yoga`). Yoga poses live in their own
+// collection, `yogaLibrary`, and never in `drillCatalog`; each section reads its
+// collection the first time it opens.
 
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { DOMAINS, domainLabel, domainSortIndex } from "../../../lib/contracts/types";
 import { formatDoseText } from "../../../lib/contracts/drillV2";
 import type { CatalogDrill } from "../../../lib/contracts/drillV2";
@@ -16,18 +20,26 @@ import { loadCatalog, loadCatalogVersion, presentSlots } from "../lib/catalog";
 import { loadDrillAuthoring } from "../lib/trainingAuthoring";
 import { filmingProgress, type DrillAuthoring } from "../lib/wholeBodyTraining";
 import { TrainingReviewerDesignation } from "./TrainingReadinessPanel";
+import YogaLibrarySection from "./YogaLibrarySection";
+import { useYogaLibrary } from "../lib/useYogaLibrary";
 
 // A stable empty array: a fresh `[]` per render would make every memo below
 // recompute on every keystroke.
 const NO_DRILLS: CatalogDrill[] = [];
 
 type Load =
-  | { kind: "loading" }
+  | { kind: "idle" }
   | { kind: "ready"; drills: CatalogDrill[]; version: string }
   | { kind: "error"; message: string };
 
-export default function DrillLibrary() {
-  const [load, setLoad] = useState<Load>({ kind: "loading" });
+type Section = "drills" | "yoga";
+const SECTIONS: [Section, string][] = [["drills", "Drills"], ["yoga", "Yoga"]];
+
+export default function DrillLibrary({ preview = false }: { preview?: boolean }) {
+  const [params, setParams] = useSearchParams();
+  const section: Section = params.get("section") === "yoga" ? "yoga" : "drills";
+  const yoga = useYogaLibrary(section === "yoga", preview);
+  const [load, setLoad] = useState<Load>({ kind: "idle" });
   const [search, setSearch] = useState("");
   const [domain, setDomain] = useState("all");
   const [status, setStatus] = useState("all");
@@ -35,13 +47,24 @@ export default function DrillLibrary() {
   const [authoring, setAuthoring] = useState<Record<string, DrillAuthoring>>({});
   const [authoringError, setAuthoringError] = useState("");
 
+  useEffect(() => { document.title = "Drill library | PoseTek admin"; }, []);
+
+  const drillsRequested = useRef(false);
   useEffect(() => {
-    document.title = "Drill library | PoseTek admin";
+    if (section !== "drills" || drillsRequested.current) return;
+    drillsRequested.current = true;
     Promise.all([loadCatalog(), loadCatalogVersion()])
       .then(([drills, version]) => setLoad({ kind: "ready", drills, version }))
       .catch(error => setLoad({ kind: "error", message: error?.message || "The drill catalog could not be loaded." }));
     void loadDrillAuthoring().then(result => setAuthoring(result.records)).catch(error => setAuthoringError(error?.message || "The filming queue could not be loaded."));
-  }, []);
+  }, [section]);
+
+  function chooseSection(next: Section) {
+    const updated = new URLSearchParams(params);
+    if (next === "yoga") updated.set("section", "yoga");
+    else updated.delete("section");
+    setParams(updated, { replace: true });
+  }
 
   const drills = load.kind === "ready" ? load.drills : NO_DRILLS;
 
@@ -67,21 +90,38 @@ export default function DrillLibrary() {
 
   const unmigrated = drills.filter(drill => drill.needsMigration).length;
 
+  const poseCount = yoga.load.kind === "ready" ? yoga.load.poses.length : 0;
+  const heading = section === "yoga"
+    ? { title: poseCount ? `${poseCount} poses` : "Yoga", version: yoga.load.kind === "ready" ? yoga.load.version : null }
+    : { title: drills.length ? `${drills.length} drills` : "Drill library", version: load.kind === "ready" ? load.version : null };
+
   return (
     <>
       <section className="admin-heading">
         <div>
           <p className="eyebrow">Drill library</p>
-          <h1>{drills.length ? `${drills.length} drills` : "Drill library"}</h1>
-          <p>{load.kind === "ready" ? `Catalog version ${load.version}` : "Loading the catalog…"}</p>
+          <h1>{heading.title}</h1>
+          <p>{heading.version ? `Catalog version ${heading.version}` : "Loading the catalog…"}</p>
         </div>
-        <div className="admin-heading-actions">
-          <Link className="primary-cta" to="/admin/drills/new">
-            <span className="material-symbols-outlined">add</span>Create new drill
-          </Link>
-        </div>
+        {section === "drills" && (
+          <div className="admin-heading-actions">
+            <Link className="primary-cta" to="/admin/drills/new">
+              <span className="material-symbols-outlined">add</span>Create new drill
+            </Link>
+          </div>
+        )}
       </section>
 
+      <div className="training-library-tabs" role="tablist" aria-label="Library sections">
+        {SECTIONS.map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={section === id} onClick={() => chooseSection(id)}>{label}</button>
+        ))}
+      </div>
+
+      {section === "yoga" ? (
+        <YogaLibrarySection load={yoga.load} busy={yoga.busy} error={yoga.error}
+                            onStatus={(pose, next) => void yoga.changeStatus(pose, next)} />
+      ) : <>
       {unmigrated > 0 && (
         <div className="admin-banner warn">
           <span className="material-symbols-outlined">sync_problem</span>
@@ -133,7 +173,7 @@ export default function DrillLibrary() {
       {authoringError && <p className="form-message" role="status">Filming queue unavailable: {authoringError}</p>}
       {Object.keys(authoring).length > 0 && <p className="admin-note">Four-week filming queue · 20 drills and 60 clips per week. Drafts stay unpublished until reviewed content and all three clips are approved.</p>}
 
-      {load.kind === "loading" && (
+      {load.kind === "idle" && (
         <div className="portal-loading"><span className="spinner" /><p>Loading the catalog…</p></div>
       )}
       {load.kind === "error" && <p className="form-message" role="alert">{load.message}</p>}
@@ -174,6 +214,7 @@ export default function DrillLibrary() {
         </div>
       )}
       <TrainingReviewerDesignation />
+      </>}
     </>
   );
 }
