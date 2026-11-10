@@ -229,11 +229,11 @@ function makeCorrectedResults(report) {
 
 
 /** Saved-plan references are descriptive only, never authorization or mutable URLs. */
-export function validateDevelopment(development, exercises) {
+export function validateDevelopment(development, exercises, focused = false) {
   if (development === undefined) return false;
   const d = development;
   if (!d || d.version !== 1) throw new Error('Invalid development extension');
-  validatePathwayCharts(d.charts, 1);
+  if (!focused || d.charts !== undefined) validatePathwayCharts(d.charts, 1);
   if (!['verified', 'general', 'conflict'].includes(d.positionStatus)) throw new Error('Invalid position status');
   string(d.positionLabel, 'position label', 160);
   string(d.positionNote, 'position note');
@@ -246,7 +246,7 @@ export function validateDevelopment(development, exercises) {
     }
   }
   if (!d.plan) throw new Error('Missing saved plan');
-  for (const key of ['id', 'summary', 'schedule', 'progression', 'assumptions']) string(d.plan[key], 'plan ' + key);
+  for (const key of focused ? ['id'] : ['id', 'summary', 'schedule', 'progression', 'assumptions']) string(d.plan[key], 'plan ' + key);
   if (!Array.isArray(exercises) || exercises.length !== 2) throw new Error('Two saved-plan drills required');
   for (const exercise of exercises) {
     for (const key of ['drillId', 'workoutId', 'equipment', 'why']) string(exercise[key], 'exercise ' + key);
@@ -258,10 +258,12 @@ export function validateDevelopment(development, exercises) {
 function makeDevelopment(report) {
   const d = report.development;
   const section = element('section', 'pt-development');
+  if (report.layout !== 'focused-v1') {
   const pathways = makePathways({...report, pathwayCharts: d.charts});
   pathways.classList.add('pt-pathways-compact');
   pathways.querySelector('h2').textContent = 'Developmental pathway';
   section.append(pathways);
+  }
   for (const [key, title] of [['strengths', 'What you’re doing well'], ['priorities', 'What we’ll build next']]) {
     const part = element('section', 'pt-development-part');
     part.append(element('h2', 'pt-practice-title', title));
@@ -272,6 +274,7 @@ function makeDevelopment(report) {
     }
     section.append(part);
   }
+  if (report.layout === 'focused-v1') return section;
   const plan = element('section', 'pt-development-part pt-plan');
   plan.append(element('h2', 'pt-practice-title', 'Your training plan'));
   plan.append(element('p', 'pt-position', d.positionLabel + ' · ' + d.positionNote));
@@ -308,7 +311,10 @@ function validate(report) {
   }
   for (const note of array(report.methodNotes, 'method notes', 16)) string(note, 'method note', 1800);
   validatePathwayCharts(report.pathwayCharts, report.pathwayVersion);
-  validateDevelopment(report.development, report.exercises);
+  if (report.layout !== undefined && report.layout !== 'focused-v1') throw new Error('Invalid report layout');
+  const focused = report.layout === 'focused-v1';
+  if (focused && (!report.development || report.resultsFirst !== true)) throw new Error('Focused report requires saved-plan findings');
+  validateDevelopment(report.development, report.exercises, focused);
   if (report.development && (report.pathwayCharts || report.resultsFirst !== true)) throw new Error('Development requires results-first classic layout');
   if (report.pathwayCoverage !== undefined) {
     if (!report.pathwayCharts || !report.pathwayCoverage || typeof report.pathwayCoverage.broaderComparisonsPending !== 'boolean') throw new Error('Invalid pathway coverage');
@@ -335,13 +341,22 @@ export function clearReport() {
   pdfUrl = undefined;
 }
 
-function makeMetric(metric) {
+export function teamAverageText(metric) {
+  const n = metric.count ?? 0;
+  if (n < 5) return `Team average unavailable · ${n} usable results (5 needed)`;
+  return metric.average ? `Team average: ${metric.average} · ${n} results` : `Team average unavailable · ${n} results`;
+}
+
+function makeMetric(metric, focused = false) {
   if (metric.percentile === null) {
     const row = element('div', 'pt-retest');
     const label = element('div', '', metric.label);
     if (metric.note) label.append(element('small', '', metric.note));
     row.append(label, element('strong', '', metric.result || 'Retest'));
-    return row;
+    if (!focused) return row;
+    const group = element('div', 'pt-missing-result');
+    group.append(row, element('p', 'pt-team-average', teamAverageText(metric)));
+    return group;
   }
   const row = element('div', 'pt-metric');
   const head = element('div', 'pt-metric-head');
@@ -356,6 +371,7 @@ function makeMetric(metric) {
   marker.style.left = `${metric.percentile}%`;
   track.append(marker);
   row.append(head, track);
+  if (focused) row.append(element('p', 'pt-team-average', teamAverageText(metric)));
   return row;
 }
 
@@ -429,6 +445,15 @@ function makeWorkoutEntry(report, record) {
     entry.append(workout, guidance);
     const signIn = `/signin?reportPlayer=${encodeURIComponent(report.playerId)}`;
     entry.append(workoutAnchor('Already have the player login? Sign in', signIn));
+    if (report.layout === 'focused-v1') {
+      const install = element('section', 'pt-install-visible');
+      install.append(element('p', 'pt-cta-note', 'New here? Create your player login with Open workouts. Then use the button below to install TestFlight and PoseTek. Sign in to PoseTek with the same email and password, then open Workouts.'));
+      install.append(workoutAnchor('Get PoseTek on TestFlight', links.install, 'pt-install-button', record && (() => record('testflight'))));
+      install.append(element('p', 'pt-platform-label', 'iPhone and iPad'));
+      if (platform !== 'android') install.append(workoutAnchor('Already installed? Open PoseTek', links.native));
+      entry.append(install);
+      return entry;
+    }
     if (platform !== 'android') {
       const recovery = element('details', 'pt-app-options');
       recovery.append(element('summary', '', 'Already set up? Open the iPhone or iPad app'));
@@ -482,7 +507,8 @@ export function renderReport(report, record) {
   const pdf = validate(report);
   const mount = document.getElementById('report-root');
   if (!mount) throw new Error('Missing report mount');
-  const phone = element('article', 'pt-phone');
+  const focused = report.layout === 'focused-v1';
+  const phone = element('article', focused ? 'pt-phone pt-focused' : 'pt-phone');
   const header = element('header', 'pt-top');
   header.append(element('div', 'pt-brand', 'POSETEK'));
   header.append(element('h1', '', `${report.firstName}’s ${report.pathwayCharts ? 'testing' : 'team'} snapshot`));
@@ -522,12 +548,12 @@ export function renderReport(report, record) {
   const personal = element('span', 'pt-you');
   personal.append(element('span', 'pt-dot'), element('span', '', report.firstName));
   sectionTitle.append(element('h2', '', `Where ${report.firstName} stands`), personal);
-  main.append(sectionTitle, element('p', 'pt-provisional', 'Approximate team percentiles · this testing session'));
+  main.append(sectionTitle, element('p', 'pt-provisional', focused ? 'Compared with this team’s testing session. Further right means a stronger result. Percentiles are approximate.' : 'Approximate team percentiles · this testing session'));
   const zones = element('div', 'pt-zones');
   zones.setAttribute('aria-label', 'Team percentile bands');
   for (const zone of ['Practice', 'Team middle', 'Strong']) zones.append(element('span', '', zone));
-  main.append(zones);
-  for (const metric of report.metrics) main.append(makeMetric(metric));
+  if (!focused) main.append(zones);
+  for (const metric of report.metrics) main.append(makeMetric(metric, focused));
   }
   const meaning = element('section', 'pt-meaning');
   meaning.setAttribute('aria-label', 'What to work on next');
@@ -536,9 +562,9 @@ export function renderReport(report, record) {
     row.append(element('strong', '', summary.label), element('span', '', summary.text));
     meaning.append(row);
   }
-  if (report.summary.length) main.append(meaning);
+  if (!focused && report.summary.length) main.append(meaning);
   if (report.development) main.append(makeDevelopment(report));
-  if (!report.pathwayCharts) main.append(makeDetails(report));
+  if (!focused && !report.pathwayCharts) main.append(makeDetails(report));
   if (report.exercises.length) {
     const practice = element('section');
     practice.append(element('h2', 'pt-practice-title', report.development ? 'Two drills from your plan' : 'A little practice to get started'));
