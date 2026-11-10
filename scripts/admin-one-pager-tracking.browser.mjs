@@ -45,7 +45,7 @@ try {
       const cardValues = async () => Object.fromEntries(await cards.evaluateAll(nodes => nodes.map(node => [node.querySelector('span').textContent, node.querySelector('strong').textContent])));
       assert.deepEqual(await cardValues(), { 'Reports sent': '33', 'Reports opened': '3 of 33', 'Workout button clicks': '1 of 33',
         'TestFlight clicks': '1 of 33', 'Average time on page': '2 min 30 sec' });
-      await cards.last().getByText('2 reports with recorded time · 5 min in total', { exact: true }).waitFor();
+      await cards.last().getByText('Per report, all visits combined · 2 reports with recorded time · 5 min in total', { exact: true }).waitFor();
       const players = panel.getByRole('table', { name: 'First recorded activity per player report' }).locator('tbody tr');
       assert.equal(await players.count(), 33);
       assert.equal(await players.nth(0).locator('td').last().textContent(), '4 min 10 sec');
@@ -72,6 +72,19 @@ try {
       assert.equal(await page.getByRole('button', { name: 'Filters & period' }).count(), 0);
       await page.setViewportSize({ width: 390, height: 844 });
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+      // Stacked rows use the full width: the desktop first-column width must not survive on a phone.
+      for (const table of [players, changes]) {
+        const widths = await table.first().evaluate(row => [row.querySelector('td').getBoundingClientRect().width, row.getBoundingClientRect().width]);
+        assert(widths[0] > widths[1] * 0.9, 'The first cell of a stacked row spans the row');
+      }
+      await page.setViewportSize({ width: 1440, height: 900 });
+      // Tracking that has started with nothing recorded yet shows real zeros and no empty chart.
+      await choose('quiet');
+      await panel.getByText('No opens or clicks recorded yet. A chart of activity over time appears after the first one.', { exact: true }).waitFor();
+      assert.deepEqual(await cardValues(), { 'Reports sent': '33', 'Reports opened': '0 of 33', 'Workout button clicks': '0 of 33',
+        'TestFlight clicks': '0 of 33', 'Average time on page': 'None recorded' });
+      assert.equal(await trend.count(), 0);
+      await page.setViewportSize({ width: 390, height: 844 });
       // A tracking service published before time on page reports it as unavailable, never as zero.
       await choose('legacy');
       await cards.last().getByText('Time on page is not being collected yet.', { exact: true }).waitFor();

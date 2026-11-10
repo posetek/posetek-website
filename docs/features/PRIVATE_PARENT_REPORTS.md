@@ -39,12 +39,16 @@ A forwarded link still counts for the original report. Records expire after 90 d
 
 The tab also shows **Reports sent**, an estimated **time on page** per report and a
 chart of cumulative opens, workout clicks and TestFlight clicks against the number
-sent. Time on page counts only while the report is the visible tab and someone has
-touched, scrolled or typed in the last two minutes. The reader sends whole seconds
-every 15 seconds and when the page is hidden or closed, and stores nothing in the
-browser. The server keeps one running total per report and never credits more than
-the clock time since the previous update, so two people reading one link at the same
-moment count once. Time before this version was published is not recovered, and the
+sent. Time on page is the total across all visits to one report. It counts only
+while the report is the visible tab, for up to two minutes after it is opened or
+returned to and after each touch, scroll or key; opening the report counts as
+activity because a short read often has no scroll. After the device sleeps, counting
+waits for the next touch. The reader sends whole seconds every 15 seconds and when
+the page is hidden or closed, and stores nothing in the browser. The server keeps
+one running total per report, credits a first update as sent (up to 60 seconds) and
+after that never more than the clock time since the previous update, so two people
+reading one link at the same moment count once. It writes at most once a second per
+report. Time before this version was published is not recovered, and the
 last few seconds of a visit can be lost if the browser closes abruptly. The chart is
 drawn from each report's first-event times; the sent line is level because the
 November 4–5 send times are not part of the tracking record. The reader's on-page

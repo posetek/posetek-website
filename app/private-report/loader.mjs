@@ -8,7 +8,7 @@ function message(text) {
   status.hidden = false;
 }
 // Time on page is sent as small heartbeats of visible, in-use reading time.
-const BEAT_MS = 15000, MAX_BEAT_SECONDS = 60, IDLE_MS = 120000, TICK_MS = 1000;
+const BEAT_MS = 15000, MAX_BEAT_SECONDS = 60, IDLE_MS = 120000, TICK_MS = 1000, SUSPEND_MS = 5000;
 function recordEvent(token, action, seconds) {
   const body = JSON.stringify(seconds ? {token, action, seconds} : {token, action});
   void fetch('/api/one-pager-event', {
@@ -26,18 +26,21 @@ function recordVisibleOpen(record, signal) {
   visible();
 }
 /**
- * Counts time only while the report is the visible tab and someone has touched,
- * scrolled or typed within the last two minutes. Nothing is stored in the browser;
- * whole seconds are sent every 15 seconds and when the page is hidden or closed.
+ * Counts time only while the report is the visible tab and in use: for two minutes
+ * after it is opened or returned to, and for two minutes after each touch, scroll
+ * or key. Nothing is stored in the browser; whole seconds are sent every 15 seconds
+ * and when the page is hidden or closed.
  */
 function recordViewTime(record, signal) {
   const shown = () => document.visibilityState === 'visible';
   let unsent = 0, last = performance.now(), lastInput = last, wasShown = shown();
   // Adds the time since the previous call when the report was shown throughout it.
   const advance = () => {
-    const now = performance.now();
-    // A suspended tab can resume with a large gap. Count two ticks at most.
-    if (wasShown && last - lastInput < IDLE_MS) unsent += Math.min(now - last, 2 * TICK_MS);
+    const now = performance.now(), gap = now - last;
+    // A long gap means the device slept or the tab was suspended. Count two ticks
+    // of it at most, then wait until the reader touches or returns to the page.
+    if (wasShown && last - lastInput < IDLE_MS) unsent += Math.min(gap, 2 * TICK_MS);
+    if (gap > SUSPEND_MS) lastInput = -Infinity;
     last = now; wasShown = shown();
   };
   const send = () => {
@@ -47,11 +50,13 @@ function recordViewTime(record, signal) {
     record('viewing', seconds);
   };
   const timer = setInterval(() => { advance(); if (unsent >= BEAT_MS) send(); }, TICK_MS);
-  const input = () => { advance(); lastInput = performance.now(); };
+  // Browsers without listener signals keep these handlers after a report is closed.
+  const input = () => { if (signal.aborted) return; advance(); lastInput = performance.now(); };
   for (const name of ['scroll', 'pointerdown', 'pointermove', 'touchstart', 'keydown', 'wheel']) {
     addEventListener(name, input, {signal, passive:true, capture:true});
   }
   document.addEventListener('visibilitychange', () => {
+    if (signal.aborted) return;
     advance();
     if (shown()) lastInput = last; else send();
   }, {signal});

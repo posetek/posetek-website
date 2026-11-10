@@ -48,7 +48,7 @@ export default function OnePagerTracking() {
         </div>)}
         <div className="workspace-summary-card"><span>Average time on page</span>
           {viewTime === null ? <><strong>Not available</strong><p>Time on page is not being collected yet.</p></>
-            : viewTime.reports ? <><strong>{formatViewTime(viewTime.averageSeconds)}</strong><p>{viewTime.reports} {viewTime.reports === 1 ? "report" : "reports"} with recorded time · {formatViewTime(viewTime.totalSeconds)} in total</p></>
+            : viewTime.reports ? <><strong>{formatViewTime(viewTime.averageSeconds)}</strong><p>Per report, all visits combined · {viewTime.reports} {viewTime.reports === 1 ? "report" : "reports"} with recorded time · {formatViewTime(viewTime.totalSeconds)} in total</p></>
               : <><strong>None recorded</strong><p>Counts from when time tracking was published.</p></>}
         </div>
       </section>
@@ -62,7 +62,7 @@ export default function OnePagerTracking() {
           <td data-label="Time on page">{typeof row.viewSeconds !== "number" ? "Not available" : row.viewSeconds > 0 ? formatViewTime(row.viewSeconds) : "None recorded"}</td>
         </tr>)}</tbody>
       </table>
-      <p className="admin-note">Time on page is an estimate: it counts while the report is the visible tab and in use, and two people reading the same link at once count once.</p>
+      <p className="admin-note">Time on page is an estimate. It counts while the report is the visible tab, for up to two minutes after it is opened or last touched, and two people reading the same link at once count once.</p>
     </>}
   </section>;
 }
