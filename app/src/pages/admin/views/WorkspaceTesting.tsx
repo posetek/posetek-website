@@ -50,6 +50,8 @@ export default function WorkspaceTesting({ data, request, onChange, hideSummary 
   const [drill, setDrill] = useState("shooting");
   const { testing } = data;
   const weekly = analytics?.weekly;
+  // A reporting service published before November 10 compares matching weekdays.
+  const wholePreviousWeek = Boolean(weekly) && Date.parse(`${weekly!.previousWeekEnd}T12:00:00Z`) - Date.parse(`${weekly!.previousWeekStart}T12:00:00Z`) === 6 * 86_400_000;
   const today = dateInZone(new Date(data.generatedAtMillis), data.period.timeZone);
   const currentWeek = data.period.endDate === today;
   const series = analytics?.performance.find(row => row.drill === drill);
@@ -72,6 +74,6 @@ export default function WorkspaceTesting({ data, request, onChange, hideSummary 
     </section>
     <TestingStationAnalytics stations={analytics?.stations} pending={detailsPending} />
     <ActivityChart title="Testing activity by week" labels={weeks.labels} series={[{ label: "Distinct recorded attempts", values: weeks.values[0] }, { label: "Qualifying results", values: weeks.values[1] }]} unit="results" note="Recorded activity in the selected period, including partial boundary weeks." />
-    <AboutNumbers><p>Dates use {data.period.timeZone}; weeks begin Monday. Weekly cards cover Monday through the selected end date; the comparison covers the same weekdays one week earlier. Complete rotations run from first capture at the first station to final result at the last station and include time between stations. Historical records follow current organization and team ownership. All totals cover the full filtered roster.</p></AboutNumbers>
+    <AboutNumbers><p>Dates use {data.period.timeZone}; weeks begin Monday. Weekly cards cover Monday through the selected end date; {wholePreviousWeek ? "the comparison covers the whole previous Monday–Sunday week" : "the comparison covers the same weekdays one week earlier"}. Complete rotations run from first capture at the first station to final result at the last station and include time between stations. Historical records follow current organization and team ownership. All totals cover the full filtered roster.</p></AboutNumbers>
   </div>;
 }

@@ -34,7 +34,7 @@ describe('participation and usage cards', () => {
     expect(html).toContain('same weekdays last week');
     expect(html).toContain('not an App Store installation count');
   });
-  it('shows the whole previous week and no change arrow while the current week is in progress', () => {
+  it('shows the whole previous week and no change arrow for a part week', () => {
     const metrics = fixture();
     metrics.windows = { current: { startDate: '2026-11-09', endDate: '2026-11-09' }, previous: { startDate: '2026-11-02', endDate: '2026-11-08' },
       cumulative: { endDate: '2026-11-09', previousEndDate: '2026-11-02' } };
@@ -42,14 +42,14 @@ describe('participation and usage cards', () => {
     const html = render(metrics);
     for (const [title, previous] of [['Weekly users', '40'], ['Repeat users', '12'], ['Time on platform', '312.4 min']]) {
       expect(card(html, title)).toContain(`Last week <strong>${previous}</strong>`);
-      expect(card(html, title)).toContain('This week so far');
+      expect(card(html, title)).toContain('Week to date');
       expect(card(html, title)).not.toContain('activity-stat-delta');
       expect(card(html, title)).toContain('is-neutral">');
     }
     // Cumulative cards keep their seven-day comparison and its arrow.
     expect(card(html, 'Players tested')).toContain('aria-label="Increase 5"');
-    expect(card(html, 'Players tested')).not.toContain('This week so far');
-    expect(html).toContain('This week: 2026-11-09–2026-11-09, still in progress. Last week: 2026-11-02–2026-11-08, the whole Monday–Sunday week.');
+    expect(card(html, 'Players tested')).not.toContain('Week to date');
+    expect(html).toContain('Report week: 2026-11-09–2026-11-09, a part week. Last week: 2026-11-02–2026-11-08, the whole Monday–Sunday week before it.');
     expect(html).toContain('compared with the total through 2026-11-02');
     expect(html).not.toContain('same weekdays last week');
   });
@@ -58,9 +58,21 @@ describe('participation and usage cards', () => {
     metrics.windows = { current: { startDate: '2026-11-02', endDate: '2026-11-08' }, previous: { startDate: '2026-10-26', endDate: '2026-11-01' } };
     const html = render(metrics);
     expect(card(html, 'Weekly users')).toContain('aria-label="Decrease 3"');
-    expect(card(html, 'Weekly users')).not.toContain('This week so far');
-    expect(html).toContain('This week: 2026-11-02–2026-11-08. Last week: 2026-10-26–2026-11-01');
+    expect(card(html, 'Weekly users')).not.toContain('Week to date');
+    expect(html).toContain('Report week: 2026-11-02–2026-11-08. Last week: 2026-10-26–2026-11-01');
     expect(html).toContain('cumulative through each cutoff');
+  });
+  it('keeps a part week honest when coverage is partial or a value is missing', () => {
+    const metrics = fixture();
+    metrics.windows = { current: { startDate: '2026-10-19', endDate: '2026-10-21' }, previous: { startDate: '2026-10-12', endDate: '2026-10-18' } };
+    metrics.cards.weeklyUsers = value(2, 40, 'partial'); metrics.cards.repeatUsers = value(null, 12);
+    const html = render(metrics);
+    expect(card(html, 'Weekly users')).toContain('Week to date'); expect(card(html, 'Weekly users')).toContain('Partial coverage');
+    expect(card(html, 'Weekly users')).not.toContain('activity-stat-delta');
+    // No current value: nothing to label as a week to date.
+    expect(card(html, 'Repeat users')).not.toContain('Week to date'); expect(card(html, 'Repeat users')).toContain('Last week <strong>12</strong>');
+    // A report ending on a past Wednesday is a part week, never "in progress".
+    expect(html).toContain('Report week: 2026-10-19–2026-10-21, a part week.'); expect(html).not.toMatch(/in progress|so far/);
   });
   it('preserves known zero and refuses to infer activity or a trend without collection evidence', () => {
     const metrics = fixture();

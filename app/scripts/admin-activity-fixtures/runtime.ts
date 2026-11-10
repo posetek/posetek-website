@@ -98,7 +98,7 @@ function testingAnalytics(population, request) {
     performance: drills.map(([drill, unit, base], drillIndex) => ({ drill, unit, lowerIsBetter: unit === 's',
       points: population.filter((_, index) => index % 7 !== drillIndex).map((row, index) => ({ playerId: row.id, name: `${row.firstName} ${row.lastName}`, age: row.age, division: row.division,
         value: base * (.75 + ((index * 7 + drillIndex * 3) % 17) / 32 + (row.age === null ? 0 : (row.age - 10) / 90)) })) })),
-    weekly: { weekStart, weekEnd: request.endDate, previousWeekStart: shift(weekStart, -7), previousWeekEnd: shift(request.endDate, -7),
+    weekly: { weekStart, weekEnd: request.endDate, previousWeekStart: shift(weekStart, -7), previousWeekEnd: shift(weekStart, -1),
       playersTested: Math.floor(count * .7), previousPlayersTested: Math.floor(count * .6),
       rotation: { meanMs: timingSamples ? 1_140_000 : null, samples: timingSamples },
       previousRotation: { meanMs: timingSamples ? 1_350_000 : null, samples: Math.floor(timingSamples * .8) } },
@@ -117,8 +117,8 @@ function participationMetrics(population, request) {
     cards: { testedPlayers: metric(Math.floor(count * .85), Math.floor(count * .75), 'Four distinct recorded drills; failures included.'),
       claimedAccounts: metric(Math.floor(count * .7), Math.floor(count * .6), 'Claimed through each cutoff.'),
       iosDownloads: metric(Math.floor(count * .6), Math.floor(count * .55), 'Players with positive retained iOS activity; not App Store installations.'),
-      repeatUsers: metric(Math.floor(count * .3), Math.floor(count * .25), 'Players active on two or more distinct local days this week so far and in the whole previous week; same-day visits count once.'),
-      weeklyUsers: metric(Math.floor(count * .45), Math.floor(count * .5), 'Distinct active players this week so far and in the whole previous week.'),
+      repeatUsers: metric(Math.floor(count * .3), Math.floor(count * .25), 'Players active on two or more distinct local days in the report week to date and in the whole previous week; same-day visits count once.'),
+      weeklyUsers: metric(Math.floor(count * .45), Math.floor(count * .5), 'Distinct active players in the report week to date and in the whole previous week.'),
       platformMinutes: metric(count * 3.7, count * 3.2, 'Simultaneous website and iOS time counted once.') } };
 }
 const featureDays = days => days.map((day, index) => ({ ...day, featureMinutes: day.activeMinutes === null ? null : { workout: day.activeMinutes * (index % 7 > 4 ? .5 : .2), training: day.activeMinutes * .15, video: day.activeMinutes * .15, results: day.activeMinutes * .1, overview: day.activeMinutes * (index % 7 > 4 ? .05 : .35), other: day.activeMinutes * .05 } }));

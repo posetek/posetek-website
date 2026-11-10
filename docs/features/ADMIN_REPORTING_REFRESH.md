@@ -77,7 +77,7 @@ reconstructed from period totals. The exact-day data table preserves nulls.
   beside the whole previous Monday–Sunday week. Since November 10 "Last week" is
   that whole week on every weekday; the earlier matching-weekday comparison made
   a Monday report describe last week by its Monday alone. While the current week
-  is in progress the card says "This week so far" and shows no change arrow. A
+  is a part week the card says "Week to date" and shows no change arrow. A
   player counts once per window; overlapping web/iOS time counts once. A
   reporting service that still sends matching weekdays keeps the earlier wording
   and arrows.
