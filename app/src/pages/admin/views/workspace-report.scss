@@ -19,7 +19,19 @@
   .workspace-scope-accounts strong { color:var(--accent); font-weight:600; }
   .workspace-scope-summary p { margin:0; }
   .workspace-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:20px 0; }
-  .one-pager-summary { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .one-pager-summary { grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); }
+  .one-pager-trend { margin:20px 0 24px; padding:18px 14px; background:var(--surface-1); border:1px solid var(--surface-border); border-radius:var(--radius-sm); }
+  .one-pager-trend h4 { margin:0 0 4px; font-size:16px; }
+  .one-pager-legend { display:flex; flex-wrap:wrap; gap:8px 20px; padding:0; margin:14px 0; list-style:none; color:var(--text-muted); font-size:12px; }
+  .one-pager-legend li { display:flex; align-items:center; gap:7px; }
+  .one-pager-legend i { width:14px; height:2px; border-radius:1px; flex:0 0 auto; }
+  .one-pager-legend strong { color:var(--text-primary); font-weight:600; }
+  .one-pager-chart { position:relative; height:260px; min-width:0; overflow:hidden; }
+  .one-pager-chart-data { margin-top:12px; color:var(--text-muted); font-size:12px; }
+  .one-pager-chart-data summary { min-height:44px; display:flex; align-items:center; cursor:pointer; }
+  .directory-player-table.one-pager-table td:first-child { width:24%; }
+  @media(max-width:760px) { .directory-player-table.one-pager-table td:first-child { width:auto; } .directory-player-table.one-pager-table td:last-child::before { display:inline-block; } }
+  .one-pager-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
   .workspace-summary-card { min-width:0; padding:18px 14px; background:var(--surface-1); border:1px solid var(--surface-border); border-radius:var(--radius-sm); }
   .workspace-summary-card > span { color:var(--text-muted); font-size:12px; line-height:1.5; }
   .workspace-summary-card strong { display:block; margin:12px 0; color:var(--accent); font-size:25px; font-weight:600; line-height:1.25; overflow-wrap:anywhere; }

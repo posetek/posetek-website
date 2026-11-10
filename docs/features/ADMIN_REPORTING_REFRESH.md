@@ -81,7 +81,12 @@ reconstructed from period totals. The exact-day data table preserves nulls.
   player counts once per window; overlapping web/iOS time counts once. A
   reporting service that still sends matching weekdays keeps the earlier wording
   and arrows.
-- Completed workouts: distinct deduplicated saved logs ended as completed. This
+- Completed workouts: distinct deduplicated saved logs ended as completed, plus
+  (since November 10) sessions recorded on the player's phone that the app has
+  synced: repeats of a finished workout, yoga, runs, rides and walks. They are
+  counted as workouts, not labelled apart. The player page compares the saved
+  logs it lists with the report's `workouts.savedLogs`, never with the combined
+  totals. This
   does not establish every prescribed set was done. Starts and completions use
   their respective dates. Current plans do not establish generation count;
   generated workouts remain unmeasured by this report.

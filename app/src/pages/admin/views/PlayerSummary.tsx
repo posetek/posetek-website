@@ -67,7 +67,7 @@ export function PlayerSummaryContent({ data, metric, status, error = "", onRetry
       <dl className="admin-player-summary-metrics">
         <div><dt>Testing</dt><dd>{metric.testing.exercisesComplete}<span> of 6 exercises</span></dd>
           <dd className="admin-player-summary-detail">{TESTING_LABELS[metric.testing.status] || "Status unavailable"} · {data.testingMode === "cumulative" ? `Recorded through ${data.period.endDate}` : "Selected period"}</dd></div>
-        <div><dt>Completed workouts</dt><dd>{metric.workouts.completed}</dd><dd className="admin-player-summary-detail">Personal + assigned + extra · {WORKOUT_LABELS[metric.workouts.status] || "Status unavailable"}</dd></div>
+        <div><dt>Completed workouts</dt><dd>{metric.workouts.completed}</dd><dd className="admin-player-summary-detail">{metric.workouts.onDeviceEvents ? "Personal + assigned + extra + on the phone" : "Personal + assigned + extra"} · {WORKOUT_LABELS[metric.workouts.status] || "Status unavailable"}</dd></div>
         <div><dt>Estimated active use</dt><dd className={metric.usage.collected ? "" : "missing"}>{minuteText(metric.usage.activeMinutes, metric.usage.collected)}</dd>
           <dd className="admin-player-summary-detail">{metric.usage.collected ? `${metric.usage.activeDays} active ${metric.usage.activeDays === 1 ? "day" : "days"}` : "Usage collection is unavailable"}</dd></div>
       </dl>
@@ -76,7 +76,7 @@ export function PlayerSummaryContent({ data, metric, status, error = "", onRetry
         <div><dt>Elapsed estimate</dt><dd>{workoutDurationText(metric.workouts.estimatedMinutes, metric.workouts.estimatedRecords)}</dd></div>
         <div><dt>Current-plan progress</dt><dd>{!metric.performance ? 'Unavailable' : !metric.performance.activePlan ? 'No active plan' : metric.performance.sessionsDone === null || metric.performance.sessionsPlanned === null ? 'Schedule or completion unavailable' : `${metric.performance.sessionsDone} of ${metric.performance.sessionsPlanned}`}</dd><dd className="admin-player-summary-detail">Assigned plan only · last 14 days</dd></div>
       </dl>
-      <p className="admin-player-summary-note">Completed workouts count saved personal, assigned and extra sessions in the dates above. Current-plan progress is separate. Timer duration and elapsed estimates have different sources; app use is not workout duration.</p>
+      <p className="admin-player-summary-note">Completed workouts count saved personal, assigned and extra sessions in the dates above{metric.workouts.onDeviceEvents ? `, and ${metric.workouts.onDeviceEvents} recorded on the player’s phone (repeats, yoga, runs and rides) that the saved-workout list below does not show` : ""}. Current-plan progress is separate. Timer duration and elapsed estimates have different sources; app use is not workout duration.</p>
       <p className="admin-player-summary-note">Report checked {workoutPacificTime(Number.isFinite(data.generatedAtMillis) ? data.generatedAtMillis : null)}.</p>
     </>}
   </section>;

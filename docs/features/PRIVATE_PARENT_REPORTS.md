@@ -36,6 +36,30 @@ The 33 sent November 4–5 links use first-party engagement tracking after activ
 tracking** shows the first visible open, workout-button click and TestFlight click
 per report. The event sends only the action and a separate write-only capability.
 A forwarded link still counts for the original report. Records expire after 90 days.
+
+The tab also shows **Reports sent**, an estimated **time on page** per report and a
+chart of cumulative opens, workout clicks and TestFlight clicks against the number
+sent. Time on page is the total across all visits to one report. It counts only
+while the report is the visible tab, for up to two minutes after it is opened or
+returned to and after each touch, scroll or key; opening the report counts as
+activity because a short read often has no scroll. After the device sleeps, counting
+waits for the next touch. The reader sends whole seconds every 15 seconds and when
+the page is hidden or closed, and stores nothing in the browser. The server keeps
+one running total per report, credits a first update as sent (up to 60 seconds) and
+after that never more than the clock time since the previous update, so two people
+reading one link at the same moment count once. It writes at most once a second per
+report. Time before this version was published is not recovered, and the
+last few seconds of a visit can be lost if the browser closes abruptly. The cards, chart
+and table describe the selected cohort. **Accounts created** counts recipients
+whose player account was claimed after their report's Workouts button was
+clicked, since that button opens signup for the player. A recipient with an
+account created any other way is noted and not counted. The claim time comes from
+the player's profile, so it needs no change to the report page; an account claimed
+before the click was being tracked cannot be attributed. The chart is drawn from each report's
+first-event times. Its sent line steps up at each verified send time saved when a
+send is recorded; the original November 4–5 cohort was registered together after
+its sends, so its sent line is level. The reader's on-page
+notice names every recorded action, including viewing time.
 The reader stays open in its own tab while signup or TestFlight opens. Both
 destinations continue to work if tracking is unavailable.
 
