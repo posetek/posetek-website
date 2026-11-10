@@ -68,15 +68,19 @@ reconstructed from period totals. The exact-day data table preserves nulls.
 - iOS downloads: users with positive retained iOS activity, not App Store installs.
   Historical telemetry retention and collection coverage are explicit.
 - Repeat users: the user approved two or more distinct active local days on
-  November 5. Each player counts once in each matching weekly window (Monday
-  through selected report end, compared with the same weekdays last week).
+  November 5. Each player counts once in each weekly window: Monday through the
+  selected report end, and the whole Monday–Sunday week before it.
   Positive website or iOS time qualifies a day; multiple visits or platforms on
   one day still count as one day. The card shows this definition. Missing
   collection and historical coverage retain unavailable/partial states.
-- Weekly users and platform minutes: Monday through selected report end compared
-  with the same weekdays one week earlier. The current day may still be
-  accumulating; this is not an equal-elapsed-hours comparison. A player counts
-  once per window; overlapping web/iOS time counts once.
+- Weekly users and platform minutes: Monday through selected report end, shown
+  beside the whole previous Monday–Sunday week. Since November 10 "Last week" is
+  that whole week on every weekday; the earlier matching-weekday comparison made
+  a Monday report describe last week by its Monday alone. While the current week
+  is a part week the card says "Week to date" and shows no change arrow. A
+  player counts once per window; overlapping web/iOS time counts once. A
+  reporting service that still sends matching weekdays keeps the earlier wording
+  and arrows.
 - Completed workouts: distinct deduplicated saved logs ended as completed, plus
   (since November 10) sessions recorded on the player's phone that the app has
   synced: repeats of a finished workout, yoga, runs, rides and walks. They are

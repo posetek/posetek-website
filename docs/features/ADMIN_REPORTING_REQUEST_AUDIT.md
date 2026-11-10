@@ -24,8 +24,8 @@ below describe the original implementation and remain part of the audit history.
 | Players tested: at least four different recorded drills | Implemented, dated deduplicated saved drill keys, including failed/unqualified results | Standalone diagnostic failures are not saved drills; unknown dates qualify coverage |
 | Accounts claimed | Implemented from registered profiles and claim timestamps | Legacy missing claim dates limit historical comparison |
 | iOS downloads defined by any observed app time | Implemented as positive retained iOS usage | This is the requested observed-use proxy, not store installation data |
-| Repeat users | Implemented with user-approved two distinct active local days | Matching weekly windows; multiple visits/platforms on one date count once |
-| Weekly distinct users | Implemented | Monday through selected end; same weekdays last week |
+| Repeat users | Implemented with user-approved two distinct active local days | This week so far and the whole previous week; multiple visits/platforms on one date count once |
+| Weekly distinct users | Implemented | Monday through selected end; "Last week" is the whole previous Monday–Sunday week |
 | Estimated platform time | Implemented | Measured web/iOS time, overlap counted once; uncollected use unknown |
 | Compact six cards, two rows, prior values and green/red changes | Implemented in Overview and Usage | Partial/unavailable evidence does not support a confident colored change |
 | Remove People to follow up with and its explanatory paragraph | Removed from Overview, Usage and Workouts | Existing bookmarked filter URLs remain supported |
