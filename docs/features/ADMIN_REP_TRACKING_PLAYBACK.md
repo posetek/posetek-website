@@ -1,6 +1,10 @@
 # Admin rep tracking playback
 
-Source fix, November 5, 2026. This is not a production release.
+Source fix, November 5, 2026 (PR #128). Released November 6, 2026 in deployment
+`6aedefb93ea542305e9f49da` with result validation; see
+[the release handoff](../releases/RESULT_VALIDATION_RELEASE.md). On that runtime the
+measured-evidence layer has its own switch; the browser suite turns it off before
+checking the raw tracking overlay.
 
 Rep Tools previously built its scrubber from metadata without loading
 `tracking.json`. A recording without video or pose therefore showed numbered

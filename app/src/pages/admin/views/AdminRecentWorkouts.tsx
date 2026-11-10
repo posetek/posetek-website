@@ -19,7 +19,7 @@ export default function AdminRecentWorkouts({ playerId }: { playerId: string }) 
     ? { kind: 'ready' as const, logs: recentWorkoutLogs(state.data), checkedAt: state.checkedAt }
     : { kind: state.kind };
   return <>
-    <p className="activity-note">Up to five recent saved sessions across personal, assigned and extra workouts. This history is current when checked; it is separate from the reporting period.</p>
+    <p className="activity-note">Saved session detail: up to five recent saved sessions across personal, assigned and extra workouts, with their recorded progress. Sessions recorded on the phone appear in the list above and have no saved detail. This history is current when checked; it is separate from the reporting period.</p>
     <PlayerWorkoutHistoryContent playerId={playerId} load={load} request={request}
       refresh={revision} refreshing={state.refreshing} stale={state.stale}
       onRefresh={refresh} onSelect={focus => setRequest({ kind: 'valid', focus })} />

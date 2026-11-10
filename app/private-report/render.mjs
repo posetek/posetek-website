@@ -595,7 +595,7 @@ export function renderReport(report, record) {
   }
   main.append(actions);
   main.append(element('p', 'pt-private-note', 'Keep this link within your family.'));
-  if (record) main.append(element('p', 'pt-private-note', 'PoseTek records when this report link is opened and when its Workouts and TestFlight buttons are used.'));
+  if (record) main.append(element('p', 'pt-private-note', 'PoseTek records when this report link is opened, about how long it is viewed, and when its Workouts and TestFlight buttons are used.'));
   phone.append(header, main);
   pdfUrl = URL.createObjectURL(new Blob([pdf], {type: 'application/pdf'}));
   mount.replaceChildren(phone);

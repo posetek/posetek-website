@@ -1,11 +1,11 @@
 import { Component, Fragment, Suspense, lazy, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { FEATURE_LABELS, minuteText, workoutDurationText } from '../../insights/lib/expanded';
+import { FEATURE_LABELS, minuteText, workoutDurationText, workoutTypeLabel } from '../../insights/lib/expanded';
 import type { ExpandedInsights, ExpandedReportSummary } from '../../insights/lib/expanded';
 import type { ExpandedRequest } from '../../insights/lib/expandedQuery';
 import { adminActivitySelection } from '../lib/adminActivity';
-import type { AdminActivityFollowUp, AdminActivityReportData, AdminActivitySort, AdminPlayerActivity } from '../lib/adminActivity';
+import type { AdminActivityFollowUp, AdminActivityReportData, AdminActivitySort, AdminPlayerActivity, AdminPlayerWorkout } from '../lib/adminActivity';
 import { activityDate, activityWindow, exactWorkoutLink } from '../lib/adminActivityPresentation';
 import AdminReportingCards from './AdminReportingCards';
 import './admin-activity-report.scss';
@@ -98,11 +98,25 @@ function RecentHistory({ playerId }: { playerId: string }) {
   const [Recent, setRecent] = useState(() => lazy(() => import('./AdminRecentWorkouts')));
   return <RecentHistoryBoundary key={attempt} retry={() => { setRecent(() => lazy(() => import('./AdminRecentWorkouts'))); setAttempt(value => value + 1); }}><Suspense fallback={<p role="status">Loading recent workouts…</p>}><Recent playerId={playerId} /></Suspense></RecentHistoryBoundary>;
 }
+/** Every recent workout the report counts for this player, phone sessions included.
+ * The saved-session detail below it can only open workouts that have a saved log. */
+function RecentWorkouts({ workouts, timezone }: { workouts: AdminPlayerWorkout[]; timezone: string }) {
+  if (!workouts.length) return <p className="activity-note">No workouts recorded for this player.</p>;
+  return <div className="activity-table-wrap"><table className="activity-table activity-recent-workouts"><caption>Most recent workouts of every kind, newest first</caption>
+    <thead><tr><th scope="col">Started</th><th scope="col">Workout</th><th scope="col">Type</th><th scope="col">Outcome</th><th scope="col">Duration</th></tr></thead>
+    <tbody>{workouts.map((workout, index) => <tr key={`${workout.source}:${workout.logId ?? index}:${workout.startedAtMillis}`}>
+      <td data-label="Started">{activityDate(workout.startedAtMillis, timezone)}</td>
+      <td data-label="Workout">{workout.source === 'onDevice' ? 'Recorded on the phone' : workout.title || 'Saved workout'}</td>
+      <td data-label="Type">{workoutTypeLabel(workout.type)}</td>
+      <td data-label="Outcome">{OUTCOMES[workout.status] || 'Status unavailable'}</td>
+      <td data-label="Duration">{workout.timerMinutes != null ? `${minuteText(workout.timerMinutes)} timer` : workout.estimatedMinutes != null ? `${minuteText(workout.estimatedMinutes)} elapsed estimate` : 'Not recorded'}</td>
+    </tr>)}</tbody></table></div>;
+}
 function PlayerRows({ data, view, playerLink }: { data: ExpandedInsights; view: View; playerLink: PlayerLink }) {
   const [expanded, setExpanded] = useState('');
   const timezone = data.period.timeZone;
   const columns = view === 'overview' ? ['Player', 'Recorded sign-in', 'Estimated app use', 'Workouts completed', 'Assigned work']
-    : view === 'workouts' ? ['Player', 'Period activity', 'Recorded duration', 'Latest saved workout', 'Assigned work', 'Recent history']
+    : view === 'workouts' ? ['Player', 'Period activity', 'Recorded duration', 'Latest workout', 'Assigned work', 'Recent history']
       : ['Player', 'Estimated app use', 'Active days', 'Platforms', 'Last observed feature'];
   return <div className="activity-table-wrap"><table className="activity-table"><caption>Player activity in this reporting scope</caption><thead><tr>{columns.map(column => <th key={column} scope="col">{column}</th>)}</tr></thead>
     <tbody>{data.players.map(player => {
@@ -114,11 +128,13 @@ function PlayerRows({ data, view, playerLink }: { data: ExpandedInsights; view: 
         {view === 'overview' && <><td data-label="Recorded sign-in"><SignIn activity={activity} timezone={timezone} /></td><td data-label="Estimated app use"><strong>{minuteText(player.usage.activeMinutes, player.usage.collected)}</strong><small>{player.usage.collected ? `${player.usage.activeDays} active days` : 'Collection unavailable'}</small></td><td data-label="Workouts completed"><strong>{player.workouts.completed}</strong><small>Personal + assigned + extra</small></td><td data-label="Assigned work"><Assigned activity={activity} /></td></>}
         {view === 'workouts' && <><td data-label="Period activity"><strong>{player.workouts.started} started</strong><small>{player.workouts.completed} completed</small></td>
           <td data-label="Recorded duration"><strong>{workoutDurationText(player.workouts.timerMinutes, player.workouts.timerRecords)} timer</strong><small>{workoutDurationText(player.workouts.estimatedMinutes, player.workouts.estimatedRecords)} elapsed estimate</small></td>
-          <td data-label="Latest saved workout">{latest ? <><Link className="activity-row-action" to={exactWorkoutLink(playerLink(player.id, 'workouts'), latest)}>{latest.title || 'Saved workout'}</Link><span className="activity-state">{OUTCOMES[latest.status] || 'Status unavailable'}</span><small>Started {activityDate(latest.startedAtMillis, timezone)}</small><small>{latest.endedAtMillis == null ? 'No ending recorded' : `Ended ${activityDate(latest.endedAtMillis, timezone)}`}</small><small>{latest.timerMinutes != null ? `${minuteText(latest.timerMinutes)} recorded timer` : latest.estimatedMinutes != null ? `${minuteText(latest.estimatedMinutes)} elapsed estimate` : 'Duration not recorded'} · {latest.setsCompleted} sets recorded</small></> : <span className="activity-missing">{activity ? 'No saved workout' : 'Latest workout unavailable'}</span>}</td>
+          <td data-label="Latest workout">{latest ? <>{latest.source === 'onDevice' ? <strong>{workoutTypeLabel(latest.type)} · on the phone</strong> : <Link className="activity-row-action" to={exactWorkoutLink(playerLink(player.id, 'workouts'), latest)}>{latest.title || 'Saved workout'}</Link>}<span className="activity-state">{OUTCOMES[latest.status] || 'Status unavailable'}</span><small>Started {activityDate(latest.startedAtMillis, timezone)}</small><small>{latest.endedAtMillis == null ? 'No ending recorded' : `Ended ${activityDate(latest.endedAtMillis, timezone)}`}</small><small>{latest.timerMinutes != null ? `${minuteText(latest.timerMinutes)} recorded timer` : latest.estimatedMinutes != null ? `${minuteText(latest.estimatedMinutes)} elapsed estimate` : 'Duration not recorded'} · {latest.setsCompleted} sets recorded</small></> : <span className="activity-missing">{activity ? 'No workout recorded' : 'Latest workout unavailable'}</span>}</td>
           <td data-label="Assigned work"><Assigned activity={activity} /></td><td data-label="Recent history"><button id={`admin-player-${player.id}-history`} type="button" className="activity-row-action" aria-label={`${open ? 'Hide' : 'Show'} recent workouts for ${name}`} aria-expanded={open} aria-controls={`activity-history-${player.id}`} onClick={() => setExpanded(open ? '' : player.id)}>{open ? 'Hide recent workouts' : 'Show recent workouts'}</button></td></>}
         {view === 'usage' && <><td data-label="Estimated app use"><strong>{minuteText(player.usage.activeMinutes, player.usage.collected)}</strong></td><td data-label="Active days"><strong>{player.usage.collected ? player.usage.activeDays : 'Not collected'}</strong></td><td data-label="Platforms"><strong>{minuteText(player.usage.webMinutes, player.usage.webCollected)} website</strong><small>{minuteText(player.usage.iosMinutes, player.usage.iosCollected)} iOS</small></td>
           <td data-label="Last observed feature"><LastObservedFeature activity={activity} collected={player.usage.collected} timezone={timezone} /></td></>}
-      </tr>{open && <tr className="activity-expanded-row"><td className="activity-expansion-cell" colSpan={columns.length}><section id={`activity-history-${player.id}`} className="activity-expansion" aria-label={`Recent workouts for ${name}`}><div className="activity-expansion-heading"><h3>Recent workouts · {name}</h3><Link className="quiet-button" to={playerLink(player.id, 'workouts')}>Open full workout record</Link></div><RecentHistory key={player.id} playerId={player.id} /></section></td></tr>}</Fragment>;
+      </tr>{open && <tr className="activity-expanded-row"><td className="activity-expansion-cell" colSpan={columns.length}><section id={`activity-history-${player.id}`} className="activity-expansion" aria-label={`Recent workouts for ${name}`}><div className="activity-expansion-heading"><h3>Recent workouts · {name}</h3><Link className="quiet-button" to={playerLink(player.id, 'workouts')}>Open full workout record</Link></div>
+        {activity?.workouts.recent && <RecentWorkouts workouts={activity.workouts.recent} timezone={timezone} />}
+        <RecentHistory key={player.id} playerId={player.id} /></section></td></tr>}</Fragment>;
     })}</tbody></table></div>;
 }
 export default function AdminActivityReport({ data, request, view, busy, onChange, onFirstPage, onNextPage, playerLink, children, detailsPending = false }: AdminActivityReportProps) {
@@ -132,7 +148,7 @@ export default function AdminActivityReport({ data, request, view, busy, onChang
   const start = exact ? request.page * exact.pagination.pageSize + (exact.players.length ? 1 : 0) : 0, end = exact ? request.page * exact.pagination.pageSize + exact.players.length : 0;
   return <div className="admin-activity-report" aria-label="Admin activity report" aria-busy={busy || false}>
     {!report && <p className="form-message" role="status">Detailed account activity is unavailable in this report. Existing period totals remain available below; refresh reporting to retry.</p>}
-    {view === 'workouts' ? <dl className="activity-summary"><Stat title="Workouts started" value={data.workouts.started} note="Saved starts in the selected period" /><Stat title="Workouts completed" value={data.workouts.completed} note="Saved completion records" /><Stat title="Recorded timer duration" value={workoutDurationText(data.workouts.timerMinutes, data.workouts.timerRecords)} note="Saved active timer time; pauses excluded" /></dl> : <AdminReportingCards metrics={report?.metricsV2} />}
+    {view === 'workouts' ? <dl className="activity-summary"><Stat title="Workouts started" value={data.workouts.started} note="Saved logs and phone sessions started in the selected period" /><Stat title="Workouts completed" value={data.workouts.completed} note="Saved completions and phone sessions with recorded work" /><Stat title="Recorded timer duration" value={workoutDurationText(data.workouts.timerMinutes, data.workouts.timerRecords)} note="Saved active timer time; pauses excluded" /></dl> : <AdminReportingCards metrics={report?.metricsV2} />}
     {view === 'overview' && report && <Rankings report={report} playerLink={playerLink} />}
     {children}
     <details className="activity-method"><summary>How this is measured</summary><p className="activity-note">Workout records and rankings cover {data.period.startDate} through {data.period.endDate}, in {data.period.timeZone}. Participation and usage cards use the cutoffs and weekly windows in Metric definitions. All summaries cover the complete reporting selection before name search and pagination. Workout timers and elapsed estimates remain separate.</p>

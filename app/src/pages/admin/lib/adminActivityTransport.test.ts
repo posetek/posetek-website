@@ -39,6 +39,21 @@ describe("admin activity read validation", () => {
     const other = fixture(); other.players[0].organizationId = "foreign";
     expect(() => assertWorkspaceMetrics(other, input())).toThrow(/Player activity/);
   });
+  it("accepts a phone session as a player's latest or recent workout and rejects a malformed one", () => {
+    const saved = { source: "workoutLogs" as const, logId: "plan_one", title: "Saved", type: "field", startedAtMillis: 1_000_000, endedAtMillis: 2_000_000, status: "completed", timerMinutes: 12, estimatedMinutes: null, setsCompleted: 4 };
+    const phone = { source: "onDevice" as const, logId: null, title: "", type: "yoga", startedAtMillis: 3_000_000, endedAtMillis: 4_000_000, status: "completed", timerMinutes: 20, estimatedMinutes: null, setsCompleted: 3 };
+    const withWorkouts = (workouts: unknown) => { const data = fixture(); data.players[0].adminReporting!.workouts = workouts as never; return () => assertWorkspaceMetrics(data, input()); };
+    expect(withWorkouts({ latest: phone, recent: [phone, saved] })).not.toThrow();
+    expect(withWorkouts({ latest: saved })).not.toThrow();
+    expect(withWorkouts({ latest: null, recent: [] })).not.toThrow();
+    // A saved log must name its record; a phone session must not claim one.
+    expect(withWorkouts({ latest: { ...saved, logId: null } })).toThrow(/Latest workout/);
+    expect(withWorkouts({ latest: { ...phone, logId: "plan_one" } })).toThrow(/Latest workout/);
+    expect(withWorkouts({ latest: { ...phone, source: "elsewhere" } })).toThrow(/Latest workout/);
+    expect(withWorkouts({ latest: phone, recent: [phone, { ...saved, timerMinutes: -1 }] })).toThrow(/Recent workout/);
+    expect(withWorkouts({ latest: phone, recent: Array.from({ length: 9 }, () => phone) })).toThrow(/Recent workout/);
+    expect(withWorkouts({ latest: phone, recent: "none" })).toThrow(/Recent workout/);
+  });
   it("rejects impossible activity windows rather than displaying a precise stop", () => {
     const data = fixture(); data.players[0].adminReporting!.usage.lastActivityWindow = { startMillis: 1000, endMillis: 1000 };
     expect(() => assertWorkspaceMetrics(data, input())).toThrow(/timing/);

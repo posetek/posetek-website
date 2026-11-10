@@ -5,6 +5,16 @@ The audit is scoped to People & organizations reporting; shared coach reporting
 and unrelated runtime candidates remain separate. At audit time this task had
 not deployed. Source and synthetic proof do not establish a live athlete's data.
 
+Current source status: Website PR #127 merged as `c1b34a8` and Backend PR #94
+merged as `99cd460` after integrated-head qualification at `7a725b4`. Website
+hosted CI passed. All seven Backend local lanes passed with documented scope
+limits and skips; GitHub billing blocked hosted Backend jobs, and the owner
+explicitly authorized a one-release exception. Deployment `6aecbf94751cf215f811865f` is now published with callable version 12.
+Use the [release handoff](../releases/ADMIN_REPORTING_REFRESH.md) and
+[release receipt](../releases/receipts/ADMIN_REPORTING_REFRESH_PRODUCTION.json)
+for authoritative publication and production-verification status. The omissions
+below describe the original implementation and remain part of the audit history.
+
 ## Full request comparison
 
 | Original request | Result after audit corrections | Qualification |
@@ -14,8 +24,8 @@ not deployed. Source and synthetic proof do not establish a live athlete's data.
 | Players tested: at least four different recorded drills | Implemented, dated deduplicated saved drill keys, including failed/unqualified results | Standalone diagnostic failures are not saved drills; unknown dates qualify coverage |
 | Accounts claimed | Implemented from registered profiles and claim timestamps | Legacy missing claim dates limit historical comparison |
 | iOS downloads defined by any observed app time | Implemented as positive retained iOS usage | This is the requested observed-use proxy, not store installation data |
-| Repeat users | Implemented with user-approved two distinct active local days | Matching weekly windows; multiple visits/platforms on one date count once |
-| Weekly distinct users | Implemented | Monday through selected end; same weekdays last week |
+| Repeat users | Implemented with user-approved two distinct active local days | This week so far and the whole previous week; multiple visits/platforms on one date count once |
+| Weekly distinct users | Implemented | Monday through selected end; "Last week" is the whole previous Monday–Sunday week |
 | Estimated platform time | Implemented | Measured web/iOS time, overlap counted once; uncollected use unknown |
 | Compact six cards, two rows, prior values and green/red changes | Implemented in Overview and Usage | Partial/unavailable evidence does not support a confident colored change |
 | Remove People to follow up with and its explanatory paragraph | Removed from Overview, Usage and Workouts | Existing bookmarked filter URLs remain supported |
@@ -35,7 +45,7 @@ not deployed. Source and synthetic proof do not establish a live athlete's data.
 | Player workouts at very bottom, plots above | Corrected after audit | Measurement disclosure now precedes player section |
 | Player app usage at very bottom | Corrected after audit | Measurement disclosure now precedes player section |
 | Keep weekly estimated usage chart | Preserved | Same selected-period web/iOS series and overlap explanation |
-| Add daily usage chart immediately beneath weekly chart | Implemented | Daily rows preserve null collection and exclusive allocations |
+| Add daily usage chart immediately beneath weekly chart | Implemented with connected points and category lines | Total mode uses one line; daily rows preserve null collection and exclusive allocations |
 | 1 week, 2 weeks, 1 month, 2 months | Corrected after audit: full requested window | Additive two-calendar-month history independent of report start; legacy fallback disclosed |
 | Toggle consolidated categories versus total per day | Implemented | Training, Results, Social, Profile & overview, Other |
 | Keep high-level data while switching tabs | Corrected after audit | Same-cohort summary stays visible during first/expired detail reads and directory refresh; wrong player pages never reused |
@@ -55,11 +65,14 @@ controls without asserting the returned dates; its screenshot visibly clipped
 two months to four weeks. The new assertions check final-section order and every
 day in the full two-month interval.
 
-The Backend follow-up also adds transferred-team station coverage and actual
-usage-reader history tests. Its final candidate is
-`516229112ffdd925f9be7e76ac2a50eb882c73d9`. See the
-[feature handoff](ADMIN_REPORTING_REFRESH.md) for validation, source identities,
-remaining SDK checks and Backend-first release order.
+The Backend follow-up adds transferred-team station coverage and actual
+usage-reader history tests. Its reporting implementation is
+`516229112ffdd925f9be7e76ac2a50eb882c73d9`; later release tooling and integration
+were qualified at `7a725b4` before PR #94 merged. The initially missing SDK checks
+were subsequently completed with isolated dependencies. See the
+[feature handoff](ADMIN_REPORTING_REFRESH.md) for behavior and historical checks,
+and the release handoff for current qualification, exact identities and
+Backend-first publication order.
 
 ## Verification of the corrections
 
@@ -69,5 +82,9 @@ and 60 real-hook persistence/continuity scenarios across Chromium/WebKit and
 visible while details remain pending. Layout checks require the player section
 as the final visible section and verify all 61 days of the selected two-month
 fixture despite its 28-day report period. TypeScript/Astro, marketing, lint,
-Svelte, policy and tooling checks passed. These are synthetic checks; they do
-not certify production authorization, real athlete values or a deployed artifact.
+Svelte, policy and tooling checks passed. These source checks use synthetic fixtures; they do not by themselves certify
+production authorization, real athlete values or a deployed artifact. Later
+hosted acceptance and exact-artifact verification are recorded separately in the
+release handoff and receipt. Earlier incomplete SDK/CI descriptions are
+superseded by the current qualification status above, while the original test
+coverage gaps remain documented here.

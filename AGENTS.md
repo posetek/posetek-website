@@ -17,6 +17,103 @@ PR requirements and release/deployment holds remain unchanged. Runtime tool
 approval is separate from this policy; report exact tool rejections and never
 switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.md#website-worktree-local-lane).
 
+## Admin reporting fixes and one-pager time on page — November 10, 2026
+
+Deployment `6af39c12b5d6443ec57767ec` was published at `2026-11-10T22:40:04.431Z`
+from runtime `e0cc95d` on `runtime/admin-reporting-fixes`: accepted runtime
+`691db60` plus the `app/` changes of PRs #141, #143, #146 and #142.
+
+- Admin cards: "Last week" is the whole previous Monday–Sunday week, and cumulative
+  cards compare with the total at the end of it.
+- Workouts: sessions recorded on the phone count as workouts, with a by-type chart
+  and per-player lists.
+- One-pager tracking: reports sent, time on page, accounts created through the
+  Workouts button and a trend chart, per cohort. The report page sends a
+  time-on-page heartbeat.
+- Web personal workouts can save a skip and finish.
+
+It preserves the prior live deploy `6af3761a` (the report project's November 9
+broad jump correction) byte for byte except three files: `/application.html`,
+`/report/loader.mjs`, and `/report/render.mjs`, which is the live file with one
+notice sentence changed. **The live report reader is newer than this repository's
+copy; never ship the repository's `render.mjs` or `report.css` over it.** 15 hashed
+assets were added. All 2,776 artifact files match 2,777 provider records. The
+reconciled baseline protects 2,774 files with all 37 recovery mappings.
+
+Backend `functions:one-pager-tracking` (version 3) went out before the website and
+`functions:expanded-insights` (`getClubInsightsV2` version 14) after it, from
+backend main `d96edbe`. Hosted backend CI did not start (GitHub billing); the owner
+instructed the merge and deployment. Signed-in hosted acceptance is not claimed.
+[Release handoff](docs/releases/ADMIN_REPORTING_FIXES.md) ·
+[Production receipt](docs/releases/receipts/ADMIN_REPORTING_FIXES_PRODUCTION.json)
+
+The report project deploys the reader from its own source (draft PR #140). Its next
+production deploy overwrites `loader.mjs` and `render.mjs` unless that source merges
+main first, which would silently stop time-on-page collection. Keep `[skip netlify]`
+on every source and receipt merge.
+
+## Database-first catalog compatibility release — November 7, 2026
+
+Deployment `6aeffb31ae4da62a62fc6356` was published at
+`2026-11-08T04:34:35.550Z` from runtime `dbb380f` on
+`runtime/catalog-db-first-compat`. That runtime is accepted runtime `51106ec`
+plus PR #134's six commits. The admin drill editor follows the catalog validation
+gate and refuses stale saves. The workout picker is uncapped. Coaches see published
+drills only, and the athlete workout player shows the v2 how-to.
+
+It preserves the prior live deploy `6aeff48b` byte for byte. That deploy is Dylan
+Keller's November cohort reports, including `/player-signin.html` and its `/signin`
+rewrite and headers. All 2,697 artifact files match 2,698 provider records; only
+`/application.html` changed, with 20 hashed assets added. The reconciled baseline
+protects 2,695 files with all 37 recovery mappings. Signed-in hosted acceptance is
+not claimed.
+[Release handoff](docs/releases/CATALOG_DB_FIRST_COMPAT_RELEASE.md) ·
+[Production receipt](docs/releases/receipts/CATALOG_DB_FIRST_COMPAT_PRODUCTION.json)
+
+The #134 merge lacked `[skip netlify]` and auto-published Git build `6aefe7d5`.
+That build rebuilt the marketing pages, with only the astro-island uid changing.
+**Every merge to main must carry `[skip netlify]`.** No backend, rules, indexes,
+gateway, catalog data or native release. Held candidates and report outreach remain held.
+
+## Admin result validation release — November 6, 2026
+
+Deployment `6aedefb93ea542305e9f49da` was published at
+`2026-11-06T15:22:23.567Z` from runtime `e4c6403` on `runtime/result-validation`.
+It adds **Review tools → Result validation**: validate, adjust or flag each rep in a
+testing session, with reviewer notes, undo, per-drill evidence, focus mode and the
+organization age curve. Saved tracking playback (PR #128) ships with it.
+
+All 2,603 artifact files match 2,604 provider records; only `/application.html`
+changed, with 20 hashed assets added. Marketing, feedback, coach enrollment and
+private reports remain exact. The reconciled baseline protects 2,601 files with all
+37 recovery mappings. Signed-in hosted acceptance is not claimed.
+[Release handoff](docs/releases/RESULT_VALIDATION_RELEASE.md) ·
+[Production receipt](docs/releases/receipts/RESULT_VALIDATION_PRODUCTION.json)
+
+Website PR #132 is merged. No backend, rules, indexes, gateway, catalog or native
+release. Keep `[skip netlify]` on source/receipt integration; held candidates and
+report outreach remain held.
+
+## Admin reporting refresh release — November 5, 2026
+
+Deployment `6aecbf94751cf215f811865f` was published at
+`2026-11-05T19:06:24.045Z` with runtime `bc6ed7c` and
+`getClubInsightsV2` version 12. Organization reports now show six comparison
+cards, age-by-drill Testing, station analytics and daily usage lines. Shared
+summaries persist across tab transitions; player tables finish Workouts and Usage.
+
+Candidate and live signed-in Chromium/WebKit checks passed, as did all 27 deployed
+API assertions. All 2,583 artifact files match 2,584 provider records. The
+reconciled baseline protects 2,581 files and retains all 37 recovery mappings.
+[Release handoff](docs/releases/ADMIN_REPORTING_REFRESH.md) ·
+[Production receipt](docs/releases/receipts/ADMIN_REPORTING_REFRESH_PRODUCTION.json)
+
+Website PR #127 and Backend PR #94 are merged. Backend hosted CI remained blocked
+by billing; the owner authorized a one-release exception backed by seven passing
+local lanes. Website hosted CI passed. New workout funnel wiring/UI remains a
+[separate follow-up](docs/features/WORKOUT_REPORTING_FUNNEL_HANDOFF.md). Keep
+`[skip netlify]` on source/receipt integration; held candidates and outreach remain held.
+
 ## Admin tab persistence release — November 5, 2026
 
 Deployment `6aec430f45bc0d0841566ba7` was published at

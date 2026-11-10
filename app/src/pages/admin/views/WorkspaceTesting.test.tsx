@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { TestingAgeChart, TestingStationAnalytics } from "./WorkspaceTesting";
+import WorkspaceTesting, { TestingAgeChart, TestingStationAnalytics } from "./WorkspaceTesting";
+import { previewInsights } from "../../insights/lib/preview";
+import { expandedRequest } from "../../insights/lib/expandedQuery";
+
+const request = { ...expandedRequest("", new Date("2026-11-09T18:00:00Z")), view: "testing" as const };
+const average = { meanMs: null, samples: 0 };
+const testingTab = (previousWeekEnd: string) => renderToStaticMarkup(<WorkspaceTesting request={request} onChange={() => {}} data={{ ...previewInsights(request),
+  adminTesting: { version: 1, performance: [], stations: null, weekly: { weekStart: "2026-11-09", weekEnd: "2026-11-09", previousWeekStart: "2026-11-02", previousWeekEnd,
+    playersTested: 1, previousPlayersTested: 7, rotation: average, previousRotation: average } } } as never} />);
 
 describe("Testing reporting components", () => {
   it("renders age clusters, separate division means and accessible point measurements", () => {
@@ -14,6 +22,16 @@ describe("Testing reporting components", () => {
     expect(html).toContain("Boys: average result at each age");
     expect(html).not.toContain("Girls: average result at each age");
     expect(html).toContain("3 players shown");
+  });
+  it("describes the previous week as the reporting service defines it", () => {
+    const whole = testingTab("2026-11-08");
+    expect(whole).toContain("Previous week: 7");
+    expect(whole).toContain("the comparison covers the whole previous Monday–Sunday week.");
+    expect(whole).not.toContain("same weekdays");
+    // A reporting service that still compares matching weekdays keeps the earlier wording.
+    const matching = testingTab("2026-11-02");
+    expect(matching).toContain("the comparison covers the same weekdays one week earlier.");
+    expect(matching).not.toContain("whole previous");
   });
   it("distinguishes unsupported station timing from a genuine empty result", () => {
     expect(renderToStaticMarkup(<TestingStationAnalytics stations={null} />)).toContain("Station timing is unavailable");

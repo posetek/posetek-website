@@ -72,12 +72,14 @@ async function addExistingReports(f) {
   return existing;
 }
 
+// Both transitions replay frozen reader bytes: the pins describe releases that
+// already happened, so later edits to app/private-report must not move them.
 async function initialReaderTransitionFixture(t, pathway = false) {
   const f = await fixture(t), existing = await addExistingReports(f);
   for (const name of ['index.html', 'render.mjs', 'report.css']) {
     const path = '/report/' + name;
     const oldBytes = await readFile(new URL('./fixtures/private-parent-report-reader-v1/' + name, import.meta.url));
-    const newBytes = await readFile(new URL((pathway ? '../app/private-report/' : './fixtures/private-parent-report-reader-workouts-v1/') + name, import.meta.url));
+    const newBytes = await readFile(new URL(('./fixtures/private-parent-report-reader-' + (pathway ? 'pathways' : 'workouts') + '-v1/') + name, import.meta.url));
     existing[path] = oldBytes;
     Object.assign(f.rows.find(row => row.path === path), { sha: sha(oldBytes), size: oldBytes.length });
     await put(f.predecessor, path, oldBytes);
