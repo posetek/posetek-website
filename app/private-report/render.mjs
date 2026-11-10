@@ -315,6 +315,7 @@ function validate(report) {
   const focused = report.layout === 'focused-v1';
   if (focused && (!report.development || report.resultsFirst !== true)) throw new Error('Focused report requires saved-plan findings');
   validateDevelopment(report.development, report.exercises, focused);
+  if (focused) validateFocusedMetrics(report.metrics);
   if (report.development && (report.pathwayCharts || report.resultsFirst !== true)) throw new Error('Development requires results-first classic layout');
   if (report.pathwayCoverage !== undefined) {
     if (!report.pathwayCharts || !report.pathwayCoverage || typeof report.pathwayCoverage.broaderComparisonsPending !== 'boolean') throw new Error('Invalid pathway coverage');
@@ -339,6 +340,14 @@ export function clearReport() {
   }
   if (pdfUrl) URL.revokeObjectURL(pdfUrl);
   pdfUrl = undefined;
+}
+
+export function validateFocusedMetrics(metrics) {
+  for (const metric of metrics) {
+    if ((metric.count ?? 0) < 5 && (metric.percentile !== null || metric.average != null)) {
+      throw new Error('Focused comparisons require five usable results');
+    }
+  }
 }
 
 export function teamAverageText(metric) {
