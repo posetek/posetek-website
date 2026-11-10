@@ -10,6 +10,13 @@ export type AdminActivityFollowUp = typeof ADMIN_ACTIVITY_FOLLOW_UPS[number];
 export type AdminActivitySort = typeof ADMIN_ACTIVITY_SORTS[number];
 export interface AdminActivityRequest { version: 1; followUp: AdminActivityFollowUp; sort: AdminActivitySort }
 
+/** A saved workout log, or a session recorded on the player's phone (`onDevice`),
+ * which has no saved log to open and carries its kind of training in `type`. */
+export interface AdminPlayerWorkout {
+  source: "workoutLogs" | "personalWorkoutLogs" | "onDevice"; logId: string | null; title: string; type?: string;
+  startedAtMillis: number | null; endedAtMillis: number | null; status: string;
+  timerMinutes: number | null; estimatedMinutes: number | null; setsCompleted: number;
+}
 export interface AdminPlayerActivity {
   signIn: { status: "recorded" | "none" | "unlinked" | "unknown"; lastSignInAtMillis: number | null };
   usage: { lastActivityWindow: {
@@ -17,11 +24,9 @@ export interface AdminPlayerActivity {
     endMillis: number;
     featureEvidence?: { basis: "latestInterval" | "window"; features: UsageFeature[] };
   } | null };
-  workouts: { latest: {
-    source: "workoutLogs" | "personalWorkoutLogs"; logId: string; title: string;
-    startedAtMillis: number | null; endedAtMillis: number | null; status: string;
-    timerMinutes: number | null; estimatedMinutes: number | null; setsCompleted: number;
-  } | null };
+  workouts: { latest: AdminPlayerWorkout | null;
+    /** The player's most recent workouts of every kind, newest first; absent on an earlier reporting service. */
+    recent?: AdminPlayerWorkout[] };
   assigned: { status: "available" | "noActivePlan" | "unavailable"; weekNumber: number | null; remaining: number | null; notStarted: number | null; noEnding: number | null };
 }
 export interface AdminActivityTeam {

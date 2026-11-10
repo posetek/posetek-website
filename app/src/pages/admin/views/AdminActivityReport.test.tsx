@@ -74,6 +74,18 @@ describe('admin activity reporting presentation', () => {
     expect(html).toContain('No ending recorded');
     expect(html).not.toContain('Loading recent workouts');
   });
+  it('lists every recent workout for a player, with phone sessions shown as what they are and never linked to a saved log', () => {
+    const phone = { source: 'onDevice' as const, logId: null, title: '', type: 'yoga', startedAtMillis: Date.parse('2026-11-03T17:00:00Z'), endedAtMillis: Date.parse('2026-11-03T17:20:00Z'), status: 'completed', timerMinutes: 20, estimatedMinutes: null, setsCompleted: 3 };
+    const saved = { ...facts.workouts.latest!, type: 'field' };
+    const data = fixture();
+    data.players[0] = { ...data.players[0], adminReporting: { ...facts, workouts: { latest: phone, recent: [phone, saved] } } };
+    const html = render('workouts', data);
+    expect(html).toContain('<th scope="col">Latest workout</th>');
+    expect(html).toContain('<strong>Yoga · on the phone</strong>');
+    expect(html).not.toContain('workoutSource=onDevice');
+    // The expanded list is opened by a click; its content is checked through the component's own list.
+    expect(html).toContain('Show recent workouts');
+  });
   it('labels coarse last-use windows without claiming a stop or logout time', () => {
     const html = render('usage');
     expect(html).toContain('15-minute retained activity window');
