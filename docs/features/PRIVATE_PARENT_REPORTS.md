@@ -23,13 +23,21 @@ history, copied links and downloaded PDFs as private. No promise of automatic
 expiry or recall is made; deleting today's file cannot revoke copies or historical
 immutable deploys. Parent distribution requires review of this access model.
 
-Only the generic reader is tracked. Plaintext report inputs, PDF bytes, keys,
+Only the generic reader source is checked into Git. Plaintext report inputs, PDF bytes, keys,
 complete links and recipient mappings stay in private local evidence. Production
 artifacts may contain encrypted binaries only. The isolated reader has no Auth
-SDK, tracking, third-party resources, local/session storage or service worker. It
+SDK, third-party resources, local/session storage or service worker. It
 fails closed when controlled by a service worker and uses no-store, no-referrer,
 noindex, frame-denial and a restrictive CSP. Invalid/missing/tampered data shows a
 generic message without revealing an athlete.
+
+The 33 sent November 4–5 links use first-party engagement tracking after activation.
+**People & organizations → Vacaville United Soccer Club → All teams → One-pager
+tracking** shows the first visible open, workout-button click and TestFlight click
+per report. The event sends only the action and a separate write-only capability.
+A forwarded link still counts for the original report. Records expire after 90 days.
+The reader stays open in its own tab while signup or TestFlight opens. Both
+destinations continue to work if tracking is unavailable.
 
 The workout button builds only
 `https://posetek.net/athlete?player=<id>&view=training`. This is a locator, not an

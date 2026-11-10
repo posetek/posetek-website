@@ -90,6 +90,7 @@ jobs:
       - run: node app/node_modules/playwright/cli.js install --with-deps chromium webkit
       - run: node --test scripts/browser-smoke.mjs
       - run: node --test scripts/marketing-link-activation.browser.mjs
+      - run: node --test scripts/private-parent-report.browser.mjs scripts/admin-one-pager-tracking.browser.mjs
       # Production assembly still requires the reviewed live preservation baseline.
       # These are compile checks, not a production artifact or a deployment.
   ci:

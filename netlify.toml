@@ -88,7 +88,13 @@
   status = 200
   force = true
 
-# Isolated private report reader; no application scripts or tracking.
+# Isolated private report reader and its first-party event endpoint.
+[[redirects]]
+  from = "/api/one-pager-event"
+  to = "https://us-central1-kickai-69dd0.cloudfunctions.net/recordOnePagerEngagement"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/report"
   to = "/report/index.html"
