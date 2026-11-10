@@ -10,6 +10,8 @@ await vite.listen();
 const origin = `http://127.0.0.1:${vite.httpServer.address().port}`;
 const url = path => origin + '/admin/accounts?' + path;
 const club = 'orgId=vacaville-united-soccer-club&directoryLevel=people';
+const trackingPath = club + '&directoryPane=one-pagers';
+const original = 'vacaville-2026-11-04-05', next = 'vacaville-2026-11-09';
 try {
   for (const [name, engine] of [['Chromium', chromium], ['WebKit', webkit]]) {
     const browser = await engine.launch();
@@ -50,12 +52,41 @@ try {
       await choose('expired');
       await panel.getByText('The 90-day tracking period has ended.').waitFor();
       await choose('error');
+      await panel.getByRole('alert').getByText('Could not load this cohort.', { exact: false }).waitFor();
+      await choose('list-error');
       await panel.getByRole('alert').getByText('Could not load one-pager tracking.', { exact: false }).waitFor();
-      for (const scope of [club + '&teamId=synthetic-team', 'orgId=vacaville-united-soccer-club', 'orgId=northfield&directoryLevel=people']) {
+      await page.evaluate(() => { window.fixtureTrackingState = 'active'; window.fixtureNewCohort = true; });
+      await refresh.click();
+      const selector = panel.getByRole('combobox', { name: 'Cohort' });
+      await panel.getByText('New Athlete 1').waitFor();
+      assert.equal(await selector.inputValue(), next);
+      assert.equal(await panel.getByText('0 of 2', { exact: true }).count(), 3);
+      await selector.selectOption(original);
+      await panel.getByText('Synthetic Athlete 1', { exact: true }).waitFor();
+      assert.equal(new URL(page.url()).searchParams.get('onePagerCohort'), original);
+      assert.equal(await panel.getByText('1 of 33', { exact: true }).count(), 1);
+      await page.goBack();
+      await panel.getByText('New Athlete 1').waitFor();
+      await page.goForward();
+      await panel.getByText('Synthetic Athlete 1', { exact: true }).waitFor();
+
+      const deepLink = await browser.newPage();
+      await installDirectoryFixture(deepLink, { onePagers: true, newCohort: true });
+      await deepLink.goto(url(trackingPath + '&onePagerCohort=' + next));
+      await deepLink.getByText('New Athlete 1').waitFor();
+      await deepLink.reload();
+      await deepLink.getByText('New Athlete 1').waitFor();
+      await deepLink.goto(url(trackingPath + '&onePagerCohort=unknown-cohort'));
+      await deepLink.getByText('This cohort is unavailable in the selected organization.').waitFor();
+      await deepLink.close();
+
+      for (const scope of [club + '&teamId=synthetic-team', 'orgId=vacaville-united-soccer-club', club + '&directoryLookup=unassigned']) {
         await page.goto(url(scope + '&directoryPane=one-pagers'));
         await tabs.waitFor();
         assert.equal(await tracking.count(), 0);
       }
+      await page.goto(url('orgId=northfield&directoryLevel=people&directoryPane=one-pagers'));
+      await panel.getByText('No sent one-pager cohorts for this organization yet.').waitFor();
       console.log(`${name}: one-pager placement, navigation, counts, scope and error states passed`);
     } finally { await browser.close(); }
   }

@@ -183,7 +183,8 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
 }) {
   const attention = state.reportMode === "attention", request = workspaceReportRequest(state);
   const view = state.reportView || "overview", requestedPane = directoryWorkspacePaneOf(state);
-  const showOnePagers = scope?.kind === "organization" && supportsOnePagerTracking(state);
+  const onePagerOrganization = scope?.kind === "organization" && supportsOnePagerTracking(state) ? scope.organizationId : undefined;
+  const showOnePagers = Boolean(onePagerOrganization);
   const pane = !showOnePagers && requestedPane === "one-pagers" ? "list" : requestedPane;
   const onePagers = pane === "one-pagers";
   const activityView = pane === "report" && view !== "testing";
@@ -249,7 +250,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
       <DirectoryWorkspaceTabs active={activeView} onePagers={showOnePagers} listLabel={showPeople ? "People" : state.orgId ? "Teams" : "Organizations"} onChange={selected => choose({ reportCursor: undefined, reportPage: undefined, reportAdminSort: undefined, reportAdminFollowUp: undefined,
         ...(selected === "list" || selected === "one-pagers" ? { directoryPane: selected } : { directoryPane: "report" as const, reportView: selected, reportMode: "directory" as const }) })} />
     </WorkspaceScopeHeader>
-    {onePagers ? <OnePagerTracking /> : <>
+    {onePagers && onePagerOrganization ? <OnePagerTracking organizationId={onePagerOrganization} cohortId={state.onePagerCohort} onCohortChange={onePagerCohort => choose({ onePagerCohort })} /> : <>
     <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : null}</div>
       {filters}
       {pane === "report" && !legacy && <button type="button" className="quiet-button" disabled={metrics.loading || metrics.refreshing} onClick={() => { metrics.refresh(); refreshQueue(); }}>Refresh reporting</button>}
