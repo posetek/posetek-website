@@ -227,6 +227,25 @@
   .admin-row-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--admin-dim); font-size: 13px; }
   .admin-row-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
+  // Library sections (Drills / Yoga): the directory tabs' look.
+  .training-library-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--admin-line); margin: 0 0 16px; overflow-x: auto; }
+  .training-library-tabs button {
+    min-height: 44px; flex: none; padding: 10px 16px; border: 0; border-bottom: 3px solid transparent; border-radius: 0;
+    color: var(--admin-dim); background: transparent; font: inherit; font-size: 14px; cursor: pointer;
+  }
+  .training-library-tabs button[aria-selected="true"] { color: var(--admin-accent); border-bottom-color: var(--admin-accent); }
+
+  // The status-only control on a drill page and on each yoga row.
+  .admin-heading-actions > select, .training-library-row .admin-row-actions > select {
+    background: var(--admin-panel-strong);
+    color: var(--admin-text);
+    border: 1px solid var(--admin-line);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font: inherit;
+  }
+  .training-library-row[data-status="archived"], .training-library-row[data-status="none"] { opacity: .72; }
+
   @media(max-width:700px) {
     .training-library-row { flex-wrap:wrap; }
     .training-library-row .admin-row-copy { flex:1 1 100%; }

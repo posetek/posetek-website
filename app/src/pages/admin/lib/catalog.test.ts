@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  STALE_DRILL_MESSAGE, keepEquipmentOrder, mediaPlaybackUrl, sameStamp, syncFrequency, updateDrill, updateLoadedDrill,
-  type DrillWrite,
+  STALE_DRILL_MESSAGE, drillStatusEditable, keepEquipmentOrder, mediaPlaybackUrl, sameStamp, syncFrequency, updateDrill,
+  updateDrillStatus, updateLoadedDrill, type DrillWrite,
 } from './catalog';
 import { baselineAfterOwnWrite, normalizeCatalogDrill } from '../../../lib/contracts/drillV2';
 
@@ -209,6 +209,101 @@ describe('direct admin save against database-first catalog documents', () => {
   it('refuses a v1 document', async () => {
     harness.stored = libraryDoc({ schemaVersion: 1 });
     await expect(save()).rejects.toThrow('not been migrated');
+  });
+});
+
+// The library's status-only control (yoga catalog alignment plan §6.5): one field, the editor's guards.
+describe('drill status-only write', () => {
+  const loadedAt = { seconds: 1_800_000_000, nanoseconds: 5 };
+  const drillDoc = (extra: Record<string, unknown> = {}) => ({
+    schemaVersion: 2, drillId: 'GYM-001', name: 'Goblet squat', domain: 'strength', status: 'published',
+    catalogVersion: '1.0.5', updatedAt: loadedAt, equipment: ['dumbbells'], dose: { setsMin: 3 },
+    howTo: { setup: 'Set up.', steps: ['Squat.'] }, pools: { gym: { category: 'squat' } }, minimumClient: { build: 40 },
+    validation: { required: true, result: 'pending' },
+    ...extra,
+  });
+  const loaded = (extra: Record<string, unknown> = {}) => normalizeCatalogDrill('GYM-001', drillDoc(extra));
+  let gets: { collection: string; id: string }[] = [];
+  beforeEach(() => {
+    gets = [];
+    harness.stored = drillDoc();
+    harness.transaction.mockImplementation(async (run: (tx: unknown) => Promise<string>) => run({
+      get: async (ref: { id: string; collection: string }) => {
+        gets.push({ collection: ref.collection, id: ref.id });
+        return { exists: true, data: () => (ref.id === 'current' ? { catalogVersion: '1.0.8' } : harness.stored) };
+      },
+      update: harness.txUpdate, set: harness.txSet,
+    }));
+  });
+
+  it('writes exactly status, catalogVersion, updatedAt and updatedBy', async () => {
+    await expect(updateDrillStatus(loaded(), 'archived')).resolves.toBe('1.0.9');
+    const [ref, payload] = harness.txUpdate.mock.calls[0];
+    expect(ref).toMatchObject({ collection: 'drillCatalog', id: 'GYM-001' });
+    expect(payload).toEqual({ status: 'archived', catalogVersion: '1.0.9', updatedAt: 'SERVER_TIMESTAMP', updatedBy: 'admin-test' });
+    expect(harness.save).not.toHaveBeenCalled();
+  });
+
+  it('bumps drillCatalogMeta/current with the editor lastChange shape', async () => {
+    await updateDrillStatus(loaded(), 'archived');
+    expect(gets).toContainEqual({ collection: 'drillCatalogMeta', id: 'current' });
+    const [ref, meta, options] = harness.txSet.mock.calls[0];
+    expect(ref).toMatchObject({ collection: 'drillCatalogMeta', id: 'current' });
+    expect(meta).toEqual({
+      catalogVersion: '1.0.9', updatedAt: 'SERVER_TIMESTAMP', updatedBy: 'admin-test',
+      lastChange: { drillId: 'GYM-001', kind: 'archived' },
+    });
+    expect(options).toEqual({ merge: true });
+    harness.txSet.mockReset();
+    await updateDrillStatus(loaded(), 'draft');
+    expect(harness.txSet.mock.calls[0][1].lastChange).toEqual({ drillId: 'GYM-001', kind: 'edited' });
+  });
+
+  it('keeps the publish gate: an unpassed drill cannot move to published', async () => {
+    harness.stored = drillDoc({ status: 'draft' });
+    await expect(updateDrillStatus(loaded({ status: 'draft' }), 'published')).rejects.toThrow('must pass validation');
+    harness.stored = drillDoc({ status: 'archived', validation: { required: true, result: 'fail' } });
+    await expect(updateDrillStatus(loaded({ status: 'archived', validation: { required: true, result: 'fail' } }), 'published'))
+      .rejects.toThrow('must pass validation');
+    expect(harness.txUpdate).not.toHaveBeenCalled();
+  });
+
+  it('publishes after a pass, for an exempt drill and for a drill with no validation', async () => {
+    for (const validation of [{ required: true, result: 'pass' }, { required: false, exemptReason: 'published-before-gate-2026-11-07' }, undefined]) {
+      harness.stored = drillDoc({ status: 'draft', validation });
+      await expect(updateDrillStatus(loaded({ status: 'draft', validation }), 'published')).resolves.toBe('1.0.9');
+    }
+    expect(harness.txUpdate).toHaveBeenCalledTimes(3);
+  });
+
+  it('refuses a stale status, version or updatedAt', async () => {
+    for (const moved of [{ status: 'draft' }, { catalogVersion: '1.0.6' }, { updatedAt: { seconds: 1_800_000_001, nanoseconds: 0 } }]) {
+      harness.stored = drillDoc(moved);
+      await expect(updateDrillStatus(loaded(), 'archived')).rejects.toThrow(STALE_DRILL_MESSAGE);
+    }
+    expect(harness.txUpdate).not.toHaveBeenCalled();
+    expect(harness.txSet).not.toHaveBeenCalled();
+  });
+
+  it('refuses a v1 document and a reviewed production drill, and is not offered for them', async () => {
+    harness.stored = drillDoc({ schemaVersion: 1 });
+    await expect(updateDrillStatus(loaded(), 'archived')).rejects.toThrow('not been migrated');
+    harness.stored = drillDoc({ productionBatchId: 'whole-body-2026-09' });
+    await expect(updateDrillStatus(loaded(), 'archived')).rejects.toThrow('reviewed production drill');
+    expect(harness.txUpdate).not.toHaveBeenCalled();
+    expect(drillStatusEditable(loaded())).toBe(true);
+    expect(drillStatusEditable(loaded({ schemaVersion: 1 }))).toBe(false);
+    expect(drillStatusEditable(loaded({ productionBatchId: 'whole-body-2026-09' }))).toBe(false);
+  });
+
+  it('writes an explicit status over a status-less drill and nothing for an unchanged one', async () => {
+    harness.stored = drillDoc({ status: undefined });
+    await expect(updateDrillStatus(loaded({ status: undefined }), 'published')).resolves.toBe('1.0.9');
+    expect(harness.txUpdate.mock.calls[0][1].status).toBe('published');
+    harness.txUpdate.mockReset();
+    harness.stored = drillDoc();
+    await expect(updateDrillStatus(loaded(), 'published')).resolves.toBe('1.0.5');
+    expect(harness.txUpdate).not.toHaveBeenCalled();
   });
 });
 
