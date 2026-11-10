@@ -26,6 +26,7 @@ import DirectoryNavigator, { TeamDirectory } from "./DirectoryNavigator";
 import { DirectoryFilters, DirectoryPlayerFilters, DirectoryWorkspaceTabs } from "./DirectoryWorkspaceControls";
 import AdminActivityReport from "./AdminActivityReport";
 import OnePagerTracking from "./OnePagerTracking";
+import AdminTabs from "./AdminTabs";
 import "./admin-directory.scss";
 import "./admin-directory-lightning.scss";
 
@@ -88,17 +89,7 @@ export function jumpToDirectorySection(event: Pick<MouseEvent<HTMLAnchorElement>
 }
 
 export function DirectoryTabs({ active, onChange }: { active: AdminDirectoryState["directoryTab"]; onChange(tab: AdminDirectoryState["directoryTab"]): void }) {
-  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  return <div className="directory-tabs" role="tablist" aria-label="People and organization views">{tabs.map(([id, label], index) => <button key={id} type="button" ref={element => { buttons.current[index] = element; }}
-    id={`directory-tab-${id}`} role="tab" aria-selected={active === id} aria-controls={`directory-panel-${id}`} tabIndex={active === id ? 0 : -1}
-    onClick={() => onChange(id)} onKeyDown={event => {
-      let next: number | undefined;
-      if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
-      if (event.key === "ArrowLeft") next = (index + tabs.length - 1) % tabs.length;
-      if (event.key === "Home") next = 0;
-      if (event.key === "End") next = tabs.length - 1;
-      if (next !== undefined) { event.preventDefault(); buttons.current[next]?.focus(); }
-    }}>{label}</button>)}</div>;
+  return <AdminTabs className="directory-tabs" label="People and organization views" idPrefix="directory" tabs={tabs} active={active} onChange={onChange} />;
 }
 
 function OrganizationPlayers({ org, organizations, state, choose, navigateScope, source }: { org: OrganizationRow; organizations: OrganizationRow[]; state: AdminDirectoryState; choose: ChooseDirectory; navigateScope: ChooseDirectory; source: DirectorySource }) {
