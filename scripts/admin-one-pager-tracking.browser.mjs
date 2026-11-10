@@ -45,7 +45,7 @@ try {
       await panel.getByText(/Tracking started Nov 8, 2026.*12:00\s*PM Pacific/).waitFor();
       const cards = panel.getByRole('region', { name: 'One-pager engagement totals' }).locator('.workspace-summary-card');
       const cardValues = async () => Object.fromEntries(await cards.evaluateAll(nodes => nodes.map(node => [node.querySelector('span').textContent, node.querySelector('strong').textContent])));
-      assert.deepEqual(await cardValues(), { 'Reports sent': '33', 'Reports opened': '3 of 33', 'Workout button clicks': '1 of 33',
+      assert.deepEqual(await cardValues(), { 'Reports sent': '33', 'Reports opened': '3 of 33', 'Workout button clicks': '1 of 33', 'Accounts created': '1 of 33',
         'TestFlight clicks': '1 of 33', 'Average time on page': '2 min 30 sec' });
       await cards.last().getByText('Per report, all visits combined · 2 reports with recorded time · 5 min in total', { exact: true }).waitFor();
       const players = panel.getByRole('table', { name: 'First recorded activity per player report' }).locator('tbody tr');
@@ -55,7 +55,7 @@ try {
       // The chart runs from the start of tracking to now: sent stays level and each line steps at a first event.
       const trend = panel.getByRole('region', { name: 'Opens and clicks over time' });
       assert.deepEqual(await trend.locator('.one-pager-legend li').allTextContents(),
-        ['Reports sent33', 'Reports opened3', 'Workout button clicks1', 'TestFlight clicks1']);
+        ['Reports sent33', 'Reports opened3', 'Workout button clicks1', 'Accounts created1', 'TestFlight clicks1']);
       const painted = await trend.locator('canvas').evaluate(node => {
         const pixels = node.getContext('2d').getImageData(0, 0, node.width, node.height).data;
         let drawn = 0; for (let index = 3; index < pixels.length; index += 4) if (pixels[index]) drawn++;
@@ -64,13 +64,15 @@ try {
       assert(painted.width > 300 && painted.drawn > 500, 'The trend chart is drawn');
       await trend.getByText('View chart data', { exact: true }).click();
       const changes = trend.locator('details tbody tr');
-      assert.equal(await changes.count(), 7);
+      assert.equal(await changes.count(), 8);
       const cells = row => changes.nth(row).locator('td').allTextContents();
       assert.match((await cells(0))[0], /^Nov 8, 12:00\s*PM$/);
-      assert.deepEqual((await cells(0)).slice(1), ['33', '0', '0', '0']);
+      assert.deepEqual((await cells(0)).slice(1), ['33', '0', '0', '0', '0']);
       assert.match((await cells(2))[0], /^Nov 8, 2:00\s*PM$/);
-      assert.deepEqual((await cells(2)).slice(1), ['33', '1', '1', '0']);
-      assert.deepEqual((await cells(6)).slice(1), ['33', '3', '1', '1']);
+      assert.deepEqual((await cells(2)).slice(1), ['33', '1', '1', '0', '0']);
+      // An account created five hours in steps its own line, between the clicks and TestFlight.
+      assert.deepEqual((await cells(5)).slice(1), ['33', '2', '1', '1', '1']);
+      assert.deepEqual((await cells(7)).slice(1), ['33', '3', '1', '1', '1']);
       assert.equal(await page.getByRole('button', { name: 'Filters & period' }).count(), 0);
       await page.setViewportSize({ width: 390, height: 844 });
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
@@ -83,7 +85,7 @@ try {
       // Tracking that has started with nothing recorded yet shows real zeros and no empty chart.
       await choose('quiet');
       await panel.getByText('No opens or clicks recorded yet. A chart of activity over time appears after the first one.', { exact: true }).waitFor();
-      assert.deepEqual(await cardValues(), { 'Reports sent': '33', 'Reports opened': '0 of 33', 'Workout button clicks': '0 of 33',
+      assert.deepEqual(await cardValues(), { 'Reports sent': '33', 'Reports opened': '0 of 33', 'Workout button clicks': '0 of 33', 'Accounts created': '0 of 33',
         'TestFlight clicks': '0 of 33', 'Average time on page': 'None recorded' });
       assert.equal(await trend.count(), 0);
       await page.setViewportSize({ width: 390, height: 844 });
@@ -91,6 +93,8 @@ try {
       await choose('legacy');
       await cards.last().getByText('Time on page is not being collected yet.', { exact: true }).waitFor();
       assert.equal((await cardValues())['Average time on page'], 'Not available');
+      // The same earlier service reports no account creation: not available, never zero.
+      assert.equal((await cardValues())['Accounts created'], 'Not available');
       assert.equal((await cardValues())['Reports opened'], '1 of 33');
       assert.equal(await players.nth(0).locator('td').last().textContent(), 'Not available');
       await choose('expired');
@@ -105,12 +109,13 @@ try {
       await panel.getByText('New Athlete 1').waitFor();
       assert.equal(await selector.inputValue(), next);
       // A later cohort has its own totals, and its sent line steps up at each verified send.
-      assert.deepEqual(await cardValues(), { 'Reports sent': '2', 'Reports opened': '1 of 2', 'Workout button clicks': '0 of 2',
+      assert.deepEqual(await cardValues(), { 'Reports sent': '2', 'Reports opened': '1 of 2', 'Workout button clicks': '0 of 2', 'Accounts created': '0 of 2',
         'TestFlight clicks': '0 of 2', 'Average time on page': '40 sec' });
       await trend.getByText('View chart data', { exact: true }).click();
-      assert.deepEqual((await cells(0)).slice(1), ['1', '0', '0', '0']);
-      assert.deepEqual((await cells(1)).slice(1), ['2', '0', '0', '0']);
-      assert.deepEqual((await cells(2)).slice(1), ['2', '1', '0', '0']);
+      await cards.nth(3).getByText('Claimed since the first send date · 1 already had an account', { exact: true }).waitFor();
+      assert.deepEqual((await cells(0)).slice(1), ['1', '0', '0', '0', '0']);
+      assert.deepEqual((await cells(1)).slice(1), ['2', '0', '0', '0', '0']);
+      assert.deepEqual((await cells(2)).slice(1), ['2', '1', '0', '0', '0']);
       await selector.selectOption(original);
       await panel.getByText('Synthetic Athlete 1', { exact: true }).waitFor();
       assert.equal(new URL(page.url()).searchParams.get('onePagerCohort'), original);

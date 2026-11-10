@@ -12,8 +12,9 @@ type Response = { state: "pending" | "expired" } | {
   total: number;
   reports: OnePagerReport[];
 };
-/** `loadedAt` is when this browser received the response; the right edge of the chart. */
-type Tracking = Response & { loadedAt: number };
+/** `loadedAt` is when this browser received the response; the right edge of the chart.
+ * `accountsReported` is false for a tracking service that does not report account creation yet. */
+type Tracking = Response & { loadedAt: number; accountsReported: boolean };
 const formatPacific = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "short",
 });
@@ -58,13 +59,18 @@ export default function OnePagerTracking({ organizationId, cohortId, onCohortCha
 function CohortTracking({ organizationId, cohort }: { organizationId: string; cohort: Cohort }) {
   const loadTracking = useCallback(async (): Promise<Tracking> => {
     const { data } = await cloud.httpsCallable("getOnePagerEngagement")({ organizationId, cohortId: cohort.id });
-    return { ...(data as Response), loadedAt: Date.now() };
+    const response = data as Response;
+    if (response.state !== "active") return { ...response, loadedAt: Date.now(), accountsReported: false };
+    // Absent on an earlier service: read as "none" for counting, and shown as not available.
+    const accountsReported = response.reports.some(row => (row as { accountAt?: unknown }).accountAt !== undefined);
+    return { ...response, reports: response.reports.map(row => ({ ...row, accountAt: typeof row.accountAt === "number" ? row.accountAt : null })), loadedAt: Date.now(), accountsReported };
   }, [organizationId, cohort.id]);
   const { state } = useAccountLoad(loadTracking);
   const tracking = state.kind === "ready" ? state.data : null;
   const active = tracking?.state === "active" ? tracking : null;
   const total = active ? active.total : cohort.total;
   const viewTime = active ? viewTimeSummary(active.reports) : null;
+  const hadAccount = active ? active.reports.filter(row => row.hadAccount === true).length : 0;
   const hasActivity = active?.reports.some(row => ONE_PAGER_METRICS.some(({ field }) => row[field] !== null));
   const trend = useMemo(() => active && hasActivity ? onePagerTrend(active.reports, active.total, active.startAt, active.loadedAt) : null, [active, hasActivity]);
   return <>
@@ -78,7 +84,10 @@ function CohortTracking({ organizationId, cohort }: { organizationId: string; co
       <section className="workspace-summary one-pager-summary" aria-label="One-pager engagement totals">
         <div className="workspace-summary-card"><span>Reports sent</span><strong>{active.total}</strong></div>
         {ONE_PAGER_METRICS.map(({ field, label }) => <div className="workspace-summary-card" key={field}>
-          <span>{label}</span><strong>{active.reports.filter(row => row[field] !== null).length} of {active.total}</strong>
+          <span>{label}</span>
+          {field === "accountAt" && !active.accountsReported ? <><strong>Not available</strong><p>Account creation is not being reported yet.</p></>
+            : <strong>{active.reports.filter(row => row[field] !== null).length} of {active.total}</strong>}
+          {field === "accountAt" && active.accountsReported && <p>Claimed since the first send date{hadAccount ? ` · ${hadAccount} already had an account` : ""}</p>}
         </div>)}
         <div className="workspace-summary-card"><span>Average time on page</span>
           {viewTime === null ? <><strong>Not available</strong><p>Time on page is not being collected yet.</p></>
@@ -86,13 +95,13 @@ function CohortTracking({ organizationId, cohort }: { organizationId: string; co
               : <><strong>None recorded</strong><p>Counts from when time tracking was published.</p></>}
         </div>
       </section>
-      {trend ? <OnePagerTrendChart points={trend} />
+      {trend ? <OnePagerTrendChart points={trend} omit={active.accountsReported ? undefined : "accountAt"} />
         : <p className="admin-note">No opens or clicks recorded yet. A chart of activity over time appears after the first one.</p>}
       <table className="directory-player-table one-pager-table" aria-label="First recorded activity per player report">
-        <thead><tr><th scope="col">Player</th><th scope="col">First open</th><th scope="col">First Workout click</th><th scope="col">First TestFlight click</th><th scope="col">Time on page</th></tr></thead>
+        <thead><tr><th scope="col">Player</th><th scope="col">First open</th><th scope="col">First Workout click</th><th scope="col">Account created</th><th scope="col">First TestFlight click</th><th scope="col">Time on page</th></tr></thead>
         <tbody>{active.reports.map(row => <tr key={row.id}>
           <td data-label="Player"><strong>{row.name}</strong></td>
-          {ONE_PAGER_METRICS.map(({ field, label }) => <td data-label={label} key={field}>{row[field] === null ? "None recorded" : <time dateTime={new Date(row[field]).toISOString()}>{formatPacific.format(row[field])}</time>}</td>)}
+          {ONE_PAGER_METRICS.map(({ field, label }) => <td data-label={label} key={field}>{row[field] === null ? (field !== "accountAt" ? "None recorded" : !active.accountsReported ? "Not available" : row.hadAccount ? "Already had an account" : "Not yet") : <time dateTime={new Date(row[field]).toISOString()}>{formatPacific.format(row[field])}</time>}</td>)}
           <td data-label="Time on page">{typeof row.viewSeconds !== "number" ? "Not available" : row.viewSeconds > 0 ? formatViewTime(row.viewSeconds) : "None recorded"}</td>
         </tr>)}</tbody>
       </table>

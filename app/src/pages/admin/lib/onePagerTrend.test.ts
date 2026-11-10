@@ -5,7 +5,7 @@ import type { OnePagerReport } from "./onePagerTrend";
 const HOUR = 3_600_000;
 const START = Date.UTC(2026, 10, 10, 2, 16); // Nov 9, 6:16 PM Pacific
 const report = (id: string, values: Partial<OnePagerReport> = {}): OnePagerReport =>
-  ({ id, name: `Synthetic ${id}`, openedAt: null, workoutsAt: null, testflightAt: null, ...values });
+  ({ id, name: `Synthetic ${id}`, openedAt: null, workoutsAt: null, accountAt: null, testflightAt: null, ...values });
 
 describe("onePagerTrend", () => {
   it("accumulates first events on one shared timeline and keeps sent level", () => {
@@ -15,12 +15,17 @@ describe("onePagerTrend", () => {
       report("c"),
     ], 33, START, START + 5 * HOUR);
     expect(points).toEqual([
-      { at: START, sent: 33, openedAt: 0, workoutsAt: 0, testflightAt: 0 },
-      { at: START + HOUR, sent: 33, openedAt: 1, workoutsAt: 0, testflightAt: 0 },
-      { at: START + 2 * HOUR, sent: 33, openedAt: 2, workoutsAt: 1, testflightAt: 0 },
-      { at: START + 3 * HOUR, sent: 33, openedAt: 2, workoutsAt: 1, testflightAt: 1 },
-      { at: START + 5 * HOUR, sent: 33, openedAt: 2, workoutsAt: 1, testflightAt: 1 },
+      { at: START, sent: 33, openedAt: 0, workoutsAt: 0, accountAt: 0, testflightAt: 0 },
+      { at: START + HOUR, sent: 33, openedAt: 1, workoutsAt: 0, accountAt: 0, testflightAt: 0 },
+      { at: START + 2 * HOUR, sent: 33, openedAt: 2, workoutsAt: 1, accountAt: 0, testflightAt: 0 },
+      { at: START + 3 * HOUR, sent: 33, openedAt: 2, workoutsAt: 1, accountAt: 0, testflightAt: 1 },
+      { at: START + 5 * HOUR, sent: 33, openedAt: 2, workoutsAt: 1, accountAt: 0, testflightAt: 1 },
     ]);
+  });
+
+  it("counts an account created from the report on the same timeline as the clicks", () => {
+    const points = onePagerTrend([report("a", { openedAt: START + HOUR, workoutsAt: START + 2 * HOUR, accountAt: START + 3 * HOUR }), report("b", { accountAt: START + 4 * HOUR })], 2, START, START + 5 * HOUR);
+    expect(points.map(point => [point.at - START, point.accountAt])).toEqual([[0, 0], [HOUR, 0], [2 * HOUR, 0], [3 * HOUR, 1], [4 * HOUR, 2], [5 * HOUR, 2]]);
   });
 
   it("steps the sent line where a report joined the cohort after tracking started", () => {
@@ -32,22 +37,22 @@ describe("onePagerTrend", () => {
       report("e", { sentAt: START + 9 * HOUR }),
     ], 5, START, START + 5 * HOUR);
     expect(points).toEqual([
-      { at: START, sent: 2, openedAt: 0, workoutsAt: 0, testflightAt: 0 },
-      { at: START + 2 * HOUR, sent: 4, openedAt: 0, workoutsAt: 0, testflightAt: 0 },
-      { at: START + 3 * HOUR, sent: 4, openedAt: 1, workoutsAt: 0, testflightAt: 0 },
+      { at: START, sent: 2, openedAt: 0, workoutsAt: 0, accountAt: 0, testflightAt: 0 },
+      { at: START + 2 * HOUR, sent: 4, openedAt: 0, workoutsAt: 0, accountAt: 0, testflightAt: 0 },
+      { at: START + 3 * HOUR, sent: 4, openedAt: 1, workoutsAt: 0, accountAt: 0, testflightAt: 0 },
       // A send time past the viewer's clock still reaches the total at the right edge.
-      { at: START + 5 * HOUR, sent: 5, openedAt: 1, workoutsAt: 0, testflightAt: 0 },
+      { at: START + 5 * HOUR, sent: 5, openedAt: 1, workoutsAt: 0, accountAt: 0, testflightAt: 0 },
     ]);
   });
 
   it("starts and ends flat with no activity and never runs past the two ends", () => {
     expect(onePagerTrend([report("a")], 33, START, START + HOUR)).toEqual([
-      { at: START, sent: 33, openedAt: 0, workoutsAt: 0, testflightAt: 0 },
-      { at: START + HOUR, sent: 33, openedAt: 0, workoutsAt: 0, testflightAt: 0 },
+      { at: START, sent: 33, openedAt: 0, workoutsAt: 0, accountAt: 0, testflightAt: 0 },
+      { at: START + HOUR, sent: 33, openedAt: 0, workoutsAt: 0, accountAt: 0, testflightAt: 0 },
     ]);
     // A viewer clock behind the server still shows the event, at the right edge.
     const skewed = onePagerTrend([report("a", { openedAt: START + 2 * HOUR })], 33, START, START + HOUR);
-    expect(skewed.at(-1)).toEqual({ at: START + HOUR, sent: 33, openedAt: 1, workoutsAt: 0, testflightAt: 0 });
+    expect(skewed.at(-1)).toEqual({ at: START + HOUR, sent: 33, openedAt: 1, workoutsAt: 0, accountAt: 0, testflightAt: 0 });
     expect(onePagerTrend([], 33, START, START - HOUR).map(point => point.at)).toEqual([START, START + 1]);
   });
 });

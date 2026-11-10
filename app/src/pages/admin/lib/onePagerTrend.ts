@@ -4,13 +4,18 @@ export const ONE_PAGER_TIME_ZONE = "America/Los_Angeles";
 export const ONE_PAGER_METRICS = [
   { field: "openedAt", label: "Reports opened", short: "Opened", color: "#2a78d6" },
   { field: "workoutsAt", label: "Workout button clicks", short: "Workout clicks", color: "#eb6834" },
+  // The player's account was claimed from the cohort's first send date on. Not a
+  // tracked click: the reporting service reads it from the player's profile.
+  { field: "accountAt", label: "Accounts created", short: "Accounts", color: "#4a3aa7" },
   { field: "testflightAt", label: "TestFlight clicks", short: "TestFlight clicks", color: "#1baf7a" },
 ] as const;
 export const ONE_PAGER_SENT_COLOR = "#657b70";
 export type OnePagerMetric = typeof ONE_PAGER_METRICS[number]["field"];
 /** `viewSeconds` and `sentAt` are absent until the tracking service that reports them is published.
  * `sentAt` is when the report joined its cohort's sent total; `null` means from the start. */
-export type OnePagerReport = { id: string; name: string; viewSeconds?: number; sentAt?: number | null } & Record<OnePagerMetric, number | null>;
+export type OnePagerReport = { id: string; name: string; viewSeconds?: number; sentAt?: number | null;
+  /** The player had already claimed an account before the cohort's first send date. */
+  hadAccount?: boolean } & Record<OnePagerMetric, number | null>;
 export type OnePagerTrendPoint = { at: number; sent: number } & Record<OnePagerMetric, number>;
 
 const HOUR = 3_600_000;
@@ -29,12 +34,12 @@ export function onePagerTrend(reports: OnePagerReport[], total: number, startAt:
   // Reports sent after tracking started; every other report counts from the start.
   const later = reports.map(row => row.sentAt).filter((at): at is number => typeof at === "number" && Number.isFinite(at) && at > startAt).map(clamp).sort((a, b) => a - b);
   const times = [...new Set([startAt, ...ONE_PAGER_METRICS.flatMap(({ field }) => events[field]), ...later, end])].sort((a, b) => a - b);
-  const cursor = { openedAt: 0, workoutsAt: 0, testflightAt: 0 };
+  const cursor = Object.fromEntries(ONE_PAGER_METRICS.map(({ field }) => [field, 0])) as Record<OnePagerMetric, number>;
   let sent = 0;
   return times.map(at => {
     for (const { field } of ONE_PAGER_METRICS) while (cursor[field] < events[field].length && events[field][cursor[field]] <= at) cursor[field]++;
     while (sent < later.length && later[sent] <= at) sent++;
-    return { at, sent: Math.max(0, total - later.length + sent), ...cursor };
+    return { at, sent: Math.max(0, total - later.length + sent), ...cursor } as OnePagerTrendPoint;
   });
 }
 

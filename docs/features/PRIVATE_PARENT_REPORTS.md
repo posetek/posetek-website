@@ -50,7 +50,11 @@ after that never more than the clock time since the previous update, so two peop
 reading one link at the same moment count once. It writes at most once a second per
 report. Time before this version was published is not recovered, and the
 last few seconds of a visit can be lost if the browser closes abruptly. The cards, chart
-and table describe the selected cohort. The chart is drawn from each report's
+and table describe the selected cohort. **Accounts created** counts recipients
+whose player account was claimed on or after the cohort's first send date; a
+player who already had an account is noted and not counted. It comes from the
+player's profile, not from a tracked click, so it needs no change to the report
+page. The chart is drawn from each report's
 first-event times. Its sent line steps up at each verified send time saved when a
 send is recorded; the original November 4–5 cohort was registered together after
 its sends, so its sent line is level. The reader's on-page

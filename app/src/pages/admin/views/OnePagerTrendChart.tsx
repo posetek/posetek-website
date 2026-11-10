@@ -14,8 +14,10 @@ const clock = new Intl.DateTimeFormat("en-US", { timeZone: ONE_PAGER_TIME_ZONE, 
 const moment = { format: (at: number) => `${day.format(at)}, ${clock.format(at)}` };
 
 /** Cumulative step lines: how many of the sent reports have a first open or click so far. */
-export default function OnePagerTrendChart({ points }: { points: OnePagerTrendPoint[] }) {
+export default function OnePagerTrendChart({ points, omit }: { points: OnePagerTrendPoint[]; omit?: string }) {
   const id = useId(), canvas = useRef<HTMLCanvasElement>(null);
+  // A line the reporting service does not report yet is left out, never drawn at zero.
+  const series = useMemo(() => SERIES.filter(row => row.field !== omit), [omit]);
   const latest = points.at(-1)!;
   const start = points[0].at, end = latest.at;
   const ticks = useMemo(() => onePagerTicks(start, end), [start, end]);
@@ -39,9 +41,9 @@ export default function OnePagerTrendChart({ points }: { points: OnePagerTrendPo
       type: "line",
       plugins: [crosshair],
       data: {
-        datasets: SERIES.map(series => ({
-          label: series.label, data: points.map(point => ({ x: point.at, y: point[series.field] })),
-          borderColor: series.color, backgroundColor: series.color, borderWidth: 2, stepped: true,
+        datasets: series.map(row => ({
+          label: row.label, data: points.map(point => ({ x: point.at, y: point[row.field] })),
+          borderColor: row.color, backgroundColor: row.color, borderWidth: 2, stepped: true,
           pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 12, pointHoverBorderWidth: 2, pointHoverBorderColor: "#fff", fill: false,
         })),
       },
@@ -73,21 +75,21 @@ export default function OnePagerTrendChart({ points }: { points: OnePagerTrendPo
       },
     });
     return () => chart.destroy();
-  }, [points, ticks, start, end, latest.sent]);
+  }, [points, ticks, start, end, latest.sent, series]);
   return <section className="one-pager-trend" aria-labelledby={id}>
     <h4 id={id}>Opens and clicks over time</h4>
-    <p className="admin-note">Running count of reports with a first open or click, against the number sent so far. Times are Pacific.</p>
+    <p className="admin-note">Running count of reports with a first open, click or account created, against the number sent so far. Times are Pacific.</p>
     <ul className="one-pager-legend" aria-label="Chart lines and current counts">
-      {SERIES.map(series => <li key={series.field}><i aria-hidden="true" style={{ background: series.color }} />{series.label}<strong>{latest[series.field]}</strong></li>)}
+      {series.map(row => <li key={row.field}><i aria-hidden="true" style={{ background: row.color }} />{row.label}<strong>{latest[row.field]}</strong></li>)}
     </ul>
     <div className="one-pager-chart"><canvas ref={canvas} aria-hidden="true" /></div>
     <details className="one-pager-chart-data"><summary>View chart data</summary>
       <table className="directory-player-table one-pager-table">
         <caption className="one-pager-sr-only">Running counts at each recorded change, Pacific time</caption>
-        <thead><tr><th scope="col">Time</th>{SERIES.map(series => <th scope="col" key={series.field}>{series.label}</th>)}</tr></thead>
+        <thead><tr><th scope="col">Time</th>{series.map(row => <th scope="col" key={row.field}>{row.label}</th>)}</tr></thead>
         <tbody>{points.map(point => <tr key={point.at}>
           <td data-label="Time"><time dateTime={new Date(point.at).toISOString()}>{moment.format(point.at)}</time></td>
-          {SERIES.map(series => <td data-label={series.label} key={series.field}>{point[series.field]}</td>)}
+          {series.map(row => <td data-label={row.label} key={row.field}>{point[row.field]}</td>)}
         </tr>)}</tbody>
       </table>
     </details>
