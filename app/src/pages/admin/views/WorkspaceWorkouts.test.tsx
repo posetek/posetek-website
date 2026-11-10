@@ -9,6 +9,20 @@ const request = { ...expandedRequest("", new Date("2026-11-05T12:00:00Z")), view
 const render = (data: ExpandedInsights) => renderToStaticMarkup(<WorkspaceWorkouts data={data} request={request} onChange={() => {}} />);
 
 describe("admin workout evidence", () => {
+  it("breaks workouts down by kind of training when the report names them", () => {
+    const data = previewInsights(request);
+    data.workouts = { ...data.workouts, types: [{ key: "field", started: 43, completed: 12, timerMinutes: 600 }, { key: "yoga", started: 37, completed: 30, timerMinutes: 410 },
+      { key: "bike", started: 15, completed: 15, timerMinutes: 520 }, { key: "something-new", started: 1, completed: 0, timerMinutes: 0 }] };
+    const html = render(data);
+    expect(html).toContain("Workouts by type");
+    for (const label of ["Field training", "Yoga", "Ride", "Other"]) expect(html).toContain(label);
+    expect(html).toContain("A saved workout without a recorded type is field training.");
+    expect(html.indexOf("Workouts by type")).toBeLessThan(html.indexOf("Workout activity by week"));
+    // An earlier reporting service sends no kinds: no empty chart is drawn.
+    expect(render(previewInsights(request))).not.toContain("Workouts by type");
+    const none = previewInsights(request); none.workouts = { ...none.workouts, types: [] };
+    expect(render(none)).toContain("No workouts in this period.");
+  });
   it("keeps all outcome categories, separate player and log denominators, and no prescription card or roster", () => {
     const data = previewInsights(request);
     data.workouts = { ...data.workouts, completed: 2, endedEarly: 1, inProgress: 3, abandoned: 1, unknownEnding: 1, outcomeEvents: 8 };

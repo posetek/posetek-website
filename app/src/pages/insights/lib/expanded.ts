@@ -63,7 +63,9 @@ export interface ExpandedInsights {
     exercises: { key: string; playersQualified: number; qualifyingTests: number; distinctAttempts: number }[];
     progress?: QualifiedProgress[];
     days: { date: string; recordedDocuments: number; distinctAttempts: number; qualifyingTests: number }[] };
-  workouts: { statuses: CountGroup[]; started: number; completed: number; inProgress: number; endedEarly: number; abandoned: number; unknownEnding: number; outcomeEvents?: number; onDeviceEvents?: number; timerRecords?: number; estimatedRecords?: number; knownPrescription?: number; duplicateLogs: number; doneBlocks: number; partialBlocks: number; skippedBlocks: number; setsCompleted: number; timerMinutes: number; estimatedMinutes: number; unknownDuration: number; allPrescribedSetsCompleted: number; unknownPrescription: number;
+  workouts: { statuses: CountGroup[]; started: number; completed: number; inProgress: number; endedEarly: number; abandoned: number; unknownEnding: number; outcomeEvents?: number; onDeviceEvents?: number;
+    /** Started and completed workouts by kind of training; administrator reports only. */
+    types?: { key: string; started: number; completed: number; timerMinutes: number }[]; timerRecords?: number; estimatedRecords?: number; knownPrescription?: number; duplicateLogs: number; doneBlocks: number; partialBlocks: number; skippedBlocks: number; setsCompleted: number; timerMinutes: number; estimatedMinutes: number; unknownDuration: number; allPrescribedSetsCompleted: number; unknownPrescription: number;
     days: { date: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number }[] };
   usage: { statuses: CountGroup[]; collectedPlayers: number; notCollectedPlayers: number; webCollectedPlayers: number; iosCollectedPlayers: number; activePlayers: number; returningPlayers: number; activeMinutes: number; webMinutes: number; iosMinutes: number; overlapMinutes: number; collectionStartedAtMillis: number | null; webCollectionStartedAtMillis: number | null; iosCollectionStartedAtMillis: number | null; featureMinutes: Record<string, number>;
     days: { date: string; activeMinutes: number | null; webMinutes: number | null; iosMinutes: number | null; featureMinutes?: Record<string, number> | null; collectedPlayers?: number; webCollectedPlayers?: number; iosCollectedPlayers?: number }[] };
@@ -77,6 +79,9 @@ export type ExpandedReportSummary = Omit<ExpandedInsights, 'players' | 'paginati
   adminReporting?: Omit<AdminActivityReportData, 'sort' | 'followUp'>;
 };
 export const TESTING_LABELS: Record<string, string> = { fullyTested: "Fully tested", partiallyTested: "Partially tested", noSuccessfulTests: "No successful tests", noRecordedTests: "No recorded tests" };
+/** Kinds of training, as the reporting service names them. */
+export const WORKOUT_TYPE_LABELS: Record<string, string> = { field: "Field training", yoga: "Yoga", core: "Core", gym: "Gym", fitness: "Fitness", hiit: "HIIT", run: "Run", bike: "Ride", walk: "Walk", other: "Other" };
+export const workoutTypeLabel = (key: string | undefined) => WORKOUT_TYPE_LABELS[key || ""] || "Other";
 export const WORKOUT_LABELS: Record<string, string> = { completed: "Completed a workout", inProgress: "No ending record", endedEarly: "Ended early", abandoned: "Abandoned", none: "No workout status" };
 export const USAGE_LABELS: Record<string, string> = { returning: "Returning", active: "Active on one day", inactive: "No active use", notCollected: "Not collected" };
 export const EXERCISES = ["shooting", "sprint", "jump", "broadJump", "changeOfDirection", "dribbling"];
