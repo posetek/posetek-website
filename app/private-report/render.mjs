@@ -457,7 +457,7 @@ function makeWorkoutEntry(report, record) {
     if (report.layout === 'focused-v1') {
       const install = element('section', 'pt-install-visible');
       install.append(element('p', 'pt-cta-note', 'New here? Create your player login with Open workouts. Then use the button below to install TestFlight and PoseTek. Sign in to PoseTek with the same email and password, then open Workouts.'));
-      install.append(workoutAnchor('Get PoseTek on TestFlight', links.install, 'pt-install-button', record && (() => record('testflight'))));
+      install.append(workoutAnchor('Get PoseTek on iPhone', links.install, 'pt-install-button', record && (() => record('testflight'))));
       install.append(element('p', 'pt-platform-label', 'iPhone and iPad'));
       if (platform !== 'android') install.append(workoutAnchor('Already installed? Open PoseTek', links.native));
       entry.append(install);
