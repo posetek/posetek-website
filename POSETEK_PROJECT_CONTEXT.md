@@ -1,5 +1,9 @@
 # PoseTek website project context
 
+## Vacaville one-pager tracking release — November 9, 2026
+
+The live Admin reporting row has **One-pager tracking** after **Usage** for Vacaville’s All teams view. Opens and the two CTA clicks are measured from activation for the 33 sent reports. The exact Netlify artifact and scoped Firebase functions were verified. See the [release handoff](docs/releases/ONE_PAGER_TRACKING.md) for the owner-authorized hosted CI exception, local evidence, retention and recovery.
+
 ## Database-first catalog compatibility release — November 7, 2026
 
 Deployment `6aeffb31ae4da62a62fc6356` was published at

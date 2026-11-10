@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "status": "published-and-active",
+  "productionDeploy": "6af27aaf2061850934b99eeb",
+  "predecessorDeploy": "6af0caecc71b6c0f44b3653c",
+  "publishedAtUtc": "2026-11-10T02:15:34.963Z",
+  "websiteSourcePR": 136,
+  "websiteMergeCommit": "8877904bfc3640982234bb11e854b06ce761e01f",
+  "websiteRuntimeCommit": "7504e7f16258b27a5c117259777b354f18ea93ee",
+  "backendSourcePR": 125,
+  "backendMergeCommit": "801e333a82bd8a463a0b4653220aa10274aab1c7",
+  "backendVerifiedMergeTree": "e0492dfcf440862dc58bf6668bbdd4e5bbce7373",
+  "backendHostedCI": "Blocked before execution by GitHub billing; one-time owner-approved exception. Independent source review and all local lanes passed.",
+  "backendHostedRun": "https://github.com/posetek/posetek-backend/actions/runs/42534035359/attempts/3",
+  "artifactFiles": 2723,
+  "providerRecords": 2724,
+  "preservedPredecessorFiles": 2693,
+  "changedPredecessorFiles": [
+    "/application.html",
+    "/report/crypto.mjs",
+    "/report/loader.mjs",
+    "/report/render.mjs"
+  ],
+  "addedHashedAssets": 26,
+  "protectedFiles": 2721,
+  "localRecoveryMappings": 37,
+  "functions": {
+    "recordOnePagerEngagement": {
+      "versionId": "1",
+      "sourceSha256": "ef63b5a41c27d7f1a5d8c26bcf215274ba851341c85e8b50e54c3091bd0b5a1a",
+      "status": "ACTIVE"
+    },
+    "getOnePagerEngagement": {
+      "versionId": "1",
+      "sourceSha256": "ef63b5a41c27d7f1a5d8c26bcf215274ba851341c85e8b50e54c3091bd0b5a1a",
+      "status": "ACTIVE"
+    }
+  },
+  "unrelatedFunctionsPreserved": true,
+  "tracking": {
+    "organizationId": "vacaville-united-soccer-club",
+    "registeredReports": 33,
+    "startedAtUtc": "2026-11-10T02:16:44.614Z",
+    "expiresAtUtc": "2027-02-08T02:16:44.614Z",
+    "expiryPolicy": "ACTIVE",
+    "syntheticTestRecordsRemaining": 0
+  },
+  "acceptance": {
+    "signedInAdminConfirmed": true,
+    "renderedRows": 33,
+    "initialCounts": {
+      "opened": 0,
+      "workouts": 0,
+      "testflight": 0
+    },
+    "draftSyntheticAllThreeActions": true,
+    "signedOutAdminReadDenied": true,
+    "reportAndSignupBytesPreserved": true
+  }
+}
