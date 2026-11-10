@@ -15,7 +15,7 @@ const render = (metrics?: AdminReportingMetrics) => renderToStaticMarkup(<AdminR
 const card = (html: string, title: string) => html.split(`<dt>${title}</dt>`)[1].split('</div>')[0];
 
 describe('participation and usage cards', () => {
-  it('shows six cohort metrics with independent matching-week comparisons', () => {
+  it('shows six cohort metrics with matching-weekday comparisons from an earlier reporting service', () => {
     const html = render(fixture());
     expect(html.match(/<dt>/g)).toHaveLength(6);
     expect(card(html, 'Players tested')).toContain('is-up">20');
@@ -33,6 +33,34 @@ describe('participation and usage cards', () => {
     expect(html).toContain('2026-10-26–2026-10-29');
     expect(html).toContain('same weekdays last week');
     expect(html).toContain('not an App Store installation count');
+  });
+  it('shows the whole previous week and no change arrow while the current week is in progress', () => {
+    const metrics = fixture();
+    metrics.windows = { current: { startDate: '2026-11-09', endDate: '2026-11-09' }, previous: { startDate: '2026-11-02', endDate: '2026-11-08' },
+      cumulative: { endDate: '2026-11-09', previousEndDate: '2026-11-02' } };
+    metrics.cards.weeklyUsers = value(2, 40); metrics.cards.repeatUsers = value(0, 12); metrics.cards.platformMinutes = value(1.8, 312.4);
+    const html = render(metrics);
+    for (const [title, previous] of [['Weekly users', '40'], ['Repeat users', '12'], ['Time on platform', '312.4 min']]) {
+      expect(card(html, title)).toContain(`Last week <strong>${previous}</strong>`);
+      expect(card(html, title)).toContain('This week so far');
+      expect(card(html, title)).not.toContain('activity-stat-delta');
+      expect(card(html, title)).toContain('is-neutral">');
+    }
+    // Cumulative cards keep their seven-day comparison and its arrow.
+    expect(card(html, 'Players tested')).toContain('aria-label="Increase 5"');
+    expect(card(html, 'Players tested')).not.toContain('This week so far');
+    expect(html).toContain('This week: 2026-11-09–2026-11-09, still in progress. Last week: 2026-11-02–2026-11-08, the whole Monday–Sunday week.');
+    expect(html).toContain('compared with the total through 2026-11-02');
+    expect(html).not.toContain('same weekdays last week');
+  });
+  it('compares two complete weeks once the current week has ended', () => {
+    const metrics = fixture();
+    metrics.windows = { current: { startDate: '2026-11-02', endDate: '2026-11-08' }, previous: { startDate: '2026-10-26', endDate: '2026-11-01' } };
+    const html = render(metrics);
+    expect(card(html, 'Weekly users')).toContain('aria-label="Decrease 3"');
+    expect(card(html, 'Weekly users')).not.toContain('This week so far');
+    expect(html).toContain('This week: 2026-11-02–2026-11-08. Last week: 2026-10-26–2026-11-01');
+    expect(html).toContain('cumulative through each cutoff');
   });
   it('preserves known zero and refuses to infer activity or a trend without collection evidence', () => {
     const metrics = fixture();

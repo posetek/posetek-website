@@ -9,25 +9,35 @@ const CARDS = [
   ['platformMinutes', 'Time on platform', 'Estimated active website + iOS use'],
 ] as const;
 const finite = (value: number | null | undefined) => value != null && Number.isFinite(value) && value >= 0 ? value : null;
+const WEEKLY = new Set<string>(['repeatUsers', 'weeklyUsers', 'platformMinutes']);
+const days = (window: { startDate: string; endDate: string }) => Math.round((Date.parse(`${window.endDate}T12:00:00Z`) - Date.parse(`${window.startDate}T12:00:00Z`)) / 86_400_000) + 1;
 const format = (value: number | null | undefined, minutes = false) => value == null || !Number.isFinite(value) ? '—' : `${value.toLocaleString('en-US', { maximumFractionDigits: minutes ? 1 : 0 })}${minutes ? ' min' : ''}`;
 
 export default function AdminReportingCards({ metrics }: { metrics?: AdminReportingMetrics }) {
+  const windows = metrics?.windows;
+  // "Last week" is the whole previous week. Until the current week is as long,
+  // a difference between the two would compare a part with a whole.
+  const wholePreviousWeek = Boolean(windows) && days(windows!.previous) === 7;
+  const weekInProgress = Boolean(windows) && days(windows!.current) < days(windows!.previous);
   return <section aria-label="Participation and usage summary"><dl className="activity-summary activity-summary-six">
     {CARDS.map(([key, title, description]) => {
       const metric = metrics?.cards[key], minutes = key === 'platformMinutes';
       const value = metric?.status === 'unavailable' ? null : finite(metric?.value);
       const previous = metric?.status === 'unavailable' ? null : finite(metric?.previousValue);
       // Partial collection can change between snapshots; it cannot support a clean trend.
-      const delta = metric?.status === 'available' && value != null && previous != null ? value - previous : null;
+      const inProgress = weekInProgress && WEEKLY.has(key);
+      const delta = !inProgress && metric?.status === 'available' && value != null && previous != null ? value - previous : null;
       const direction = delta == null || delta === 0 ? 'neutral' : delta > 0 ? 'up' : 'down';
       return <div key={key} className="activity-stat activity-card" title={metric?.note || 'Updated reporting data is unavailable.'}>
         <dt>{title}</dt><dd className={`activity-stat-value is-${direction}`}>{format(value, minutes)}</dd>
-        <dd className="activity-stat-comparison"><span>Last week <strong>{format(previous, minutes)}</strong></span>{delta != null && <span className={`activity-stat-delta is-${direction}`} aria-label={`${delta > 0 ? 'Increase' : delta < 0 ? 'Decrease' : 'No change'} ${format(Math.abs(delta), minutes)}`}>{delta > 0 ? '↑' : delta < 0 ? '↓' : '–'} {format(Math.abs(delta), minutes)}</span>}</dd>
+        <dd className="activity-stat-comparison"><span>Last week <strong>{format(previous, minutes)}</strong></span>{delta != null && <span className={`activity-stat-delta is-${direction}`} aria-label={`${delta > 0 ? 'Increase' : delta < 0 ? 'Decrease' : 'No change'} ${format(Math.abs(delta), minutes)}`}>{delta > 0 ? '↑' : delta < 0 ? '↓' : '–'} {format(Math.abs(delta), minutes)}</span>}{inProgress && value != null && <span>This week so far</span>}</dd>
         <dd className="activity-stat-note">{value == null ? metric?.note || 'Updated reporting unavailable' : metric?.status === 'partial' ? `Partial coverage · ${description}` : description}</dd>
       </div>;
     })}
   </dl><details className="activity-card-definitions"><summary>Metric definitions</summary>
-    {metrics && <p>Weekly activity: {metrics.windows.current.startDate}–{metrics.windows.current.endDate}. Comparison: {metrics.windows.previous.startDate}–{metrics.windows.previous.endDate}, the same weekdays last week. Players tested, accounts claimed and observed iOS users are cumulative through each cutoff. Partial coverage does not support a week-to-week trend.</p>}
+    {windows && <p>{wholePreviousWeek
+      ? <>This week: {windows.current.startDate}–{windows.current.endDate}{weekInProgress && ', still in progress'}. Last week: {windows.previous.startDate}–{windows.previous.endDate}, the whole Monday–Sunday week. Repeat users, weekly users and time on platform use these two weeks; a week in progress is shown without a change arrow.</>
+      : <>Weekly activity: {windows.current.startDate}–{windows.current.endDate}. Comparison: {windows.previous.startDate}–{windows.previous.endDate}, the same weekdays last week.</>} Players tested, accounts claimed and observed iOS users are cumulative{windows.cumulative ? <>, compared with the total through {windows.cumulative.previousEndDate}</> : ' through each cutoff'}. Partial coverage does not support a week-to-week trend.</p>}
     <p>Repeat users counts players with recorded website or iOS use on at least two distinct local days in each shown week. Multiple visits on one day count as one active day.</p>
     <p>iOS downloads uses observed iOS activity as a proxy; it is not an App Store installation count. Estimated active time counts simultaneous website and iOS use once.</p>
     {CARDS.map(([key, title]) => metrics?.cards[key]?.note && <p key={key}><strong>{title}:</strong> {metrics.cards[key].note}</p>)}
