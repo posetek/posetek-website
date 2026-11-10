@@ -1,5 +1,11 @@
 # PoseTek website project context
 
+## One-pager cohort tracking release — November 10, 2026
+
+Deployment `6af362397a8e341ea91b5788` adds a Cohort selector after Usage in each organization's All teams player view. The original 33 Vacaville reports retain their recorded activity and expiry. The verified-send closeout enrolls later reports as approved messages are recorded. The 13 November 9 drafts remain held.
+
+The exact production artifact preserves 2,722 prior files, including the current encrypted reports and reader. Only the application document changed and 25 hashed assets were added. Both existing tracking Functions are active at version 2. Keep `[skip netlify]` on source and receipt merges. [Production receipt](docs/releases/receipts/ONE_PAGER_COHORTS_PRODUCTION.json)
+
 ## Database-first catalog compatibility release — November 7, 2026
 
 Deployment `6aeffb31ae4da62a62fc6356` was published at
