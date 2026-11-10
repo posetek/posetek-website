@@ -14,7 +14,7 @@ describe("admin workout evidence", () => {
     data.workouts = { ...data.workouts, completed: 2, endedEarly: 1, inProgress: 3, abandoned: 1, unknownEnding: 1, outcomeEvents: 8 };
     const html = render(data);
     expect(html).toContain("84 matching players");
-    expect(html).toContain("8 distinct workout logs");
+    expect(html).toContain("8 distinct workouts");
     expect(html).toContain("Completed as logged");
     expect(html).toContain("Unknown ending");
     expect(html).toContain("A player may have several outcomes");
@@ -51,7 +51,7 @@ describe("admin workout evidence", () => {
     data.players = [];
     data.workouts = { ...data.workouts, completed: 2, endedEarly: 1, inProgress: 1, abandoned: 0, unknownEnding: 0, outcomeEvents: undefined, timerRecords: 2 };
     const html = render(data);
-    expect(html).toContain("4 distinct workout logs");
+    expect(html).toContain("4 distinct workouts");
     expect(html).toContain("2/4 logs with timers");
     expect(html).toContain("84 matching players");
     expect(html).not.toContain("NaN");

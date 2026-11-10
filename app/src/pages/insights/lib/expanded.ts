@@ -34,7 +34,11 @@ export interface ExpandedPlayer {
   performance?: { d1: number | null; change: number | null; lastTestDate: string | null; previousTestDate: string | null;
     sessionsDone: number | null; sessionsPlanned: number | null; activePlan: boolean; planAgeDays: number | null; needsYouReasons: string[];
     coachFocus?: { version: 1; completedInPeriod: number | null; measuredTests: CoachMeasuredTest[] } };
-  workouts: { status: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number; allPrescribedSetsCompleted: number; unknownPrescription: number; outcomeEvents?: number; timerRecords?: number; estimatedRecords?: number };
+  workouts: { status: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number; allPrescribedSetsCompleted: number; unknownPrescription: number; outcomeEvents?: number; timerRecords?: number; estimatedRecords?: number;
+    /** Sessions recorded on the player's phone and counted above; absent on an earlier reporting service. */
+    onDeviceEvents?: number;
+    /** The same totals from saved workout logs alone, for comparison with the logs a page lists. */
+    savedLogs?: { completed: number; timerMinutes: number; estimatedMinutes: number; timerRecords: number; estimatedRecords: number } };
   usage: { status: string; collected: boolean; webCollected: boolean; iosCollected: boolean; activeMinutes: number; webMinutes: number; iosMinutes: number; activeDays: number };
 }
 /** Optional admin-only metrics for account rows; excluded history is never returned. */
@@ -59,7 +63,7 @@ export interface ExpandedInsights {
     exercises: { key: string; playersQualified: number; qualifyingTests: number; distinctAttempts: number }[];
     progress?: QualifiedProgress[];
     days: { date: string; recordedDocuments: number; distinctAttempts: number; qualifyingTests: number }[] };
-  workouts: { statuses: CountGroup[]; started: number; completed: number; inProgress: number; endedEarly: number; abandoned: number; unknownEnding: number; outcomeEvents?: number; timerRecords?: number; estimatedRecords?: number; knownPrescription?: number; duplicateLogs: number; doneBlocks: number; partialBlocks: number; skippedBlocks: number; setsCompleted: number; timerMinutes: number; estimatedMinutes: number; unknownDuration: number; allPrescribedSetsCompleted: number; unknownPrescription: number;
+  workouts: { statuses: CountGroup[]; started: number; completed: number; inProgress: number; endedEarly: number; abandoned: number; unknownEnding: number; outcomeEvents?: number; onDeviceEvents?: number; timerRecords?: number; estimatedRecords?: number; knownPrescription?: number; duplicateLogs: number; doneBlocks: number; partialBlocks: number; skippedBlocks: number; setsCompleted: number; timerMinutes: number; estimatedMinutes: number; unknownDuration: number; allPrescribedSetsCompleted: number; unknownPrescription: number;
     days: { date: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number }[] };
   usage: { statuses: CountGroup[]; collectedPlayers: number; notCollectedPlayers: number; webCollectedPlayers: number; iosCollectedPlayers: number; activePlayers: number; returningPlayers: number; activeMinutes: number; webMinutes: number; iosMinutes: number; overlapMinutes: number; collectionStartedAtMillis: number | null; webCollectionStartedAtMillis: number | null; iosCollectionStartedAtMillis: number | null; featureMinutes: Record<string, number>;
     days: { date: string; activeMinutes: number | null; webMinutes: number | null; iosMinutes: number | null; featureMinutes?: Record<string, number> | null; collectedPlayers?: number; webCollectedPlayers?: number; iosCollectedPlayers?: number }[] };

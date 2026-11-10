@@ -27,8 +27,12 @@ export function playerWorkoutTotalsAgree(report: ExpandedInsights, playerId: str
   const row = report.rosterMetrics?.find(metric => metric.playerId === playerId);
   // Exclusions and unavailable summaries keep their existing explicit states.
   if (!row || row.status !== 'included') return true;
+  // The report also counts sessions recorded on the player's phone, which are
+  // not among the saved logs listed here. Compare like with like: the report's
+  // saved-log totals when it sends them, its only totals when it does not.
+  const reported = row.player.workouts.savedLogs ?? row.player.workouts;
   return (Object.keys(expected) as (keyof typeof expected)[]).every(key =>
-    Number.isFinite(row.player.workouts[key]) && Math.abs(row.player.workouts[key]! - expected[key]) < 1e-7);
+    Number.isFinite(reported[key]) && Math.abs(reported[key]! - expected[key]) < 1e-7);
 }
 
 export function assertPlayerWorkoutsAgree(report: ExpandedInsights, playerId: string, logs: RecordedWorkoutLog[], now: number) {
