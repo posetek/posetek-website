@@ -101,7 +101,7 @@ export function assertAdminActivity(data: ExpandedInsights, payload: WorkspaceRe
   }
 }
 
-export const WORKSPACE_REPORT_TTL_MS = 60_000;
+export const WORKSPACE_REPORT_TTL_MS = 5 * 60_000;
 export const WORKSPACE_REPORT_MAX_ENTRIES = 5;
 export const WORKSPACE_REPORT_MAX_BYTES = 2 * 1024 * 1024;
 export interface WorkspaceReportObservation { data: ExpandedInsights; checkedAt: number }

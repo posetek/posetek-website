@@ -6,7 +6,7 @@ import type { ReadOnlyReport } from '../../../lib/useReadOnlyReport';
 import { retryableReportError } from '../../insights/lib/completeReport';
 import { useForegroundReport } from '../../../lib/foreground-report';
 import type { ExpandedInsights, InsightScope } from "../../insights/lib/expanded";
-import { createWorkspaceMetricsTransport, workspaceMetricsPayload, workspacePayloadKey } from "./workspaceMetricsData";
+import { createWorkspaceMetricsTransport, WORKSPACE_REPORT_TTL_MS, workspaceMetricsPayload, workspacePayloadKey } from "./workspaceMetricsData";
 import type { WorkspaceReportPayload } from "./workspaceMetricsData";
 import { failDirectorySession } from "./directoryRetention";
 
@@ -93,7 +93,7 @@ export function useWorkspaceMetrics({ scope, search, playerIds, lookupOnly = fal
   const summary = retained && payload ? transport.peekSummary(auth.currentUser?.uid || null, payload) : null;
   const refreshing = Boolean(payload && readEnabled && outcome.refreshing);
   const loading = refreshing && !outcome.data;
-  useForegroundReport({ key, refresh, busy: refreshing, enabled: Boolean(payload && foreground && readEnabled) });
+  useForegroundReport({ key, refresh, busy: refreshing, enabled: Boolean(payload && foreground && readEnabled), ...(retained ? { refreshMs: WORKSPACE_REPORT_TTL_MS, observedAt: outcome.checkedAt } : {}) });
   return {
     data: payload && readEnabled ? outcome.data : null,
     summaryData: summary?.data || null, summaryCheckedAt: summary?.checkedAt ?? null,

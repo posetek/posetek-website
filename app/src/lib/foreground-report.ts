@@ -2,26 +2,26 @@ import { useEffect, useRef } from 'react';
 
 export const REPORT_REFRESH_MS = 60_000;
 /** No hidden polling. A visible return/focus and interval share one deadline. */
-export function createForegroundRefresh(now: () => number, refresh: () => void) {
+export function createForegroundRefresh(now: () => number, refresh: () => void, refreshMs = REPORT_REFRESH_MS) {
   let attemptedAt = now();
   return {
-    attempted() { attemptedAt = now(); },
+    attempted(at = now()) { attemptedAt = at; },
     check(visible: boolean, busy: boolean) {
-      if (!visible || busy || now() - attemptedAt < REPORT_REFRESH_MS) return false;
+      if (!visible || busy || now() - attemptedAt < refreshMs) return false;
       attemptedAt = now(); refresh(); return true;
     },
   };
 }
 
-export function useForegroundReport({ key, refresh, busy, enabled = true, interval = false }: {
-  key: string; refresh: () => void; busy: boolean; enabled?: boolean; interval?: boolean;
+export function useForegroundReport({ key, refresh, busy, enabled = true, interval = false, refreshMs, observedAt }: {
+  key: string; refresh: () => void; busy: boolean; enabled?: boolean; interval?: boolean; refreshMs?: number; observedAt?: number | null;
 }) {
   const current = useRef({ refresh, busy });
   useEffect(() => { current.current = { refresh, busy }; }, [refresh, busy]);
   const clock = useRef<ReturnType<typeof createForegroundRefresh> | null>(null);
   useEffect(() => {
-    clock.current = createForegroundRefresh(Date.now, () => current.current.refresh());
-  }, [key]);
+    clock.current = createForegroundRefresh(Date.now, () => current.current.refresh(), refreshMs);
+  }, [key, refreshMs]);
   useEffect(() => {
     if (!enabled) return;
     const check = () => clock.current?.check(document.visibilityState === 'visible', current.current.busy);
@@ -33,4 +33,6 @@ export function useForegroundReport({ key, refresh, busy, enabled = true, interv
     return () => { document.removeEventListener('visibilitychange', check); window.removeEventListener('focus', check); if (timer !== undefined) window.clearInterval(timer); };
   }, [key, enabled, interval]);
   useEffect(() => { clock.current?.attempted(); }, [busy]);
+  // Must follow the busy effect: a report reused from earlier is already partway through its lifetime.
+  useEffect(() => { if (observedAt != null) clock.current?.attempted(observedAt); }, [observedAt]);
 }

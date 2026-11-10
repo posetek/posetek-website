@@ -124,7 +124,7 @@ describe('opt-in short-lived admin workspace observations', () => {
     const expected = report(), read = vi.fn().mockResolvedValue(expected);
     const transport = createWorkspaceMetricsTransport(read, () => clock);
     await transport.load('admin', payload(), () => true, undefined, undefined, retained);
-    clock += 59_999;
+    clock += 299_999;
     expect(await transport.load('admin', payload(), () => true, undefined, undefined, retained)).toBe(expected);
     expect(transport.peek('admin', payload())?.checkedAt).toBe(1000);
     expect(transport.peek('admin', payload())?.data.generatedAtMillis).toBe(expected.generatedAtMillis);
@@ -146,6 +146,15 @@ describe('opt-in short-lived admin workspace observations', () => {
       { ...base, filters: { ...base.filters, workoutStatus: 'completed' } },
     ].map(workspacePayloadKey);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+  it('reuses an exact report for five minutes and not after', async () => {
+    let at = 1_000;
+    const read = vi.fn(async (input) => report(input)), transport = createWorkspaceMetricsTransport(read, () => at);
+    await transport.load('admin', payload(), () => true, undefined, undefined, retained);
+    at = 1_000 + 299_999;
+    expect(transport.peek('admin', payload())).not.toBeNull();
+    at = 1_000 + 300_000;
+    expect(transport.peek('admin', payload())).toBeNull();
   });
   it('refreshes all same-scope tab variants when one report is explicitly refreshed', async () => {
     const read = vi.fn(async (input) => report(input));
@@ -281,7 +290,7 @@ describe('same-cohort display-only summaries', () => {
     let clock = 1000;
     const data = summaryReport(), transport = createWorkspaceMetricsTransport(async () => data, () => clock);
     await transport.load('admin', input(), () => true, undefined, undefined, retained);
-    clock += 60_001;
+    clock += 300_001;
     expect(transport.peek('admin', input())).toBeNull();
     expect(transport.peekSummary('admin', input())).toMatchObject({ checkedAt: 1000, stale: true, data: { generatedAtMillis: data.generatedAtMillis } });
   });

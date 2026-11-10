@@ -43,7 +43,8 @@ export default function MonitorAccounts({ source = directorySource }: { source?:
   useEffect(() => {
     setWorkspaceMetricsScope(state.orgId ? state.teamId ? { kind: "team", organizationId: state.orgId, teamId: state.teamId } : { kind: "organization", organizationId: state.orgId } : { kind: "global" });
   }, [state.orgId, state.teamId, session]);
-  useEffect(() => () => { setWorkspaceMetricsScope(null); session.clearAll(false); }, [session]);
+  // Reports stay retained across leaving this page; their TTL, Auth and scope changes still expire them.
+  useEffect(() => () => { session.clearAll(false); }, [session]);
   const choose = (patch: Partial<AdminDirectoryState>, replace = false) => {
     const target = adminDirectoryPath({ ...state, ...patch });
     setQuery(new URLSearchParams(target.split("?")[1] || ""), { replace });
