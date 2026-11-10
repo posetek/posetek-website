@@ -89,9 +89,24 @@ export function personalGenerationErrors(intake: PersonalIntake, minutes: number
 export function latestPersonalRevision(old: Row | undefined, incoming: Row): Row {
   return old && Number(old.revision) > Number(incoming.revision) ? old : incoming;
 }
+// The workout screen shares its skip choices with assigned workouts. The personal
+// workout service has its own, narrower list and refuses any other value, which
+// left the drill unsaved. Saved rows already use the service's words.
+const PERSONAL_SKIP_REASONS: Record<string, string> = { pain: 'pain', time: 'time', equipment: 'equipment', other: 'other', noSpace: 'equipment', tooTired: 'other' };
+export function personalSkipReason(reason: unknown): string | undefined {
+  return typeof reason === 'string' && reason ? PERSONAL_SKIP_REASONS[reason] ?? 'other' : undefined;
+}
+/** The service keeps `completed` for a session with every prescribed set of every
+ * exercise done, and refuses it otherwise. A session seen through with a skipped
+ * or part-done drill ends as `stopped`, so it is saved instead of staying open. */
+export function personalEndReason(endReason: string | undefined, rows: Row[], prescribedBlocks: number): 'completed' | 'stopped' | 'pain' | undefined {
+  if (!endReason) return undefined;
+  if (rows.some(r => r.skipReason === 'pain')) return 'pain';
+  return endReason === 'completed' && prescribedBlocks > 0 && rows.length === prescribedBlocks && rows.every(r => r.status === 'done') ? 'completed' : 'stopped';
+}
 export function personalLogRows(rows: Row[]): Row[] {
   return rows.map(r => ({ blockId: r.blockId, status: r.status, setsCompleted: r.setsCompleted,
-    ...(r.skipReason ? { skipReason: r.skipReason } : {}),
+    ...(r.skipReason ? { skipReason: personalSkipReason(r.skipReason) } : {}),
     ...(Number.isInteger(r.elapsedSeconds) ? { elapsedSeconds: r.elapsedSeconds } : {}) }));
 }
 export function personalWorkoutPayload(draft: PersonalDraft): PersonalDraft {
