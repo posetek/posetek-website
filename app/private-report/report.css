@@ -160,3 +160,15 @@ button:focus-visible, a:focus-visible, summary:focus-visible {
 .pt-corrected-results dd { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 
 .pt-top .pt-coverage { margin-top: 12px; padding-top: 10px; border-top: 1px solid #284A3B; color: #E2EBDD; }
+
+/* Development evidence extends the classic report without replacing its result bands. */
+.pt-development-part { margin: 22px 0; }
+.pt-development-part p { margin: 7px 0; font-size: 12px; color: var(--pt-muted); }
+.pt-development-part strong { color: var(--pt-ink); }
+.pt-plan { padding: 14px; background: var(--pt-panel); border: 1px solid var(--pt-line); border-radius: 11px; }
+.pt-plan .pt-position { color: var(--pt-ink); }
+.pt-plan .pt-assumptions { font-size: 11px; }
+.pt-pathways-compact .pt-pathway { margin: 14px 0; padding-top: 12px; }
+.pt-pathways-compact .pt-pathway-placement { min-height: 0; }
+.pt-pathways-compact .pt-pathway svg { min-width: 0; }
+.pt-drill .pt-equipment, .pt-drill .pt-drill-why { margin: 7px 0 0; font-size: 12px; color: var(--pt-muted); }

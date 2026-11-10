@@ -227,6 +227,60 @@ function makeCorrectedResults(report) {
   return section;
 }
 
+
+/** Saved-plan references are descriptive only, never authorization or mutable URLs. */
+export function validateDevelopment(development, exercises) {
+  if (development === undefined) return false;
+  const d = development;
+  if (!d || d.version !== 1) throw new Error('Invalid development extension');
+  validatePathwayCharts(d.charts, 1);
+  if (!['verified', 'general', 'conflict'].includes(d.positionStatus)) throw new Error('Invalid position status');
+  string(d.positionLabel, 'position label', 160);
+  string(d.positionNote, 'position note');
+  for (const key of ['strengths', 'priorities']) {
+    for (const item of array(d[key], key, 2)) {
+      string(item.title, key + ' title', 160);
+      string(item.text, key + ' text');
+      if (!['measured', 'position', 'recorded'].includes(item.basis)) throw new Error('Invalid development basis');
+      for (const id of array(item.drillIds, 'priority drill references', 12)) string(id, 'drill id', 128);
+    }
+  }
+  if (!d.plan) throw new Error('Missing saved plan');
+  for (const key of ['id', 'summary', 'schedule', 'progression', 'assumptions']) string(d.plan[key], 'plan ' + key);
+  if (!Array.isArray(exercises) || exercises.length !== 2) throw new Error('Two saved-plan drills required');
+  for (const exercise of exercises) {
+    for (const key of ['drillId', 'workoutId', 'equipment', 'why']) string(exercise[key], 'exercise ' + key);
+    if (exercise.planId !== d.plan.id) throw new Error('Drill and plan disagree');
+  }
+  return true;
+}
+
+function makeDevelopment(report) {
+  const d = report.development;
+  const section = element('section', 'pt-development');
+  const pathways = makePathways({...report, pathwayCharts: d.charts});
+  pathways.classList.add('pt-pathways-compact');
+  pathways.querySelector('h2').textContent = 'Developmental pathway';
+  section.append(pathways);
+  for (const [key, title] of [['strengths', 'What you’re doing well'], ['priorities', 'What we’ll build next']]) {
+    const part = element('section', 'pt-development-part');
+    part.append(element('h2', 'pt-practice-title', title));
+    for (const item of d[key]) {
+      const p = element('p');
+      p.append(element('strong', '', item.title + '. '), document.createTextNode(item.text));
+      part.append(p);
+    }
+    section.append(part);
+  }
+  const plan = element('section', 'pt-development-part pt-plan');
+  plan.append(element('h2', 'pt-practice-title', 'Your training plan'));
+  plan.append(element('p', 'pt-position', d.positionLabel + ' · ' + d.positionNote));
+  for (const key of ['summary', 'schedule', 'progression']) plan.append(element('p', '', d.plan[key]));
+  plan.append(element('p', 'pt-assumptions', d.plan.assumptions));
+  section.append(plan);
+  return section;
+}
+
 function validate(report) {
   if (!report || typeof report !== 'object' || report.version !== 1) throw new Error('Invalid report');
   for (const field of ['name', 'firstName', 'team', 'coach', 'testDate', 'focusTitle', 'focusText', 'playerId']) {
@@ -254,11 +308,14 @@ function validate(report) {
   }
   for (const note of array(report.methodNotes, 'method notes', 16)) string(note, 'method note', 1800);
   validatePathwayCharts(report.pathwayCharts, report.pathwayVersion);
+  validateDevelopment(report.development, report.exercises);
+  if (report.development && (report.pathwayCharts || report.resultsFirst !== true)) throw new Error('Development requires results-first classic layout');
   if (report.pathwayCoverage !== undefined) {
     if (!report.pathwayCharts || !report.pathwayCoverage || typeof report.pathwayCoverage.broaderComparisonsPending !== 'boolean') throw new Error('Invalid pathway coverage');
     string(report.pathwayCoverage.note, 'pathway coverage', 300);
   }
   if (report.playerSignupUrl !== undefined) playerSignupLink(report.playerSignupUrl, report.playerId);
+  if (report.reviewNotice !== undefined) string(report.reviewNotice, 'review notice', 180);
   if (report.resultsFirst !== undefined && typeof report.resultsFirst !== 'boolean') throw new Error('Invalid results-first presentation');
   const encoded = string(report.pdfBase64, 'PDF', 1_800_000);
   if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) throw new Error('Invalid PDF encoding');
@@ -307,7 +364,7 @@ function makeDetails(report) {
   details.append(element('summary', '', 'How to read this + team averages'));
   const content = element('div', 'pt-detail-content');
   content.append(element('p', '', 'Further right means a more favorable result in this team’s testing session. 50th is the team middle; around 90th is near the top of this session.'));
-  content.append(element('p', '', 'Practice: below 25th. Team middle: 25th to below 75th. Strong: 75th and above. These are report bands, not age or national standards.'));
+  content.append(element('p', '', 'Practice: below 25th. Team middle: 25th to below 75th. Strong: 75th and above. Bands use unrounded ranks; the labels are rounded. These are report bands, not age or national standards.'));
   const table = element('table');
   table.setAttribute('aria-label', 'Team averages and number of results');
   const head = element('thead');
@@ -327,6 +384,10 @@ function makeDetails(report) {
   table.append(head, body);
   content.append(table);
   for (const note of report.methodNotes) content.append(element('p', '', note));
+  for (const chart of report.development?.charts || []) {
+    content.append(element('p', '', `${chart.label}: ${chart.reference.label}. Checked ${chart.reference.sourceDate}. ${chart.reference.selectionRule}`));
+    for (const note of chart.notes) content.append(element('p', '', note));
+  }
   for (const metric of report.metrics) {
     if (metric.note && metric.percentile !== null) content.append(element('p', '', `${metric.label}: ${metric.note}`));
   }
@@ -334,16 +395,20 @@ function makeDetails(report) {
   return details;
 }
 
-function workoutAnchor(text, href, className = 'pt-recovery-link') {
+function workoutAnchor(text, href, className = 'pt-recovery-link', onActivate) {
   const link = element('a', className, text);
   link.href = href;
   if (href.startsWith('https://')) link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.referrerPolicy = 'no-referrer';
+  if (onActivate) {
+    link.addEventListener('click', onActivate);
+    link.addEventListener('auxclick', event => { if (event.button === 1) onActivate(); });
+  }
   return link;
 }
 
-function makeWorkoutEntry(report) {
+function makeWorkoutEntry(report, record) {
   const links = workoutLinks(report.playerId);
   const entry = element('div', 'pt-workout-entry');
   if (!links) {
@@ -352,8 +417,16 @@ function makeWorkoutEntry(report) {
   }
   const platform = workoutPlatform();
   if (report.playerSignupUrl !== undefined) {
-    entry.append(workoutAnchor(`Open ${report.firstName}’s workouts`, playerSignupLink(report.playerSignupUrl, report.playerId), 'pt-primary'));
-    entry.append(element('p', 'pt-cta-note', `First, create ${report.firstName}’s player login with the filled-in code, or sign in if it’s already set up.`));
+    const workout = workoutAnchor(`Open ${report.firstName}’s workouts`, playerSignupLink(report.playerSignupUrl, report.playerId), 'pt-primary', record && (() => record('workouts')));
+    // Keep the report open while signup starts. WebKit can cancel the event
+    // during same-tab navigation even when the request has keepalive enabled.
+    const guidance = element('p', 'pt-cta-note', `First, create ${report.firstName}’s player login with the filled-in code, or sign in if it’s already set up.${record ? ' Opens in a new tab.' : ''}`);
+    if (record) {
+      workout.target = '_blank';
+      guidance.id = 'pt-workouts-guidance';
+      workout.setAttribute('aria-describedby', guidance.id);
+    }
+    entry.append(workout, guidance);
     const signIn = `/signin?reportPlayer=${encodeURIComponent(report.playerId)}`;
     entry.append(workoutAnchor('Already have the player login? Sign in', signIn));
     if (platform !== 'android') {
@@ -361,7 +434,7 @@ function makeWorkoutEntry(report) {
       recovery.append(element('summary', '', 'Already set up? Open the iPhone or iPad app'));
       const choices = element('div', 'pt-recovery-links');
       choices.append(workoutAnchor('Open in the PoseTek app', links.native));
-      recovery.append(choices, makeInstallSteps(links));
+      recovery.append(choices, makeInstallSteps(links, record));
       entry.append(recovery);
     }
     return entry;
@@ -392,19 +465,19 @@ function makeWorkoutEntry(report) {
   return entry;
 }
 
-function makeInstallSteps(links) {
+function makeInstallSteps(links, record) {
   const steps = element('div', 'pt-install');
   steps.append(element('p', 'pt-install-title', 'Don’t have PoseTek yet?'));
   const list = element('ol', 'pt-install-list');
   const install = element('li');
-  install.append(workoutAnchor('Install or update PoseTek', links.install), ' through Apple’s TestFlight.');
+  install.append(workoutAnchor('Install or update PoseTek', links.install, undefined, record && (() => record('testflight'))), ' through Apple’s TestFlight.');
   list.append(install, element('li', '', 'Come back to this report and tap Open in the PoseTek app.'));
   steps.append(list);
   return steps;
 }
 
 /** Render only an already-decrypted report. Report strings are always plain text. */
-export function renderReport(report) {
+export function renderReport(report, record) {
   clearReport();
   const pdf = validate(report);
   const mount = document.getElementById('report-root');
@@ -415,6 +488,7 @@ export function renderReport(report) {
   header.append(element('h1', '', `${report.firstName}’s ${report.pathwayCharts ? 'testing' : 'team'} snapshot`));
   header.append(element('p', '', `${report.name} · ${report.team}`));
   header.append(element('p', '', `Coach ${report.coach} · Tested ${report.testDate}`));
+  if (report.reviewNotice) header.append(element('p', 'pt-coverage', report.reviewNotice));
   if (report.pathwayCoverage) header.append(element('p', 'pt-coverage', report.pathwayCoverage.note));
   const main = element('main', 'pt-body');
   if (!report.resultsFirst) {
@@ -424,7 +498,7 @@ export function renderReport(report) {
   }
 
   const actions = element('div', 'pt-actions');
-  actions.append(makeWorkoutEntry(report));
+  actions.append(makeWorkoutEntry(report, record));
   const downloadRow = element('div', 'pt-download-row');
   const download = element('button', 'pt-quiet-button', 'Download PDF');
   download.type = 'button';
@@ -463,15 +537,22 @@ export function renderReport(report) {
     meaning.append(row);
   }
   if (report.summary.length) main.append(meaning);
+  if (report.development) main.append(makeDevelopment(report));
   if (!report.pathwayCharts) main.append(makeDetails(report));
   if (report.exercises.length) {
     const practice = element('section');
-    practice.append(element('h2', 'pt-practice-title', 'A little practice to get started'));
+    practice.append(element('h2', 'pt-practice-title', report.development ? 'Two drills from your plan' : 'A little practice to get started'));
     for (const exercise of report.exercises) {
       const drill = element('article', 'pt-drill');
       const top = element('div', 'pt-drill-top');
       top.append(element('h3', '', exercise.title), element('span', 'pt-drill-tag', exercise.tag));
       drill.append(top, element('p', 'pt-dose', exercise.dose), element('p', '', exercise.instruction));
+      if (report.development) {
+        drill.dataset.drillId = exercise.drillId;
+        drill.dataset.workoutId = exercise.workoutId;
+        drill.append(element('p', 'pt-equipment', `Equipment: ${exercise.equipment}`));
+        drill.append(element('p', 'pt-drill-why', `Why this helps you: ${exercise.why}`));
+      }
       practice.append(drill);
     }
     practice.append(element('p', 'pt-safety', 'Clear, flat space. Stop if anything hurts.'));
@@ -479,6 +560,7 @@ export function renderReport(report) {
   }
   main.append(actions);
   main.append(element('p', 'pt-private-note', 'Keep this link within your family.'));
+  if (record) main.append(element('p', 'pt-private-note', 'PoseTek records when this report link is opened and when its Workouts and TestFlight buttons are used.'));
   phone.append(header, main);
   pdfUrl = URL.createObjectURL(new Blob([pdf], {type: 'application/pdf'}));
   mount.replaceChildren(phone);
