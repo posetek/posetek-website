@@ -70,7 +70,8 @@ function CohortTracking({ organizationId, cohort }: { organizationId: string; co
   const active = tracking?.state === "active" ? tracking : null;
   const total = active ? active.total : cohort.total;
   const viewTime = active ? viewTimeSummary(active.reports) : null;
-  const hadAccount = active ? active.reports.filter(row => row.hadAccount === true).length : 0;
+  // Recipients with an account that was not created through this report's Workouts button.
+  const otherAccounts = active ? active.reports.filter(row => row.hasAccount === true && row.accountAt === null).length : 0;
   const hasActivity = active?.reports.some(row => ONE_PAGER_METRICS.some(({ field }) => row[field] !== null));
   const trend = useMemo(() => active && hasActivity ? onePagerTrend(active.reports, active.total, active.startAt, active.loadedAt) : null, [active, hasActivity]);
   return <>
@@ -87,7 +88,7 @@ function CohortTracking({ organizationId, cohort }: { organizationId: string; co
           <span>{label}</span>
           {field === "accountAt" && !active.accountsReported ? <><strong>Not available</strong><p>Account creation is not being reported yet.</p></>
             : <strong>{active.reports.filter(row => row[field] !== null).length} of {active.total}</strong>}
-          {field === "accountAt" && active.accountsReported && <p>Claimed since the first send date{hadAccount ? ` · ${hadAccount} already had an account` : ""}</p>}
+          {field === "accountAt" && active.accountsReported && <p>Created after clicking the report’s Workouts button{otherAccounts ? ` · ${otherAccounts} more ${otherAccounts === 1 ? "has" : "have"} an account another way` : ""}</p>}
         </div>)}
         <div className="workspace-summary-card"><span>Average time on page</span>
           {viewTime === null ? <><strong>Not available</strong><p>Time on page is not being collected yet.</p></>
@@ -98,10 +99,10 @@ function CohortTracking({ organizationId, cohort }: { organizationId: string; co
       {trend ? <OnePagerTrendChart points={trend} omit={active.accountsReported ? undefined : "accountAt"} />
         : <p className="admin-note">No opens or clicks recorded yet. A chart of activity over time appears after the first one.</p>}
       <table className="directory-player-table one-pager-table" aria-label="First recorded activity per player report">
-        <thead><tr><th scope="col">Player</th><th scope="col">First open</th><th scope="col">First Workout click</th><th scope="col">Account created</th><th scope="col">First TestFlight click</th><th scope="col">Time on page</th></tr></thead>
+        <thead><tr><th scope="col">Player</th><th scope="col">First open</th><th scope="col">First Workout click</th><th scope="col">Account from Workout button</th><th scope="col">First TestFlight click</th><th scope="col">Time on page</th></tr></thead>
         <tbody>{active.reports.map(row => <tr key={row.id}>
           <td data-label="Player"><strong>{row.name}</strong></td>
-          {ONE_PAGER_METRICS.map(({ field, label }) => <td data-label={label} key={field}>{row[field] === null ? (field !== "accountAt" ? "None recorded" : !active.accountsReported ? "Not available" : row.hadAccount ? "Already had an account" : "Not yet") : <time dateTime={new Date(row[field]).toISOString()}>{formatPacific.format(row[field])}</time>}</td>)}
+          {ONE_PAGER_METRICS.map(({ field, label }) => <td data-label={label} key={field}>{row[field] === null ? (field !== "accountAt" ? "None recorded" : !active.accountsReported ? "Not available" : row.hasAccount ? "Has an account, not from this button" : "Not yet") : <time dateTime={new Date(row[field]).toISOString()}>{formatPacific.format(row[field])}</time>}</td>)}
           <td data-label="Time on page">{typeof row.viewSeconds !== "number" ? "Not available" : row.viewSeconds > 0 ? formatViewTime(row.viewSeconds) : "None recorded"}</td>
         </tr>)}</tbody>
       </table>

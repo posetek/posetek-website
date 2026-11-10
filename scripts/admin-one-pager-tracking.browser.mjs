@@ -112,7 +112,7 @@ try {
       assert.deepEqual(await cardValues(), { 'Reports sent': '2', 'Reports opened': '1 of 2', 'Workout button clicks': '0 of 2', 'Accounts created': '0 of 2',
         'TestFlight clicks': '0 of 2', 'Average time on page': '40 sec' });
       await trend.getByText('View chart data', { exact: true }).click();
-      await cards.nth(3).getByText('Claimed since the first send date · 1 already had an account', { exact: true }).waitFor();
+      await cards.nth(3).getByText('Created after clicking the report’s Workouts button · 1 more has an account another way', { exact: true }).waitFor();
       assert.deepEqual((await cells(0)).slice(1), ['1', '0', '0', '0', '0']);
       assert.deepEqual((await cells(1)).slice(1), ['2', '0', '0', '0', '0']);
       assert.deepEqual((await cells(2)).slice(1), ['2', '1', '0', '0', '0']);

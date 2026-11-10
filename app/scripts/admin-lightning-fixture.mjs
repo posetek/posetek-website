@@ -14,12 +14,12 @@ function fixtureTracking(input) {
  // 'legacy' is a tracking service from before time on page; 'quiet' has started with nothing recorded.
  if (!['active', 'legacy', 'quiet'].includes(state)) return { state };
  const startAt = cohort === next ? Date.UTC(2026,10,9,20) : Date.UTC(2026,10,8,20), hour = 3600000;
- const events = cohort === next ? [{ openedAt: startAt + 3 * hour, viewSeconds: 40, sentAt: startAt }, { sentAt: startAt + 2 * hour, hadAccount: true }]
-  : [{ openedAt: startAt + hour, workoutsAt: startAt + 2 * hour, accountAt: startAt + 5 * hour, viewSeconds: 250 }, { openedAt: startAt + 3 * hour, testflightAt: startAt + 4 * hour, viewSeconds: 50 }, { openedAt: startAt + 26 * hour }];
+ const events = cohort === next ? [{ openedAt: startAt + 3 * hour, viewSeconds: 40, sentAt: startAt }, { sentAt: startAt + 2 * hour, hasAccount: true }]
+  : [{ openedAt: startAt + hour, workoutsAt: startAt + 2 * hour, accountAt: startAt + 5 * hour, hasAccount: true, viewSeconds: 250 }, { openedAt: startAt + 3 * hour, testflightAt: startAt + 4 * hour, viewSeconds: 50 }, { openedAt: startAt + 26 * hour }];
  return { state: 'active', startAt, total: cohort.total, reports: Array.from({length:cohort.total}, (_, index) => ({
   id: String(index), name: (cohort === next ? 'New Athlete ' : 'Synthetic Athlete ') + (index + 1),
   openedAt: null, workoutsAt: null, testflightAt: null,
-  ...(state === 'legacy' ? { openedAt: index === 0 ? startAt : null } : { viewSeconds: 0, sentAt: null, accountAt: null, hadAccount: false, ...(state === 'quiet' ? {} : events[index]) }),
+  ...(state === 'legacy' ? { openedAt: index === 0 ? startAt : null } : { viewSeconds: 0, sentAt: null, accountAt: null, hasAccount: false, ...(state === 'quiet' ? {} : events[index]) }),
  })) };
 }
 

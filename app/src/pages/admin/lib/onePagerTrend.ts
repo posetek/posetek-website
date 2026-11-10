@@ -4,8 +4,8 @@ export const ONE_PAGER_TIME_ZONE = "America/Los_Angeles";
 export const ONE_PAGER_METRICS = [
   { field: "openedAt", label: "Reports opened", short: "Opened", color: "#2a78d6" },
   { field: "workoutsAt", label: "Workout button clicks", short: "Workout clicks", color: "#eb6834" },
-  // The player's account was claimed from the cohort's first send date on. Not a
-  // tracked click: the reporting service reads it from the player's profile.
+  // The player's account was claimed after this report's Workouts button was
+  // clicked. The reporting service reads the claim from the player's profile.
   { field: "accountAt", label: "Accounts created", short: "Accounts", color: "#4a3aa7" },
   { field: "testflightAt", label: "TestFlight clicks", short: "TestFlight clicks", color: "#1baf7a" },
 ] as const;
@@ -14,8 +14,8 @@ export type OnePagerMetric = typeof ONE_PAGER_METRICS[number]["field"];
 /** `viewSeconds` and `sentAt` are absent until the tracking service that reports them is published.
  * `sentAt` is when the report joined its cohort's sent total; `null` means from the start. */
 export type OnePagerReport = { id: string; name: string; viewSeconds?: number; sentAt?: number | null;
-  /** The player had already claimed an account before the cohort's first send date. */
-  hadAccount?: boolean } & Record<OnePagerMetric, number | null>;
+  /** The player has an account, whether or not it came through this report's button. */
+  hasAccount?: boolean } & Record<OnePagerMetric, number | null>;
 export type OnePagerTrendPoint = { at: number; sent: number } & Record<OnePagerMetric, number>;
 
 const HOUR = 3_600_000;
