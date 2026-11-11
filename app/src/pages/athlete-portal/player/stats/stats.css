@@ -14,7 +14,6 @@
   .stats-text-button { justify-self: start; min-height: 44px; padding: 0; border: 0; background: none; color: var(--v4-accent); font-size: 17px; }
   .stats-loading { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 15px; color: var(--v4-secondary); }
   .stats-spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #7cff1840; border-top-color: var(--v4-accent); animation: stats-spin .9s linear infinite; flex: 0 0 auto; }
-  @keyframes stats-spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .stats-spinner { animation: none; border-color: var(--v4-accent); } }
 
   /* Skill benchmarks: V4Card(padding 16, spacing 8) holding the legend and the 258 px radar. */
@@ -107,3 +106,5 @@
   @media (max-width: 380px) { .stats-tile strong { font-size: 18px; } }
   .stats-page .player-feedback-results { margin: 0; }
 }
+/* Keyframes stay at the top level: the production CSS minifier rejects them inside a nested rule. */
+@keyframes stats-spin { to { transform: rotate(360deg); } }

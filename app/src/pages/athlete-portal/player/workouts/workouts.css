@@ -72,7 +72,6 @@
   .wk-text-button { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--v4-accent); font-size: 12px; font-weight: 600; }
   .wk-loading { display: flex; align-items: center; gap: 10px; justify-content: center; color: var(--wk-muted); font-size: 13px; padding: 24px 0; margin: 0; }
   .wk-spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #ffffff33; border-top-color: #fff; animation: wk-spin .9s linear infinite; }
-  @keyframes wk-spin { to { transform: rotate(360deg); } }
   .wk-hub .primary-cta, .wk-page > .primary-cta { margin: 0; }
 
   /* Stats row and breakdown */
@@ -284,3 +283,5 @@
     .wk-legend strong { font-size: 14px; }
   }
 }
+/* Keyframes stay at the top level: the production CSS minifier rejects them inside a nested rule. */
+@keyframes wk-spin { to { transform: rotate(360deg); } }

@@ -61,4 +61,11 @@ describe('estimated engagement clock', () => {
     expect(featureForLocation('/dashboard', '')).toBeNull();
     expect(featureForLocation('/feed', '')).toBe('feed');
   });
+  it('maps the four workspace tabs and the links saved before them', () => {
+    for (const query of ['', '?view=home', '?view=leaderboards', '?view=feed']) expect(featureForLocation('/athlete', query)).toBe('feed');
+    for (const query of ['?view=workouts', '?view=workouts&screen=plan', '?view=workouts&page=activities', '?view=training']) expect(featureForLocation('/athlete', query)).toBe('training');
+    for (const query of ['?view=workouts&drill=sprint', '?view=drills', '?drill=jump&session=session2']) expect(featureForLocation('/athlete', query)).toBe('results');
+    for (const query of ['?view=coach', '?view=aiCoach']) expect(featureForLocation('/athlete', query)).toBe('planner');
+    for (const query of ['?view=stats', '?view=stats&screen=plan', '?view=profile']) expect(featureForLocation('/athlete', query)).toBe('overview');
+  });
 });

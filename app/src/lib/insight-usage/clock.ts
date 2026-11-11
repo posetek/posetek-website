@@ -59,8 +59,13 @@ export function featureForLocation(path: string, query: string): UsageFeature | 
   if (path === '/feed' || path === '/feed.html') return 'feed';
   if (path === '/programs') return 'planner';
   if (path !== '/athlete' && path !== '/profile.html') return null;
-  if (q.has('session') || q.has('drill') || ['drills', 'results'].includes(q.get('view') || '')) return 'results';
-  if (q.get('view') === 'training') return 'training';
-  if (q.get('view') === 'aiCoach') return 'planner';
-  return 'overview';
+  // The player workspace's four tabs, with the names links used before them. Tracking runs only
+  // for players, so every /athlete location here is that workspace. Home is the week and the
+  // organization feed and Stats is the overview, as the app records them.
+  const view = q.get('view') || '';
+  if (q.has('session') || q.has('drill') || ['drills', 'results'].includes(view)) return 'results';
+  if (view === 'workouts' || view === 'training') return 'training';
+  if (view === 'coach' || view === 'aiCoach') return 'planner';
+  if (view === 'stats' || view === 'profile') return 'overview';
+  return 'feed';
 }
