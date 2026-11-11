@@ -17,6 +17,7 @@ import { DRILLS } from "./drills";
 import { accepted, fullName, mergeUnique, normalizeRep, num, repNumber, sessionNumber } from "./metrics";
 import { boardsFromPlayers, number } from "./mobile";
 import { assertAIJobEnabled } from '../player/ai-sharing';
+import { prefetchAthleteTestReport } from '../player/report';
 
 export type Access = "athlete" | "coach" | "manager" | "admin" | "shared" | "preview";
 
@@ -62,6 +63,9 @@ export async function loadAuthenticated(user: any, requestedPlayer: string | nul
     access = "coach";
   }
   const athlete = { id: playerDoc.id, ...playerDoc.data() };
+  // The athlete lands on their profile, whose first section is the testing report: ask for it now
+  // rather than after the results below have loaded.
+  if (access === "athlete") prefetchAthleteTestReport(playerDoc.id);
   const effective = await cloud.httpsCallable("getAthleteEffectiveResults")({ playerId: playerDoc.id });
   const all = visibleAttempts(((effective.data as any).reps || []).map(normalizeRep));
   const reps = emptyReps();

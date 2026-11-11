@@ -8,9 +8,10 @@
   --wk-row-line: #ffffff14;
 
   .wk-root, .wk-page { display: block; min-width: 0; }
-  .wk-stack { display: grid; gap: 14px; min-width: 0; }
+  /* One column that may shrink: without it a wide scroller inside (the week rail of a long plan) widens the whole page. */
+  .wk-stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
   .wk-hub-content { gap: 16px; }
-  .wk-plan { display: grid; gap: 14px; min-width: 0; }
+  .wk-plan { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
   .wk-page > .v4-header + * { margin-top: 4px; }
 
   /* Root: the two-page carousel. Pages are inset 20px from the screen edge and the neighbor peeks. */

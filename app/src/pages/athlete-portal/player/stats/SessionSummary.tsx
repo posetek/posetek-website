@@ -41,7 +41,8 @@ export default function SessionSummary({ sessions }: { sessions: Session[] | nul
   const tiles = sessionTiles(sessions);
   const tile = (title: string, value: string, caption: string | null, icon: string) => <div className="stats-tile">
     <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
-    <small>{title}</small><strong>{value}</strong>{caption && <small>{caption}</small>}
+    {/* The app shrinks a long value to fit the tile instead of breaking the word. */}
+    <small>{title}</small><strong className={value.length > 7 ? 'stats-tile-long' : undefined}>{value}</strong>{caption && <small>{caption}</small>}
   </div>;
   return <div className="stats-tiles">
     {tile('Streak', tiles.streak, 'Keep it going', 'local_fire_department')}

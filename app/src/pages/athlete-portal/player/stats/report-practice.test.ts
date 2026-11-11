@@ -23,6 +23,12 @@ describe('AthleteReportPractice.samples', () => {
       [{ drillId: 'A', published: true, technicalTransfer: 'Carries into tight dribbling.' }]);
     expect(samples).toMatchObject([{ id: 'A', name: 'Cone maze', reason: `${GENERAL} Carries into tight dribbling.` }]);
   });
+  it('does not append a one-word transfer level, which the live catalog stores in that field', () => {
+    const drill = plan([{ weekNumber: 1, workouts: [{ workoutId: 'w', blocks: [block('b', 1, 'A', 'Cone maze')] }] }]);
+    for (const level of ['isolated', ' isolated ', 'game-like', '']) {
+      expect(reportPracticeSamples(drill, 'p1', [{ drillId: 'A', published: true, technicalTransfer: level }])[0].reason).toBe(GENERAL);
+    }
+  });
   it('fills the one-pager card from the plan block and the catalog row, and leaves missing fields null', () => {
     const weeks = [{ weekNumber: 1, workouts: [{ workoutId: 'w', blocks: [
       block('b1', 1, 'DRB-005', 'Cone maze', { domain: 'dribbling', sets: 3, reps: 60, repUnit: 'seconds', restSeconds: 30, restScope: 'sets', estimatedMinutes: 14 }),

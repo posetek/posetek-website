@@ -171,7 +171,9 @@ export function reportPracticeSamples(rawPlan: unknown, playerId: string, catalo
     const drill = catalog.find(entry => entry.drillId === id);
     if (!drill || !drill.published) continue;
     samples.push({
-      id, name, reason: GENERAL_REASON + (drill.technicalTransfer ? ` ${drill.technicalTransfer}` : ''),
+      // The app appends the catalog's technical-transfer text. In the live catalog that field is a
+      // one-word level ("isolated"), which reads as a stray word, so only a written sentence is added.
+      id, name, reason: GENERAL_REASON + (/\s/.test(drill.technicalTransfer.trim()) ? ` ${drill.technicalTransfer.trim()}` : ''),
       tag: domainLabel(block.domain || drill.domain || '') || null,
       dose: blockDoseLine(block),
       instruction: drill.instruction || null,

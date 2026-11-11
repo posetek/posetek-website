@@ -157,6 +157,26 @@ export const DEMO_REPORT: AthleteTestReport = {
 
 export type ReportState = ReportResult & { loading: boolean; reload: () => void };
 
+const requestReport = (playerId: string): Promise<unknown> =>
+  cloud.httpsCallable('getAthleteTestReport', { timeout: 90_000 })({ playerId }).then(response => response.data);
+
+/** A request started before the workspace mounted, for one athlete and one signed-in account. */
+let early: { playerId: string; uid: string; startedAt: number; response: Promise<unknown> } | null = null;
+const EARLY_REQUEST_MS = 60_000;
+
+/**
+ * Starts the report request while the portal is still loading the athlete's results. The profile is
+ * the landing page and the report is its first section; without this the request waits for those
+ * results and the section appears several seconds later than it needs to.
+ */
+export function prefetchAthleteTestReport(playerId: string): void {
+  const user = auth.currentUser;
+  if (!user || user.isAnonymous || !playerId) return;
+  const response = requestReport(playerId);
+  response.catch(() => { /* the workspace reports the failure when it reads this request */ });
+  early = { playerId, uid: user.uid, startedAt: Date.now(), response };
+}
+
 /**
  * One report per athlete and signed-in session, loaded once for the whole workspace as the app
  * does. A response is dropped when the athlete or the signed-in account changed while it loaded.
@@ -173,9 +193,13 @@ export function useAthleteTestReport(playerId: string | null, preview: boolean):
     if (!user || user.isAnonymous) { setState({ report: null, limitedComparison: false, error: null, loading: false }); return; }
     setState({ report: null, limitedComparison: false, error: null, loading: true });
     const stale = () => current !== ticket.current || auth.currentUser?.uid !== user.uid;
-    cloud.httpsCallable('getAthleteTestReport', { timeout: 90_000 })({ playerId }).then(response => {
+    // The first load reads the request the portal started early, when it is for this athlete and
+    // account and still recent. "Try again" always asks afresh.
+    const started = attempt === 0 && early && early.playerId === playerId && early.uid === user.uid && Date.now() - early.startedAt < EARLY_REQUEST_MS
+      ? early.response : requestReport(playerId);
+    started.then(data => {
       if (stale()) return;
-      setState({ ...parseReportResponse(response.data, playerId), loading: false });
+      setState({ ...parseReportResponse(data, playerId), loading: false });
     }).catch(() => {
       if (!stale()) setState({ report: null, limitedComparison: false, error: 'Testing results could not be loaded.', loading: false });
     });
