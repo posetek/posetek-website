@@ -1,4 +1,4 @@
-import { PlayerHeader } from '../PlayerShell';
+import PlayerTraining from '../PlayerTraining';
 import type { PlayerTabProps } from '../workspace';
 
 type Props = PlayerTabProps & {
@@ -8,11 +8,9 @@ type Props = PlayerTabProps & {
 
 /**
  * "My workout plan" (the app's `planPage`): one page, reached from the workout hub and from the
- * report's drills on Stats. It never shows the Saved Workouts or history links.
+ * report's drills on Stats. It never shows the Saved Workouts or history links. Inside Workouts the
+ * tab's own hub renders this page; from Stats this component hosts it with its own plan and logs.
  */
-export default function WorkoutPlanPage({ back }: Props) {
-  return <>
-    <PlayerHeader title="My workout plan" onBack={back} />
-    <section className="portal-card"><p className="muted-copy">Your plan will appear here.</p></section>
-  </>;
+export default function WorkoutPlanPage({ ctx, personal, go, back, fromStats = false }: Props) {
+  return <PlayerTraining ctx={ctx} statsProfile={{}} personal={personal} request={null} onAcknowledge={() => {}} page="plan" fromStats={fromStats} go={go} back={back} />;
 }

@@ -37,7 +37,7 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const [reps, setReps] = useState(initialReps), [athlete, setAthlete] = useState(ctx.athlete), [dataset, setDataset] = useState(defaultDataset);
   const [provisionalEstimates, setProvisionalEstimates] = useState(ctx.provisionalEstimates || []);
   const [visited, setVisited] = useState(new Set<PlayerView>([route.view])), [request, setRequest] = useState<Row | null>(null), [refreshError, setRefreshError] = useState('');
-  const [feedbackInvitation, setFeedbackInvitation] = useState(false), [accountSettings, setAccountSettings] = useState(false);
+  const [feedbackInvitation, setFeedbackInvitation] = useState(false), [accountSettings, setAccountSettings] = useState(false), [guided, setGuided] = useState(false);
   const [feedbackOwner] = useState(() => ({ uid: auth.currentUser?.uid, playerId: ctx.playerId }));
   const feedbackContext = useRef({ view: route.view, playerId: ctx.playerId, access: ctx.access });
   feedbackContext.current = { view: route.view, playerId: ctx.playerId, access: ctx.access };
@@ -107,14 +107,14 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const statsPlan = route.view === 'stats' && route.screen === 'plan';
   // A sheet over the workspace pauses the tab under it, as the app's `isActive` does.
   const tab = (view: PlayerView): PlayerTabProps => ({ ctx: playerCtx, route, go, back, active: route.view === view && !accountSettings, preview, athlete, reps, personal, report });
-  return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} initials={playerInitials(athlete?.name)} onNavigate={view => go(view as PlayerView)}
+  return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} initials={playerInitials(athlete?.name)} onNavigate={view => go(view as PlayerView)} hideDock={guided && route.view === 'workouts'}
     onAccountSettings={() => setAccountSettings(true)} onReturnHome={() => go('home')} onSignOut={preview ? undefined : () => { void auth.signOut(); }}>
       {preview && <p className="player-preview-note">Local preview · sample data · no account changes</p>}
       {refreshError && <p className="player-error" role="status">Could not refresh your latest results: {refreshError}</p>}
       {visited.has('home') && <div hidden={route.view !== 'home'}><PlayerHome {...tab('home')} /></div>}
       {visited.has('coach') && <div hidden={route.view !== 'coach'}><PlayerHeader title="Coach" /><CoachChat playerId={ctx.playerId!} preview={preview} personalStore={personal} athlete={athlete} active={route.view === 'coach' && !accountSettings}
         technique={{ reps: all, onReplay: rep => go('workouts', { drill: 'shooting', session: rep.sessionFolder || `session${rep.sessionNumber}`, rep: rep.id }) }} onHandoff={r => { setRequest(r); if (r.conversationId) navigate({ pathname: location.pathname, search: personalDraftLink(location.search, r.conversationId) }); else go('workouts', { screen: 'workout' }); }} /></div>}
-      {visited.has('workouts') && <div hidden={route.view !== 'workouts'}><PlayerWorkouts {...tab('workouts')} statsProfile={intakeSnapshot(profile)} request={route.view === 'workouts' ? request : null} onAcknowledge={() => setRequest(null)} onCompleted={completedWorkout} feedbackInvitation={feedbackInvitation} onDismissFeedback={() => setFeedbackInvitation(false)} /></div>}
+      {visited.has('workouts') && <div hidden={route.view !== 'workouts'}><PlayerWorkouts {...tab('workouts')} statsProfile={intakeSnapshot(profile)} request={route.view === 'workouts' ? request : null} onAcknowledge={() => setRequest(null)} onCompleted={completedWorkout} feedbackInvitation={feedbackInvitation} onDismissFeedback={() => setFeedbackInvitation(false)} onGuidedChange={setGuided} /></div>}
       {visited.has('stats') && <div hidden={route.view !== 'stats' || statsPlan}><PlayerStats {...tab('stats')} active={route.view === 'stats' && !statsPlan} profile={profile} dataset={dataset} /></div>}
       {statsPlan && <WorkoutPlanPage {...tab('stats')} fromStats />}
       {accountSettings && <AccountSettings ctx={playerCtx} onClose={() => setAccountSettings(false)} />}

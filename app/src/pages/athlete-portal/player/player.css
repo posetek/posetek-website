@@ -168,7 +168,7 @@
   .body-profile-grid { display: block; }
   .body-canvas-wrap { height: 330px; }
   @media (min-width: 800px) { .player-bottom-nav { max-width: 692px; left: 50%; right: auto; width: 100%; transform: translateX(-50%); } }
-  @media (max-width: 360px) { .v4-activity-card strong { font-size: 18px; } .v4-activity-card small { font-size: 13px; } }
+  @media (max-width: 360px) { .v4-activity-card strong { font-size: 18px; } .v4-activity-card small { font-size: 13px; } .v4-header-compact { margin-inline: -12px; } }
   @media (max-width: 360px) { .player-main { padding-inline: 12px; } .portal-card { padding: 15px; } .player-profile-hero { grid-template-columns: 1.4fr 1fr; } .player-identity h1 { font-size: 22px; } .player-measurements { gap: 10px; } }
   @media (max-width: 700px) {
     .player-chat-messages { height: max(300px, calc(100dvh - 440px)); scroll-padding-bottom: 100px; }

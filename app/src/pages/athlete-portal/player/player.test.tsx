@@ -177,7 +177,8 @@ describe('player route and preview rendering', () => {
     for (const removed of ['Profile', 'Results', 'Leaderboards', 'Community']) expect(navigation).not.toContain(removed);
     expect(navigation.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).not.toContain('Open community feed');
-    if (view === 'training') { expect(html).toContain('Next'); expect(html).toContain('Keep the ball close'); }
+    // An older training link opens the workout hub; the next workout now lives on My workout plan.
+    if (view === 'training') { expect(html).toContain('<h1>Workout</h1>'); expect(html).toContain('My workout plan'); expect(html).toContain('Create your workout'); }
     if (view === 'workouts') for (const test of ['Shooting', 'Dribbling', 'Vertical Jump', 'Broad Jump', 'Sprint', 'Shuttle']) expect(html).toContain(`<strong>${test}</strong>`);
     if (view === 'stats') {
       // The app's order: benchmarks, the testing report, then the body scan.
