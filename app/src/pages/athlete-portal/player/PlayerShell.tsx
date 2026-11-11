@@ -46,11 +46,11 @@ export function playerTabPath(view: string, search = '', pathname = '/athlete') 
   return `${fromCommunity ? '/athlete' : pathname}?${params}`;
 }
 
-type PlayerChrome = { initials?: string; onSignOut?: () => void; onAccountSettings?: () => void };
+type PlayerChrome = { initials?: string; onSignOut?: () => void; onAccountSettings?: () => void; onReturnHome?: () => void };
 const PlayerChromeContext = createContext<PlayerChrome>({});
 
 function AccountMenu() {
-  const { initials, onSignOut, onAccountSettings } = useContext(PlayerChromeContext);
+  const { initials, onSignOut, onAccountSettings, onReturnHome } = useContext(PlayerChromeContext);
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -62,7 +62,7 @@ function AccountMenu() {
     document.addEventListener('keydown', close);
     return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close); };
   }, [open]);
-  if (!onSignOut && !onAccountSettings) return null;
+  if (!onSignOut && !onAccountSettings && !onReturnHome) return null;
   const choose = (action: () => void) => () => { setOpen(false); action(); };
   return <div className="v4-account" ref={root}>
     <button type="button" className="v4-account-button" aria-label="Account menu" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(value => !value)}>
@@ -70,6 +70,7 @@ function AccountMenu() {
     </button>
     {open && <div className="v4-account-menu" role="menu">
       {onAccountSettings && <button type="button" role="menuitem" onClick={choose(onAccountSettings)}><span className="material-symbols-outlined" aria-hidden="true">account_circle</span>Account settings</button>}
+      {onReturnHome && <button type="button" role="menuitem" onClick={choose(onReturnHome)}><span className="material-symbols-outlined" aria-hidden="true">home</span>Return to home</button>}
       {onSignOut && <button type="button" role="menuitem" onClick={choose(onSignOut)}><span className="material-symbols-outlined" aria-hidden="true">logout</span>Sign out</button>}
     </div>}
   </div>;
@@ -109,15 +110,37 @@ type PlayerShellProps = PlayerChrome & {
   mainClassName?: string;
 };
 
-export default function PlayerShell({ activeView, children, title, search = '', pathname = '/athlete', onNavigate, onSignOut, onAccountSettings, initials, navigationDisabled = false, hideDock = false, className = '', mainClassName = '' }: PlayerShellProps) {
+/** The app's `LogoutConfirmationView`: signing out always asks first. */
+function SignOutConfirmation({ onSignOut, onCancel }: { onSignOut: () => void; onCancel: () => void }) {
+  const cancel = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    cancel.current?.focus();
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') onCancel(); };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [onCancel]);
+  return <div className="v4-sheet-backdrop" onClick={event => { if (event.target === event.currentTarget) onCancel(); }}>
+    <div className="v4-confirm" role="alertdialog" aria-modal="true" aria-labelledby="v4-sign-out-title" aria-describedby="v4-sign-out-detail">
+      <span className="material-symbols-outlined v4-confirm-icon" aria-hidden="true">logout</span>
+      <h2 id="v4-sign-out-title">Sign out?</h2>
+      <p id="v4-sign-out-detail">You'll need to sign back in to reach your roster.</p>
+      <button type="button" className="v4-confirm-destructive" onClick={onSignOut}>Sign Out</button>
+      <button type="button" ref={cancel} onClick={onCancel}>Cancel</button>
+    </div>
+  </div>;
+}
+
+export default function PlayerShell({ activeView, children, title, search = '', pathname = '/athlete', onNavigate, onSignOut, onAccountSettings, onReturnHome, initials, navigationDisabled = false, hideDock = false, className = '', mainClassName = '' }: PlayerShellProps) {
   const active = canonicalPlayerView(activeView);
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const askToSignOut = onSignOut ? () => setConfirmingSignOut(true) : undefined;
   const navigate = (event: MouseEvent<HTMLAnchorElement>, view: string) => {
     if (navigationDisabled) { event.preventDefault(); return; }
     if (onNavigate && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
       event.preventDefault(); onNavigate(view);
     }
   };
-  return <PlayerChromeContext.Provider value={{ initials, onSignOut, onAccountSettings }}>
+  return <PlayerChromeContext.Provider value={{ initials, onSignOut: askToSignOut, onAccountSettings, onReturnHome }}>
     <div className={`pt-pose pt-player${className ? ` ${className}` : ''}`}>
       <main className={`player-main${mainClassName ? ` ${mainClassName}` : ''}`}>
         {title && <PlayerHeader title={title} />}
@@ -128,6 +151,7 @@ export default function PlayerShell({ activeView, children, title, search = '', 
           <span className="material-symbols-outlined" aria-hidden="true">{tab.icon}</span><span>{tab.label}</span>
         </Link>)}
       </nav>}
+      {confirmingSignOut && onSignOut && <SignOutConfirmation onSignOut={() => { setConfirmingSignOut(false); onSignOut(); }} onCancel={() => setConfirmingSignOut(false)} />}
     </div>
   </PlayerChromeContext.Provider>;
 }

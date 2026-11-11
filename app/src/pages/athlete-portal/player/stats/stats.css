@@ -1,0 +1,109 @@
+/* Stats (the app's V4 StatsView / V4ProfileStatsView / AthleteTestReportSection). One column with
+   16 px between sections, as the app's VStack(spacing: 16). */
+.pt-player {
+  .stats-page { display: grid; gap: 16px; min-width: 0; }
+  .stats-page > * { min-width: 0; margin: 0; }
+  .stats-page > .v4-header { margin-bottom: -8px; }
+  .stats-name { font-size: 28px; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+  .stats-section-title { margin: 0; font-size: 22px; font-weight: 700; line-height: 1.25; letter-spacing: 0; }
+  .stats-caption { margin: 0; font-size: 12px; line-height: 1.35; color: var(--v4-secondary); }
+  .stats-secondary { margin: 0; color: var(--v4-secondary); }
+  .stats-subheadline { margin: 0; font-size: 15px; color: var(--v4-secondary); }
+  .stats-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .stats-page .v4-card { margin: 0; }
+  .stats-text-button { justify-self: start; min-height: 44px; padding: 0; border: 0; background: none; color: var(--v4-accent); font-size: 17px; }
+  .stats-loading { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 15px; color: var(--v4-secondary); }
+  .stats-spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #7cff1840; border-top-color: var(--v4-accent); animation: stats-spin .9s linear infinite; flex: 0 0 auto; }
+  @keyframes stats-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .stats-spinner { animation: none; border-color: var(--v4-accent); } }
+
+  /* Skill benchmarks: V4Card(padding 16, spacing 8) holding the legend and the 258 px radar. */
+  .stats-benchmarks { display: grid; gap: 16px; }
+  .stats-radar-card { display: grid; gap: 8px; padding: 16px; }
+  .stats-radar-legend { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #ffffff8c; min-width: 0; }
+  .stats-radar-count { color: var(--v4-secondary); margin-right: auto; white-space: nowrap; }
+  .stats-radar-key { display: inline-flex; align-items: center; gap: 4px; }
+  .stats-radar-key i { display: block; width: 14px; height: 0; border-top: 2.5px solid var(--v4-accent); }
+  .stats-radar-key i.d1 { border-top-style: dashed; border-top-color: #ffffff8c; }
+  .stats-radar { position: relative; width: 100%; }
+  .stats-radar svg { position: absolute; inset: 0; display: block; overflow: visible; cursor: pointer; }
+  .stats-radar-grid { fill: none; stroke: #ffffff17; stroke-width: 1; }
+  .stats-radar-spoke { stroke: #ffffff24; stroke-width: 1; }
+  .stats-radar-spoke.empty { stroke: #ffffff12; stroke-dasharray: 3 3; }
+  .stats-radar-spoke.selected { stroke: #7cff1873; stroke-width: 1.5; }
+  .stats-radar-reference { fill: #ffffff0f; stroke: #ffffff8c; stroke-width: 1.5; stroke-dasharray: 5 4; }
+  .stats-radar-athlete { fill: #7cff1838; stroke: var(--v4-accent); stroke-width: 2.5; stroke-linejoin: round; }
+  .stats-radar-vertex { fill: var(--v4-accent); stroke: #ffffffd9; stroke-width: 1.5; filter: drop-shadow(0 0 3px #7cff1899); pointer-events: none; }
+  .stats-radar-vertex.selected { stroke-width: 2.5; filter: drop-shadow(0 0 6px #7cff1899); }
+  .stats-radar-estimate { fill: none; stroke: var(--v4-accent); stroke-width: 2; pointer-events: none; }
+  .stats-radar-label { position: absolute; transform: translate(-50%, -50%); display: grid; justify-items: center; align-content: center; min-height: 44px; min-width: 44px; padding: 0 7px;
+    border: 1px solid transparent; border-radius: 9px; background: none; font-size: 12px; line-height: 1.25; white-space: nowrap; color: #fff; }
+  .stats-radar-label strong { font-weight: 400; color: var(--v4-accent); }
+  .stats-radar-label.empty, .stats-radar-label.empty strong { color: #ffffff47; }
+  .stats-radar-label[aria-pressed="true"] { background: #7cff1826; border-color: #7cff18b3; }
+  .stats-benchmarks .provisional-estimate-note { margin: 0; }
+
+  /* The report: V4Card(padding 20, corner 24, spacing 20). */
+  .stats-report { display: grid; gap: 16px; }
+  .stats-report-card { display: grid; gap: 20px; padding: 20px; border-radius: 24px; }
+  .stats-report-card h3 { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.3; }
+  .stats-report-empty { gap: 24px; }
+  .stats-report-heading { display: grid; gap: 8px; }
+  .stats-report-tested { display: flex; align-items: baseline; gap: 8px; }
+  .stats-report-tested h3 { margin-right: auto; }
+  .stats-report-you { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--v4-secondary); }
+  .stats-report-you i, .stats-report-marker { background: #40bfd1; border-radius: 50%; }
+  .stats-report-you i { width: 8px; height: 8px; }
+  .stats-report-row { display: grid; gap: 6px; }
+  .stats-report-row-line { display: flex; align-items: baseline; gap: 6px; margin: 0; font-size: 15px; line-height: 1.35; }
+  .stats-report-row-line > span { margin-right: auto; min-width: 0; }
+  .stats-report-row-line strong { font-weight: 700; }
+  .stats-report-row-line small { font-size: 12px; color: inherit; }
+  .stats-report-row-line b { font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .stats-report-bar { position: relative; height: 16px; }
+  .stats-report-bands { position: absolute; left: 0; right: 0; top: 4.5px; height: 7px; display: flex; gap: 2px; border-radius: 2px; overflow: hidden; }
+  .stats-report-bands i { display: block; height: 100%; }
+  .stats-report-bands i:nth-child(1) { flex: 0 0 calc((100% - 4px) * .25); background: #ffffff24; }
+  .stats-report-bands i:nth-child(2) { flex: 0 0 calc((100% - 4px) * .5); background: #ffffff52; }
+  .stats-report-bands i:nth-child(3) { flex: 1 1 auto; background: #7cff187a; }
+  .stats-report-marker { position: absolute; top: 1px; width: 14px; height: 14px; box-shadow: 0 0 0 2px var(--v4-background); }
+  .stats-report-note { display: grid; gap: 10px; font-size: 15px; color: var(--v4-secondary); }
+  .stats-report-note h3 { color: #fff; }
+  .stats-report-note p { margin: 0; }
+  .stats-report-drills { gap: 12px; }
+  .stats-report-drill { display: grid; gap: 6px; width: 100%; padding: 12px; border: 1px solid var(--v4-border); border-radius: 14px; background: var(--v4-card); text-align: left; min-height: 44px; }
+  .stats-report-drill-name { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+  .stats-report-drill-name strong { margin-right: auto; font-weight: 700; }
+  .stats-report-drill-name .material-symbols-outlined { color: var(--v4-accent); font-size: 16px; font-variation-settings: 'wght' 700; }
+  .stats-report-drill small { font-size: 12px; color: var(--v4-secondary); }
+
+  /* Body scan: V4Card(padding 16) with the 314 px viewer and the height/weight strip. The shared
+     viewer's page chrome (hero, name heading, staff-page cards) is not part of the app's panel. */
+  .stats-body { display: grid; gap: 16px; }
+  .stats-body-card { display: grid; gap: 12px; padding: 16px; }
+  .stats-body-viewer .mobile-page-hero, .stats-body-viewer .body-scan-card .card-heading, .stats-body-viewer .body-hint,
+  .stats-body-viewer .body-profile-details > .portal-card:first-child,
+  .stats-body-viewer .body-profile-details > .portal-card:has(#limbMeasurements):not(:has(#limbMeasurements article)) { display: none; }
+  .stats-body-viewer .mobile-page, .stats-body-viewer .body-profile-grid, .stats-body-viewer .body-profile-details { display: grid; gap: 12px; }
+  .stats-body-viewer .portal-card { margin: 0; padding: 0; border: 0; background: none; border-radius: 0; min-height: 0; }
+  .stats-body-viewer .body-scan-card { min-height: 0; }
+  .stats-body-viewer .body-canvas-wrap { height: 314px; border-radius: 18px; }
+  .stats-body-viewer .limb-measurements article { font-size: 12px; }
+  .stats-body-viewer .scan-note { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--v4-border); border-radius: 14px; }
+  .stats-body-viewer .scan-note h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+  .stats-body-viewer .scan-note p { margin: 0; font-size: 12px; color: var(--v4-secondary); }
+  .stats-body-viewer .scan-note .material-symbols-outlined, .stats-body-viewer .mobile-empty > .material-symbols-outlined { color: var(--v4-accent); }
+  .stats-body-viewer .text-button { min-height: 44px; }
+  .stats-body-measurements { display: flex; flex-wrap: wrap; gap: 8px 10px; padding: 10px 14px; border: 1px solid #ffffff1a; border-radius: 18px; background: linear-gradient(135deg, #0d2a20f5, #0a2219); font-size: 14px; font-weight: 600; }
+  .stats-body-measurements > span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .stats-body-measurements .material-symbols-outlined { color: var(--v4-accent); font-size: 18px; }
+
+  /* V4MetricTile x3: padding 12, corner 20, spacing 12. */
+  .stats-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .stats-tile { display: grid; align-content: start; justify-items: start; gap: 8px; padding: 12px; border: 1px solid var(--v4-border); border-radius: 20px; background: var(--v4-card); min-width: 0; }
+  .stats-tile .material-symbols-outlined { color: var(--v4-accent); font-size: 22px; height: 22px; }
+  .stats-tile small { font-size: 12px; line-height: 1.3; color: var(--v4-secondary); }
+  .stats-tile strong { font-size: 22px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+  @media (max-width: 380px) { .stats-tile strong { font-size: 18px; } }
+  .stats-page .player-feedback-results { margin: 0; }
+}

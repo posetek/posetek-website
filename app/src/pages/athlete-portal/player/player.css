@@ -51,6 +51,14 @@
   .v4-account-menu button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; text-align: left; border-radius: 10px; }
   .v4-account-menu button:hover { background: var(--v4-card); }
   .v4-account-menu .material-symbols-outlined { font-size: 20px; }
+  /* LogoutConfirmationView: a short sheet from the bottom with the destructive choice first. */
+  .v4-sheet-backdrop { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; background: #00000080; }
+  .v4-confirm { width: 100%; max-width: 452px; display: grid; justify-items: center; gap: 10px; padding: 28px 28px calc(28px + env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; border: 1px solid var(--v4-border); border-bottom: 0; background: linear-gradient(135deg, var(--v4-background), var(--v4-background-middle), var(--v4-background-end)); text-align: center; }
+  .v4-confirm-icon { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; color: var(--v4-accent); background: #7cff1824; margin-bottom: 12px; }
+  .v4-confirm h2 { margin: 0; font-size: 22px; font-weight: 800; }
+  .v4-confirm p { margin: 0 0 12px; font-size: 14px; font-weight: 500; color: var(--v4-secondary); }
+  .v4-confirm button { width: 100%; padding: 14px; border-radius: 16px; font-size: 16px; font-weight: 600; background: #ffffff14; border: 1px solid var(--v4-border); }
+  .v4-confirm .v4-confirm-destructive { background: #ff3b30d9; border-color: transparent; font-weight: 700; }
   /* WorkoutActivityGrid and WorkoutActivityCard: two columns of cards, one column at large text sizes. */
   .v4-activity-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .v4-activity-card { display: grid; justify-items: start; align-content: start; gap: 8px; padding: 14px; border: 0; border-radius: 18px; background: var(--v4-card); text-align: left; }

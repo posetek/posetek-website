@@ -1,0 +1,28 @@
+/* Account settings: the app presents it as a sheet over the workspace with "Done", an inset
+   grouped list and one pushed page (AI sharing). */
+.pt-player {
+  .account-sheet-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: flex-end; justify-content: center; background: #000000a6; }
+  .account-sheet { width: 100%; max-width: 720px; height: calc(100dvh - max(12px, env(safe-area-inset-top))); overflow-y: auto; overscroll-behavior: contain;
+    padding: 8px 16px calc(24px + env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; background: linear-gradient(160deg, var(--v4-background-middle), var(--v4-background)); }
+  .account-sheet-bar { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+  .account-sheet-done, .account-sheet-back { min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--v4-accent); font-size: 17px; }
+  .account-sheet-done { font-weight: 600; }
+  .account-sheet-back { display: inline-flex; align-items: center; gap: 2px; margin-left: -8px; }
+  .account-sheet-back .material-symbols-outlined { font-size: 28px; }
+  .account-sheet-title { margin: 4px 0 18px; font-size: 34px; font-weight: 700; line-height: 1.2; letter-spacing: 0; }
+  .account-section-title { margin: 0 16px 6px; font-size: 13px; font-weight: 400; color: var(--v4-secondary); }
+  .account-list { display: grid; margin: 0 0 24px; border-radius: 14px; background: var(--v4-card); border: 1px solid var(--v4-border); overflow: hidden; }
+  .account-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; margin: 0; padding: 10px 16px; border: 0; border-radius: 0; background: none;
+    color: #fff; font-size: 17px; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
+  .account-row + .account-row { border-top: 1px solid var(--v4-border); }
+  .account-link .material-symbols-outlined { margin-left: auto; color: var(--v4-secondary); font-size: 20px; }
+  .account-external { color: var(--v4-accent); }
+  .account-age { display: block; }
+  .account-age .player-profile-age { margin: 0; padding: 0; border: 0; }
+  .account-age .player-profile-age small { margin-bottom: 2px; }
+  .account-age .player-profile-age > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .account-age .player-profile-age span { display: flex; flex-direction: column; }
+  .account-age .player-profile-age fieldset { margin: 12px 0 0; }
+  .account-sheet .ai-sharing-control { margin: 0; }
+  .account-sheet .ai-sharing-control a { color: var(--v4-accent); }
+}

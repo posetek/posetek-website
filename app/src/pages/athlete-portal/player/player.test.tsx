@@ -180,10 +180,13 @@ describe('player route and preview rendering', () => {
     if (view === 'training') { expect(html).toContain('Next'); expect(html).toContain('Keep the ball close'); }
     if (view === 'workouts') for (const test of ['Shooting', 'Dribbling', 'Vertical Jump', 'Broad Jump', 'Sprint', 'Shuttle']) expect(html).toContain(`<strong>${test}</strong>`);
     if (view === 'stats') {
-      expect(html).toContain('Your skill map');
-      expect(html.indexOf('Your skill map')).toBeLessThan(html.indexOf('Profile details'));
+      // The app's order: benchmarks, the testing report, then the body scan.
+      const order = ['>Skill benchmarks</h2>', '>Your report</h3>', '>Body scan</h2>'].map(heading => html.indexOf(heading));
+      expect(order.every(index => index >= 0)).toBe(true);
+      expect(order).toEqual([...order].sort((a, b) => a - b));
       expect(html).not.toContain('Overall rating');
-      expect(html).toContain('How the skill map is scored');
+      expect(html).not.toContain('Leaderboards');
     }
+    if (view === 'home') { expect(html).toContain('Your week'); expect(html).toContain('>Organization activity</h2>'); }
   });
 });
