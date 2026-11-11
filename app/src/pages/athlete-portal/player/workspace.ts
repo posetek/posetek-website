@@ -4,6 +4,7 @@ import type { Row } from './execution';
 import type { PersonalWorkoutStore } from './use-personal-workouts';
 import { PLAYER_SUBROUTE_KEYS, canonicalPlayerView } from './PlayerShell';
 import type { PlayerView } from './PlayerShell';
+import type { ReportState } from './report';
 
 /**
  * A page pushed inside a tab, mirroring the app's `TrainingHubDestination`:
@@ -89,4 +90,6 @@ export type PlayerTabProps = {
   athlete: Row;
   reps: Record<string, Row[]>;
   personal: PersonalWorkoutStore;
+  /** The testing report, loaded once for the workspace. Home shows its focus line; Stats renders it. */
+  report: ReportState;
 };
