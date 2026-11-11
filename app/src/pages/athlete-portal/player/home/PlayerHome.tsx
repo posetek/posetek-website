@@ -25,7 +25,7 @@ function ConfigProbe({ preview, onConfig }: { preview: boolean; onConfig: (confi
  * (`CommunityFeedView` with `workspacePlayerName`): the week recap first, then "Organization
  * activity" in the organization scope with no scope menu, behind `config/llm.communityFeedEnabled`.
  */
-export default function PlayerHome({ ctx, preview, active, athlete, report }: PlayerTabProps) {
+export default function PlayerHome({ ctx, preview, active, athlete, report, personal }: PlayerTabProps) {
   const location = useLocation();
   const mode = preview ? new URLSearchParams(location.search).get('homePreview') : null;
   const [configAttempt, setConfigAttempt] = useState(0);
@@ -49,7 +49,7 @@ export default function PlayerHome({ ctx, preview, active, athlete, report }: Pl
     {!preview && <ConfigProbe key={configAttempt} preview={false} onConfig={setConfig} />}
     <div className="home-stack">
       <WeekRecap key={`${ctx.playerId}:${auth.currentUser?.uid ?? ''}`} access={ctx.access} playerName={playerName} playerId={ctx.playerId} active={active}
-        preview={preview} previewState={recapPreview} feedUnavailable={feedUnavailable(enabled, phase)} report={report} />
+        preview={preview} previewState={recapPreview} feedUnavailable={feedUnavailable(enabled, phase)} report={report} includePersonal={personal?.enabled === true} />
       <div className="home-section-heading">
         <h2>Organization activity</h2>
         {organizationName && <p>{organizationName}</p>}

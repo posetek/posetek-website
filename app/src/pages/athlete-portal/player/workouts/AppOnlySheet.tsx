@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useCloseOnHistoryNavigation } from '../PlayerShell';
 
 /** Activities that only the app can record. The words follow the app's own (`OutdoorActivityType`). */
 export const APP_ONLY_LINES = {
@@ -42,6 +43,8 @@ function AppLink({ playerId }: { playerId: string | null | undefined }) {
 /** What a card that only the app can run does in the browser: says so, and offers the app. */
 export default function AppOnlySheet({ title, kind, playerId, onClose }: { title: string; kind: AppOnlyKind; playerId: string | null | undefined; onClose: () => void }) {
   const done = useRef<HTMLButtonElement>(null);
+  // The browser's Back changes the page under the sheet, so the sheet goes with it.
+  useCloseOnHistoryNavigation(onClose);
   useEffect(() => {
     done.current?.focus();
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };

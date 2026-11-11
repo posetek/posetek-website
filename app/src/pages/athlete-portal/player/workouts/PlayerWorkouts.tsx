@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { drillByKey } from '../../lib/drills';
 import DrillDashboard from '../../views/DrillDashboard';
 import SessionView from '../../views/SessionView';
 import { PlayerHeader } from '../PlayerShell';
 import PlayerTraining from '../PlayerTraining';
-import type { HubPage } from '../PlayerTraining';
+import { workoutsPage, workoutsRoute, workoutsShown } from './navigation';
 import PlayerFeedbackInvitation, { PlayerResultsFeedbackLink } from '../PlayerFeedbackInvitation';
 import { showResultsFeedback } from '../feedback-invitation';
 import type { Row } from '../execution';
@@ -32,10 +32,15 @@ type Props = PlayerTabProps & {
  * My workout plan, Saved Workouts, History, and each test's results. The hub's state stays mounted for
  * as long as the tab is, so a workout in progress survives a look at another page or tab.
  */
-export default function PlayerWorkouts({ ctx, route, go, back, reps, personal, statsProfile, request, onAcknowledge, onCompleted, feedbackInvitation, onDismissFeedback, onGuidedChange }: Props) {
+export default function PlayerWorkouts({ ctx, route: current, go, back, active, reps, personal, statsProfile, request, onAcknowledge, onCompleted, feedbackInvitation, onDismissFeedback, onGuidedChange }: Props) {
   const location = useLocation(), navigate = useNavigate();
-  const test = route.screen === 'test';
-  const page: HubPage = route.screen === 'workout' || route.screen === 'plan' || route.screen === 'saved' || route.screen === 'history' ? route.screen : 'root';
+  // Shown for Workouts and for My workout plan opened from Stats. While another tab is on screen the
+  // last route it was shown with stays in force, so a streaming chat, the planner or an open review
+  // is not torn down under the hidden tab.
+  const lastShown = useRef(current);
+  if (workoutsShown(current)) lastShown.current = current;
+  const route = workoutsRoute(current, lastShown.current);
+  const { page, test, fromStats } = workoutsPage(route);
   const hub = page !== 'root';
   // A swipe updates the address in place: it is not a page the browser's Back should step through.
   const onWorkoutsPage = useCallback((next: WorkoutsPage) => {
@@ -57,7 +62,7 @@ export default function PlayerWorkouts({ ctx, route, go, back, reps, personal, s
     </section>}
     <div hidden={test}>
       <PlayerTraining ctx={ctx} statsProfile={statsProfile} personal={personal} request={hub ? request : null} onAcknowledge={onAcknowledge} onCompleted={onCompleted}
-        page={page} go={go} back={back} workoutsPage={route.page} onWorkoutsPage={onWorkoutsPage} onTest={key => go('workouts', { drill: key })}
+        page={page} fromStats={fromStats} active={active} go={go} back={back} workoutsPage={route.page} onWorkoutsPage={onWorkoutsPage} onTest={key => go('workouts', { drill: key })}
         hubNotice={feedbackInvitation ? <PlayerFeedbackInvitation onDismiss={onDismissFeedback} /> : null} onGuidedChange={setGuided} />
     </div>
   </>;

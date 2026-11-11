@@ -16,13 +16,30 @@ export type PlayerView = typeof PLAYER_TABS[number]['view'];
 const LEGACY_VIEWS: Record<string, PlayerView> = {
   profile: 'stats', aiCoach: 'coach', training: 'workouts', drills: 'workouts', leaderboards: 'home', feed: 'home',
 };
+/** Where a player lands when a link names no page: their profile, the testing report on Stats. */
+export const PLAYER_LANDING_VIEW: PlayerView = 'stats';
 export function canonicalPlayerView(raw: string | null | undefined): PlayerView {
   const tab = PLAYER_TABS.find(item => item.view === raw);
-  return tab ? tab.view : LEGACY_VIEWS[raw || ''] || 'home';
+  return tab ? tab.view : LEGACY_VIEWS[raw || ''] || PLAYER_LANDING_VIEW;
 }
 
-/** Parameters that select a page inside one tab. A dock tap always opens that tab's root. */
-export const PLAYER_SUBROUTE_KEYS = ['drill', 'session', 'rep', 'screen', 'page'] as const;
+/**
+ * Parameters that select a page inside one tab. A dock tap always opens that tab's root, so a
+ * personal-workout conversation opened in the hub never follows the athlete to another tab.
+ */
+export const PLAYER_SUBROUTE_KEYS = ['drill', 'session', 'rep', 'screen', 'page', 'personalConversation', 'personalWorkout'] as const;
+
+/**
+ * A sheet covers the dock, so the only way to change page under one is the browser's Back or
+ * Forward. The sheet closes then, instead of staying open (and holding the page still) over a
+ * page it does not belong to.
+ */
+export function useCloseOnHistoryNavigation(onClose: () => void) {
+  useEffect(() => {
+    window.addEventListener('popstate', onClose);
+    return () => window.removeEventListener('popstate', onClose);
+  }, [onClose]);
+}
 
 /** Only social route context crosses from the player portal into Community. */
 export function communityPath(search = '', pathname = '/feed') {
@@ -113,6 +130,7 @@ type PlayerShellProps = PlayerChrome & {
 /** The app's `LogoutConfirmationView`: signing out always asks first. */
 function SignOutConfirmation({ onSignOut, onCancel }: { onSignOut: () => void; onCancel: () => void }) {
   const cancel = useRef<HTMLButtonElement>(null);
+  useCloseOnHistoryNavigation(onCancel);
   useEffect(() => {
     cancel.current?.focus();
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') onCancel(); };

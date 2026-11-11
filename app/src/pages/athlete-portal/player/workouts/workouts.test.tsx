@@ -7,6 +7,8 @@ import { previewData } from '../../lib/preview';
 import { HistoryList, SavedLibrary } from './HistoryAndSaved';
 import WorkoutReview from './WorkoutReview';
 import WorkoutsRoot from './WorkoutsRoot';
+import PlayerTraining from '../PlayerTraining';
+import type { HubPage } from './navigation';
 
 const render = (query: string) => {
   const data = previewData();
@@ -42,6 +44,19 @@ describe('Workouts pages, in the app’s order and words', () => {
     expect(render('view=workouts&screen=history')).toContain('From an earlier plan.');
     const saved = render('view=workouts&screen=saved');
     expect(saved).toContain('<h1>Saved Workouts</h1>'); expect(saved).toContain('All workouts');
+  });
+});
+
+describe('after a finished workout', () => {
+  const personal = { enabled: false, selectionReady: true, conversationId: null, workouts: [], logs: {}, loaded: true, newConversation: () => {}, openConversation: async () => ({}) } as any;
+  const page = (name: HubPage) => {
+    const data = previewData();
+    const ctx = { ...data, notify: () => {}, allStatsReps: () => Object.values(data.reps).flat() } as any;
+    return renderToStaticMarkup(<MemoryRouter initialEntries={['/athlete?preview=1&view=workouts']}><PlayerTraining ctx={ctx} statsProfile={{}} personal={personal} request={null} onAcknowledge={() => {}}
+      page={name} go={() => {}} back={() => {}} hubNotice={<p>FEEDBACK INVITATION</p>} /></MemoryRouter>);
+  };
+  it('shows the feedback invitation on whichever Workouts page the athlete lands on', () => {
+    for (const name of ['root', 'workout', 'plan', 'saved', 'history'] as const) expect(page(name)).toContain('FEEDBACK INVITATION');
   });
 });
 

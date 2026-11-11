@@ -75,6 +75,12 @@
   .stats-report-drill-name strong { margin-right: auto; font-weight: 700; }
   .stats-report-drill-name .material-symbols-outlined { color: var(--v4-accent); font-size: 16px; font-variation-settings: 'wght' 700; }
   .stats-report-drill small { font-size: 12px; color: var(--v4-secondary); }
+  /* The one-pager's card fields: tag beside the title, the plan's dose, the catalog instruction. */
+  .stats-report-drill-name strong { min-width: 0; overflow-wrap: anywhere; }
+  .stats-report-drill-tag { flex: 0 1 auto; padding: 2px 8px; border-radius: 999px; background: #7cff181f; color: var(--v4-accent); font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .stats-report-drill-dose { font-size: 13px; font-weight: 600; color: #fff; overflow-wrap: anywhere; }
+  .stats-report-drill-text { font-size: 13px; line-height: 1.4; color: #ffffffd9; }
+  .stats-report-safety { margin-top: -2px; }
 
   /* Body scan: V4Card(padding 16) with the 314 px viewer and the height/weight strip. The shared
      viewer's page chrome (hero, name heading, staff-page cards) is not part of the app's panel. */

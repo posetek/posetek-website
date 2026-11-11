@@ -1,14 +1,30 @@
+import { blockDoseLine, normalizeCatalogDrill } from '../../../../lib/contracts/drillV2';
+import { domainLabel } from '../../../../lib/contracts/types';
 import type { Row } from '../execution';
+import { EQUIPMENT_LABELS } from '../training-access';
 
 /**
  * "Two drills from your plan": the web copy of the app's `AthleteReportPractice.samples`
  * (KickAI/Stats/AthleteTestReport.swift). Only drills from the athlete's own active saved plan are
  * previewed, at most two, in plan order, and only drills the catalog lists as published.
+ *
+ * Each sample also carries what the parent one-pager's drill card shows (`private-report/render.mjs`,
+ * layout `focused-v1`): a tag (the drill's focus), the dose from the saved plan, the catalog's
+ * instruction and equipment. A field is null when its data is missing, so the card leaves it out.
  */
-export type ReportPractice = { id: string; name: string; reason: string };
+export type ReportPractice = {
+  id: string; name: string; reason: string;
+  tag: string | null; dose: string | null; instruction: string | null; equipment: string | null;
+};
 
-/** The two catalog facts the samples read: the resolved publication status and the transfer note. */
-export type PracticeCatalogEntry = { drillId: string; published: boolean; technicalTransfer: string };
+/**
+ * The catalog facts the samples read: the resolved publication status, the transfer note, and the
+ * drill card's focus, instruction and equipment (null or empty when the row has none).
+ */
+export type PracticeCatalogEntry = {
+  drillId: string; published: boolean; technicalTransfer: string;
+  domain?: string; instruction?: string | null; equipment?: string[];
+};
 
 const GENERAL_REASON = 'General practice from your saved plan, not a drill selected here to correct a measured weakness.';
 
@@ -27,8 +43,20 @@ export function catalogEntry(id: string, raw: unknown): PracticeCatalogEntry {
   const status = data.status === 'draft' || data.status === 'published' || data.status === 'archived' ? data.status : null;
   const dose = isRecord(data.dose) ? data.dose : {};
   const doseEmpty = intValue(dose.setsMax) === 0 && (typeof dose.repsMax === 'number' ? dose.repsMax : 0) === 0 && !text(dose.doseText);
-  return { drillId: id, published: status ? status === 'published' : !doseEmpty, technicalTransfer: text(data.technicalTransfer) };
+  // The shared normalizer reads both catalog schemas: v2 `howTo`, or v1 `setup` / `execution`.
+  const drill = normalizeCatalogDrill(id, data);
+  const steps = drill.howTo.steps.map(step => step.trim()).filter(Boolean);
+  return {
+    drillId: id, published: status ? status === 'published' : !doseEmpty, technicalTransfer: text(data.technicalTransfer),
+    domain: drill.domain, instruction: steps.length ? steps.join(' ') : drill.howTo.setup.trim() || null, equipment: drill.equipment,
+  };
 }
+
+/** The card's "Equipment:" text, in the athlete-facing names the workout setup uses. */
+export const equipmentText = (equipment: string[] | undefined): string | null => {
+  const names = (equipment || []).map(item => EQUIPMENT_LABELS[item] || item).filter(Boolean);
+  return names.length ? names.join(', ') : null;
+};
 
 const millis = (value: unknown): number => {
   const stamp = value as { toMillis?: () => number } | null | undefined;
@@ -42,11 +70,22 @@ export function activeTrainingPlan(plans: Row[]): Row | null {
   return plans.filter(plan => plan?.status === 'active').sort((a, b) => millis(b.generatedAt) - millis(a.generatedAt))[0] || null;
 }
 
-type Block = { drillId: string; name: string; sets: number; reps: number; order: number; isMeasuredDrill: boolean };
+type Block = {
+  drillId: string; name: string; sets: number; reps: number; order: number; isMeasuredDrill: boolean;
+  /** What the dose line and tag read from the saved plan. */
+  domain: string; repUnit: string; perSide: boolean; restSeconds: number; restScope: string; estimatedMinutes: number;
+};
+
+/** The plan's own prescription fields, shared by workout blocks and older plans' week drills. */
+const prescription = (raw: Row) => ({
+  drillId: text(raw.drillId), name: text(raw.name), sets: intValue(raw.sets), reps: intValue(raw.reps),
+  domain: text(raw.domain), repUnit: text(raw.repUnit) || 'reps', perSide: raw.perSide === true, restSeconds: intValue(raw.restSeconds),
+  restScope: text(raw.restScope) || 'sets', estimatedMinutes: intValue(raw.estimatedMinutes),
+});
 
 function parseBlock(raw: unknown): Block | null {
   if (!isRecord(raw) || !text(raw.blockId)) return null;
-  return { drillId: text(raw.drillId), name: text(raw.name), sets: intValue(raw.sets), reps: intValue(raw.reps), order: intValue(raw.order), isMeasuredDrill: raw.isMeasuredDrill === true };
+  return { ...prescription(raw), order: intValue(raw.order), isMeasuredDrill: raw.isMeasuredDrill === true };
 }
 
 /** `PlanWorkout.parse`: nil without an id; a V3 plan with an unreadable workout is unreadable. */
@@ -77,7 +116,7 @@ export function readPlan(raw: unknown): { playerId: string; status: string; requ
     const weekNumber = intValue(week.weekNumber, 0);
     if (weekNumber < 1) continue;
     const drills = list(week.drills).flatMap(drill => isRecord(drill) && text(drill.drillId)
-      ? [{ drillId: text(drill.drillId), name: text(drill.name), sets: intValue(drill.sets), reps: intValue(drill.reps), order: 0, isMeasuredDrill: false }] : []);
+      ? [{ ...prescription(drill), perSide: false, restScope: 'sets', order: 0, isMeasuredDrill: false }] : []);
     weeks.push({ weekNumber, workouts: workouts.filter((workout): workout is NonNullable<typeof workout> => workout !== null), drills });
   }
   return { playerId: raw.playerId, status: raw.status, requiresTrainingStartAuthorization: raw.requiresTrainingStartAuthorization === true, weeks };
@@ -101,16 +140,43 @@ export function practiceCandidateIds(rawPlan: unknown, playerId: string): string
   return [...new Set(planDrills(plan).filter(drill => drill.sets > 0 && drill.reps > 0 && drill.name.trim() && drill.drillId).map(drill => drill.drillId))];
 }
 
+/**
+ * Reads only the catalog rows the samples can reach. The candidates are the plan's eligible drills
+ * in sample order (first eligible occurrence of each id), so the samples are the first two
+ * candidates whose row is published. Rows are read in plan order, as many at a time as drills are
+ * still needed, and reading stops once two are published. `reportPracticeSamples` over these rows
+ * equals it over the whole catalog. A failed or missing read counts as "not in the catalog".
+ */
+export async function readPracticeCatalog(rawPlan: unknown, playerId: string,
+  read: (drillId: string) => Promise<PracticeCatalogEntry | null>): Promise<PracticeCatalogEntry[]> {
+  const ids = practiceCandidateIds(rawPlan, playerId), entries: PracticeCatalogEntry[] = [];
+  let next = 0, chosen = 0;
+  while (chosen < 2 && next < ids.length) {
+    const batch = ids.slice(next, next + 2 - chosen);
+    next += batch.length;
+    const rows = await Promise.all(batch.map(id => read(id).catch(() => null)));
+    for (const row of rows) if (row) { entries.push(row); if (row.published) chosen += 1; }
+  }
+  return entries;
+}
+
 /** `AthleteReportPractice.samples(plan:playerID:catalog:)`. */
 export function reportPracticeSamples(rawPlan: unknown, playerId: string, catalog: PracticeCatalogEntry[]): ReportPractice[] {
   const plan = readPlan(rawPlan);
   if (!plan || plan.playerId !== playerId || plan.status !== 'active' || plan.requiresTrainingStartAuthorization) return [];
   const samples: ReportPractice[] = [];
-  for (const { drillId: id, name, sets, reps } of planDrills(plan)) {
+  for (const block of planDrills(plan)) {
+    const { drillId: id, name, sets, reps } = block;
     if (samples.length >= 2 || samples.some(sample => sample.id === id) || sets <= 0 || reps <= 0 || !name.trim()) continue;
     const drill = catalog.find(entry => entry.drillId === id);
     if (!drill || !drill.published) continue;
-    samples.push({ id, name, reason: GENERAL_REASON + (drill.technicalTransfer ? ` ${drill.technicalTransfer}` : '') });
+    samples.push({
+      id, name, reason: GENERAL_REASON + (drill.technicalTransfer ? ` ${drill.technicalTransfer}` : ''),
+      tag: domainLabel(block.domain || drill.domain || '') || null,
+      dose: blockDoseLine(block),
+      instruction: drill.instruction || null,
+      equipment: equipmentText(drill.equipment),
+    });
   }
   return samples;
 }

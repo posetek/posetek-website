@@ -22,10 +22,12 @@ type Props = {
   previewState?: RecapPreview;
   feedUnavailable: boolean;
   report: ReportState;
+  /** Count the website's personal workouts: on whenever the Workouts tab counts them (`personal.enabled`). */
+  includePersonal?: boolean;
 };
 
 /** The app's `AthleteWeekRecap`: the first card on Home. */
-export default function WeekRecap({ access, playerName, playerId, active, preview, previewState, feedUnavailable, report }: Props) {
+export default function WeekRecap({ access, playerName, playerId, active, preview, previewState, feedUnavailable, report, includePersonal = false }: Props) {
   const [recent, setRecent] = useState<RecentTraining | null>(() => preview && !previewState ? previewTraining(new Date())
     : preview && previewState === 'empty' ? { logs: [], sessions: [], storedWorkoutTitles: {} } : null);
   const [failed, setFailed] = useState(preview && previewState === 'failed');
@@ -43,12 +45,12 @@ export default function WeekRecap({ access, playerName, playerId, active, previe
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     let current = true;
-    loadRecentTraining(playerId, new Date()).then(training => {
+    loadRecentTraining(playerId, new Date(), { includePersonal }).then(training => {
       if (!current || auth.currentUser?.uid !== uid) return;
       setFailed(false); setRecent(training);
     }, () => { if (current) setFailed(true); });
     return () => { current = false; };
-  }, [preview, active, foreground, playerId, attempt]);
+  }, [preview, active, foreground, playerId, attempt, includePersonal]);
 
   const now = new Date();
   const summary = recent && playerId ? weekSummary(recent, NO_RUNS, now) : null;

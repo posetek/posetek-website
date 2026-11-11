@@ -376,7 +376,7 @@ function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, o
       `Leaderboards`
     ],
     [
-      athleteUrl(`home`),
+      athleteUrl(`stats`),
       `person`,
       `You`
     ]
@@ -399,7 +399,7 @@ function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, o
         <button aria-label={`Sharing settings`} onClick={() => setPanel(`settings`)}>
           <Icon name={`tune`} />
         </button>
-        <Link className={`social-avatar small`} aria-label={`Your profile`} to={athleteUrl(`home`)}>
+        <Link className={`social-avatar small`} aria-label={`Your profile`} to={athleteUrl(`stats`)}>
           {initials(context?.name || `You`)}
         </Link>
       </div>

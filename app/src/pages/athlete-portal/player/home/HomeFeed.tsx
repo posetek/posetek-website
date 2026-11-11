@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { callSocial } from '../../../feed/api';
 import { formatDate, initials, mergeActivities } from '../../../feed/model';
@@ -8,6 +8,8 @@ import {
   errorMessage, errorStatus, formatNumber, outdoorPaths, shownBars, subtitleText, visibilityCandidate,
 } from './home-feed';
 import type { HomeActivity, HomeFeed, MediaLoad } from './home-feed';
+import { useCloseOnHistoryNavigation } from '../PlayerShell';
+import { initialPreviewPlayback, previewReducer, unavailableIds } from './preview-playback';
 
 const Icon = ({ name, filled = false }: { name: string; filled?: boolean }) =>
   <span className={`material-symbols-outlined${filled ? ' home-filled' : ''}`} aria-hidden="true">{name}</span>;
@@ -73,62 +75,57 @@ function OutdoorGraphic({ lines }: { lines: number[][][] }) {
 
 // MARK: - Silent previews (`V4FeedPlayback`): one muted preview plays, the one nearest the middle of the screen.
 
-type PreviewState = { kind: 'loading' } | { kind: 'ready' } | { kind: 'unavailable' } | { kind: 'failed'; message: string };
-
 function usePreviewPlayback(ids: string[], enabled: boolean, load: (id: string, refresh: boolean) => Promise<MediaLoad>) {
   const elements = useRef(new Map<string, HTMLElement>());
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [states, setStates] = useState<Record<string, PreviewState>>({});
-  const [urls, setUrls] = useState<Record<string, string>>({});
-  const [manual, setManual] = useState<Record<string, 'paused' | 'playing'>>({});
-  const statesRef = useRef(states); statesRef.current = states;
+  const [state, dispatch] = useReducer(previewReducer, initialPreviewPlayback);
+  const { activeId, request, refresh, states, urls } = state;
+  const unavailable = [...unavailableIds(state)].sort().join('|');
   const idsKey = ids.join('|');
-  const select = useCallback(() => {
-    if (!enabled) { setActiveId(null); return; }
-    const frames: Record<string, { top: number; height: number; width: number; visibleArea: number }> = {};
-    const height = window.innerHeight;
-    for (const id of idsKey ? idsKey.split('|') : []) {
-      const rect = elements.current.get(id)?.getBoundingClientRect();
-      if (!rect) continue;
-      const visibleHeight = Math.max(0, Math.min(rect.bottom, height) - Math.max(rect.top, 0));
-      frames[id] = { top: rect.top, height: rect.height, width: rect.width, visibleArea: visibleHeight * rect.width };
-    }
-    const excluded = new Set(Object.entries(statesRef.current).filter(([, state]) => state.kind === 'unavailable').map(([id]) => id));
-    setActiveId(visibilityCandidate(frames, height / 2, excluded));
-  }, [enabled, idsKey]);
+  // Measures on scroll, resize and list changes. Selecting the card that is already active is a no-op
+  // in the reducer, so "Load more activity" never restarts the preview that is playing.
   useEffect(() => {
     let frame = 0;
+    const excluded = new Set(unavailable ? unavailable.split('|') : []);
+    const select = () => {
+      if (!enabled) { dispatch({ type: 'select', id: null }); return; }
+      const frames: Record<string, { top: number; height: number; width: number; visibleArea: number }> = {};
+      const height = window.innerHeight;
+      for (const id of idsKey ? idsKey.split('|') : []) {
+        const rect = elements.current.get(id)?.getBoundingClientRect();
+        if (!rect) continue;
+        const visibleHeight = Math.max(0, Math.min(rect.bottom, height) - Math.max(rect.top, 0));
+        frames[id] = { top: rect.top, height: rect.height, width: rect.width, visibleArea: visibleHeight * rect.width };
+      }
+      dispatch({ type: 'select', id: visibilityCandidate(frames, height / 2, excluded) });
+    };
     const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(select); };
     schedule();
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
     return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', schedule); window.removeEventListener('resize', schedule); };
-  }, [select]);
-  const begin = useCallback((id: string, refresh: boolean) => {
-    let current = true;
-    setStates(old => ({ ...old, [id]: { kind: 'loading' } }));
-    void load(id, refresh).then(result => {
-      if (!current) return;
-      if (result.kind === 'playable') setUrls(old => ({ ...old, [id]: result.url }));
-      else if (result.kind === 'noVideo') { setStates(old => ({ ...old, [id]: { kind: 'unavailable' } })); requestAnimationFrame(select); }
-      else setStates(old => ({ ...old, [id]: { kind: 'failed', message: result.message } }));
-    });
-    return () => { current = false; };
-  }, [load, select]);
-  useEffect(() => { if (activeId) return begin(activeId, false); }, [activeId, begin]);
-  // The video must report it can play within 20 seconds, or the preview says it could not load.
+  }, [enabled, idsKey, unavailable]);
+  // One media load per request number: only a newly selected card or a retry starts one.
+  const loadRef = useRef(load);
+  useEffect(() => { loadRef.current = load; }, [load]);
   useEffect(() => {
-    if (!activeId || !urls[activeId] || states[activeId]?.kind !== 'loading') return;
-    const id = activeId, timer = setTimeout(() => setStates(old => old[id]?.kind === 'loading' ? { ...old, [id]: { kind: 'failed', message: COPY.videoLoadFailed } } : old), 20_000);
+    if (!activeId) return;
+    const id = activeId, number = request;
+    void loadRef.current(id, refresh).then(result => dispatch({ type: 'loaded', id, request: number, result }));
+  }, [activeId, request, refresh]);
+  // The video must report it can play within 20 seconds, or the preview says it could not load.
+  const waiting = !!activeId && !!urls[activeId] && states[activeId]?.kind === 'loading';
+  useEffect(() => {
+    if (!waiting || !activeId) return;
+    const id = activeId, timer = setTimeout(() => dispatch({ type: 'timeout', id }), 20_000);
     return () => clearTimeout(timer);
-  }, [activeId, urls, states]);
+  }, [waiting, activeId, request]);
   return {
-    activeId, states, urls, manual,
+    ...state,
     register: (id: string) => (element: HTMLElement | null) => { if (element) elements.current.set(id, element); else elements.current.delete(id); },
-    ready: (id: string) => setStates(old => ({ ...old, [id]: { kind: 'ready' } })),
-    fail: (id: string) => setStates(old => ({ ...old, [id]: { kind: 'failed', message: COPY.videoLoadFailed } })),
-    retry: (id: string) => { setUrls(old => { const next = { ...old }; delete next[id]; return next; }); begin(id, true); },
-    toggle: (id: string, paused: boolean) => setManual(old => ({ ...old, [id]: paused ? 'playing' : 'paused' })),
+    ready: (id: string) => dispatch({ type: 'ready', id }),
+    fail: (id: string) => dispatch({ type: 'failed', id }),
+    retry: (id: string) => dispatch({ type: 'retry', id }),
+    toggle: (id: string, paused: boolean) => dispatch({ type: 'toggle', id, paused }),
   };
 }
 type Playback = ReturnType<typeof usePreviewPlayback>;
@@ -210,6 +207,7 @@ function ActivityCard({ activity, busy, error, notice, preview, onKudos, onComme
 
 function Sheet({ title, onClose, closeLabel, children, className = '' }: { title: string; onClose: () => void; closeLabel: string; children: ReactNode; className?: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  useCloseOnHistoryNavigation(onClose);
   useEffect(() => {
     const element = dialog.current;
     if (element && !element.open) element.showModal?.();

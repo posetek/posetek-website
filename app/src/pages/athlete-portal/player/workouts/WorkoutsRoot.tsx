@@ -83,14 +83,17 @@ type Props = {
   onWorkout: () => void;
   onSaved: () => void;
   onHistory: () => void;
+  /** Shown under the header: the feedback invitation after a finished workout, and errors. */
+  notice?: ReactNode;
 };
 
 /** The Workouts root (`TrainingHubView.workspaceContent`): carousel, banners, then three rows. */
-export default function WorkoutsRoot({ page, onPage, playerId, onTest, resume, activeFreeSession, onWorkout, onSaved, onHistory }: Props) {
+export default function WorkoutsRoot({ page, onPage, playerId, onTest, resume, activeFreeSession, onWorkout, onSaved, onHistory, notice }: Props) {
   const [appOnly, setAppOnly] = useState<{ title: string; kind: AppOnlyKind } | null>(null);
   const refs = activeFreeSession?.sessionRefs?.length || 0;
   return <section className="wk-root">
     <PlayerHeader title="Workouts" />
+    {notice}
     <ActivityPager page={page} onPage={onPage}>
       <div className="v4-activity-grid">{MEASURED_TESTS.map(item => <ActivityCard key={item.drill} title={item.title} detail={item.detail} icon={item.icon} label={`${item.title}, ${item.detail}`} onClick={() => onTest(item.drill)} />)}</div>
       <div className="v4-activity-grid">{WORKOUT_ACTIVITIES.map(item => <ActivityCard key={item.kind} title={item.title} detail={item.detail} icon={item.icon} minutes={item.minutes} onClick={() => setAppOnly({ title: item.title, kind: item.kind })} />)}</div>

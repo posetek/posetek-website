@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useCloseOnHistoryNavigation } from '../PlayerShell';
 
 /**
  * A full-height sheet over the Coach tab, standing in for the app's `.sheet` presentations
@@ -12,6 +13,8 @@ export default function CoachSheet({ title, onDone, doneLabel = 'Done', doneDisa
   const panel = useRef<HTMLDivElement>(null), titleId = useId();
   const done = useRef(onDone);
   useEffect(() => { done.current = onDone; });
+  const [closeOnNavigation] = useState(() => () => done.current());
+  useCloseOnHistoryNavigation(closeOnNavigation);
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
     panel.current?.focus();

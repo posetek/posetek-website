@@ -19,7 +19,6 @@ import type { PlayerDestination, PlayerTabProps } from './workspace';
 import PlayerHome from './home/PlayerHome';
 import PlayerWorkouts from './workouts/PlayerWorkouts';
 import PlayerStats from './stats/PlayerStats';
-import WorkoutPlanPage from './workouts/WorkoutPlanPage';
 import AccountSettings from './account/AccountSettings';
 import { useAthleteTestReport } from './report';
 import './player.css';
@@ -39,10 +38,16 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const [visited, setVisited] = useState(new Set<PlayerView>([route.view])), [request, setRequest] = useState<Row | null>(null), [refreshError, setRefreshError] = useState('');
   const [feedbackInvitation, setFeedbackInvitation] = useState(false), [accountSettings, setAccountSettings] = useState(false), [guided, setGuided] = useState(false);
   const [feedbackOwner] = useState(() => ({ uid: auth.currentUser?.uid, playerId: ctx.playerId }));
-  const feedbackContext = useRef({ view: route.view, playerId: ctx.playerId, access: ctx.access });
-  feedbackContext.current = { view: route.view, playerId: ctx.playerId, access: ctx.access };
-  // Pages opened inside this visit can use browser Back; a page opened straight from a link cannot.
-  const pushed = useRef(0);
+  // My workout plan opened from Stats is the Workouts tab's own page shown over Stats, as in the
+  // app, so one instance owns every workout in progress.
+  const statsPlan = route.view === 'stats' && route.screen === 'plan';
+  const workoutsShown = route.view === 'workouts' || statsPlan;
+  const feedbackContext = useRef({ workoutsShown, playerId: ctx.playerId, access: ctx.access });
+  feedbackContext.current = { workoutsShown, playerId: ctx.playerId, access: ctx.access };
+  // The workspace pages behind this one in the browser's history, oldest first. The in-app Back
+  // control steps back only onto a page of the same tab; otherwise it opens the tab's root, so it
+  // can never leave the workspace for whatever page came before a link.
+  const trail = useRef<{ key: string; view: PlayerView }[]>([]);
   const scrollPositions = useRef(new Map<string, number>());
   const report = useAthleteTestReport(ctx.playerId, preview);
   useEffect(() => {
@@ -52,18 +57,22 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
     document.addEventListener('visibilitychange', hide);
     return () => { stop(); document.removeEventListener('visibilitychange', hide); };
   }, [preview, feedbackOwner]);
-  useEffect(() => { if (route.view !== 'workouts') setFeedbackInvitation(false); }, [route.view]);
+  useEffect(() => { if (!workoutsShown) setFeedbackInvitation(false); }, [workoutsShown]);
   const completedWorkout = () => {
-    const current = () => feedbackContext.current.access === 'athlete' && feedbackContext.current.view === 'workouts'
+    const current = () => feedbackContext.current.access === 'athlete' && feedbackContext.current.workoutsShown
       && feedbackContext.current.playerId === feedbackOwner.playerId && !!feedbackOwner.uid
       && auth.currentUser?.uid === feedbackOwner.uid && document.visibilityState === 'visible';
     if (!current()) return;
     void claimBrowserFeedbackInvitation().then(claimed => { if (claimed && current()) setFeedbackInvitation(true); });
   };
-  useEffect(() => { setVisited(old => old.has(route.view) ? old : new Set([...old, route.view])); }, [route.view]);
   useEffect(() => {
-    if (route.view !== 'workouts') window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
-  }, [route.view]);
+    // The plan opened from Stats is rendered by Workouts, which then stays mounted like any visited tab.
+    const shown: PlayerView[] = route.view === 'stats' && route.screen === 'plan' ? ['stats', 'workouts'] : [route.view];
+    setVisited(old => shown.every(view => old.has(view)) ? old : new Set([...old, ...shown]));
+  }, [route.view, route.screen]);
+  useEffect(() => {
+    if (!workoutsShown) window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
+  }, [workoutsShown]);
   useEffect(() => {
     if (preview) return;
     const player = db.collection('players').doc(ctx.playerId!);
@@ -90,33 +99,36 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const profile = useMemo(() => playerProfile(all, athlete, dataset), [all, athlete, dataset]);
   const playerCtx = useMemo(() => ({ ...ctx, athlete, provisionalEstimates, allStatsReps: () => all, allResultReps: () => Object.values(reps).flat() }), [ctx, athlete, all, reps, provisionalEstimates]);
   const go = (view: PlayerView, to: PlayerDestination = {}) => {
-    if (route.view === 'workouts' && view !== 'workouts') window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
-    if (!to.replace) pushed.current += 1;
+    if (workoutsShown && view !== 'workouts' && !(view === 'stats' && to.screen === 'plan')) window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
     scrollPositions.current.set(location.key, window.scrollY);
     navigate({ pathname: location.pathname, search: playerSearch(location.search, view, to) }, { replace: to.replace });
     window.scrollTo({ top: 0 });
   };
   const back = () => {
-    if (pushed.current > 0) { pushed.current -= 1; navigate(-1); }
+    const previous = trail.current[trail.current.length - 2];
+    if (previous && previous.view === route.view) navigate(-1);
     else go(route.view, { replace: true });
   };
-  // Returning to a page (Back from the plan to Stats) lands where the athlete left it.
   useEffect(() => {
+    const entry = { key: location.key, view: route.view };
+    const known = trail.current.findIndex(item => item.key === location.key);
+    if (navigationType === 'POP' && known >= 0) trail.current = trail.current.slice(0, known + 1);
+    else if (navigationType === 'REPLACE' && trail.current.length) trail.current[trail.current.length - 1] = entry;
+    else trail.current.push(entry);
+    // Returning to a page (Back from the plan to Stats) lands where the athlete left it.
     if (navigationType === 'POP') window.scrollTo({ top: scrollPositions.current.get(location.key) ?? 0 });
-  }, [location.key, navigationType]);
-  const statsPlan = route.view === 'stats' && route.screen === 'plan';
+  }, [location.key, navigationType, route.view]);
   // A sheet over the workspace pauses the tab under it, as the app's `isActive` does.
   const tab = (view: PlayerView): PlayerTabProps => ({ ctx: playerCtx, route, go, back, active: route.view === view && !accountSettings, preview, athlete, reps, personal, report });
-  return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} initials={playerInitials(athlete?.name)} onNavigate={view => go(view as PlayerView)} hideDock={guided && route.view === 'workouts'}
+  return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} initials={playerInitials(athlete?.name)} onNavigate={view => go(view as PlayerView)} hideDock={guided && workoutsShown}
     onAccountSettings={() => setAccountSettings(true)} onReturnHome={() => go('home')} onSignOut={preview ? undefined : () => { void auth.signOut(); }}>
       {preview && <p className="player-preview-note">Local preview · sample data · no account changes</p>}
       {refreshError && <p className="player-error" role="status">Could not refresh your latest results: {refreshError}</p>}
       {visited.has('home') && <div hidden={route.view !== 'home'}><PlayerHome {...tab('home')} /></div>}
       {visited.has('coach') && <div hidden={route.view !== 'coach'}><PlayerHeader title="Coach" /><CoachChat playerId={ctx.playerId!} preview={preview} personalStore={personal} athlete={athlete} active={route.view === 'coach' && !accountSettings}
         technique={{ reps: all, onReplay: rep => go('workouts', { drill: 'shooting', session: rep.sessionFolder || `session${rep.sessionNumber}`, rep: rep.id }) }} onHandoff={r => { setRequest(r); if (r.conversationId) navigate({ pathname: location.pathname, search: personalDraftLink(location.search, r.conversationId) }); else go('workouts', { screen: 'workout' }); }} /></div>}
-      {visited.has('workouts') && <div hidden={route.view !== 'workouts'}><PlayerWorkouts {...tab('workouts')} statsProfile={intakeSnapshot(profile)} request={route.view === 'workouts' ? request : null} onAcknowledge={() => setRequest(null)} onCompleted={completedWorkout} feedbackInvitation={feedbackInvitation} onDismissFeedback={() => setFeedbackInvitation(false)} onGuidedChange={setGuided} /></div>}
+      {(visited.has('workouts') || statsPlan) && <div hidden={!workoutsShown}><PlayerWorkouts {...tab('workouts')} active={workoutsShown && !accountSettings} statsProfile={intakeSnapshot(profile)} request={route.view === 'workouts' ? request : null} onAcknowledge={() => setRequest(null)} onCompleted={completedWorkout} feedbackInvitation={feedbackInvitation} onDismissFeedback={() => setFeedbackInvitation(false)} onGuidedChange={setGuided} /></div>}
       {visited.has('stats') && <div hidden={route.view !== 'stats' || statsPlan}><PlayerStats {...tab('stats')} active={route.view === 'stats' && !statsPlan} profile={profile} dataset={dataset} /></div>}
-      {statsPlan && <WorkoutPlanPage {...tab('stats')} fromStats />}
       {accountSettings && <AccountSettings ctx={playerCtx} onClose={() => setAccountSettings(false)} />}
   </PlayerShell>;
 }

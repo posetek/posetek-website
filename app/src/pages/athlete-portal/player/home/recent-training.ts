@@ -1,5 +1,6 @@
 import firebase, { db } from '../../../../lib/firebase';
 import { loadCatalogDrill } from '../../lib/workout-store';
+import { personalExecutionId } from '../personal-workouts';
 
 /**
  * The web copy of the app's `RecentTraining` (KickAI/Community/AthleteWorkspaceHome.swift): the
@@ -221,18 +222,35 @@ export function parseTrainingSession(id: string, data: Data): TrainingSession | 
   };
 }
 
-/** Builds the record set from documents, as `RecentTraining.load` does after its queries. */
-export function recentTrainingFrom(logDocs: { id: string; data: Data }[], sessionDocs: { id: string; data: Data }[]): RecentTraining {
-  const logs: WorkoutLog[] = [], storedWorkoutTitles: Record<string, string> = {};
-  for (const doc of logDocs) {
-    const log = parseWorkoutLog(doc.id, doc.data);
-    if (!log) continue;
-    logs.push(log);
-    const title = storedTitle(doc.data);
-    if (title !== undefined) storedWorkoutTitles[log.id] = title;
-  }
+/**
+ * A website personal workout log (`personalWorkoutLogs/{workoutId}`) in the shape the Workouts tab
+ * gives it (`PlayerTraining`'s history): id `personal_<workoutId>`, source `personal`. The app has no
+ * such collection; the website counts them so Home and Workouts agree.
+ */
+export function parsePersonalWorkoutLog(workoutId: string, data: Data): WorkoutLog | null {
+  return parseWorkoutLog(personalExecutionId(workoutId), { ...data, planId: typeof data.planId === 'string' ? data.planId : '__personal__' });
+}
+
+type Doc = { id: string; data: Data };
+
+/**
+ * Builds the record set from documents, as `RecentTraining.load` does after its queries. Logs are
+ * unique by id; a personal log replaces an assigned log only on the same `personal_` id, as the
+ * Workouts history does. A personal log that links a training session hides that session the same
+ * way an assigned log does, so neither is counted twice.
+ */
+export function recentTrainingFrom(logDocs: Doc[], sessionDocs: Doc[], personalDocs: Doc[] = []): RecentTraining {
+  const logs = new Map<string, WorkoutLog>(), storedWorkoutTitles: Record<string, string> = {};
+  const add = (log: WorkoutLog | null, data: Data) => {
+    if (!log) return;
+    logs.delete(log.id); logs.set(log.id, log);
+    const title = storedTitle(data);
+    if (title !== undefined) storedWorkoutTitles[log.id] = title; else delete storedWorkoutTitles[log.id];
+  };
+  for (const doc of logDocs) add(parseWorkoutLog(doc.id, doc.data), doc.data);
+  for (const doc of personalDocs) add(parsePersonalWorkoutLog(doc.id, doc.data), doc.data);
   const sessions = sessionDocs.map(doc => parseTrainingSession(doc.id, doc.data)).filter((session): session is TrainingSession => !!session);
-  return { logs, sessions, storedWorkoutTitles };
+  return { logs: [...logs.values()], sessions, storedWorkoutTitles };
 }
 
 /** Drill ids whose name only the catalog can supply. */
@@ -249,17 +267,21 @@ export function drillsNeedingCatalog(training: RecentTraining): string[] {
 
 /**
  * The app's two queries: workout logs and training sessions that ended on or after the start of
- * the day thirteen days ago. The app also merges the camera-guided Yoga/Core logs it keeps on the
- * phone; those never reach the backend, so the website cannot count them.
+ * the day thirteen days ago. The website adds its personal workout logs over the same window when
+ * personal workouts are on, the same condition under which the Workouts tab counts them. The app
+ * also merges the camera-guided Yoga/Core logs it keeps on the phone; those never reach the backend,
+ * so the website cannot count them.
  */
-export async function loadRecentTraining(playerId: string, now: Date): Promise<RecentTraining> {
+export async function loadRecentTraining(playerId: string, now: Date, { includePersonal = false } = {}): Promise<RecentTraining> {
   const since = firebase.firestore.Timestamp.fromDate(addDays(startOfDay(now), -13));
   const player = db.collection('players').doc(playerId);
-  const [logs, sessions] = await Promise.all([
+  const [logs, sessions, personal] = await Promise.all([
     player.collection('workoutLogs').where('endedAt', '>=', since).get(),
     player.collection('trainingSessions').where('endedAt', '>=', since).get(),
+    includePersonal ? player.collection('personalWorkoutLogs').where('endedAt', '>=', since).get() : null,
   ]);
-  const training = recentTrainingFrom(logs.docs.map(doc => ({ id: doc.id, data: doc.data() })), sessions.docs.map(doc => ({ id: doc.id, data: doc.data() })));
+  const docs = (snapshot: { docs: { id: string; data: () => Data }[] } | null) => snapshot ? snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() })) : [];
+  const training = recentTrainingFrom(docs(logs), docs(sessions), docs(personal));
   const needed = drillsNeedingCatalog(training);
   if (!needed.length) return training;
   const drills = await Promise.all(needed.map(loadCatalogDrill));

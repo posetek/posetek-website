@@ -24,8 +24,10 @@ const visible = (html: string) => html.replace(/<section class="mobile-page body
 describe('Stats tab (V4 StatsView)', () => {
   it('shows the sections in the app order and nothing from the old profile screen', () => {
     const html = render(report()), text = visible(html);
-    const order = ['Stats', 'Jordan Rivera', 'Skill benchmarks', 'SKILL MAP', '5/5 recorded', '100 = the D1 reference. Reference values are provisional.',
-      'Standing', 'What you’re doing well', 'What we’ll build next', 'Striker. Position-based development', 'Drills from your plan', 'Body scan', '5\'10"', '159 lbs', 'Streak', 'Total Sessions', 'Favorite Drill'];
+    // The one-pager's order (Nolan, 2026-11-11): the report directly under the name, then the rest.
+    const order = ['Stats', 'Jordan Rivera', 'Standing', 'Team average: 7.20 s · 8 results','What you’re doing well', 'What we’ll build next',
+      'Striker. Position-based development', 'Drills from your plan', 'Skill benchmarks', 'SKILL MAP', '5/5 recorded', '100 = the D1 reference. Reference values are provisional.',
+      'Body scan', '5\'10"', '159 lbs', 'Streak', 'Total Sessions', 'Favorite Drill'];
     let at = -1;
     for (const item of order) { const next = text.indexOf(item, at + 1); expect(next, item).toBeGreaterThan(at); at = next; }
     for (const removed of ['Leaderboards', 'Your skill map', 'How the skill map is scored', 'Profile details', 'Technique analysis', 'Review AI sharing', 'Day streak']) expect(html).not.toContain(removed);

@@ -27,6 +27,8 @@ import { personalExecutionId } from './personal-workouts';
 import { PlayerHeader } from './PlayerShell';
 import { TrainingBreakdownCard, TrainingStatsRow, useFocusPreferences } from './workouts/TrainingFocus';
 import { findResume, focusSummary, planCardSubtitle, planPagePlan, previewHistory, resumeBannerText, savedEntries, savedWorkouts } from './workouts/hub';
+import { needsAllLogs, overlayScroll, resumeAction } from './workouts/navigation';
+import type { HubPage } from './workouts/navigation';
 import type { ResumeTarget, SavedEntry } from './workouts/hub';
 import MyWorkoutPlan, { Eyebrow, InfoNote, PlanWeekDetail } from './workouts/MyWorkoutPlan';
 import WorkoutReview from './workouts/WorkoutReview';
@@ -47,7 +49,7 @@ export function previewProgram(): Row {
 }
 
 /** The pages of the Workouts tab this component hosts (the app's `TrainingHubDestination`). */
-export type HubPage = 'root' | 'workout' | 'plan' | 'saved' | 'history';
+export type { HubPage } from './workouts/navigation';
 const PAGE_TITLE: Record<Exclude<HubPage, 'root'>, string> = { workout: 'Workout', plan: 'My workout plan', saved: 'Saved Workouts', history: 'History' };
 
 type Props = {
@@ -63,6 +65,8 @@ type Props = {
   hubNotice?: ReactNode;
   /** True while a guided workout fills the screen, so the shell can hide the dock as the app does. */
   onGuidedChange?: (active: boolean) => void;
+  /** False while the Workouts tab is hidden: listeners that only serve what is on screen stop. */
+  active?: boolean;
 };
 
 /**
@@ -70,7 +74,7 @@ type Props = {
  * Saved Workouts and History share one set of plans, logs and presentations, so a workout in progress
  * survives a look at another page. Plans, logs, proposals and schedules keep their existing data access.
  */
-export default function PlayerTraining({ ctx, personal, request, onAcknowledge, onCompleted, page, fromStats = false, go, back, workoutsPage = 'tests', onWorkoutsPage, onTest, hubNotice, onGuidedChange }: Props) {
+export default function PlayerTraining({ ctx, personal, request, onAcknowledge, onCompleted, page, fromStats = false, go, back, workoutsPage = 'tests', onWorkoutsPage, onTest, hubNotice, onGuidedChange, active = true }: Props) {
   const preview = ctx.access === 'preview';
   const [plans, setPlans] = useState<Row[] | null>(preview ? [previewProgram()] : null), [error, setError] = useState('');
   const [intake, setIntake] = useState(false), [seed, setSeed] = useState(''), [reveal, setReveal] = useState(false);
@@ -92,19 +96,21 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
   const requestedConversation = new URLSearchParams(location.search).get('personalConversation');
   const previousConversation = useRef(requestedConversation);
   useEffect(() => {
+    // Another tab's address says nothing about a workout conversation; leave the hidden tab alone.
+    if (!active) return;
     const previous = previousConversation.current; previousConversation.current = requestedConversation;
     if (!personal.enabled || !personal.selectionReady) return;
     if (!requestedConversation) {
       if (previous && navigationType === 'POP') { setPersonalOpen(true); setPersonalCreate(false); setConversationOpen(false); setSeed(''); setPersonalSource(undefined); setPersonalSelected(undefined); setPersonalHandoff(undefined); setPersonalEntry(v => v + 1); }
       return;
     }
-    // The conversation already selected by the visible hub only updates its
-    // address. Do not remount it and discard the just-confirmed session setup.
-    // Browser Back/Forward and external links still recover through the route.
-    if (personalOpen && personal.conversationId === requestedConversation && navigationType !== 'POP') return;
+    // The conversation already open in the hub only updates its address, including when the athlete
+    // returns to it with Back. Remounting would discard the just-confirmed session setup. Back/Forward
+    // to another conversation and external links still recover through the route.
+    if (personalOpen && personal.conversationId === requestedConversation) return;
     setPersonalOpen(true); setConversationOpen(true); setSeed(''); setPersonalEntry(v => v + 1);
     if (personal.conversationId !== requestedConversation) void personal.openConversation(requestedConversation).catch(e => setError(e.message));
-  }, [requestedConversation, personal.enabled, personal.selectionReady]);
+  }, [requestedConversation, personal.enabled, personal.selectionReady, active]);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const plan = plans?.find(p => p.status === 'active') || plans?.find(p => p.status === 'completed') || null;
@@ -122,11 +128,13 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
       setError('');
     }, e => setError(e.message));
   }, [ctx.playerId, preview]);
-  // Every workout log, for History and the training focus. The plan page opened from Stats does not need them.
+  // Every workout log, for the hub's stats and training focus and for History; only while one of those
+  // pages is on screen. The last copy stays for the next visit and refreshes when the listener reopens.
+  const allLogsListened = !preview && needsAllLogs(page, active);
   useEffect(() => {
-    if (preview || fromStats) return;
+    if (!allLogsListened) return;
     return db.collection('players').doc(ctx.playerId!).collection('workoutLogs').onSnapshot(s => { setAllLogs(s.docs.map(d => ({ ...d.data(), id: d.id }))); setHistoryLoaded(true); setHistoryError(''); }, e => { setHistoryLoaded(true); setHistoryError(e.message); });
-  }, [ctx.playerId, preview, fromStats]);
+  }, [ctx.playerId, allLogsListened]);
   useEffect(() => {
     if (!request || !plans || playing || review || chatTarget || (!preview && !config)) return;
     setSeed(request.request || '');
@@ -150,33 +158,46 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
   useEffect(() => { onGuidedChange?.(!!playing || (personalOpen && personalGuided && page !== 'root')); }, [playing, personalOpen, personalGuided, page]);
   useEffect(() => { if (fromStats && page === 'plan') { setSelected(null); setDrillsExpanded(true); } }, [fromStats, page]);
   // Light presentations belong to the page that opened them; ongoing work (a guided workout, a
-  // workout conversation, the planner) stays until the athlete closes it.
-  const lastPage = useRef(page);
+  // workout conversation, the planner) stays until the athlete closes it. A review opened by the
+  // root's resume banner is carried onto the hub it opens.
+  const lastPage = useRef(page), carryReview = useRef(false);
   useEffect(() => {
     if (lastPage.current === page) return;
     lastPage.current = page;
-    setReview(null); setDrill(null); setFullOpen(false); setWeekDetail(null); setPanel(''); setCreateOpen(false); setFreeSessionSheet(false);
+    if (!carryReview.current) setReview(null);
+    carryReview.current = false;
+    setDrill(null); setFullOpen(false); setWeekDetail(null); setPanel(''); setCreateOpen(false); setFreeSessionSheet(false);
+    // A personal guided session left with Back stays mounted under the root; it pauses, as a plan
+    // workout does when the athlete leaves it.
+    if (page === 'root' && personalOpen && personalGuided) window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
   }, [page]);
 
-  // Presentations open at the top, as a pushed page does, and closing one returns to where the
-  // athlete was on the page under it.
-  const presentation = [page, personalOpen && 'personal', playing && 'player', intake && 'intake', drill && `drill:${drill.id}`, chatTarget && 'chat', review && (fullOpen ? 'full' : 'review'), createOpen && 'create', weekDetail !== null && `week:${weekDetail}`, panel].filter(Boolean).join('/');
-  const scrolls = useRef(new Map<string, number>()), shownPresentation = useRef(presentation);
+  // Presentations inside one page open at the top and closing one returns to where the athlete was
+  // on the page under it. Page changes are the workspace's: it scrolls a pushed page to the top and
+  // restores a page reached with the browser's Back.
+  const overlayKey = [personalOpen && 'personal', playing && 'player', intake && 'intake', chatTarget && 'chat', review && 'review', fullOpen && 'full', createOpen && 'create', weekDetail !== null && `week:${weekDetail}`, panel, drill && `drill:${drill.id}`].filter(Boolean).join('/');
+  const scrolls = useRef(new Map<string, number>()), shownOverlay = useRef({ page, key: overlayKey }), activeRef = useRef(active);
+  activeRef.current = active;
   useEffect(() => {
-    const remember = () => scrolls.current.set(shownPresentation.current, window.scrollY);
+    const remember = () => { if (activeRef.current) scrolls.current.set(`${shownOverlay.current.page}|${shownOverlay.current.key}`, window.scrollY); };
     window.addEventListener('scroll', remember, { passive: true });
     return () => window.removeEventListener('scroll', remember);
   }, []);
   useLayoutEffect(() => {
-    if (shownPresentation.current === presentation) return;
-    const opening = presentation.startsWith(shownPresentation.current);
-    shownPresentation.current = presentation;
-    // A page change is scrolled by the workspace's own navigation.
-    if (presentation.split('/')[0] !== page) return;
-    window.scrollTo({ top: opening ? 0 : scrolls.current.get(presentation) ?? 0 });
-  }, [presentation]);
+    const previous = shownOverlay.current, next = { page, key: overlayKey };
+    if (previous.page === next.page && previous.key === next.key) return;
+    shownOverlay.current = next;
+    if (previous.page !== next.page) { scrolls.current.clear(); return; }
+    const step = overlayScroll(previous, next);
+    if (step !== 'none' && active) window.scrollTo({ top: step === 'top' ? 0 : scrolls.current.get(`${page}|${overlayKey}`) ?? 0 });
+  }, [page, overlayKey]);
 
-  const start = async (w: Row) => { try { setPlaying(await store.start(w)); setReview(null); setChatTarget(null); setFullOpen(false); } catch { /* store owns error */ } };
+  const start = async (w: Row) => {
+    // One guided workout at a time: a personal session still open is saved on the server and closes
+    // here, so it can be resumed later rather than run alongside this one.
+    if (personalOpen) closePersonal();
+    try { setPlaying(await store.start(w)); setReview(null); setChatTarget(null); setFullOpen(false); } catch { /* store owns error */ }
+  };
   const apply = async (andStart: boolean) => {
     if (!proposal || applying) return;
     setApplying(true); setError('');
@@ -223,9 +244,15 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
   const savedCount = saved.length + personalWorkouts.filter(w => !personalLogs[w.workoutId]?.endedAt).length;
   const resume = findResume(v3Active, logs, saved, personalWorkouts, personalLogs);
   const openResume = (target: ResumeTarget) => {
-    if (target.kind === 'personal') { openPersonal(target.workout); return; }
-    const exec = executable(v3Active!, target.workout, Number(target.workout.weekNumber), target.kind);
-    if (needsTrainingStartCheck(exec)) setReview(exec); else void start(exec);
+    const exec = target.kind === 'personal' ? null : executable(v3Active!, target.workout, Number(target.workout.weekNumber), target.kind);
+    const atRoot = page === 'root';
+    switch (resumeAction(target, { needsCheck: !!exec && needsTrainingStartCheck(exec), atRoot, personalLive: personalOpen && personalGuided })) {
+      case 'returnToPersonal': if (atRoot) go('workouts', { screen: 'workout' }); return;
+      case 'openPersonal': openPersonal(target.workout); if (atRoot) go('workouts', { screen: 'workout' }); return;
+      case 'reviewOnHub': carryReview.current = true; setReview(exec); go('workouts', { screen: 'workout' }); return;
+      case 'review': setReview(exec); return;
+      case 'start': void start(exec!);
+    }
   };
   // History and the training focus: every workout log, the hub's own (newer in a preview), and personal sessions.
   const historyLogs = useMemo(() => {
@@ -247,8 +274,10 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
 
   // MARK: Full-screen and pushed presentations
 
-  const root = page === 'root' && <WorkoutsRoot page={workoutsPage} onPage={p => onWorkoutsPage?.(p)} playerId={ctx.playerId} onTest={d => onTest?.(d)}
-    resume={resume && (resume.kind === 'personal' || store.logsLoaded) ? { text: resumeBannerText(resume), onOpen: () => { if (resume.kind === 'personal') { openPersonal(resume.workout); go('workouts', { screen: 'workout' }); } else openResume(resume); } } : null}
+  // The feedback invitation appears on whichever Workouts page the athlete lands on after finishing.
+  const notices = <>{hubNotice}{message}</>;
+  const root = page === 'root' && <WorkoutsRoot page={workoutsPage} onPage={p => onWorkoutsPage?.(p)} playerId={ctx.playerId} onTest={d => onTest?.(d)} notice={notices}
+    resume={resume && (resume.kind === 'personal' || store.logsLoaded) ? { text: resumeBannerText(resume), onOpen: () => openResume(resume) } : null}
     activeFreeSession={preview ? null : activeFreeSession} onWorkout={() => go('workouts', { screen: 'workout' })} onSaved={() => go('workouts', { screen: 'saved' })} onHistory={() => go('workouts', { screen: 'history' })} />;
   if (personalOpen) {
     // A personal workout (and its guided session) stays mounted while the athlete looks at the root.
@@ -259,7 +288,7 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
   if (playing) return <PlayerWorkout workout={playing} store={store} playerId={ctx.playerId!} preview={preview} onExit={() => setPlaying(null)} onCompleted={onCompleted} />;
   if (root) return root;
 
-  const overlay = (title: string, onClose: () => void, body: ReactNode) => <section className="wk-page"><PlayerHeader title={title} onBack={onClose} />{body}</section>;
+  const overlay = (title: string, onClose: () => void, body: ReactNode) => <section className="wk-page"><PlayerHeader title={title} onBack={onClose} />{hubNotice}{body}</section>;
   if (intake) return overlay('Training plan', () => setIntake(false), <ProgramIntake playerId={ctx.playerId!} athlete={ctx.athlete} statsProfile={{}} preview={preview} initialText={seed} onReady={() => { setIntake(false); setReveal(true); }} onBack={() => setIntake(false)} />);
   if (drill) return overlay(drill.name || 'Drill', () => setDrill(null), <DrillMedia drillId={drill.id} preview={preview} />);
   if (chatTarget) return overlay(chatTarget.kind === 'new' ? 'Create your workout' : 'Your workout', () => { if (!applying) { setChatTarget(null); setProposal(null); } }, <>{message}
@@ -305,7 +334,7 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
 
   if (page === 'plan') {
     const shown = planPagePlan(activePlan, fromStats);
-    return <section className="wk-page">{header}{message}
+    return <section className="wk-page">{header}{notices}
       {!plans && <p className="wk-loading" role="status"><span className="wk-spinner" aria-hidden="true" />Loading training…</p>}
       {shown && shown.schemaVersion === 3 && <MyWorkoutPlan plan={shown} logs={logs} logsLoaded={store.logsLoaded} reps={ctx.allStatsReps()} sessions={recordedSessions} selectedWeek={selected} onSelectWeek={setSelected}
         drillsExpanded={drillsExpanded} onDrillsExpanded={setDrillsExpanded} onOpenWorkout={setReview} onOpenWeek={setWeekDetail} onOpenDrill={id => { const b = (weekOf(shown, selected || currentWeekNumber(shown))?.workouts || []).flatMap((w: Row) => w.blocks || []).find((x: Row) => x.drillId === id); openDrill(id, b?.name); }}
@@ -314,12 +343,12 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
       {sheet}
     </section>;
   }
-  if (page === 'saved') return <section className="wk-page">{header}{message}
+  if (page === 'saved') return <section className="wk-page">{header}{notices}
     <SavedLibrary entries={savedEntries(v3Active ? store.workouts : [], store.logs, personalWorkouts, personalLogs, v3Active)} loading={!!plan && !store.logsLoaded || (personal.enabled && !personal.loaded)} error={store.error || ''}
       onOpen={entry => { if (entry.inProgress && entry.source === 'adhoc') { const exec = executable(v3Active!, entry.workout, Number(entry.workout.weekNumber), 'adhoc'); if (needsTrainingStartCheck(exec)) setReview(exec); else void start(exec); } else reviewSaved(entry); }}
       onEdit={entry => openPersonal(entry.workout)} />
   </section>;
-  if (page === 'history') return <section className="wk-page">{header}
+  if (page === 'history') return <section className="wk-page">{header}{notices}
     <HistoryList logs={historyLogs} sessions={recordedSessions} planId={activePlan?.id || null} loading={!historyLoaded} error={historyError}
       canReview={log => log.source !== 'personal' && !!log.workoutSnapshot && !log.endedAt && plans?.some(p => p.id === log.planId && p.status === 'active') === true}
       onReview={log => setReview({ ...log.workoutSnapshot, ...log, blocks: log.workoutSnapshot.blocks })} />
@@ -347,7 +376,7 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
     <button type="button" className="primary-cta" onClick={openPlan}>Get started</button>
     {!ctx.allStatsReps().length && <InfoNote text="You haven't recorded any drills yet. You can still build a plan — it'll lean on your goals and tell you which drills to record so the plan can adapt." />}
   </>;
-  return <section className="wk-page wk-hub">{header}{hubNotice}{message}<div className="wk-stack wk-hub-content">{content}</div>{sheet}</section>;
+  return <section className="wk-page wk-hub">{header}{notices}<div className="wk-stack wk-hub-content">{content}</div>{sheet}</section>;
 }
 
 function LegacyPlan({ onBuild, children }: { onBuild: () => void; children: ReactNode }) {

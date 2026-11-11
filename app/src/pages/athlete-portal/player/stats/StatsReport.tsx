@@ -40,7 +40,20 @@ export function reportCaption(kind: 'event' | 'individual', limitedComparison: b
       : 'Your latest available personal results. Team percentiles need comparable results from the same completed event.';
 }
 
-/** `AthleteTestReportRow`: label and result, the approximate percentile, the three-band bar and its marker. */
+/**
+ * The team-average line, worded as the parent one-pager's `teamAverageText`
+ * (private-report/render.mjs): fewer than five usable results give no comparison.
+ */
+export function teamAverageText(count: number, average: string | null): string {
+  if (count < 5) return `Team average unavailable · ${count} usable results (5 needed)`;
+  return average ? `Team average: ${average} · ${count} results` : `Team average unavailable · ${count} results`;
+}
+
+/**
+ * One row as in the one-pager's focused layout and the app's `AthleteTestReportRow`: label and
+ * result, the approximate percentile, the three-band bar and its marker, then the team-average
+ * line whenever the report supplies a count (also for a test without a percentile).
+ */
 function ReportRow({ metric, showDate, timeZone }: { metric: ReportMetric; showDate: boolean; timeZone?: string }) {
   const rank = comparisonPercentile(metric), average = averageText(metric), estimated = metric.estimatedCount ?? 0;
   return <div className="stats-report-row" data-metric={metric.id}>
@@ -50,7 +63,7 @@ function ReportRow({ metric, showDate, timeZone }: { metric: ReportMetric; showD
       <span className="stats-report-bands"><i /><i /><i /></span>
       <span className="stats-report-marker" style={{ left: `calc((100% - 14px) * ${rank / 100})` }} />
     </div>}
-    {average !== null && metric.count !== null && rank !== null && <p className="stats-caption">Team average: {average} · {metric.count} results{estimated > 0 ? ` (${estimated} estimated)` : ''}</p>}
+    {metric.count !== null && <p className="stats-caption">{teamAverageText(metric.count, average)}{estimated > 0 ? ` (${estimated} estimated)` : ''}</p>}
     {showDate && metric.recordedAtMillis !== null && <p className="stats-caption">{reportDate(metric.recordedAtMillis, timeZone)}</p>}
   </div>;
 }
@@ -87,10 +100,17 @@ export default function StatsReport({ report: state, position, practice, onOpenP
     </div>
     <div className="v4-card stats-report-card stats-report-drills">
       <h3>{samples.length === 2 ? 'Two drills from your plan' : 'Drills from your plan'}</h3>
+      {/* The one-pager's drill card: title and tag, dose, instruction, equipment, why. A missing field is left out. */}
       {samples.map(sample => <button key={sample.id} type="button" className="stats-report-drill" data-drill={sample.id} onClick={onOpenPlan}>
-        <span className="stats-report-drill-name"><strong>{sample.name}</strong><span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></span>
+        <span className="stats-report-drill-name"><strong>{sample.name}</strong>
+          {sample.tag && <span className="stats-report-drill-tag">{sample.tag}</span>}
+          <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></span>
+        {sample.dose && <span className="stats-report-drill-dose">{sample.dose}</span>}
+        {sample.instruction && <span className="stats-report-drill-text">{sample.instruction}</span>}
+        {sample.equipment && <small>Equipment: {sample.equipment}</small>}
         <small>Why this helps you: {sample.reason}</small>
       </button>)}
+      {samples.length > 0 && <p className="stats-caption stats-report-safety">Clear, flat space. Stop if anything hurts.</p>}
       {!samples.length && (practice.loading
         ? <p className="stats-loading" role="status"><span className="stats-spinner" aria-hidden="true" />Loading your plan</p>
         : <p className="stats-subheadline">{practice.error ? 'Your saved plan could not be loaded.' : 'No eligible drills from your saved plan are available yet.'}</p>)}

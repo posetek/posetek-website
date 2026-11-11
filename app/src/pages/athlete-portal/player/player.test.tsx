@@ -141,7 +141,10 @@ describe('gateway terminal state and feature gates', () => {
 
 describe('player route and preview rendering', () => {
   it('opens the four workspace destinations and their pages', () => {
-    expect(playerRoute('')).toMatchObject({ view: 'home', screen: null, page: 'tests' });
+    // A player lands on the profile: the testing report on Stats.
+    expect(playerRoute('')).toMatchObject({ view: 'stats', screen: null, page: 'tests' });
+    expect(playerRoute('?player=p1&userType=player').view).toBe('stats');
+    expect(playerRoute('?view=home').view).toBe('home');
     expect(playerRoute('?view=coach').view).toBe('coach');
     expect(playerRoute('?view=stats').view).toBe('stats');
     expect(playerRoute('?view=stats&screen=plan')).toMatchObject({ view: 'stats', screen: 'plan' });
@@ -181,8 +184,8 @@ describe('player route and preview rendering', () => {
     if (view === 'training') { expect(html).toContain('<h1>Workout</h1>'); expect(html).toContain('My workout plan'); expect(html).toContain('Create your workout'); }
     if (view === 'workouts') for (const test of ['Shooting', 'Dribbling', 'Vertical Jump', 'Broad Jump', 'Sprint', 'Shuttle']) expect(html).toContain(`<strong>${test}</strong>`);
     if (view === 'stats') {
-      // The app's order: benchmarks, the testing report, then the body scan.
-      const order = ['>Skill benchmarks</h2>', '>Your report</h3>', '>Body scan</h2>'].map(heading => html.indexOf(heading));
+      // The profile is the one-pager first: the testing report, then benchmarks and the body scan.
+      const order = ['>Your report</h3>', '>Skill benchmarks</h2>', '>Body scan</h2>'].map(heading => html.indexOf(heading));
       expect(order.every(index => index >= 0)).toBe(true);
       expect(order).toEqual([...order].sort((a, b) => a - b));
       expect(html).not.toContain('Overall rating');

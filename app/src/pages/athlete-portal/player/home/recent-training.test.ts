@@ -96,6 +96,42 @@ describe('Progression line', () => {
   });
 });
 
+describe('Website personal workouts', () => {
+  const stamp = (date: Date) => ({ toDate: () => date });
+  const personal = (ended: Date | null, blocks: unknown[], extra: Record<string, unknown> = {}) => ({
+    schemaVersion: 1, source: 'personal', workoutId: 'pw1', revision: 2, startedAt: stamp(day(-1, 9)), endedAt: ended ? stamp(ended) : null,
+    workoutSnapshot: { workoutId: 'pw1', title: 'My workout', blocks: [{ blockId: 'b1', drillId: 'STR-010', name: 'Split squat', sets: 3, reps: 8 }] }, blocks, ...extra,
+  });
+  const assigned = { planId: 'p', startedAt: stamp(day(-2)), endedAt: stamp(day(-2)), blocks: [{ blockId: 'b1', drillId: 'STR-010', status: 'done', setsCompleted: 3 }], workoutSnapshot: { title: 'Plan day' } };
+  it('counts a completed personal workout in the week, the previous week and Recent workouts', () => {
+    const t = recentTrainingFrom([{ id: 'p_w1s1', data: assigned }], [], [
+      { id: 'pw1', data: personal(day(-1, 10), [{ blockId: 'b1', status: 'done', setsCompleted: 3 }]) },
+      { id: 'pw2', data: personal(day(-9), [{ blockId: 'b1', status: 'partial', setsCompleted: 1 }]) },
+    ]);
+    expect(t.logs.map(log => log.id)).toEqual(['p_w1s1', 'personal_pw1', 'personal_pw2']);
+    expect(weekSummary(t, [], NOW)).toEqual({ current: 2, previous: 1 });
+    expect(recentWorkouts(t, [], NOW).map(row => [row.id, row.title])).toEqual([['workout-personal_pw1', 'My workout'], ['workout-p_w1s1', 'Plan day']]);
+  });
+  it('uses the card’s completion rule: open logs and logs with nothing done are not counted', () => {
+    const t = recentTrainingFrom([], [], [
+      { id: 'open', data: personal(null, [{ blockId: 'b1', status: 'done', setsCompleted: 3 }]) },
+      { id: 'skipped', data: personal(day(-1), [{ blockId: 'b1', status: 'skipped', setsCompleted: 0 }]) },
+    ]);
+    expect(weekSummary(t, [], NOW)).toEqual({ current: 0, previous: 0 });
+  });
+  it('never counts the same session twice', () => {
+    // An assigned log stored under the same personal id is replaced, as the Workouts history does.
+    const same = recentTrainingFrom([{ id: 'personal_pw1', data: assigned }], [], [{ id: 'pw1', data: personal(day(-1, 10), [{ blockId: 'b1', status: 'done', setsCompleted: 3 }]) }]);
+    expect(same.logs).toHaveLength(1);
+    expect(same.storedWorkoutTitles).toEqual({ personal_pw1: 'My workout' });
+    expect(weekSummary(same, [], NOW).current).toBe(1);
+    // A training session the personal workout links is not counted again.
+    const linked = recentTrainingFrom([], [{ id: 's1', data: { startedAt: stamp(day(-1, 9)), endedAt: stamp(day(-1, 10)), sessionRefs: [{ sessionDocId: 'x', drillType: 'sprint' }] } }],
+      [{ id: 'pw1', data: personal(day(-1, 10), [{ blockId: 'b1', status: 'done', setsCompleted: 3 }], { linkedTrainingSessionId: 's1' }) }]);
+    expect(weekSummary(linked, [], NOW).current).toBe(1);
+  });
+});
+
 describe('Parsing the app’s documents', () => {
   const stamp = (date: Date) => ({ toDate: () => date });
   it('skips logs the app cannot read and keeps the raw title', () => {

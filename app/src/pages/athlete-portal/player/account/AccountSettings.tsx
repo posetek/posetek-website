@@ -4,6 +4,7 @@ import { auth } from '../../../../lib/firebase';
 import type { PortalContext } from '../../views/shared';
 import AISharingControl from '../AISharingControl';
 import PlayerAgeField from '../PlayerAgeField';
+import { useCloseOnHistoryNavigation } from '../PlayerShell';
 import './account.css';
 
 type Props = {
@@ -24,6 +25,7 @@ export default function AccountSettings({ ctx, onClose, email = auth.currentUser
   const [page, setPage] = useState<'root' | 'aiSharing'>('root');
   const done = useRef<HTMLButtonElement>(null), back = useRef<HTMLButtonElement>(null);
   const preview = ctx.access === 'preview', own = ctx.access === 'athlete' || preview;
+  useCloseOnHistoryNavigation(onClose);
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
     return () => { opener?.focus?.(); };
@@ -41,8 +43,9 @@ export default function AccountSettings({ ctx, onClose, email = auth.currentUser
         <h2 id="account-sheet-title" className="account-sheet-title">Account settings</h2>
         <h3 className="account-section-title">Your account</h3>
         <div className="account-list">
-          {email && <p className="account-row">{email}</p>}
-          {own && ctx.playerId && <div className="account-row account-age"><PlayerAgeField playerId={ctx.playerId} athlete={ctx.athlete} editable preview={preview} /></div>}
+          {/* Each row renders only with content, so the list never starts with a blank row. */}
+          {email ? <p className="account-row">{email}</p> : null}
+          {own && ctx.playerId ? <div className="account-row account-age"><PlayerAgeField playerId={ctx.playerId} athlete={ctx.athlete} editable preview={preview} /></div> : null}
           <button type="button" className="account-row account-link" onClick={() => setPage('aiSharing')}>AI sharing<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
           <a className="account-row account-link" href="/support#delete-account">Delete account<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
         </div>

@@ -144,12 +144,15 @@ export function parseReportResponse(data: unknown, playerId: string): ReportResu
   return { report, limitedComparison, error: limitedComparison && !report ? 'The testing history is too large to verify reliably.' : null };
 }
 
-/** Sample data for the local preview: the app's own demo report. */
+/**
+ * Sample data for the local preview: the app's demo athlete and results, shown against a team of
+ * eight so the preview has the team-average line a real testing day produces.
+ */
 export const DEMO_REPORT: AthleteTestReport = {
   kind: 'event', playerId: 'demo-avery', testDateMillis: 1_793_472_000_000, teamName: 'Summit Demo',
-  metrics: ([['dribbleLeft', 'Left-course dribble', '7.62 s', 15, 'practice'], ['dribbleRight', 'Right-course dribble', '7.05 s', 50, 'middle'],
-    ['sprint', 'Sprint', '2.07 s', 85, 'strong'], ['jump', 'Vertical jump', '39.5 cm', 85, 'strong']] as const)
-    .map(([id, label, result, percentile, band]) => ({ id, label, status: 'measured' as const, result, percentile, band, count: 3, estimatedCount: 0, average: null, recordedAtMillis: null })),
+  metrics: ([['dribbleLeft', 'Left-course dribble', '7.62 s', 15, 'practice', '7.20 s'], ['dribbleRight', 'Right-course dribble', '7.05 s', 50, 'middle', '7.10 s'],
+    ['sprint', 'Sprint', '2.07 s', 85, 'strong', '2.21 s'], ['jump', 'Vertical jump', '39.5 cm', 85, 'strong', '35.3 cm']] as const)
+    .map(([id, label, result, percentile, band, average]) => ({ id, label, status: 'measured' as const, result, percentile, band, count: 8, estimatedCount: 0, average, recordedAtMillis: null })),
 };
 
 export type ReportState = ReportResult & { loading: boolean; reload: () => void };
