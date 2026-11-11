@@ -3,31 +3,29 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { auth, cloud, db } from '../../../lib/firebase';
 import { visibleAttempts } from '../../../lib/result-values';
 import { parseProvisionalEstimates } from '../../../lib/provisional-estimates';
-import { DRILLS, drillByKey } from '../lib/drills';
+import { DRILLS } from '../lib/drills';
 import { accepted, allStatsReps, normalizeRep } from '../lib/metrics';
 import type { PortalContext } from '../views/shared';
-import DrillDashboard from '../views/DrillDashboard';
-import SessionView from '../views/SessionView';
-import PlayerProfile from './PlayerProfile';
-import PlayerTraining from './PlayerTraining';
-import PlayerLeaderboards from './PlayerLeaderboards';
 import CoachChat from './CoachChat';
 import { usePersonalWorkouts } from './use-personal-workouts';
 import { useCoachConfig } from './gateway';
 import { personalDraftLink } from './personal-conversation';
 import { defaultDataset, intakeSnapshot, playerProfile } from './scoring';
 import type { Row } from './execution';
-import PlayerShell, { PLAYER_TABS } from './PlayerShell';
+import PlayerShell, { PlayerHeader, playerInitials } from './PlayerShell';
+import type { PlayerView } from './PlayerShell';
+import { playerRoute, playerSearch } from './workspace';
+import type { PlayerDestination, PlayerTabProps } from './workspace';
+import PlayerHome from './home/PlayerHome';
+import PlayerWorkouts from './workouts/PlayerWorkouts';
+import PlayerStats from './stats/PlayerStats';
 import './player.css';
-import PlayerFeedbackInvitation, { PlayerResultsFeedbackLink } from './PlayerFeedbackInvitation';
-import { claimBrowserFeedbackInvitation, showResultsFeedback } from './feedback-invitation';
+import { claimBrowserFeedbackInvitation } from './feedback-invitation';
 
 export { PLAYER_TABS } from './PlayerShell';
-export function playerRoute(search: string) {
-  const p = new URLSearchParams(search), raw = p.has('drill') ? 'drills' : p.get('view') || 'home';
-  return { view: raw === 'profile' || raw === 'feed' ? 'home' : PLAYER_TABS.some(t => t.view === raw) ? raw : 'home',
-    drill: DRILLS.some(d => d.key === p.get('drill')) ? p.get('drill')! : 'shooting', session: p.get('session'), rep: p.get('rep') };
-}
+export { playerRoute } from './workspace';
+
+/** The same four-tab athlete workspace as the app: Home, Coach, Workouts and Stats. */
 export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalContext; initialReps: Record<string, Row[]> }) {
   const location = useLocation(), navigate = useNavigate(), route = playerRoute(location.search);
   const preview = ctx.access === 'preview';
@@ -35,11 +33,13 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const personal = usePersonalWorkouts(ctx.playerId!, preview, coachConfig);
   const [reps, setReps] = useState(initialReps), [athlete, setAthlete] = useState(ctx.athlete), [dataset, setDataset] = useState(defaultDataset);
   const [provisionalEstimates, setProvisionalEstimates] = useState(ctx.provisionalEstimates || []);
-  const [visited, setVisited] = useState(new Set([route.view])), [request, setRequest] = useState<Row | null>(null), [refreshError, setRefreshError] = useState('');
+  const [visited, setVisited] = useState(new Set<PlayerView>([route.view])), [request, setRequest] = useState<Row | null>(null), [refreshError, setRefreshError] = useState('');
   const [feedbackInvitation, setFeedbackInvitation] = useState(false);
   const [feedbackOwner] = useState(() => ({ uid: auth.currentUser?.uid, playerId: ctx.playerId }));
   const feedbackContext = useRef({ view: route.view, playerId: ctx.playerId, access: ctx.access });
   feedbackContext.current = { view: route.view, playerId: ctx.playerId, access: ctx.access };
+  // Pages opened inside this visit can use browser Back; a page opened straight from a link cannot.
+  const pushed = useRef(0);
   useEffect(() => {
     if (preview) return;
     const hide = () => { if (document.visibilityState !== 'visible') setFeedbackInvitation(false); };
@@ -47,17 +47,17 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
     document.addEventListener('visibilitychange', hide);
     return () => { stop(); document.removeEventListener('visibilitychange', hide); };
   }, [preview, feedbackOwner]);
-  useEffect(() => { if (route.view !== 'training') setFeedbackInvitation(false); }, [route.view]);
+  useEffect(() => { if (route.view !== 'workouts') setFeedbackInvitation(false); }, [route.view]);
   const completedWorkout = () => {
-    const current = () => feedbackContext.current.access === 'athlete' && feedbackContext.current.view === 'training'
+    const current = () => feedbackContext.current.access === 'athlete' && feedbackContext.current.view === 'workouts'
       && feedbackContext.current.playerId === feedbackOwner.playerId && !!feedbackOwner.uid
       && auth.currentUser?.uid === feedbackOwner.uid && document.visibilityState === 'visible';
     if (!current()) return;
     void claimBrowserFeedbackInvitation().then(claimed => { if (claimed && current()) setFeedbackInvitation(true); });
   };
-  useEffect(() => { setVisited(old => new Set([...old, route.view])); }, [route.view]);
+  useEffect(() => { setVisited(old => old.has(route.view) ? old : new Set([...old, route.view])); }, [route.view]);
   useEffect(() => {
-    if (route.view !== 'training') window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
+    if (route.view !== 'workouts') window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
   }, [route.view]);
   useEffect(() => {
     if (preview) return;
@@ -84,26 +84,23 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const all = useMemo(() => allStatsReps(reps), [reps]);
   const profile = useMemo(() => playerProfile(all, athlete, dataset), [all, athlete, dataset]);
   const playerCtx = useMemo(() => ({ ...ctx, athlete, provisionalEstimates, allStatsReps: () => all, allResultReps: () => Object.values(reps).flat() }), [ctx, athlete, all, reps, provisionalEstimates]);
-  const go = (view: string, drill?: string, session?: string, rep?: string) => {
-    if (route.view === 'training' && view !== 'training') window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
-    const params = new URLSearchParams(location.search);
-    params.set('view', view); ['drill', 'session', 'rep'].forEach(k => params.delete(k));
-    if (drill) params.set('drill', drill); if (session) params.set('session', session); if (rep) params.set('rep', rep);
-    navigate({ pathname: location.pathname, search: params.toString() });
+  const go = (view: PlayerView, to: PlayerDestination = {}) => {
+    if (route.view === 'workouts' && view !== 'workouts') window.dispatchEvent(new CustomEvent('posetek:player-route-leave'));
+    if (!to.replace) pushed.current += 1;
+    navigate({ pathname: location.pathname, search: playerSearch(location.search, view, to) }, { replace: to.replace });
     window.scrollTo({ top: 0 });
   };
-  const activeDrill = drillByKey(route.drill);
-  return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} onNavigate={view => go(view, view === 'drills' ? route.drill : undefined)} onSignOut={preview ? undefined : () => { void auth.signOut(); }}>
+  const back = () => {
+    if (pushed.current > 0) { pushed.current -= 1; navigate(-1); }
+    else go(route.view, { replace: true });
+  };
+  const tab = (view: PlayerView): PlayerTabProps => ({ ctx: playerCtx, route, go, back, active: route.view === view, preview, athlete, reps, personal });
+  return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} initials={playerInitials(athlete?.name)} onNavigate={view => go(view as PlayerView)} onSignOut={preview ? undefined : () => { void auth.signOut(); }}>
       {preview && <p className="player-preview-note">Local preview · sample data · no account changes</p>}
       {refreshError && <p className="player-error" role="status">Could not refresh your latest results: {refreshError}</p>}
-      {route.view === 'home' && <><PlayerProfile ctx={playerCtx} profile={profile} onWorkouts={() => go('training')} onLeaderboards={() => go('leaderboards')} onDrills={rep => go('drills', 'shooting', rep ? rep.sessionFolder || `session${rep.sessionNumber}` : undefined, rep?.id)} />{showResultsFeedback(ctx.access, profile.totalReps) && <PlayerResultsFeedbackLink />}</>}
-      {visited.has('aiCoach') && <div hidden={route.view !== 'aiCoach'}><h1>Your AI Coach</h1><CoachChat playerId={ctx.playerId!} preview={preview} personalStore={personal} athlete={athlete} active={route.view === 'aiCoach'} onHandoff={r => { setRequest(r); if (r.conversationId) navigate({ pathname: location.pathname, search: personalDraftLink(location.search, r.conversationId) }); else go('training'); }} /></div>}
-      {route.view === 'drills' && <section className="player-drills"><p className="eyebrow">Your measured progress</p><h1>Results</h1><p>Explore each test, follow your progress, and watch saved videos.</p><nav className="player-week-rail" aria-label="Drill results">{DRILLS.map(d => <button key={d.key} aria-pressed={d.key === route.drill} onClick={() => go('drills', d.key)}>{d.short || d.label}<small>{reps[d.key]?.length || 0} reps</small></button>)}</nav>
-        {route.session ? <SessionView drill={activeDrill} folder={route.session} selectedId={route.rep} reps={reps[activeDrill.key] || []} access={ctx.access} playerId={ctx.playerId} shareToken={null} onBack={() => go('drills', route.drill)} onSelectRep={id => go('drills', route.drill, route.session!, String(id))} /> : <DrillDashboard drill={activeDrill} reps={reps[activeDrill.key] || []} athlete={athlete} onOpenRep={(folder, id) => go('drills', route.drill, folder, String(id))} />}
-        <p className="muted-copy">Record and process new drills in the PoseTek app. Video appears here when it was saved to the cloud.</p>
-        {showResultsFeedback(ctx.access, reps[activeDrill.key]?.length || 0) && <PlayerResultsFeedbackLink />}
-      </section>}
-      {visited.has('training') && <div hidden={route.view !== 'training'}>{feedbackInvitation && <PlayerFeedbackInvitation onDismiss={() => setFeedbackInvitation(false)} />}<PlayerTraining ctx={playerCtx} statsProfile={intakeSnapshot(profile)} personal={personal} request={route.view === 'training' ? request : null} onAcknowledge={() => setRequest(null)} onCompleted={completedWorkout} /></div>}
-      {route.view === 'leaderboards' && <PlayerLeaderboards playerId={ctx.playerId!} preview={preview} reps={all} athlete={athlete} dataset={dataset} />}
+      {route.view === 'home' && <PlayerHome {...tab('home')} />}
+      {visited.has('coach') && <div hidden={route.view !== 'coach'}><PlayerHeader title="Coach" /><CoachChat playerId={ctx.playerId!} preview={preview} personalStore={personal} athlete={athlete} active={route.view === 'coach'} onHandoff={r => { setRequest(r); if (r.conversationId) navigate({ pathname: location.pathname, search: personalDraftLink(location.search, r.conversationId) }); else go('workouts', { screen: 'workout' }); }} /></div>}
+      {visited.has('workouts') && <div hidden={route.view !== 'workouts'}><PlayerWorkouts {...tab('workouts')} statsProfile={intakeSnapshot(profile)} request={route.view === 'workouts' ? request : null} onAcknowledge={() => setRequest(null)} onCompleted={completedWorkout} feedbackInvitation={feedbackInvitation} onDismissFeedback={() => setFeedbackInvitation(false)} /></div>}
+      {route.view === 'stats' && <PlayerStats {...tab('stats')} profile={profile} dataset={dataset} />}
   </PlayerShell>;
 }

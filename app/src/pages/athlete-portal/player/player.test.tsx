@@ -11,6 +11,7 @@ import { weekProgress } from './progress';
 import { capabilityEnabled, parseFrame, streamCoach, validHandoff } from './gateway';
 import { previewProgram } from './PlayerTraining';
 import { playerRoute } from './PlayerExperience';
+import { playerSearch } from './workspace';
 import PlayerExperience from './PlayerExperience';
 import { previewData } from '../lib/preview';
 
@@ -139,32 +140,49 @@ describe('gateway terminal state and feature gates', () => {
 });
 
 describe('player route and preview rendering', () => {
-  it('keeps legacy profile and saved session links meaningful', () => {
-    expect(playerRoute('?view=profile').view).toBe('home');
-    expect(playerRoute('?drill=sprint&session=session3&rep=r2')).toMatchObject({ view: 'drills', drill: 'sprint', session: 'session3', rep: 'r2' });
-    expect(playerRoute('?view=aiCoach').view).toBe('aiCoach');
-    expect(playerRoute('?view=feed').view).toBe('home');
+  it('opens the four workspace destinations and their pages', () => {
+    expect(playerRoute('')).toMatchObject({ view: 'home', screen: null, page: 'tests' });
+    expect(playerRoute('?view=coach').view).toBe('coach');
+    expect(playerRoute('?view=stats').view).toBe('stats');
+    expect(playerRoute('?view=stats&screen=plan')).toMatchObject({ view: 'stats', screen: 'plan' });
+    expect(playerRoute('?view=workouts&page=activities')).toMatchObject({ view: 'workouts', screen: null, page: 'activities' });
+    for (const screen of ['workout', 'plan', 'saved', 'history']) expect(playerRoute(`?view=workouts&screen=${screen}`)).toMatchObject({ view: 'workouts', screen });
+    expect(playerRoute('?view=workouts&screen=unknown').screen).toBeNull();
+    expect(playerRoute('?view=home&screen=workout').screen).toBeNull();
   });
-  it.each(['home', 'aiCoach', 'training', 'leaderboards', 'drills'])('renders %s with five shared player tabs and no staff controls', view => {
+  it('keeps links saved before the four tabs meaningful', () => {
+    expect(playerRoute('?view=profile').view).toBe('stats');
+    expect(playerRoute('?view=aiCoach').view).toBe('coach');
+    expect(playerRoute('?view=feed').view).toBe('home');
+    expect(playerRoute('?view=leaderboards').view).toBe('home');
+    // Report and notification links open the workout hub, as the app's report link does.
+    expect(playerRoute('?player=p1&userType=player&view=training')).toMatchObject({ view: 'workouts', screen: 'workout' });
+    expect(playerRoute('?drill=sprint&session=session3&rep=r2')).toMatchObject({ view: 'workouts', screen: 'test', drill: 'sprint', session: 'session3', rep: 'r2' });
+    expect(playerRoute('?view=drills')).toMatchObject({ view: 'workouts', screen: 'test', drill: 'shooting' });
+  });
+  it('writes one canonical query per destination and keeps unrelated parameters', () => {
+    expect(playerSearch('?preview=1&view=training&session=s1', 'workouts', { screen: 'workout' })).toBe('preview=1&view=workouts&screen=workout');
+    expect(playerSearch('?preview=1', 'workouts', { drill: 'sprint', session: 'session3', rep: 'r2' })).toBe('preview=1&view=workouts&drill=sprint&session=session3&rep=r2');
+    expect(playerSearch('?view=workouts&screen=plan', 'stats')).toBe('view=stats');
+    expect(playerSearch('', 'workouts', { page: 'activities' })).toBe('view=workouts&page=activities');
+  });
+  it.each(['home', 'coach', 'workouts', 'stats', 'aiCoach', 'training', 'leaderboards', 'drills'])('renders %s with the four workspace tabs and no staff controls', view => {
     const data = previewData();
     const ctx = { ...data, notify: () => {}, allStatsReps: () => Object.values(data.reps).flat() };
     const html = renderToStaticMarkup(<MemoryRouter initialEntries={[`/athlete?preview=1&view=${view}`]}><PlayerExperience ctx={ctx} initialReps={data.reps} /></MemoryRouter>);
     expect(html).toContain('Player tabs'); expect(html).not.toContain('Coach view'); expect(html).toContain('no account changes');
     const navigation = html.match(/<nav class="player-bottom-nav"[\s\S]*?<\/nav>/)?.[0] || '';
-    expect((navigation.match(/<a /g) || []).length).toBe(5);
-    expect(navigation).toContain('>Profile</span>'); expect(navigation).toContain('>AI Coach</span>');
-    expect(navigation).toContain('>Workouts</span>');
-    expect(navigation).toContain('>Results</span>');
-    expect(navigation).not.toContain('Community');
-    expect(navigation).toContain('>Leaderboards</span>');
+    expect((navigation.match(/<a /g) || []).length).toBe(4);
+    for (const label of ['Home', 'Coach', 'Workouts', 'Stats']) expect(navigation).toContain(`>${label}</span>`);
+    for (const removed of ['Profile', 'Results', 'Leaderboards', 'Community']) expect(navigation).not.toContain(removed);
+    expect(navigation.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).not.toContain('Open community feed');
-    if (view === 'aiCoach') expect(html).toContain('Your AI Coach');
     if (view === 'training') { expect(html).toContain('Next'); expect(html).toContain('Keep the ball close'); }
-    if (view === 'home') {
+    if (view === 'workouts') for (const test of ['Shooting', 'Dribbling', 'Vertical Jump', 'Broad Jump', 'Sprint', 'Shuttle']) expect(html).toContain(`<strong>${test}</strong>`);
+    if (view === 'stats') {
       expect(html).toContain('Your skill map');
       expect(html.indexOf('Your skill map')).toBeLessThan(html.indexOf('Profile details'));
       expect(html).not.toContain('Overall rating');
-      expect(html).toContain('Team ranks are in Leaderboards');
       expect(html).toContain('How the skill map is scored');
     }
   });

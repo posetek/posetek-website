@@ -24,6 +24,7 @@ import TrainingStartConfirmation from './TrainingStartConfirmation';
 import PersonalWorkoutHub from './PersonalWorkoutHub';
 import type { PersonalWorkoutStore } from './use-personal-workouts';
 import { personalDraftLink } from './personal-conversation';
+import { playerRoute } from './workspace';
 import type { SourceWorkout } from './personal-workouts';
 import { personalProgress } from './personal-workouts';
 
@@ -149,7 +150,7 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
   const personalActions = personal.enabled && <div className="player-actions"><button onClick={() => openPersonal()}>Personal workouts</button><button onClick={() => setPanel('history')}>History</button></div>;
 
   const closePersonal = () => { setPersonalOpen(false); setPersonalSource(undefined); setPersonalSelected(undefined); setPersonalCreate(false); setConversationOpen(false); navigate({ search: personalDraftLink(location.search) }, { replace: true }); };
-  if (personalOpen) return <PersonalWorkoutHub key={personalEntry} store={personal} playerId={ctx.playerId!} athlete={ctx.athlete} config={config} preview={preview} source={personalSource} initialWorkout={personalSelected} initialCreate={personalCreate} initialRequest={seed} initialHandoff={personalHandoff} initialConversation={conversationOpen} onSelection={id => { const search = personalDraftLink(location.search, id); if (new URLSearchParams(location.search).get('view') === 'training' && search !== new URLSearchParams(location.search).toString()) navigate({ search }); }} onBack={closePersonal} onCompleted={() => { closePersonal(); onCompleted?.(); }} />;
+  if (personalOpen) return <PersonalWorkoutHub key={personalEntry} store={personal} playerId={ctx.playerId!} athlete={ctx.athlete} config={config} preview={preview} source={personalSource} initialWorkout={personalSelected} initialCreate={personalCreate} initialRequest={seed} initialHandoff={personalHandoff} initialConversation={conversationOpen} onSelection={id => { const search = personalDraftLink(location.search, id); if (playerRoute(location.search).screen === 'workout' && search !== new URLSearchParams(location.search).toString()) navigate({ search }); }} onBack={closePersonal} onCompleted={() => { closePersonal(); onCompleted?.(); }} />;
   if (playing) return <PlayerWorkout workout={playing} store={store} playerId={ctx.playerId!} preview={preview} onExit={() => setPlaying(null)} onCompleted={onCompleted} />;
   if (intake) return <ProgramIntake playerId={ctx.playerId!} athlete={ctx.athlete} statsProfile={statsProfile} preview={preview} initialText={seed} onReady={() => { setIntake(false); setReveal(true); }} onBack={() => setIntake(false)} />;
   if (!plans) return <section className="portal-card"><p>{error || 'Loading training…'}</p></section>;
