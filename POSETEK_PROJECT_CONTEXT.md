@@ -45,6 +45,10 @@ Deployment `6af362397a8e341ea91b5788` adds a Cohort selector after Usage in each
 
 The exact production artifact preserves 2,722 prior files, including the current encrypted reports and reader. Only the application document changed and 25 hashed assets were added. Both existing tracking Functions are active at version 2. Keep `[skip netlify]` on source and receipt merges. [Production receipt](docs/releases/receipts/ONE_PAGER_COHORTS_PRODUCTION.json)
 
+## Vacaville one-pager tracking release — November 9, 2026
+
+This release added **One-pager tracking** after **Usage** to the Admin reporting row for Vacaville’s All teams view. Opens and the two CTA clicks are measured from activation for the 33 sent reports. The exact Netlify artifact and scoped Firebase functions were verified. See the [release handoff](docs/releases/ONE_PAGER_TRACKING.md) for the owner-authorized hosted CI exception, local evidence, retention and recovery.
+
 ## Database-first catalog compatibility release — November 7, 2026
 
 Deployment `6aeffb31ae4da62a62fc6356` was published at
