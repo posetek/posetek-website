@@ -39,9 +39,10 @@ The athlete enters email, password and password confirmation. A preflight reject
 missing, invalid, ambiguous, or used codes before creating an Auth account.
 Signup sends the usual verification email and redemption atomically binds the
 existing canonical player to the authenticated user. Successful invited signup
-opens that player's `/athlete?player=<canonical ID>` page. Ordinary player signup
-keeps its feed destination; ordinary login keeps its same-origin return behavior.
-`/join` remains the coach/manager invitation route.
+opens Stats for that exact player. Ordinary player sign-in and organization-code
+signup also open Stats after resolving the owned profile. Explicit Training links
+still open Workouts after access checks. `/join` remains the coach/manager
+invitation route.
 
 Preflight does not reserve a code. If a competing claim wins, the backend remains
 authoritative. A lost redemption response is reconciled against the newly created

@@ -24,7 +24,7 @@ import {
   coachOrgInputError,
   coachOrgStep2Copy,
   getSafeReturnToUrl,
-  playerSignupRoute,
+  playerStatsRoute,
   validateIndependentSignup,
   validateOrgSignup,
   validatePlayerCodeSignup,
@@ -469,7 +469,7 @@ export default function LandingPage() {
 
       if (userTypeVal === "player") {
         await joinOrganization(orgCodeVal, "player", firstNameVal, lastNameVal);
-        navigate(playerSignupRoute(null)); // legacy: profile.html?userType=player
+        navigate(playerStatsRoute());
       } else {
         // validateOrgSignup only lets "coach" past here, and the modal was confirmed above.
         const setup = coachSetup as CoachOrgChoice;
@@ -534,7 +534,7 @@ export default function LandingPage() {
       redirectTimerRef.current = window.setTimeout(() => {
         if (auth.currentUser?.uid !== signupUid) { setPlayerCodeError("Your account was created. Sign in with that account to open your athlete profile."); return; }
         // The trusted redemption response selects the existing canonical profile.
-        navigate(reportDestination || (invitationLink.present ? `/athlete?player=${encodeURIComponent(playerId)}` : playerSignupRoute(playerId)));
+        navigate(reportDestination || playerStatsRoute(playerId));
       }, 1500);
     } catch (error: any) {
       setPlayerCodeError(accountError(error, error?.message || "Your account could not be created. Please try again."));

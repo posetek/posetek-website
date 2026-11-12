@@ -17,6 +17,15 @@ PR requirements and release/deployment holds remain unchanged. Runtime tool
 approval is separate from this policy; report exact tool rejections and never
 switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.md#website-worktree-local-lane).
 
+## Player Stats landing — November 12, 2026
+
+Deployment `6af626e37d3ff00c50b761d9` makes ordinary player sign-in and signup
+explicitly open the resolved athlete's Stats tab. Explicit Training links still
+open Workouts. Only the isolated `/player-signin.html` changed, with one new
+hashed script. The athlete application, marketing and all private report files
+were preserved. The next whole-site deploy must start from this deployment.
+[Production receipt](docs/releases/receipts/PLAYER_STATS_LANDING_PRODUCTION.json)
+
 ## Athlete workspace — November 12, 2026
 
 Deployment `6af598a062c763422296510e` was published at `2026-11-12T10:56:25.482Z`
@@ -46,9 +55,9 @@ claimed.
 [Release handoff](docs/releases/PLAYER_WORKSPACE.md) ·
 [Production receipt](docs/releases/receipts/PLAYER_WORKSPACE_PRODUCTION.json)
 
-**The next one-pager deploy must start from `6af598a0`.** Those deploys upload a full
-copy of the site; a copy that starts from an earlier deploy silently puts the earlier
-application back. Keep `[skip netlify]` on every source and receipt merge.
+**The next one-pager deploy must start from the current live deploy, `6af626e3`.**
+Those deploys upload a full copy of the site; starting from an earlier deploy can
+put earlier application or sign-in bytes back. Keep `[skip netlify]` on every source and receipt merge.
 
 **The live report reader is newer than main's copy, and its source is not on main.**
 The November 12 one-pager deploys published a `render.mjs` and `report.css` with the
@@ -56,7 +65,7 @@ The November 12 one-pager deploys published a `render.mjs` and `report.css` with
 Never ship main's `render.mjs` or `report.css` over the live ones, and land the live
 reader's source on main before the next reader change, because the report builder's
 `--append` mode requires the committed reader to equal the live one.
-`deployment/homepage-baseline.json` on main pins `6af598a0` and records the live
+`deployment/homepage-baseline.json` pins the current deploy and records the live
 reader's hashes.
 
 ## Admin reporting fixes and one-pager time on page — November 10, 2026

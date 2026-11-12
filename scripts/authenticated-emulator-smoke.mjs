@@ -2,6 +2,7 @@
 // Requires cached Java 21, Firebase emulator binaries, Playwright Chromium,
 // and the explicit Backend checkout pinned in backend-source.json.
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { mkdtemp, mkdir, symlink, writeFile, rm } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { spawn, execFileSync } from 'node:child_process';
@@ -9,6 +10,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import net from 'node:net';
+import { createInterface } from 'node:readline';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium } from '../app/node_modules/playwright/index.mjs';
 import { reviewedBackendRules } from './authenticated-emulator-source.mjs';
@@ -68,7 +70,11 @@ async function runOuter() {
       `  if (key === 'firestore') for (const name of ['FieldValue', 'Timestamp', 'FieldPath', 'Filter']) value[name] ||= firestore[name];\n` +
       `  return value;\n` +
       `} });\n` +
-      `module.exports = require(${JSON.stringify(path.join(backend.repo, 'functions/index.js'))});\n`);
+      `const runtime = require(${JSON.stringify(path.join(backend.repo, 'functions/index.js'))});\n` +
+      // Do not register background triggers, delivery workers or live integrations.
+      `for (const name of ['validatePlayerSignupInvitation', 'redeemPlayerSignupCode', 'joinOrganization', 'getClubContext', 'getAthleteEffectiveResults', 'getAthleteTestReport']) {\n` +
+      `  if (runtime[name]) exports[name] = runtime[name];\n` +
+      `}\n`);
     const config = {
       functions: { source: 'functions', runtime: 'nodejs22' },
       firestore: { rules: rules.firestore }, storage: { rules: rules.storage },
@@ -78,9 +84,16 @@ async function runOuter() {
     };
     const configFile = path.join(tmp, 'firebase.json');
     await writeFile(configFile, JSON.stringify(config));
-    const cli = spawn('firebase', ['emulators:exec', '--only', 'auth,firestore,functions,storage', '--project', projectId,
+    const firebaseCli = path.join(backend.repo, 'firebase/node_modules/firebase-tools/lib/bin/firebase.js');
+    const cli = spawn(process.execPath, [firebaseCli, 'emulators:exec', '--only', 'auth,firestore,functions,storage', '--project', projectId,
       '--config', configFile, 'node scripts/authenticated-emulator-smoke.mjs --inside'],
-    { cwd: root, env: safeEnvironment({ POSETEK_BACKEND_REPO: rules.repo, POSETEK_BACKEND_SHA: rules.sha }), stdio: 'inherit' });
+    { cwd: root, env: safeEnvironment({ POSETEK_BACKEND_REPO: rules.repo, POSETEK_BACKEND_SHA: rules.sha, FIREBASE_DEBUG_PATH: tmp }),
+      stdio: ['ignore', 'pipe', 'pipe'] });
+    // The Auth emulator prints its generated verification links. Keep them out
+    // of console output; its disposable debug log is removed with the fixture.
+    for (const stream of [cli.stdout, cli.stderr]) {
+      createInterface({ input: stream }).on('line', line => { if (!line.includes('oobCode=')) console.log(line); });
+    }
     const code = await new Promise((resolve, reject) => { cli.once('error', reject); cli.once('exit', resolve); });
     assert.equal(code, 0, `Firebase emulator journey exited ${code}`);
   } finally { await rm(tmp, { recursive: true, force: true }); }
@@ -108,8 +121,11 @@ async function runInside() {
     admin.initializeApp({ projectId });
     const db = admin.firestore();
     const player = db.collection('players').doc('synthetic-invited-player');
+    const code = 'PLR' + randomUUID().slice(0, 8).toUpperCase();
+    const email = 'synthetic-athlete@example.test';
+    const password = randomUUID();
     await player.set({ firstName: 'Synthetic', lastName: 'Athlete', coachUID: 'synthetic-coach', coachDocId: 'synthetic-coach',
-      registered: false, signupCode: 'PLRTEST7', signupCodeVersion: 2 });
+      registered: false, signupCode: code, signupCodeVersion: 2 });
     browser = await chromium.launch();
     const context = await browser.newContext({ serviceWorkers: 'block' });
     const allowed = new Set([origin, ...['auth', 'firestore', 'functions', 'storage'].map(service => `http://${host}:${ports[service]}`)]);
@@ -131,51 +147,108 @@ async function runInside() {
       blocked.push(socket.url()); socket.close();
     });
     const page = await context.newPage();
-    page.setDefaultTimeout(20000);
+    page.setDefaultTimeout(30000);
     const errors = [];
-    const requests = [];
     page.on('pageerror', error => errors.push(error.message));
-    page.on('requestfailed', request => requests.push(`${request.url()} ${request.failure()?.errorText}`));
-    page.on('response', response => { if (response.status() >= 400) requests.push(`${response.status()} ${response.url()}`); });
-    await page.goto(origin + '/signin#playerCode=PLRTEST7');
-    try { await page.locator('#playerCodeSubmit').waitFor({ state: 'visible', timeout: 8000 }); }
-    catch (error) { throw new Error(`Signup UI did not load: ${JSON.stringify({ title: await page.title(), body: (await page.locator('body').innerText()).slice(0, 800), errors, requests, blocked })}`, { cause: error }); }
-    await page.locator('#playerEmail').fill('synthetic-athlete@example.test');
-    await page.locator('#playerPassword').fill('SyntheticPass123!');
-    await page.locator('#playerConfirmPassword').fill('SyntheticPass123!');
+    const athletePath = view => `/athlete?player=${player.id}&userType=player&view=${view}`;
+    const expectTab = async (tab, destination, name = 'Synthetic Athlete') => {
+      await page.waitForFunction(expected => document.title === expected + ' | PoseTek', name);
+      const tabs = page.getByRole('navigation', { name: 'Player tabs' });
+      const selected = tabs.locator('[aria-current="page"]');
+      await tabs.getByRole('link', { name: tab, exact: true }).and(selected).waitFor({ state: 'visible' });
+      assert.equal(await selected.count(), 1);
+      const { pathname, search } = new URL(page.url());
+      assert.equal(pathname + search, destination);
+      if (tab === 'Stats') await page.getByRole('main').getByText(name, { exact: true }).waitFor({ state: 'visible' });
+    };
+    const openSignIn = async (suffix = '') => {
+      const response = await page.goto(origin + '/signin' + suffix);
+      assert.ok((await response.text()).includes('<!-- posetek-player-signin-entry -->'), 'serve the isolated /signin document');
+    };
+    const signIn = async () => {
+      await page.locator('#email').fill(email);
+      await page.locator('#password').fill(password);
+      await page.locator('#loginSubmit').click();
+    };
+    await openSignIn('#playerCode=' + code);
+    await page.locator('#playerCodeSubmit').waitFor({ state: 'visible' });
+    assert.ok(await page.locator('#playerCode').inputValue() === code, 'prefill the invitation field');
+    assert.equal(new URL(page.url()).hash, '', 'strip the invitation fragment');
+    await page.locator('#playerEmail').fill(email);
+    await page.locator('#playerPassword').fill(password);
+    await page.locator('#playerConfirmPassword').fill(password);
     await page.locator('#playerCodeSubmit').click();
-    try { await page.locator('#playerCodeSuccess').getByText(/Account created/).waitFor({ timeout: 20000 }); }
-    catch (error) { throw new Error(`Signup did not complete: ${JSON.stringify({ error: await page.locator('#playerCodeError').innerText(), success: await page.locator('#playerCodeSuccess').innerText(), disabled: await page.locator('#playerCodeSubmit').isDisabled(), errors, requests, blocked, player: (await player.get()).data() })}`, { cause: error }); }
-    await page.waitForURL('**/athlete?player=synthetic-invited-player', { timeout: 30000 });
+    await page.locator('#playerCodeSuccess').getByText(/Account created/).waitFor();
+    await expectTab('Stats', athletePath('stats'));
+
     const claimed = (await player.get()).data();
     assert.equal(claimed.registered, true);
     assert.equal(claimed.signupCode, undefined);
     assert.equal(claimed.authenticationUID, claimed.userUID);
     assert.ok(claimed.authenticationUID);
-    assert.equal((await admin.auth().getUserByEmail('synthetic-athlete@example.test')).uid, claimed.userUID);
-    await page.waitForFunction(() => document.title === 'Synthetic Athlete | PoseTek');
+    assert.equal((await admin.auth().getUserByEmail(email)).uid, claimed.userUID);
+    const verification = await fetch(`http://${host}:${ports.auth}/emulator/v1/projects/${projectId}/oobCodes`);
+    assert.equal(verification.status, 200);
+    assert.ok((await verification.json()).oobCodes.some(entry => entry.email === email && entry.requestType === 'VERIFY_EMAIL'),
+      'request verification through the Auth emulator');
+
     await page.reload();
-    await page.waitForURL('**/athlete?player=synthetic-invited-player');
-    await page.waitForFunction(() => document.title === 'Synthetic Athlete | PoseTek');
+    await expectTab('Stats', athletePath('stats'));
+    await openSignIn();
+    await page.getByRole('button', { name: 'Use a different account' }).click();
+    await signIn();
+    await expectTab('Stats', athletePath('stats'));
+
+    await openSignIn('?returnTo=' + encodeURIComponent(athletePath('training')));
+    await page.getByRole('button', { name: 'Use a different account' }).click();
+    await signIn();
+    await expectTab('Workouts', athletePath('training'));
+
+    await openSignIn('?reportPlayer=' + encodeURIComponent(player.id));
+    await expectTab('Workouts', athletePath('training'));
+
+    const orgCode = 'ORG' + randomUUID().slice(0, 8).toUpperCase();
+    const organization = db.collection('organizations').doc('synthetic-organization');
+    await organization.set({ name: 'Synthetic Organization', code: orgCode, codeVersion: 2, players: [] });
+    const newEmail = 'synthetic-new-player@example.test';
+    const newPassword = randomUUID();
+    await openSignIn();
+    await page.getByRole('button', { name: 'Use a different account' }).click();
+    await page.getByText('Independent coach or organization code', { exact: true }).click();
+    await page.getByRole('button', { name: 'Organization-code signup' }).click();
+    await page.locator('#firstName').fill('Synthetic');
+    await page.locator('#lastName').fill('New Player');
+    await page.locator('#signupEmail').fill(newEmail);
+    await page.locator('#signupPassword').fill(newPassword);
+    await page.locator('#confirmPassword').fill(newPassword);
+    await page.locator('#userType').selectOption('player');
+    await page.locator('#orgCode').fill(orgCode);
+    await page.locator('#orgSignupSubmit').click();
+    await expectTab('Stats', '/athlete?userType=player&view=stats', 'Synthetic New Player');
+    const newUser = await admin.auth().getUserByEmail(newEmail);
+    const created = (await db.collection('players').where('userUID', '==', newUser.uid).get()).docs;
+    assert.equal(created.length, 1);
+    assert.equal(created[0].data().organization.path, organization.path);
+
     const second = await fetch(`http://${host}:${ports.auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-api-key`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: 'synthetic-stranger@example.test', password: 'AnotherPass123!', returnSecureToken: true }),
+      body: JSON.stringify({ email: 'synthetic-stranger@example.test', password: randomUUID(), returnSecureToken: true }),
     });
     assert.equal(second.status, 200, 'second synthetic account must be created locally');
-    const { idToken } = await second.json();
+    const { idToken, localId } = await second.json();
     const retry = await fetch(`http://${host}:${ports.functions}/${projectId}/us-central1/redeemPlayerSignupCode`, {
       method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${idToken}`, 'x-forwarded-for': host },
-      body: JSON.stringify({ data: { code: 'PLRTEST7' } }),
+      body: JSON.stringify({ data: { code } }),
     });
     assert.equal(retry.status, 404, `used invitation retry returned ${retry.status}: ${await retry.text()}`);
     const rules = await initializeTestEnvironment({ projectId, firestore: { host, port: ports.firestore } });
     try {
-      await assertFails(rules.authenticatedContext('synthetic-stranger').firestore().doc(player.path).get());
+      await assertFails(rules.authenticatedContext(localId).firestore().doc(player.path).get());
     } finally { await rules.cleanup(); }
     assert.equal(errors.length, 0, `browser errors: ${errors.join('; ')}`);
     assert.deepEqual([...new Set(blocked)].filter(value => !['https://fonts.googleapis.com', 'https://images.unsplash.com'].includes(value)), []);
     await context.close();
-    console.log('Authenticated emulator journey passed: signup, one-time claim, canonical UID, stranger denial, refresh');
+    console.log('Authenticated emulator journey passed: prefilled signup, verification, exact-player Stats, refresh, existing sign-in, Training links, organization signup, one-time claim and stranger denial');
   } finally {
     await browser?.close();
     astro.kill('SIGTERM');

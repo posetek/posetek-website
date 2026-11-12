@@ -33,6 +33,17 @@ example draft requires exact artifact review and hosted acceptance before the us
 
 # PoseTek website project context
 
+## Player Stats landing — November 12, 2026
+
+Deployment `6af626e37d3ff00c50b761d9` explicitly opens Stats for the player
+resolved after normal sign-in, an invitation claim or organization-code signup.
+Explicit Training links still open Workouts, and staff destinations are unchanged.
+Source [PR #157](https://github.com/posetek/posetek-website/pull/157) is merged.
+The release replaces only the isolated sign-in document and adds one hashed
+script; 2,844 predecessor files, including the athlete application and all report
+files, stay exact. The new baseline protects 2,844 files with all 37 recovery
+mappings. [Production receipt](docs/releases/receipts/PLAYER_STATS_LANDING_PRODUCTION.json)
+
 ## Private report score cards — November 12, 2026
 
 The live reader selects score cards when a decrypted report has
@@ -46,6 +57,7 @@ in `deployment/homepage-baseline.json` for deployment `6af598a062c763422296510e`
 The append builder checks that the reader matches the serving baseline.
 Family report inputs, encrypted files, PDF files and access links are kept
 outside source control.
+
 
 ## Admin reporting fixes and one-pager time on page — November 10, 2026
 
