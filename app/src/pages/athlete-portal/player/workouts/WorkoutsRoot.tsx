@@ -1,11 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
-import { PlayerHeader } from '../PlayerShell';
-import type { WorkoutsPage } from '../workspace';
 import type { Row } from '../execution';
-import AppOnlySheet from './AppOnlySheet';
-import type { AppOnlyKind } from './AppOnlySheet';
 import { sessionDateText } from './hub';
+import type { PlanCardModel } from './hub';
 
 /** The six measured tests, in the app's order and wording (`DrillsView`). `drill` is the web results key. */
 export const MEASURED_TESTS = [
@@ -17,101 +12,76 @@ export const MEASURED_TESTS = [
   { drill: 'changeOfDirection', title: 'Shuttle', detail: 'Move with precision', icon: 'turn_right' },
 ] as const;
 
-/** The second carousel page (`workoutActivities`). Every one of them is recorded or camera-guided in the app. */
-export const WORKOUT_ACTIVITIES: { kind: AppOnlyKind; title: string; detail: string; minutes?: number; icon: string }[] = [
-  { kind: 'run', title: 'Run', detail: 'Outdoor run', icon: 'directions_run' },
-  { kind: 'ride', title: 'Ride', detail: 'Outdoor ride', icon: 'directions_bike' },
-  { kind: 'walk', title: 'Walk/Hike', detail: 'Outdoor walk', icon: 'hiking' },
-  { kind: 'core', title: 'Core', detail: 'Core circuit', minutes: 15, icon: 'sports_gymnastics' },
-  { kind: 'yoga', title: 'Yoga', detail: 'Mobility practice', minutes: 10, icon: 'self_improvement' },
-];
-
-function ActivityCard({ title, detail, icon, minutes, onClick, label }: { title: string; detail: string; icon: string; minutes?: number; onClick: () => void; label?: string }) {
-  return <button type="button" className="v4-activity-card wk-activity-card" aria-label={label} onClick={onClick}>
-    <span className="wk-activity-icon"><span className="material-symbols-outlined" aria-hidden="true">{icon}</span>{minutes !== undefined && <span className="wk-activity-minutes">{minutes} min</span>}</span>
+/** `WorkoutActivityCard`: an icon, a title and one line. `prominent` adds the outline Build Workout carries. */
+function ActivityCard({ title, detail, icon, onClick, label, prominent, id }: { title: string; detail: string; icon: string; onClick: () => void; label?: string; prominent?: boolean; id?: string }) {
+  return <button type="button" className={`v4-activity-card wk-activity-card${prominent ? ' prominent' : ''}`} aria-label={label} data-action={id} onClick={onClick}>
+    <span className="wk-activity-icon"><span className="material-symbols-outlined" aria-hidden="true">{icon}</span></span>
     <strong>{title}</strong><small>{detail}</small>
   </button>;
-}
-
-export function WorkspaceRow({ title, icon, onClick }: { title: string; icon: string; onClick: () => void }) {
-  return <button type="button" className="v4-row wk-row" onClick={onClick}><span className="material-symbols-outlined" aria-hidden="true">{icon}</span>{title}<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>;
-}
-
-/** The two-page carousel: snap paging, no headings or dots, kept in step with `page=activities`. */
-function ActivityPager({ page, onPage, children }: { page: WorkoutsPage; onPage: (page: WorkoutsPage) => void; children: [ReactNode, ReactNode] }) {
-  const scroller = useRef<HTMLDivElement>(null), settled = useRef(page), first = useRef(true);
-  useEffect(() => {
-    const element = scroller.current;
-    if (!element) return;
-    const target = page === 'activities' ? (element.children[1] as HTMLElement | undefined) : (element.children[0] as HTMLElement | undefined);
-    if (!target) return;
-    const left = target.offsetLeft - (element.children[0] as HTMLElement).offsetLeft;
-    if (Math.abs(element.scrollLeft - left) < 2) { first.current = false; return; }
-    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    settled.current = page;
-    element.scrollTo({ left, behavior: first.current || reduce ? 'auto' : 'smooth' });
-    first.current = false;
-  }, [page]);
-  useEffect(() => {
-    const element = scroller.current;
-    if (!element) return;
-    let timer = 0;
-    const settle = () => {
-      const pages = [...element.children] as HTMLElement[];
-      if (pages.length < 2) return;
-      const step = pages[1].offsetLeft - pages[0].offsetLeft;
-      const next: WorkoutsPage = element.scrollLeft > step / 2 ? 'activities' : 'tests';
-      if (next !== settled.current) { settled.current = next; onPage(next); }
-    };
-    const scrolled = () => { clearTimeout(timer); timer = window.setTimeout(settle, 120); };
-    element.addEventListener('scroll', scrolled, { passive: true });
-    return () => { clearTimeout(timer); element.removeEventListener('scroll', scrolled); };
-  }, [onPage]);
-  return <div className="wk-pager" ref={scroller}>
-    <div className="wk-pager-page" aria-label="Tests" role="group">{children[0]}</div>
-    <div className="wk-pager-page" aria-label="Activities" role="group">{children[1]}</div>
-  </div>;
-}
-
-type Props = {
-  page: WorkoutsPage;
-  onPage: (page: WorkoutsPage) => void;
-  playerId: string | null | undefined;
-  onTest: (drill: string) => void;
-  resume: { text: string; onOpen: () => void } | null;
-  activeFreeSession: Row | null;
-  onWorkout: () => void;
-  onSaved: () => void;
-  onHistory: () => void;
-  /** Shown under the header: the feedback invitation after a finished workout, and errors. */
-  notice?: ReactNode;
-};
-
-/** The Workouts root (`TrainingHubView.workspaceContent`): carousel, banners, then three rows. */
-export default function WorkoutsRoot({ page, onPage, playerId, onTest, resume, activeFreeSession, onWorkout, onSaved, onHistory, notice }: Props) {
-  const [appOnly, setAppOnly] = useState<{ title: string; kind: AppOnlyKind } | null>(null);
-  const refs = activeFreeSession?.sessionRefs?.length || 0;
-  return <section className="wk-root">
-    <PlayerHeader title="Workouts" />
-    {notice}
-    <ActivityPager page={page} onPage={onPage}>
-      <div className="v4-activity-grid">{MEASURED_TESTS.map(item => <ActivityCard key={item.drill} title={item.title} detail={item.detail} icon={item.icon} label={`${item.title}, ${item.detail}`} onClick={() => onTest(item.drill)} />)}</div>
-      <div className="v4-activity-grid">{WORKOUT_ACTIVITIES.map(item => <ActivityCard key={item.kind} title={item.title} detail={item.detail} icon={item.icon} minutes={item.minutes} onClick={() => setAppOnly({ title: item.title, kind: item.kind })} />)}</div>
-    </ActivityPager>
-    {activeFreeSession && <button type="button" className="wk-free-banner" onClick={() => setAppOnly({ title: 'Free session in progress', kind: 'freeSession' })}>
-      <span className="material-symbols-outlined" aria-hidden="true">radio_button_checked</span>
-      <span><strong>Free session in progress</strong><small>{refs} drill{refs === 1 ? '' : 's'} recorded · started {sessionDateText(activeFreeSession.startedAt)}</small></span>
-      <span className="material-symbols-outlined wk-chevron" aria-hidden="true">chevron_right</span>
-    </button>}
-    {resume && <ResumeBanner text={resume.text} onClick={resume.onOpen} />}
-    <WorkspaceRow title="Workout" icon="sports" onClick={onWorkout} />
-    <WorkspaceRow title="Saved Workouts" icon="bookmark" onClick={onSaved} />
-    <WorkspaceRow title="Workout history" icon="history" onClick={onHistory} />
-    {appOnly && <AppOnlySheet title={appOnly.title} kind={appOnly.kind} playerId={playerId} onClose={() => setAppOnly(null)} />}
-  </section>;
 }
 
 /** `TrainingResumeBanner` (V4): an accent line on a capsule. */
 export function ResumeBanner({ text, onClick, disabled }: { text: string; onClick: () => void; disabled?: boolean }) {
   return <button type="button" className="wk-resume" disabled={disabled} onClick={onClick}><span className="material-symbols-outlined" aria-hidden="true">resume</span><span>{text}</span></button>;
+}
+
+/** A free session being recorded in the app (`activeFreeSessionBanner`). */
+export function FreeSessionBanner({ session, onClick }: { session: Row; onClick: () => void }) {
+  const refs = session.sessionRefs?.length || 0;
+  return <button type="button" className="wk-free-banner" onClick={onClick}>
+    <span className="material-symbols-outlined" aria-hidden="true">radio_button_checked</span>
+    <span><strong>Free session in progress</strong><small>{refs} drill{refs === 1 ? '' : 's'} recorded · started {sessionDateText(session.startedAt)}</small></span>
+    <span className="material-symbols-outlined wk-chevron" aria-hidden="true">chevron_right</span>
+  </button>;
+}
+
+/** `MyWorkoutPlanCard` (V4): the label, this week's theme, the schedule line and the next workout. Opens My workout plan. */
+export function PlanSummaryCard({ model, onOpen }: { model: PlanCardModel; onOpen: () => void }) {
+  return <button type="button" className="wk-plan-card" data-action="plan" onClick={onOpen}>
+    <span className="wk-plan-card-label"><span className="material-symbols-outlined" aria-hidden="true">calendar_month</span>MY WORKOUT PLAN<span className="material-symbols-outlined" aria-hidden="true">arrow_outward</span></span>
+    <strong>{model.title}</strong>
+    <small>{model.schedule}</small>
+    {model.next && <span className="wk-plan-card-next">{model.next}</span>}
+  </button>;
+}
+
+/** `PlanInvitationView` (V4): the compact invitation. Plan length is chosen inside the planner. */
+export function PlanInvitationCard({ onCreate }: { onCreate: () => void }) {
+  return <section className="wk-plan-card">
+    <span className="wk-plan-card-label"><span className="material-symbols-outlined" aria-hidden="true">calendar_month</span>WORKOUT PLAN</span>
+    <strong>Build a routine that fits you</strong>
+    <small>An AI plan shaped around your goals.</small>
+    <button type="button" className="wk-secondary" data-action="create-plan" onClick={onCreate}><span className="material-symbols-outlined" aria-hidden="true">add</span>Create plan</button>
+  </section>;
+}
+
+/**
+ * `TrainingWorkoutActions`: Build Workout and Cardio in one row. The heading belongs to Build
+ * Workout, so it goes when the viewer cannot create one; Cardio stays.
+ */
+export function WorkoutActions({ onCreate, onCardio }: { onCreate: (() => void) | null; onCardio: () => void }) {
+  return <section className="wk-actions">
+    {onCreate && <div><h2>Create a workout</h2><p>One session, whenever you want.</p></div>}
+    <div className="v4-activity-grid">
+      {onCreate && <ActivityCard id="build" title="Build Workout" detail="Choose your focus" icon="auto_awesome" prominent onClick={onCreate} />}
+      <ActivityCard id="cardio" title="Cardio" detail="Walk, run or ride" icon="favorite" label="Cardio. Walk, run or ride." onClick={onCardio} />
+    </div>
+  </section>;
+}
+
+/** `homeFooter` (V4): Saved Workouts, Workout History and Tests grouped in one card. */
+export function HubLinks({ onSaved, onHistory, onTests }: { onSaved: () => void; onHistory: () => void; onTests: () => void }) {
+  const rows = [
+    { key: 'saved', title: 'Saved Workouts', icon: 'bookmark', onClick: onSaved },
+    { key: 'history', title: 'Workout History', icon: 'history', onClick: onHistory },
+    { key: 'tests', title: 'Tests', icon: 'straighten', onClick: onTests },
+  ];
+  return <nav className="wk-links" aria-label="More in Workouts">{rows.map(row => <button type="button" key={row.key} data-action={row.key} onClick={row.onClick}>
+    <span className="material-symbols-outlined" aria-hidden="true">{row.icon}</span>{row.title}<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+  </button>)}</nav>;
+}
+
+/** The Tests page (`testsPage`): the six measured tests. A card opens that test's results. */
+export function TestsGrid({ onTest }: { onTest: (drill: string) => void }) {
+  return <div className="v4-activity-grid">{MEASURED_TESTS.map(item => <ActivityCard key={item.drill} title={item.title} detail={item.detail} icon={item.icon} label={`${item.title}, ${item.detail}`} onClick={() => onTest(item.drill)} />)}</div>;
 }

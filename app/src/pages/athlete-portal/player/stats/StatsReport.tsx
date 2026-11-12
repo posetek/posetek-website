@@ -1,14 +1,10 @@
 import type { ReactNode } from 'react';
 import { averageText, comparisonPercentile, ordinal, strongestMetric, valueText } from '../report';
 import type { ReportMetric, ReportState } from '../report';
-import type { ReportPractice } from './report-practice';
 import { reportDate } from './stats-format';
-
-export type PracticeView = { samples: ReportPractice[]; loading: boolean; error: string | null };
 
 type Props = {
   report: ReportState;
-  practice: PracticeView;
   /** Tests pin the zone; the page uses the viewer's, as the app uses the phone's. */
   timeZone?: string;
   /** Picks the test shown in the pose player under the cards. */
@@ -60,10 +56,10 @@ function ScoreCard({ metric, event, timeZone, selected, onOpen }: { metric: Repo
 }
 
 /**
- * The testing report in the live one-pager's order: the score cards, "Strong today", then the
- * drills from the saved plan. It sits under the skill radar on Stats.
+ * The testing report in the live one-pager's order: the score cards, then "Strong today". It sits
+ * under the skill radar on Stats. The drills from the saved plan are not shown here (Nolan, 2026-11-12).
  */
-export default function StatsReport({ report: state, practice, timeZone, onOpenTest, selectedId = null, detail = null }: Props) {
+export default function StatsReport({ report: state, timeZone, onOpenTest, selectedId = null, detail = null }: Props) {
   const report = state.report;
   if (!report) return <section className="stats-report" aria-label="Your results">
     <div className="v4-card stats-report-empty">
@@ -73,7 +69,7 @@ export default function StatsReport({ report: state, practice, timeZone, onOpenT
     </div>
   </section>;
   // "Practice next" is not shown here (Nolan, 2026-11-11); Home still carries the report's focus line.
-  const event = report.kind === 'event', strong = strongestMetric(report), samples = practice.samples;
+  const event = report.kind === 'event', strong = strongestMetric(report);
   return <section className="stats-report" aria-label="Your results">
     <div className="stats-report-heading">
       <h2 className="stats-section-title">Click on each drill to see more</h2>
@@ -85,16 +81,6 @@ export default function StatsReport({ report: state, practice, timeZone, onOpenT
     {detail}
     {strong && <div className="stats-findings">
       <div><h3>Strong today</h3><p>{strong.label}</p></div>
-    </div>}
-    {samples.length > 0 && <div className="stats-drills">
-      <h2 className="stats-section-title">{samples.length === 2 ? 'Two drills to try' : 'Drills to try'}</h2>
-      {samples.map(sample => <details key={sample.id} className="stats-drill" data-drill={sample.id}>
-        <summary><span><strong>{sample.name}</strong>{sample.dose && <small>{sample.dose}</small>}</span>
-          <span className="material-symbols-outlined" aria-hidden="true">expand_more</span></summary>
-        {sample.instruction && <p>{sample.instruction}</p>}
-        {sample.equipment && <p className="stats-caption">Equipment: {sample.equipment}</p>}
-      </details>)}
-      <p className="stats-caption">Clear, flat space. Stop if anything hurts.</p>
     </div>}
   </section>;
 }

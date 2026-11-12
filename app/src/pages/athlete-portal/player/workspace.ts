@@ -7,18 +7,15 @@ import type { PlayerView } from './PlayerShell';
 import type { ReportState } from './report';
 
 /**
- * A page pushed inside a tab, mirroring the app's `TrainingHubDestination`:
- * `workout` is the workout hub, `plan` is My workout plan (also opened from Stats),
- * `saved` and `history` are the two lists, and `test` is one measured test's results.
+ * A page pushed inside a tab, mirroring the app's `TrainingHubDestination`. The workout hub is the
+ * Workouts root itself: `plan` is My workout plan (also opened from Stats), `saved` and `history`
+ * are the two lists, `tests` is the six measured tests, and `test` is one test's results.
  */
-export type PlayerScreen = 'workout' | 'plan' | 'saved' | 'history' | 'test' | null;
-/** The two pages of the Workouts carousel (`WorkoutWorkspacePage`): tests first, activities second. */
-export type WorkoutsPage = 'tests' | 'activities';
+export type PlayerScreen = 'plan' | 'saved' | 'history' | 'tests' | 'test' | null;
 
 export type PlayerRoute = {
   view: PlayerView;
   screen: PlayerScreen;
-  page: WorkoutsPage;
   drill: string;
   session: string | null;
   rep: string | null;
@@ -26,13 +23,14 @@ export type PlayerRoute = {
   fromStats: boolean;
 };
 
-const WORKOUT_SCREENS = ['workout', 'plan', 'saved', 'history'];
+const WORKOUT_SCREENS = ['plan', 'saved', 'history', 'tests'];
 
 /**
  * One parser for every link into the workspace. Links saved before the four tabs still open the
  * destination that replaced them: `view=training` (report and notification links) opens the
  * workout hub, as the app's report link does; `drill=`/`view=drills` open that test's results
- * inside Workouts; `view=profile` opens Stats; leaderboard and feed links open Home.
+ * inside Workouts; `view=profile` opens Stats; leaderboard and feed links open Home. The hub is
+ * the Workouts root, so the retired `screen=workout` and `page=activities` open it too.
  */
 export function playerRoute(search: string): PlayerRoute {
   const params = new URLSearchParams(search), raw = params.get('view'), requested = params.get('screen');
@@ -41,13 +39,11 @@ export function playerRoute(search: string): PlayerRoute {
   let screen: PlayerScreen = null;
   if (view === 'workouts') {
     if (test) screen = 'test';
-    else if (raw === 'training') screen = 'workout';
-    else if (requested && WORKOUT_SCREENS.includes(requested)) screen = requested as PlayerScreen;
+    else if (raw !== 'training' && requested && WORKOUT_SCREENS.includes(requested)) screen = requested as PlayerScreen;
   } else if (view === 'stats' && requested === 'plan') screen = 'plan';
   const drill = params.get('drill');
   return {
     view, screen,
-    page: view === 'workouts' && !screen && params.get('page') === 'activities' ? 'activities' : 'tests',
     drill: DRILLS.some(item => item.key === drill) ? drill! : 'shooting',
     session: params.get('session'), rep: params.get('rep'),
     fromStats: screen === 'test' && params.get('from') === 'stats',
@@ -56,7 +52,6 @@ export function playerRoute(search: string): PlayerRoute {
 
 export type PlayerDestination = {
   screen?: Exclude<PlayerScreen, 'test'>;
-  page?: WorkoutsPage;
   drill?: string;
   session?: string;
   rep?: string;
@@ -77,7 +72,6 @@ export function playerSearch(search: string, view: PlayerView, to: PlayerDestina
     if (to.rep) params.set('rep', to.rep);
     if (to.from) params.set('from', to.from);
   } else if (to.screen) params.set('screen', to.screen);
-  else if (to.page === 'activities') params.set('page', 'activities');
   return params.toString();
 }
 

@@ -142,14 +142,15 @@ describe('gateway terminal state and feature gates', () => {
 describe('player route and preview rendering', () => {
   it('opens the four workspace destinations and their pages', () => {
     // A player lands on the profile: the testing report on Stats.
-    expect(playerRoute('')).toMatchObject({ view: 'stats', screen: null, page: 'tests' });
+    expect(playerRoute('')).toMatchObject({ view: 'stats', screen: null });
     expect(playerRoute('?player=p1&userType=player').view).toBe('stats');
     expect(playerRoute('?view=home').view).toBe('home');
     expect(playerRoute('?view=coach').view).toBe('coach');
     expect(playerRoute('?view=stats').view).toBe('stats');
     expect(playerRoute('?view=stats&screen=plan')).toMatchObject({ view: 'stats', screen: 'plan' });
-    expect(playerRoute('?view=workouts&page=activities')).toMatchObject({ view: 'workouts', screen: null, page: 'activities' });
-    for (const screen of ['workout', 'plan', 'saved', 'history']) expect(playerRoute(`?view=workouts&screen=${screen}`)).toMatchObject({ view: 'workouts', screen });
+    for (const screen of ['plan', 'saved', 'history', 'tests']) expect(playerRoute(`?view=workouts&screen=${screen}`)).toMatchObject({ view: 'workouts', screen });
+    // The workout hub is the Workouts root, so links to the retired hub page and carousel page open it.
+    for (const retired of ['screen=workout', 'page=activities']) expect(playerRoute(`?view=workouts&${retired}`)).toMatchObject({ view: 'workouts', screen: null });
     expect(playerRoute('?view=workouts&screen=unknown').screen).toBeNull();
     expect(playerRoute('?view=home&screen=workout').screen).toBeNull();
   });
@@ -159,15 +160,16 @@ describe('player route and preview rendering', () => {
     expect(playerRoute('?view=feed').view).toBe('home');
     expect(playerRoute('?view=leaderboards').view).toBe('home');
     // Report and notification links open the workout hub, as the app's report link does.
-    expect(playerRoute('?player=p1&userType=player&view=training')).toMatchObject({ view: 'workouts', screen: 'workout' });
+    expect(playerRoute('?player=p1&userType=player&view=training')).toMatchObject({ view: 'workouts', screen: null });
+    expect(playerRoute('?view=training&screen=saved').screen).toBeNull();
     expect(playerRoute('?drill=sprint&session=session3&rep=r2')).toMatchObject({ view: 'workouts', screen: 'test', drill: 'sprint', session: 'session3', rep: 'r2' });
     expect(playerRoute('?view=drills')).toMatchObject({ view: 'workouts', screen: 'test', drill: 'shooting' });
   });
   it('writes one canonical query per destination and keeps unrelated parameters', () => {
-    expect(playerSearch('?preview=1&view=training&session=s1', 'workouts', { screen: 'workout' })).toBe('preview=1&view=workouts&screen=workout');
+    expect(playerSearch('?preview=1&view=training&session=s1', 'workouts', { screen: 'tests' })).toBe('preview=1&view=workouts&screen=tests');
+    expect(playerSearch('?preview=1&view=workouts&screen=workout&page=activities', 'workouts')).toBe('preview=1&view=workouts');
     expect(playerSearch('?preview=1', 'workouts', { drill: 'sprint', session: 'session3', rep: 'r2' })).toBe('preview=1&view=workouts&drill=sprint&session=session3&rep=r2');
     expect(playerSearch('?view=workouts&screen=plan', 'stats')).toBe('view=stats');
-    expect(playerSearch('', 'workouts', { page: 'activities' })).toBe('view=workouts&page=activities');
   });
   it.each(['home', 'coach', 'workouts', 'stats', 'aiCoach', 'training', 'leaderboards', 'drills'])('renders %s with the four workspace tabs and no staff controls', view => {
     const data = previewData();
@@ -180,9 +182,12 @@ describe('player route and preview rendering', () => {
     for (const removed of ['Profile', 'Results', 'Leaderboards', 'Community']) expect(navigation).not.toContain(removed);
     expect(navigation.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).not.toContain('Open community feed');
-    // An older training link opens the workout hub; the next workout now lives on My workout plan.
-    if (view === 'training') { expect(html).toContain('<h1>Workout</h1>'); expect(html).toContain('My workout plan'); expect(html).toContain('Create your workout'); }
-    if (view === 'workouts') for (const test of ['Shooting', 'Dribbling', 'Vertical Jump', 'Broad Jump', 'Sprint', 'Shuttle']) expect(html).toContain(`<strong>${test}</strong>`);
+    // An older training link opens the workout hub, which is the Workouts root: the plan summary, then Create a workout.
+    if (view === 'training' || view === 'workouts') { expect(html).toContain('<h1>Workouts</h1>'); expect(html).toContain('MY WORKOUT PLAN'); expect(html).toContain('Build Workout'); }
+    // The six tests are a page of their own now; an older results link still opens a test.
+    if (view === 'workouts') expect(html).not.toContain('<strong>Shooting</strong>');
+    // Stats carries neither the lifetime training totals nor the drills from the plan (Nolan, 2026-11-12).
+    if (view === 'stats') for (const gone of ['Training totals', 'rills to try', 'Clear, flat space']) expect(html).not.toContain(gone);
     if (view === 'stats') {
       // The profile: the skill radar first, the testing report beneath it, then the next steps.
       const order = ['>Skill benchmarks</h2>', 'class="stats-report"', '>So what do I do with these results?</h2>'].map(heading => html.indexOf(heading));

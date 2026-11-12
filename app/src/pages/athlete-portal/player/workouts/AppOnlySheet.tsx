@@ -3,11 +3,7 @@ import { useCloseOnHistoryNavigation } from '../PlayerShell';
 
 /** Activities that only the app can record. The words follow the app's own (`OutdoorActivityType`). */
 export const APP_ONLY_LINES = {
-  run: 'Runs are recorded with GPS in the PoseTek app.',
-  ride: 'Rides are recorded with GPS in the PoseTek app.',
-  walk: 'Walks and hikes are recorded with GPS in the PoseTek app.',
-  core: 'Camera-guided Core circuits run in the PoseTek app.',
-  yoga: 'Camera-guided Yoga practice runs in the PoseTek app.',
+  cardio: 'Walks, hikes, runs and rides are recorded with GPS in the PoseTek app.',
   freeSession: 'Free sessions are recorded in the PoseTek app.',
 } as const;
 export type AppOnlyKind = keyof typeof APP_ONLY_LINES;
