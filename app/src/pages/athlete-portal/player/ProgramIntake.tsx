@@ -4,6 +4,7 @@ import { DEFAULT_EQUIPMENT, HORIZON_WEEKS, planV3JobParams } from '../../admin/l
 import { inferredLevel } from '../../coach-dashboard/lib/logic';
 import { submitLlmJob, waitForJob } from '../lib/loaders';
 import type { Access } from '../lib/loaders';
+import AISharingControl from './AISharingControl';
 import { capabilityEnabled, useCoachConfig } from './gateway';
 import { personalAge } from './personal-workouts';
 import type { Row } from './execution';
@@ -72,6 +73,16 @@ export async function requestPlan(playerId: string, a: PlanAnswers, athlete: Row
   return (await submit(playerId, 'generate_training_plan', planRequestParams(a, athlete, statsProfile))).id;
 }
 
+/**
+ * A request refused because the requester has not allowed AI sharing: this browser's own switch
+ * (`ai_consent_required`), or the rules' consent check on the job, which Firestore reports only as
+ * `permission-denied`. The form then offers the choice instead of the raw error.
+ */
+export function planNeedsSharing(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code;
+  return code === 'ai_consent_required' || code === 'permission-denied';
+}
+
 export default function ProgramIntake({ playerId, athlete, statsProfile, preview, access, weeks: openingWeeks, initialText = '', onReady, onBack }: {
   playerId: string; athlete: Row; statsProfile: Row; preview: boolean; access?: Access; initialText?: string; onReady: () => void; onBack: () => void;
   /** The plan length the form opens with, when the button that opened it named one. */
@@ -87,6 +98,8 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
   const key = `posetek:plan-job:${auth.currentUser?.uid || 'preview'}:${playerId}`;
   const [jobId, setJobId] = useState<string | null>(() => { try { return mode === 'form' ? localStorage.getItem(key) : null; } catch { return null; } });
   const [status, setStatus] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  // 'off' once a request was refused for AI sharing; 'allowed' once the choice was saved here.
+  const [sharing, setSharing] = useState<'' | 'off' | 'allowed'>('');
   const submitting = useRef(false);
   const forget = () => { try { localStorage.removeItem(key); } catch { /* storage optional */ } };
   // A request already accepted for this athlete is followed again after leaving and returning.
@@ -114,7 +127,12 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
       if (!created) { setBusy(false); return; }
       try { localStorage.setItem(key, created); } catch { /* the listener still works */ }
       setStatus(''); setJobId(created);
-    } catch (e: any) { setError(e?.message || 'Your plan could not be requested.'); setBusy(false); }
+    } catch (e: any) {
+      // Refused again after the choice was saved here: something else is in the way, so say so plainly.
+      if (planNeedsSharing(e) && sharing !== 'allowed') setSharing('off');
+      else setError(planNeedsSharing(e) ? 'Your plan could not be requested.' : e?.message || 'Your plan could not be requested.');
+      setBusy(false);
+    }
     finally { submitting.current = false; }
   };
 
@@ -169,6 +187,10 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
             {!enabled && config && <p className="wk-muted">Plan building is paused right now.</p>}
             <div className="workout-wizard-actions"><button type="submit" className="primary-cta" disabled={!!block || !enabled || busy}>{busy ? 'Sending your answers…' : 'Build my plan'}</button></div>
           </>}
+        {sharing && <div className="player-intake-sharing">
+          {sharing === 'off' && <p className="wk-muted" role="alert">Turn on AI sharing to build your plan.</p>}
+          <AISharingControl preview={preview} onAllowed={() => setSharing('allowed')} />
+        </div>}
         {error && <div className="player-error" role="alert"><p>{error}</p></div>}
       </fieldset>
     </form>
