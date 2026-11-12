@@ -3,8 +3,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ReviewedResult } from "../../../lib/reviewed-results";
-import ReviewedResults from "../player/ReviewedResults";
 import { attemptLabel, resultLabel } from "../../../lib/result-values";
 import Chart from "chart.js/auto";
 import type { Drill } from "../lib/drills";
@@ -26,15 +24,14 @@ import type { SessionGroup } from "../lib/metrics";
 interface DrillDashboardProps {
   drill: Drill;
   reps: any[];
-  reviewedResults?: ReviewedResult[];
   athlete: any;
   onOpenRep: (folder: string, repId: any) => void;
 }
 
-export default function DrillDashboard({ drill, reps: rawReps, reviewedResults = [], athlete, onOpenRep }: DrillDashboardProps) {
+export default function DrillDashboard({ drill, reps: rawReps, athlete, onOpenRep }: DrillDashboardProps) {
   const reps = useMemo(
-    () => rawReps.filter(r => !reviewedResults.some(review => review.repId === r.id)).sort((a, b) => createdMillis(b) - createdMillis(a) || repNumber(b) - repNumber(a)),
-    [rawReps, reviewedResults],
+    () => [...rawReps].sort((a, b) => createdMillis(b) - createdMillis(a) || repNumber(b) - repNumber(a)),
+    [rawReps],
   );
   const sessions = useMemo(() => sessionsFor(reps), [reps]);
   const metrics = useMemo(() => dashboardMetrics(drill, reps), [drill, reps]);
@@ -92,7 +89,6 @@ export default function DrillDashboard({ drill, reps: rawReps, reviewedResults =
         </div>
         <span className="hero-icon"><span className="material-symbols-outlined">{drill.icon}</span></span>
       </header>
-      <ReviewedResults results={reviewedResults} onOpen={r => onOpenRep(`session${r.sessionNumber}`, r.repId)} />
       {reps.length ? (
         <>
           <div className="dashboard-grid">
@@ -171,13 +167,13 @@ export default function DrillDashboard({ drill, reps: rawReps, reviewedResults =
             </div>
           </section>
         </>
-      ) : !reviewedResults.length ? (
+      ) : (
         <section className="portal-card no-results">
           <span className="material-symbols-outlined">add_circle</span>
           <h2>No {drill.label.toLowerCase()} results yet</h2>
           <p>Once this athlete completes the drill in the mobile app, the session and pose analysis will appear here automatically.</p>
         </section>
-      ) : null}
+      )}
     </section>
   );
 }

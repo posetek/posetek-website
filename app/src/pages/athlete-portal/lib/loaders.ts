@@ -4,7 +4,6 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { parseReviewedResults, type ReviewedResult } from "../../../lib/reviewed-results";
 import { visibleAttempts } from "../../../lib/result-values";
 import { parseProvisionalEstimates, type ProvisionalEstimate } from "../../../lib/provisional-estimates";
 import { loadClubMembership } from "../../../lib/organization-data";
@@ -27,7 +26,6 @@ export interface PortalData {
   athlete: any;
   reps: Record<string, any[]>;
   provisionalEstimates?: ProvisionalEstimate[];
-  reviewedResults?: ReviewedResult[];
 }
 
 const emptyReps = (): Record<string, any[]> => Object.fromEntries(DRILLS.map(d => [d.key, []]));
@@ -65,9 +63,7 @@ export async function loadAuthenticated(user: any, requestedPlayer: string | nul
   }
   const athlete = { id: playerDoc.id, ...playerDoc.data() };
   const effective = await cloud.httpsCallable("getAthleteEffectiveResults")({ playerId: playerDoc.id });
-  const sourceRows = ((effective.data as any).reps || []).map(normalizeRep);
-  const reviewedResults = parseReviewedResults(sourceRows);
-  const all = visibleAttempts(sourceRows);
+  const all = visibleAttempts(((effective.data as any).reps || []).map(normalizeRep));
   const reps = emptyReps();
   DRILLS.forEach(drill => { reps[drill.key] = all.filter((rep: any) => accepted(rep, drill)); });
   reps.freeRecord = await loadFreeRecordReps(playerDoc.id);
@@ -76,7 +72,7 @@ export async function loadAuthenticated(user: any, requestedPlayer: string | nul
   } catch (error) {
     console.warn("[profile] Free Record listing unavailable", error);
   }
-  return { access, playerId: playerDoc.id, athlete, reps, reviewedResults, provisionalEstimates: parseProvisionalEstimates((effective.data as any).provisionalEstimates) };
+  return { access, playerId: playerDoc.id, athlete, reps, provisionalEstimates: parseProvisionalEstimates((effective.data as any).provisionalEstimates) };
 }
 
 export async function listFreeRecordStorage(playerId: string): Promise<any[]> {
