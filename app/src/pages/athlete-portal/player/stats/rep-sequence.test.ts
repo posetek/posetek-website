@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { PosePoint as ParsedPoint } from '../../../../lib/pose-playback';
 import type { ReplayTracking } from '../../../../lib/replay-tracking';
 import {
-  CENTER_MAX_GAP_S, NOMINAL_FPS, STAGE_ASPECT, alignShadow, buildRepReplay, clipPhases, clipWindow, flightFrameRate, frameRate, pictureSize, repScene, shadowClock,
-  smoothCenterLine, stageAspect,
+  CENTER_MAX_GAP_S, NOMINAL_FPS, STAGE_ASPECT, alignShadow, buildRepReplay, clipPhases, clipWindow, flightFrameRate, frameRate, pictureSize, repScene, reportAverageMeters,
+  shadowClock, smoothCenterLine, stageAspect, teamReference,
 } from './rep-sequence';
 import type { RepFiles, RepReplay } from './rep-sequence';
 
@@ -249,5 +249,76 @@ describe('the team median as a shadow', () => {
     expect(clock(199)).toBe(95);
     expect(clock(1000)).toBe(99);
     expect(shadowClock({ ...own, anchor: null }, shadow)(40)).toBe(20);
+  });
+});
+
+describe('the team average as a reference line on the jumps', () => {
+  /** The vertical jump above: the torso rises 0.1 from frame 229 to 273 and stands at 0.45; the baseline is 0.503. */
+  const verticalJump = (metadata: Record<string, unknown> = {}, keyFrames = [196, 208, 228, 261]) => buildRepReplay(files({
+    drill: 'jump', rep: { jumpHeight: .1764 },
+    frames: Array.from({ length: 600 }, (_, index) => index < 20 ? [] : pose(.5, index > 228 && index < 274 ? .1 : 0)),
+    metadata: { ground_loc_y: .616, chest_starting_loc: .503, m_to_normalized_units: 4.66, videoDisplayWidth: 720, videoDisplayHeight: 1280, ...metadata },
+    json: { 'key_frames.json': keyFrames, 'torso_midpoints.json': Array.from({ length: 600 }, (_, index) => [.48, .45 - (index > 228 && index < 274 ? .1 : 0)]) },
+    video: { width: 720, height: 1280, duration: 5 },
+  }))!;
+  const broadJump = (start: number, end: number, rep: Record<string, unknown> = { broadJumpDistance: 1.1993 }) => buildRepReplay(files({
+    drill: 'broadJump', rep: { flightTimeSeconds: .3555, ...rep }, frames: Array.from({ length: 467 }, () => pose(.5)),
+    metadata: { ground_loc_y: .502, m_to_normalized_units: 5.69 },
+    json: { 'foot_piecewise_fit.json': { takeoffFrameIndex: 226, landingFrameIndex: 270, startFootXNorm: start, endFootXNorm: end } },
+  }))!;
+
+  it('reads the report\'s team average in metres only when five results make it', () => {
+    expect(reportAverageMeters({ average: '24.1 cm', count: 12 })).toBeCloseTo(.241);
+    expect(reportAverageMeters({ average: '1.43 m', count: 5 })).toBeCloseTo(1.43);
+    expect(reportAverageMeters({ average: '9.5 in', count: 5 })).toBeCloseTo(.2413);
+    expect(reportAverageMeters({ average: '1.43 m', count: 4 })).toBeNull();
+    expect(reportAverageMeters({ average: null, count: 12 })).toBeNull();
+    expect(reportAverageMeters({ average: '7.20 s', count: 12 })).toBeNull();
+  });
+
+  it('puts the vertical jump\'s team height above the standing baseline in the scale of the peak readout', () => {
+    const replay = verticalJump();
+    // The readout's bar: from the baseline 0.503 up to the torso at full height, 0.35, labelled 0.1764 m.
+    expect(replay.peak).toBe(261 - (228 - 180));
+    const reference = teamReference(replay, .241, 'Team avg 9.5 in')!;
+    expect(reference.axis).toBe('y');
+    expect(reference.label).toBe('Team avg 9.5 in');
+    expect(reference.point[0]).toBeCloseTo(.48);
+    expect(reference.point[1]).toBeCloseTo(.503 - .153 * .241 / .1764);
+    // A higher team average sits above the athlete's peak, a lower one below it.
+    expect(reference.point[1]).toBeLessThan(.35);
+    expect(teamReference(replay, .1, 'Team avg 3.9 in')!.point[1]).toBeGreaterThan(.35);
+    // The whole-rep fit keeps the line on screen.
+    expect(stageAspect(replay, reference)).toBeGreaterThanOrEqual(STAGE_ASPECT.min);
+  });
+
+  it('puts the broad jump\'s team distance past the takeoff line, whichever way the athlete jumped', () => {
+    const right = teamReference(broadJump(.4755, .6743), 1.433, 'Team avg 4.7 ft')!;
+    expect(right.axis).toBe('x');
+    expect(right.point[0]).toBeCloseTo(.4755 + (.6743 - .4755) * 1.433 / 1.1993);
+    expect(right.point[1]).toBe(.502);
+    const left = teamReference(broadJump(.6743, .4755), 1.433, 'Team avg 4.7 ft')!;
+    expect(left.point[0]).toBeCloseTo(.6743 - (.6743 - .4755) * 1.433 / 1.1993);
+    expect(left.point[0]).toBeLessThan(.4755);
+  });
+
+  it('draws no line without a team average', () => {
+    expect(teamReference(verticalJump(), null, 'Team avg')).toBeNull();
+    expect(teamReference(broadJump(.4755, .6743), null, 'Team avg')).toBeNull();
+  });
+
+  it('draws no line when the rep lacks the scale or baseline to place it', () => {
+    // No standing baseline: no jump overlay, so nothing to measure the height from.
+    expect(teamReference(verticalJump({ chest_starting_loc: undefined }), .241, 'Team avg')).toBeNull();
+    // Full height outside the replayed clip.
+    expect(teamReference(verticalJump({}, [196, 208, 228, null as unknown as number]), .241, 'Team avg')).toBeNull();
+    // No published distance, or no takeoff and landing lines to scale it by.
+    expect(teamReference(broadJump(.4755, .6743, { broadJumpDistance: null }), 1.433, 'Team avg')).toBeNull();
+    expect(teamReference(broadJump(.5, .5), 1.433, 'Team avg')).toBeNull();
+    // A team value far outside the athlete's own is not drawn.
+    expect(teamReference(broadJump(.4755, .6743), 6, 'Team avg')).toBeNull();
+    // Not a jump.
+    const run = buildRepReplay(files({ drill: 'changeOfDirection', tracking: walker(240), metadata: { framesPerSecond: FPS } }))!;
+    expect(teamReference({ ...run, resultMeters: 1 }, 1.2, 'Team avg')).toBeNull();
   });
 });

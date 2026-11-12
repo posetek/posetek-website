@@ -21,6 +21,12 @@ import { METRIC_TESTS, bestRep, loadTeamComparison } from './test-comparison';
 export const STAFF: Access[] = ['admin', 'manager', 'coach'];
 const MEMORY_MS = 5 * 60_000;
 
+/**
+ * Whether a drill's replay shows the team median as a faint figure: the runs do; the two jumps show
+ * the team average as a reference line instead (Nolan, 2026-11-11), so their median is never loaded.
+ */
+export const teamShadow = (drillKey: string) => drillKey !== 'jump' && drillKey !== 'broadJump';
+
 /** The drill's files the replay draws besides pose.json, metadata.json and tracking.json. */
 const EXTRA_FILES: Record<string, string[]> = {
   jump: ['torso_midpoints.json', 'key_frames.json'],
@@ -84,7 +90,8 @@ export function repReplay(drill: Drill, rep: Row, access: Access, playerId: stri
 /**
  * Loads every test's replay in the background once the report is there, so the first click on
  * each score card is instant: the rep files first (lib/warm-rep-files.ts, after the browser is
- * idle), then each built replay and, for staff on a testing-event report, the team median's.
+ * idle), then each built replay and, for staff on a testing-event report, the team comparison and
+ * (runs only, `teamShadow`) the team median's replay.
  * Never rejects; anything that fails loads again when its card is opened.
  */
 export async function warmStatsReplays(report: AthleteTestReport, reps: Record<string, Row[]>, athlete: Row, access: Access, playerId: string): Promise<void> {
@@ -97,6 +104,6 @@ export async function warmStatsReplays(report: AthleteTestReport, reps: Record<s
     await repReplay(drill, rep, access, playerId).catch(() => null);
     if (report.kind !== 'event' || !STAFF.includes(access)) continue;
     const team = await loadTeamComparison(metric, athlete, playerId, report.testDateMillis).catch(() => null);
-    if (team?.median) await repReplay(drill, team.median.rep, access, team.median.playerId).catch(() => null);
+    if (team?.median && teamShadow(drill.key)) await repReplay(drill, team.median.rep, access, team.median.playerId).catch(() => null);
   }
 }

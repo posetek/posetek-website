@@ -23,31 +23,68 @@ export const METRIC_TESTS: Record<string, MetricTest> = {
   broadJump: { drill: 'broadJump', field: 'broadJumpDistance', scale: 1, digits: 2, higher: true },
 };
 
-export type Split = { label: string; field: string; fallbacks?: string[]; unit: string; scale: number; digits: number };
+/** One number under the replay; `higher` says whether a larger value is the better one. */
+export type Split = { label: string; field: string; fallbacks?: string[]; unit: string; scale: number; digits: number; higher: boolean };
 const SHUTTLE: Split[] = [
-  { label: 'Total time', field: 'totalTime', unit: 's', scale: 1, digits: 2 },
-  { label: 'Out', field: 'phase1Time', unit: 's', scale: 1, digits: 2 },
-  { label: 'Turn', field: 'phase2Time', unit: 's', scale: 1, digits: 2 },
-  { label: 'Back', field: 'phase3Time', unit: 's', scale: 1, digits: 2 },
+  { label: 'Total time', field: 'totalTime', unit: 's', scale: 1, digits: 2, higher: false },
+  { label: 'Out', field: 'phase1Time', unit: 's', scale: 1, digits: 2, higher: false },
+  { label: 'Turn', field: 'phase2Time', unit: 's', scale: 1, digits: 2, higher: false },
+  { label: 'Back', field: 'phase3Time', unit: 's', scale: 1, digits: 2, higher: false },
 ];
 /** The numbers shown under the replay for each drill: the same ones the drill's rep page shows. */
 export const SPLITS: Record<string, Split[]> = {
-  dribbling: [...SHUTTLE, { label: 'Ball distance', field: 'avgBallDistance', unit: 'in', scale: 39.3701, digits: 1 }],
+  // The ball kept closer is the better dribble.
+  dribbling: [...SHUTTLE, { label: 'Ball distance', field: 'avgBallDistance', unit: 'in', scale: 39.3701, digits: 1, higher: false }],
   changeOfDirection: SHUTTLE,
   sprint: [
-    { label: 'Total time', field: 'totalTime', unit: 's', scale: 1, digits: 2 },
-    { label: 'Top speed', field: 'max_velocity', fallbacks: ['maxVelocity'], unit: 'mph', scale: 2.23694, digits: 1 },
-    { label: 'Max acceleration', field: 'max_acceleration', fallbacks: ['maxAcceleration'], unit: 'm/s²', scale: 1, digits: 2 },
+    { label: 'Total time', field: 'totalTime', unit: 's', scale: 1, digits: 2, higher: false },
+    { label: 'Top speed', field: 'max_velocity', fallbacks: ['maxVelocity'], unit: 'mph', scale: 2.23694, digits: 1, higher: true },
+    { label: 'Max acceleration', field: 'max_acceleration', fallbacks: ['maxAcceleration'], unit: 'm/s²', scale: 1, digits: 2, higher: true },
   ],
-  jump: [{ label: 'Jump height', field: 'jumpHeight', unit: 'in', scale: 39.3701, digits: 1 }],
+  jump: [{ label: 'Jump height', field: 'jumpHeight', unit: 'in', scale: 39.3701, digits: 1, higher: true }],
   broadJump: [
-    { label: 'Distance', field: 'broadJumpDistance', unit: 'ft', scale: 3.28084, digits: 1 },
-    { label: 'Peak height', field: 'jumpHeight', unit: 'in', scale: 39.3701, digits: 1 },
+    { label: 'Distance', field: 'broadJumpDistance', unit: 'ft', scale: 3.28084, digits: 1, higher: true },
+    { label: 'Peak height', field: 'jumpHeight', unit: 'in', scale: 39.3701, digits: 1, higher: true },
   ],
 };
 
 export const splitText = (raw: number | null | undefined, split: Split): string | null =>
   raw === null || raw === undefined ? null : `${(raw * split.scale).toFixed(split.digits)} ${split.unit}`;
+
+export type Standing = 'better' | 'worse' | 'level';
+/** Within this share of the team's value a row reads as level. */
+export const LEVEL_SHARE = .01;
+
+/**
+ * The athlete against the team on one row, both in the row's shown units: the difference of the two
+ * shown figures (so it agrees with them) and whether it is better, worse or level. Level when the
+ * shown figures are equal or within `LEVEL_SHARE` of the team's value.
+ */
+export function versusTeam(mine: number, team: number, split: Pick<Split, 'digits' | 'higher'>): { standing: Standing; difference: number } {
+  const shown = (value: number) => Number(value.toFixed(split.digits));
+  const difference = shown(shown(mine) - shown(team));
+  const level = difference === 0 || Math.abs(difference) <= LEVEL_SHARE * Math.abs(shown(team)) + 1e-9;
+  return { standing: level ? 'level' : (difference > 0) === split.higher ? 'better' : 'worse', difference };
+}
+
+export type SplitRow = { label: string; mine: string | null; average: string | null; standing: Standing | null; difference: string | null };
+
+/**
+ * One row of the table: the athlete's value, the team's (the report's own average text for the
+ * headline number, in shown units; else the team's records), and how they compare. A row without
+ * both values, or whose report average is in another unit, is not compared.
+ */
+export function splitRow(split: Split, mine: number | null | undefined, team: number | null | undefined, reportAverage: string | null = null): SplitRow {
+  const mineText = splitText(mine, split);
+  const [reportValue, reportUnit] = reportAverage ? reportAverage.trim().split(/\s+/) : [];
+  const teamShown = reportAverage ? (reportUnit === split.unit && Number.isFinite(Number(reportValue)) ? Number(reportValue) : null)
+    : team === null || team === undefined ? null : team * split.scale;
+  const base = { label: split.label, mine: mineText, average: reportAverage ?? splitText(team, split), standing: null, difference: null };
+  if (mine === null || mine === undefined || teamShown === null) return base;
+  const { standing, difference } = versusTeam(mine * split.scale, teamShown, split);
+  const sign = difference > 0 ? '+' : difference < 0 ? '−' : '';
+  return { ...base, standing, difference: `${sign}${Math.abs(difference).toFixed(split.digits)} ${split.unit}` };
+}
 
 /** A testing day's reps: recorded within a day and a half of the report's test date. */
 const DAY_WINDOW = 36 * 3_600_000;

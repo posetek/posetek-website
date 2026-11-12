@@ -78,6 +78,17 @@ export interface PoseCalibration {
   ground?: { start: PosePoint; end: PosePoint };
 }
 
+/**
+ * A mark a replay is read against (the team average), in the sequence's normalized coordinates:
+ * `axis: "y"` is a horizontal line at `point[1]` (a height) that ends at `point[0]`, the athlete's
+ * own mark; `axis: "x"` is a vertical line at `point[0]` (a distance along the ground, `point[1]`).
+ */
+export interface PoseReference {
+  axis: "x" | "y";
+  point: PosePoint;
+  label: string;
+}
+
 /** One frame of a centre line: its x and the y of its two ends (normalized, y down). */
 export interface PoseCenterLine {
   x: number;
@@ -131,14 +142,16 @@ export function fitRecording(width: number, height: number, ratio: number, bound
 
 /**
  * What a whole-rep fit must keep on screen: every pose frame, both ends of every centre line,
- * the same for a shadow drawn under the rep, and the sequence's markers, ball and jump overlays.
+ * the same for a shadow drawn under the rep, the sequence's markers, ball and jump overlays, and
+ * the point of a reference line.
  */
-export function framingRecording(sequence: PoseSequence, shadow?: PoseSequence | null): FramedRecording {
+export function framingRecording(sequence: PoseSequence, shadow?: PoseSequence | null, reference?: PoseReference | null): FramedRecording {
   const frames: PosePoint[][] = [];
   for (const source of shadow ? [sequence, shadow] : [sequence]) {
     for (const frame of source.frames) frames.push(frame.filter((point): point is PosePoint => Array.isArray(point)));
     for (const line of source.centerLine ?? []) if (line) frames.push([[line.x, line.top], [line.x, line.bottom]]);
   }
+  if (reference) frames.push([reference.point]);
   return { frames, ball: sequence.ball, calibration: sequence.calibration, verticalJump: sequence.verticalJump, overlays: sequence.overlays };
 }
 

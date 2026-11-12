@@ -16,11 +16,12 @@
 
 import { groundFromMarkers, markerFrom, pointFrom } from '../../../admin/lib/repEvidence';
 import { framingRecording, recordingBounds } from '../../../home/pose-demo';
-import type { PoseCalibration, PoseCenterLine, PoseFrame, PosePhase, PosePoint, PoseSequence } from '../../../home/pose-demo';
+import type { PoseCalibration, PoseCenterLine, PoseFrame, PosePhase, PosePoint, PoseReference, PoseSequence } from '../../../home/pose-demo';
 import type { PosePoint as ParsedPoint } from '../../../../lib/pose-playback';
 import type { ReplayTracking } from '../../../../lib/replay-tracking';
 import { finiteNumber as num, metricValue } from '../../../../lib/result-values';
 import type { Row } from '../execution';
+import type { ReportMetric } from '../report';
 
 /** Everything one rep's replay is built from. Shared, cached objects: read, never changed. */
 export interface RepFiles {
@@ -59,6 +60,10 @@ export interface RepReplay {
   nominalRate: boolean;
   /** The rep's metadata.json (shared, read-only), for the numbers shown under the replay. */
   metadata: Record<string, any>;
+  /** Vertical jump: the sequence frame of full height (key_frames.json's peak), or null when it is not in the clip. */
+  peak?: number | null;
+  /** The jumps: the rep's published result in metres (jump height, broad jump distance). */
+  resultMeters?: number | null;
 }
 
 /** The phone records the tests at 120 frames a second (JumpProcessingService: nearest 1280×720 120 fps format). */
@@ -288,7 +293,7 @@ export function buildRepReplay(files: RepFiles): RepReplay | null {
     const usable = all.map((frame, index) => hipsSeen(frame) ? index : -1).filter(index => index >= 0);
     if (!usable.length) return null;
     const keyFrames = (Array.isArray(json['key_frames.json']) ? json['key_frames.json'] : []).map(num);
-    let sequence: PoseSequence, anchor: number | null, originX: number | null, direction: 1 | -1 | null = null;
+    let sequence: PoseSequence, anchor: number | null, originX: number | null, direction: 1 | -1 | null = null, peakFrame: number | null = null, result: number | null;
     if (drill === 'jump') {
       // key_frames.json: [coil, mid-extension, takeoff, peak] (JumpProcessingService).
       const takeoff = keyFrames[2] ?? null, peak = keyFrames[3] ?? null;
@@ -306,6 +311,8 @@ export function buildRepReplay(files: RepFiles): RepReplay | null {
         calibration: overlay && scene.calibration ? { ...scene.calibration, ground: undefined } : scene.calibration,
       };
       anchor = local(takeoff, first, length);
+      peakFrame = local(peak, first, length);
+      result = peakMeters;
       const hips = all.slice(first, Math.min(last, takeoff ?? last) + 1).map(frame => frame[23] && frame[24] ? (frame[23][0] + frame[24][0]) / 2 : null).filter((x): x is number => x !== null);
       originX = median(hips);
     } else {
@@ -325,11 +332,15 @@ export function buildRepReplay(files: RepFiles): RepReplay | null {
           ? { groundY, takeoffX, landingX, com: series(json['com_midpoints.json'], size, first, last), foot: series(json['foot_centers.json'], size, first, last) } : undefined,
       };
       anchor = local(takeoff, first, length);
+      result = distance;
       originX = takeoffX;
       direction = takeoffX !== null && landingX !== null && landingX !== takeoffX ? (landingX > takeoffX ? 1 : -1) : null;
     }
     const groundY = scene.ground && originX !== null ? groundAt(scene.ground, originX) : num(meta.ground_loc_y);
-    return { sequence: sequence as RepReplay['sequence'], anchor, scene: { aspect, groundY, metersPerWidth: positive(num(meta.m_to_normalized_units)), originX, direction }, nominalRate: measured === null, metadata: meta };
+    return {
+      sequence: sequence as RepReplay['sequence'], anchor, scene: { aspect, groundY, metersPerWidth: positive(num(meta.m_to_normalized_units)), originX, direction }, nominalRate: measured === null, metadata: meta,
+      ...(drill === 'jump' ? { peak: peakFrame } : {}), resultMeters: result,
+    };
   }
 
   if (!files.tracking) return null;
@@ -369,12 +380,71 @@ const positive = (value: number | null) => value !== null && value > 0 ? value :
 export const STAGE_ASPECT = { min: .8, max: 2.4 };
 
 /** The stage's width over height for a rep: the shape of everything the whole-rep fit keeps on screen. */
-export function stageAspect(replay: RepReplay): number {
-  const bounds = recordingBounds(framingRecording(replay.sequence), replay.scene.aspect);
+export function stageAspect(replay: RepReplay, reference: PoseReference | null = null): number {
+  const bounds = recordingBounds(framingRecording(replay.sequence, null, reference), replay.scene.aspect);
   const width = bounds.maxX - bounds.minX, height = bounds.maxY - bounds.minY;
   return height > 1e-6 ? clamp(width / height, STAGE_ASPECT.min, STAGE_ASPECT.max) : 16 / 9;
 }
 const nextFrame = (frame: number | null) => frame === null ? null : frame + 1;
+
+// MARK: - The team average as a reference line (the jumps)
+
+/** Metres per unit of the report's jump values: heights are sent in cm, broad jumps in m (shown in in and ft). */
+const UNIT_METERS: Record<string, number> = { cm: .01, m: 1, in: .0254, ft: .3048 };
+
+/**
+ * A team average from the report in metres: its `average` ("24.1 cm", "1.43 m") when at least five
+ * results make it (the rule the table under the player and the score cards use); else null.
+ */
+export function reportAverageMeters(metric: Pick<ReportMetric, 'average' | 'count'>): number | null {
+  if ((metric.count ?? 0) < 5 || !metric.average) return null;
+  const [value, unit, ...rest] = metric.average.trim().split(/\s+/);
+  const amount = Number(value), scale = UNIT_METERS[unit ?? ''];
+  return !rest.length && scale && Number.isFinite(amount) && amount > 0 ? amount * scale : null;
+}
+
+/** Ignore a mark the replay barely shows: a jump whose drawn rise or distance is smaller than this. */
+const MIN_MARK = .005;
+/** A team value more than this many times the athlete's (or less than its inverse) is not drawn. */
+const MAX_RATIO = 4;
+
+/**
+ * Where the team average goes on the athlete's replay, in the scale the replay already draws the
+ * athlete's result in (Nolan, 2026-11-11: a horizontal line for the vertical jump, a vertical line
+ * for the broad jump; no team figure):
+ *   - vertical jump: the readout's bar runs from the standing baseline (`chest_starting_loc`) up to
+ *     the centre of mass at full height and is labelled with the published height, so the team's
+ *     height sits at baseline − rise × team / athlete, ending at the athlete's x at full height.
+ *   - broad jump: the takeoff and landing lines are the published distance apart, so the team's
+ *     distance sits at takeoff + (landing − takeoff) × team / athlete, the way the athlete jumped.
+ * The rep's own result sets the scale rather than its saved `m_to_normalized_units`: the phone now
+ * publishes heights from the flight, and on a real rep the drawn rise × that scale was twice the
+ * published height, which would have put a higher team average below the athlete's own peak.
+ * Null when there is no team average or the replay lacks what the placement needs.
+ */
+export function teamReference(replay: RepReplay, teamMeters: number | null, label: string): PoseReference | null {
+  const own = replay.resultMeters ?? null;
+  if (teamMeters === null || !(teamMeters > 0) || own === null || !(own > 0)) return null;
+  const ratio = teamMeters / own;
+  if (ratio > MAX_RATIO || ratio < 1 / MAX_RATIO) return null;
+  const sequence = replay.sequence;
+  if (sequence.key === 'jump') {
+    const jump = sequence.verticalJump, peak = replay.peak ?? null;
+    const top = jump && peak !== null ? jump.com[peak] : null;
+    if (!jump || !top) return null;
+    const rise = jump.baselineY - top[1];
+    return rise > MIN_MARK ? { axis: 'y', point: [top[0], jump.baselineY - rise * ratio], label } : null;
+  }
+  if (sequence.key === 'broadJump') {
+    const overlay = sequence.overlays;
+    const span = overlay ? overlay.landingX - overlay.takeoffX : 0;
+    return overlay && Math.abs(span) > MIN_MARK ? { axis: 'x', point: [overlay.takeoffX + span * ratio, overlay.groundY], label } : null;
+  }
+  return null;
+}
+
+/** How long the vertical jump's replay stays at full height, once per pass (Nolan, 2026-11-11). */
+export const PEAK_HOLD_MS = 1000;
 
 // MARK: - The team median as a shadow
 

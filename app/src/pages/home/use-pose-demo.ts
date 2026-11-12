@@ -14,7 +14,8 @@
 // Optional inputs (PoseDemoOptions) let the same controller replay an athlete's own rep: the
 // homepage recorded-movement framing and look, the sequence's ArUco markers / gate / ground
 // (`calibration`), a centre line for reps recorded without pose (`centerLine`) and a second,
-// fainter sequence drawn underneath (the team median). With no options and the bundled demo
+// fainter sequence drawn underneath (the team median), a reference line with its label (the team
+// average) and a one-off pause on one frame (the jump's full height). With no options and the bundled demo
 // data none of that runs, so the homepage demo draws exactly as before.
 import { useEffect, useRef, useState, type FormEvent, type RefObject } from "react";
 import {
@@ -50,6 +51,7 @@ import {
   type PoseDemoData,
   type PoseFrame,
   type PosePoint,
+  type PoseReference,
   type PoseSequence,
   type PoseViewport,
 } from "./pose-demo";
@@ -96,6 +98,13 @@ export interface PoseDemoOptions {
    */
   recordedLook?: boolean;
   shadow?: PoseShadow | null;
+  /** A line the rep is read against (the team average), with its label; kept in the whole-rep fit. */
+  reference?: PoseReference | null;
+  /**
+   * Playback pauses on `frame` for `ms` once per pass (the vertical jump's full height), through the
+   * same hold that keeps the last frame on screen. Only while playing: a scrub never waits.
+   */
+  hold?: { frame: number; ms: number } | null;
 }
 
 const isPoint = (point: PosePoint | null): point is PosePoint => Boolean(point);
@@ -130,10 +139,13 @@ export function createPoseDemoController(
     lastTimestamp: 0,
     accumulator: 0,
     endHold: 0,
+    /** This pass has already paused on `options.hold`'s frame. */
+    held: false,
     animationId: 0,
     viewport: { ...INITIAL_VIEWPORT } as PoseViewport,
     shadow: options.shadow ?? null,
   };
+  const hold = options.hold ?? null;
 
   const currentSequence = (): PoseSequence => data.sequences[state.sequenceIndex];
   const currentFps = () => currentSequence().fps ?? data.fps;
@@ -242,6 +254,51 @@ export function createPoseDemoController(
       });
       context.stroke();
     }
+    context.restore();
+  }
+
+  /**
+   * The reference (the team average), dashed like the radar's team outline: a height runs from the
+   * left up to just past the jump readout's bar (which sits 20 px right of the athlete), so the peak
+   * reads against it and the readout's box (30 px right) stays clear, with its label above the line's
+   * left end; a distance runs the full height like the takeoff and landing lines, labelled at the top.
+   */
+  function drawReference(): void {
+    const reference = options.reference;
+    const mark = reference ? project(reference.point) : null;
+    if (!reference || !mark) return;
+    context.save();
+    context.font = "600 10px 'IBM Plex Mono', monospace";
+    const width = context.measureText(reference.label).width + 16;
+    let labelX: number, labelY: number;
+    if (reference.axis === "y") {
+      const right = mark.x + 26, left = Math.max(8, Math.min(mark.x - 120, right - width));
+      context.setLineDash([5, 4]);
+      context.strokeStyle = "#ffffff8c";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(left, mark.y);
+      context.lineTo(right, mark.y);
+      context.stroke();
+      context.setLineDash([]);
+      labelX = left;
+      labelY = mark.y - 11;
+    } else {
+      drawPath([[reference.point[0], 0], [reference.point[0], 1]], "#ffffff8c", 1.5, [5, 4]);
+      // Beside the line, on the side away from the takeoff when that clears the takeoff and landing
+      // lines and the stage's edge, else the other side, else centred on the line.
+      const overlay = currentSequence().overlays, view = state.viewport;
+      const lines = overlay ? [overlay.takeoffX, overlay.landingX].map(x => project([x, overlay.groundY])?.x ?? null) : [];
+      const clear = (from: number) => from >= 8 && from + width <= view.width - 8 && !lines.some(x => x !== null && x >= from - 4 && x <= from + width + 4);
+      const after = mark.x + 6, before = mark.x - 6 - width;
+      const sides = !overlay || reference.point[0] >= overlay.takeoffX ? [after, before] : [before, after];
+      labelX = sides.find(clear) ?? Math.max(8, Math.min(mark.x - width / 2, view.width - width - 8));
+      labelY = 30;
+    }
+    context.fillStyle = "#071b16ee";
+    context.fillRect(labelX, labelY - 15, width, 23);
+    context.fillStyle = "#edf6e8";
+    context.fillText(reference.label, labelX + 8, labelY);
     context.restore();
   }
 
@@ -489,6 +546,7 @@ export function createPoseDemoController(
     drawShadow();
     if (sequence.key === "broadJump") drawBroadJumpOverlay(sequence);
     else if (sequence.key === "changeOfDirection") drawChangeOfDirectionOverlay(sequence);
+    drawReference();
     drawSkeleton(frame);
     if (sequence.verticalJump) drawVerticalJumpOverlay(sequence);
     drawCenterLineOverlay(sequence);
@@ -512,7 +570,7 @@ export function createPoseDemoController(
   function resizeCanvas(): void {
     const rect = canvas.getBoundingClientRect();
     state.viewport = options.fitRecording
-      ? fitRecording(rect.width, rect.height, window.devicePixelRatio, recordingBounds(framingRecording(currentSequence(), state.shadow?.sequence), currentAspect()))
+      ? fitRecording(rect.width, rect.height, window.devicePixelRatio, recordingBounds(framingRecording(currentSequence(), state.shadow?.sequence, options.reference), currentAspect()))
       : fitViewport(rect.width, rect.height, window.devicePixelRatio, currentAspect());
     const pixels = backingStoreSize(state.viewport);
     if (canvas.width !== pixels.width || canvas.height !== pixels.height) {
@@ -558,6 +616,7 @@ export function createPoseDemoController(
     state.sequenceIndex = nextIndex;
     state.accumulator = 0;
     state.endHold = 0;
+    state.held = false;
     const sequence = currentSequence();
     state.frame = restingFrame(sequence, reducedMotionQuery.matches, autoplay);
     // Legacy set `scrubber.max` here too. React also renders it from state, but
@@ -578,14 +637,21 @@ export function createPoseDemoController(
     const delta = frameDelta(timestamp, state.lastTimestamp);
     state.lastTimestamp = timestamp;
     const sequence = currentSequence();
-    if (state.frame >= lastFrameIndex(sequence)) {
+    const last = lastFrameIndex(sequence);
+    if (state.frame >= last) {
       state.endHold += delta;
       if (state.endHold >= END_HOLD_MS) selectSequence(state.sequenceIndex + (data.autoAdvance === false ? 0 : 1), false);
+    } else if (hold && !state.held && state.frame >= hold.frame) {
+      // The pause on the hold frame uses the end hold's clock, then playback carries on.
+      state.endHold += delta;
+      if (state.endHold >= hold.ms) { state.endHold = 0; state.held = true; state.accumulator = 0; }
     } else {
-      const next = advanceFrame(state.frame, state.accumulator, delta, currentFps(), lastFrameIndex(sequence));
+      const next = advanceFrame(state.frame, state.accumulator, delta, currentFps(), last);
       state.accumulator = next.accumulator;
       if (next.advanced) {
-        state.frame = next.frame;
+        // Never step over the hold frame: stop on it and pause there on the next tick.
+        if (hold && !state.held && state.frame < hold.frame && next.frame > hold.frame) { state.frame = hold.frame; state.accumulator = 0; }
+        else state.frame = next.frame;
         drawFrame();
       }
     }
@@ -638,7 +704,7 @@ export function createPoseDemoController(
         stopAnimation();
         return;
       }
-      if (state.frame >= lastFrameIndex(currentSequence())) state.frame = 0;
+      if (state.frame >= lastFrameIndex(currentSequence())) { state.frame = 0; state.held = false; }
       state.userPaused = false;
       state.endHold = 0;
       drawFrame();
@@ -648,6 +714,8 @@ export function createPoseDemoController(
       state.userPaused = true;
       stopAnimation();
       state.frame = clampFrame(value, lastFrameIndex(currentSequence()));
+      // Playing on from a scrubbed frame pauses on the hold frame only if it is still ahead.
+      state.held = Boolean(hold) && state.frame >= hold!.frame;
       drawFrame();
     },
     selectDrill(key: string) {
