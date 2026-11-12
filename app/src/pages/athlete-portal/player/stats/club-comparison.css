@@ -1,0 +1,18 @@
+/* The club comparison under the pose player (ClubComparison.tsx): the admin organization age curve
+   (admin/views/AgeCurve.tsx, styled for result validation in admin/result-validation.scss) on the
+   Stats page's dark card. Only the athlete's own point is green. */
+.pt-player {
+  .stats-club { display: grid; gap: 8px; min-width: 0; padding: 16px; border: 1px solid var(--v4-border); border-radius: 22px; background: var(--v4-card); }
+  .stats-club > * { min-width: 0; margin: 0; }
+  .stats-club h3 { font-size: 17px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+  .stats-club .admin-note, .stats-club-empty { font-size: 12px; line-height: 1.4; color: var(--v4-secondary); }
+  .stats-club svg { display: block; width: 100%; max-width: 620px; height: auto; margin-inline: auto; overflow: visible; }
+  .stats-club circle { cursor: default; }
+  .stats-club .re-grid { stroke: #ffffff17; stroke-width: 1; }
+  .stats-club .re-axis { fill: #ffffff8c; font-size: 11px; }
+  .stats-club .rv-age-band-path { fill: #ffffff; fill-opacity: .06; stroke: none; }
+  .stats-club .rv-age-median-path { fill: none; stroke: #ffffff6b; stroke-width: 2; stroke-linejoin: round; }
+  .stats-club .rv-age-this-label { fill: var(--v4-accent); font-size: 12px; font-weight: 700; }
+  .stats-club .rv-age-callout { fill: #041610; font-size: 11px; font-weight: 800; letter-spacing: .04em; }
+  .stats-club .re-readout { font-size: 15px; font-weight: 600; line-height: 1.35; }
+}

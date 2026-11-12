@@ -11,6 +11,7 @@ import type { PlayerTabProps } from '../workspace';
 import SkillBenchmarks from './SkillBenchmarks';
 import StatsReport from './StatsReport';
 import TestPosePlayer from './TestPosePlayer';
+import ClubComparison from './ClubComparison';
 import { METRIC_TESTS } from './test-comparison';
 import { warmStatsReplays } from './test-replay';
 import { reportPracticeSamples } from './report-practice';
@@ -65,8 +66,9 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
     <StatsReport report={report} practice={{ samples, loading: practice.loading, error: practice.error }} timeZone={timeZone} onOpenTest={openTest}
       selectedId={selected?.id ?? null}
       // The sample-data preview has no recordings to replay.
-      detail={selected && report.report && !preview ? <TestPosePlayer key={selected.id} metric={selected} report={report.report} reps={reps} athlete={athlete}
-        access={ctx.access} playerId={ctx.playerId} onAllAttempts={() => go('workouts', { drill: METRIC_TESTS[selected.id].drill, from: 'stats' })} /> : null} />
+      detail={selected && report.report && !preview ? <><TestPosePlayer key={selected.id} metric={selected} report={report.report} reps={reps} athlete={athlete}
+        access={ctx.access} playerId={ctx.playerId} onAllAttempts={() => go('workouts', { drill: METRIC_TESTS[selected.id].drill, from: 'stats' })} />
+        <ClubComparison metric={selected} access={ctx.access} playerId={ctx.playerId} athlete={athlete} /></> : null} />
     <section className="stats-next" aria-labelledby="stats-next-title">
       <h2 id="stats-next-title" className="stats-section-title">So what do I do with these results?</h2>
       <div className="stats-next-grid">
