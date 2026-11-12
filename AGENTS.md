@@ -17,6 +17,41 @@ PR requirements and release/deployment holds remain unchanged. Runtime tool
 approval is separate from this policy; report exact tool rejections and never
 switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.md#website-worktree-local-lane).
 
+## Admin reporting fixes and one-pager time on page — November 10, 2026
+
+Deployment `6af39c12b5d6443ec57767ec` was published at `2026-11-10T22:40:04.431Z`
+from runtime `e0cc95d` on `runtime/admin-reporting-fixes`: accepted runtime
+`691db60` plus the `app/` changes of PRs #141, #143, #146 and #142.
+
+- Admin cards: "Last week" is the whole previous Monday–Sunday week, and cumulative
+  cards compare with the total at the end of it.
+- Workouts: sessions recorded on the phone count as workouts, with a by-type chart
+  and per-player lists.
+- One-pager tracking: reports sent, time on page, accounts created through the
+  Workouts button and a trend chart, per cohort. The report page sends a
+  time-on-page heartbeat.
+- Web personal workouts can save a skip and finish.
+
+It preserves the prior live deploy `6af3761a` (the report project's November 9
+broad jump correction) byte for byte except three files: `/application.html`,
+`/report/loader.mjs`, and `/report/render.mjs`, which is the live file with one
+notice sentence changed. **The live report reader is newer than this repository's
+copy; never ship the repository's `render.mjs` or `report.css` over it.** 15 hashed
+assets were added. All 2,776 artifact files match 2,777 provider records. The
+reconciled baseline protects 2,774 files with all 37 recovery mappings.
+
+Backend `functions:one-pager-tracking` (version 3) went out before the website and
+`functions:expanded-insights` (`getClubInsightsV2` version 14) after it, from
+backend main `d96edbe`. Hosted backend CI did not start (GitHub billing); the owner
+instructed the merge and deployment. Signed-in hosted acceptance is not claimed.
+[Release handoff](docs/releases/ADMIN_REPORTING_FIXES.md) ·
+[Production receipt](docs/releases/receipts/ADMIN_REPORTING_FIXES_PRODUCTION.json)
+
+The report project deploys the reader from its own source (draft PR #140). Its next
+production deploy overwrites `loader.mjs` and `render.mjs` unless that source merges
+main first, which would silently stop time-on-page collection. Keep `[skip netlify]`
+on every source and receipt merge.
+
 ## Database-first catalog compatibility release — November 7, 2026
 
 Deployment `6aeffb31ae4da62a62fc6356` was published at

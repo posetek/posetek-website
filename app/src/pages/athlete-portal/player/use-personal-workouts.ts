@@ -4,7 +4,7 @@ import { normalizeCatalogDrill } from '../../../lib/contracts/drillV2';
 import type { CatalogDrill } from '../../../lib/contracts/drillV2';
 import type { Row } from './execution';
 import type { PlayerWorkoutStore } from './use-player-workouts';
-import { addPersonalDrill, eligiblePersonalDrill, ensurePersonalSubmission, latestPersonalRevision, personalCapabilityEnabled, personalDraft, personalExecution, personalExecutionId, personalGenerationErrors, personalJobKey, personalLogRows, personalWorkoutsEnabled, recomputePersonalDraft, restorePersonalJob } from './personal-workouts';
+import { addPersonalDrill, eligiblePersonalDrill, ensurePersonalSubmission, latestPersonalRevision, personalCapabilityEnabled, personalDraft, personalEndReason, personalExecution, personalExecutionId, personalGenerationErrors, personalJobKey, personalLogRows, personalWorkoutsEnabled, recomputePersonalDraft, restorePersonalJob } from './personal-workouts';
 import type { PendingPersonalJob, PersonalCapability } from './personal-workouts';
 import { checkedPersonalConversation, checkedPersonalProposal, orderedPersonalMessages, personalProposalWithPublication, personalPublishParams, personalRefinementParams, personalTimestamp, publishedPersonalWorkoutId, readPersonalConversation, restorePersonalSelection } from './personal-workout-conversations';
 import type { PersonalSelection } from './personal-workout-conversations';
@@ -434,7 +434,7 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
     const old = current.current.logs[workoutId];
     if (!old || old.endedAt) throw new Error('This workout is not active.');
     const seconds = Math.max(Number(old.elapsedSeconds || 0), Math.floor(elapsedSeconds ?? Number(old.elapsedSeconds || 0)));
-    const reason = endReason ? blocks.some(b => b.skipReason === 'pain') ? 'pain' : endReason === 'completed' ? 'completed' : 'stopped' : undefined;
+    const reason = personalEndReason(endReason, blocks, Array.isArray(old.workoutSnapshot?.blocks) ? old.workoutSnapshot.blocks.length : 0);
     if (preview) { accept('update_personal_workout_log', { log: { ...old, blocks, revision: old.revision + 1, elapsedSeconds: seconds, activeSeconds: seconds, ...(reason ? { endReason: reason, endedAt: new Date() } : {}) } }); return; }
     await perform('update_personal_workout_log', { workoutId, expectedLogRevision: old.revision, blocks: personalLogRows(blocks), elapsedSeconds: seconds, ...(reason ? { endReason: reason } : {}) });
   };

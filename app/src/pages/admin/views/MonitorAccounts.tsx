@@ -26,6 +26,7 @@ import DirectoryNavigator, { TeamDirectory } from "./DirectoryNavigator";
 import { DirectoryFilters, DirectoryPlayerFilters, DirectoryWorkspaceTabs } from "./DirectoryWorkspaceControls";
 import AdminActivityReport from "./AdminActivityReport";
 import OnePagerTracking from "./OnePagerTracking";
+import AdminTabs from "./AdminTabs";
 import "./admin-directory.scss";
 import "./admin-directory-lightning.scss";
 
@@ -88,17 +89,7 @@ export function jumpToDirectorySection(event: Pick<MouseEvent<HTMLAnchorElement>
 }
 
 export function DirectoryTabs({ active, onChange }: { active: AdminDirectoryState["directoryTab"]; onChange(tab: AdminDirectoryState["directoryTab"]): void }) {
-  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  return <div className="directory-tabs" role="tablist" aria-label="People and organization views">{tabs.map(([id, label], index) => <button key={id} type="button" ref={element => { buttons.current[index] = element; }}
-    id={`directory-tab-${id}`} role="tab" aria-selected={active === id} aria-controls={`directory-panel-${id}`} tabIndex={active === id ? 0 : -1}
-    onClick={() => onChange(id)} onKeyDown={event => {
-      let next: number | undefined;
-      if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
-      if (event.key === "ArrowLeft") next = (index + tabs.length - 1) % tabs.length;
-      if (event.key === "Home") next = 0;
-      if (event.key === "End") next = tabs.length - 1;
-      if (next !== undefined) { event.preventDefault(); buttons.current[next]?.focus(); }
-    }}>{label}</button>)}</div>;
+  return <AdminTabs className="directory-tabs" label="People and organization views" idPrefix="directory" tabs={tabs} active={active} onChange={onChange} />;
 }
 
 function OrganizationPlayers({ org, organizations, state, choose, navigateScope, source }: { org: OrganizationRow; organizations: OrganizationRow[]; state: AdminDirectoryState; choose: ChooseDirectory; navigateScope: ChooseDirectory; source: DirectorySource }) {
@@ -192,7 +183,8 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
 }) {
   const attention = state.reportMode === "attention", request = workspaceReportRequest(state);
   const view = state.reportView || "overview", requestedPane = directoryWorkspacePaneOf(state);
-  const showOnePagers = scope?.kind === "organization" && supportsOnePagerTracking(state);
+  const onePagerOrganization = scope?.kind === "organization" && supportsOnePagerTracking(state) ? scope.organizationId : undefined;
+  const showOnePagers = Boolean(onePagerOrganization);
   const pane = !showOnePagers && requestedPane === "one-pagers" ? "list" : requestedPane;
   const onePagers = pane === "one-pagers";
   const activityView = pane === "report" && view !== "testing";
@@ -258,7 +250,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
       <DirectoryWorkspaceTabs active={activeView} onePagers={showOnePagers} listLabel={showPeople ? "People" : state.orgId ? "Teams" : "Organizations"} onChange={selected => choose({ reportCursor: undefined, reportPage: undefined, reportAdminSort: undefined, reportAdminFollowUp: undefined,
         ...(selected === "list" || selected === "one-pagers" ? { directoryPane: selected } : { directoryPane: "report" as const, reportView: selected, reportMode: "directory" as const }) })} />
     </WorkspaceScopeHeader>
-    {onePagers ? <OnePagerTracking /> : <>
+    {onePagers && onePagerOrganization ? <OnePagerTracking organizationId={onePagerOrganization} cohortId={state.onePagerCohort} onCohortChange={onePagerCohort => choose({ onePagerCohort })} /> : <>
     <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : null}</div>
       {filters}
       {pane === "report" && !legacy && <button type="button" className="quiet-button" disabled={metrics.loading || metrics.refreshing} onClick={() => { metrics.refresh(); refreshQueue(); }}>Refresh reporting</button>}

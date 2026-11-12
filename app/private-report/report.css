@@ -160,3 +160,26 @@ button:focus-visible, a:focus-visible, summary:focus-visible {
 .pt-corrected-results dd { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 
 .pt-top .pt-coverage { margin-top: 12px; padding-top: 10px; border-top: 1px solid #284A3B; color: #E2EBDD; }
+
+/* Development evidence extends the classic report without replacing its result bands. */
+.pt-development-part { margin: 22px 0; }
+.pt-development-part p { margin: 7px 0; font-size: 12px; color: var(--pt-muted); }
+.pt-development-part strong { color: var(--pt-ink); }
+.pt-plan { padding: 14px; background: var(--pt-panel); border: 1px solid var(--pt-line); border-radius: 11px; }
+.pt-plan .pt-position { color: var(--pt-ink); }
+.pt-plan .pt-assumptions { font-size: 11px; }
+.pt-pathways-compact .pt-pathway { margin: 14px 0; padding-top: 12px; }
+.pt-pathways-compact .pt-pathway-placement { min-height: 0; }
+.pt-pathways-compact .pt-pathway svg { min-width: 0; }
+.pt-drill .pt-equipment, .pt-drill .pt-drill-why { margin: 7px 0 0; font-size: 12px; color: var(--pt-muted); }
+
+/* Opt-in focused report: inline averages and visible install access. */
+.pt-team-average { margin: 7px 0 0; color: var(--pt-muted); font-size: 12px; line-height: 1.45; }
+.pt-focused .pt-metric { margin-bottom: 20px; }
+.pt-missing-result { margin-bottom: 20px; }
+.pt-missing-result .pt-retest { padding-bottom: 0; }
+.pt-install-visible { margin-top: 22px; }
+.pt-install-button { display: block; padding: 14px 12px; border: 1.5px solid var(--pt-ink); border-radius: 12px; color: var(--pt-ink); background: transparent; text-align: center; text-decoration: none; font-size: 14px; font-weight: 650; }
+.pt-install-button:focus-visible { outline: 3px solid var(--pt-cyan); outline-offset: 3px; }
+.pt-platform-label { margin: 7px 0 12px; font-size: 12px; color: var(--pt-muted); text-align: center; }
+.pt-focused .pt-development-part { margin-top: 25px; }

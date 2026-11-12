@@ -10,11 +10,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { formatDoseText, formatRestText, baselineAfterOwnWrite, publishGateError, publishTransitionBlocked } from "../../../lib/contracts/drillV2";
-import type { CatalogDrill, CatalogValidation } from "../../../lib/contracts/drillV2";
+import { formatDoseText, formatRestText, baselineAfterOwnWrite, publishGateError } from "../../../lib/contracts/drillV2";
+import type { CatalogDrill } from "../../../lib/contracts/drillV2";
 import {
   DOMAINS,
-  DRILL_STATUSES,
   EQUIPMENT,
   MEDIA_SLOTS,
   MEDIA_SLOT_LABELS,
@@ -38,6 +37,7 @@ import {
 import type { DrillWrite } from "../lib/catalog";
 import DrillProductionPanel from "./DrillProductionPanel";
 import Icon from "./AdminWorkspaceIcon";
+import { StatusField } from "./StatusField";
 
 export interface FormState {
   name: string;
@@ -542,32 +542,13 @@ export default function DrillForm({ mode }: { mode: "create" | "edit" }) {
 }
 
 /**
- * The status select. `published` is unavailable for a reviewed production drill
- * and, per the database-first catalog contract, for a drill that is not yet
- * published while validation is required and not passed: only the validation pass
- * publishes those. An already-published drill keeps `published` selectable.
+ * The status select (shared, `./StatusField`). `published` is unavailable for a
+ * reviewed production drill and, per the database-first catalog contract, for a
+ * drill that is not yet published while validation is required and not passed:
+ * only the validation pass publishes those. An already-published drill keeps
+ * `published` selectable.
  */
-export function StatusField({ value, validation, loadedStatus, managed, onChange }: {
-  value: DrillStatus;
-  validation?: CatalogValidation;
-  /** The status the editor loaded; absent when creating. */
-  loadedStatus?: DrillStatus;
-  managed: boolean;
-  onChange: (value: DrillStatus) => void;
-}) {
-  const awaitingValidation = publishTransitionBlocked("published", loadedStatus, validation);
-  return (
-    <label className="admin-field">
-      <span>Status</span>
-      <select value={value} onChange={event => onChange(event.target.value as DrillStatus)}>
-        {DRILL_STATUSES.map(option => (
-          <option key={option} value={option} disabled={option === "published" && (managed || awaitingValidation)}>{option}</option>
-        ))}
-      </select>
-      {awaitingValidation && <small className="admin-note">Publishes automatically when validation passes.</small>}
-    </label>
-  );
-}
+export { StatusField };
 
 function ListEditor({ label, entryLabel, values, maxEntries, maxChars, onChange }: {
   label: string;

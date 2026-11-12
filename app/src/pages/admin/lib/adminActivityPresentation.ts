@@ -18,7 +18,7 @@ export function activityWindow(window: AdminPlayerActivity['usage']['lastActivit
 export function exactWorkoutLink(base: string, latest: NonNullable<AdminPlayerActivity['workouts']['latest']>) {
   const [path, search = ''] = base.split('?');
   const query = new URLSearchParams(search);
-  query.set('workoutSource', latest.source); query.set('workoutLog', latest.logId);
+  query.set('workoutSource', latest.source); query.set('workoutLog', latest.logId || '');
   return `${path}?${query}`;
 }
 /** Keep linked originals together so the shared history retains its saved

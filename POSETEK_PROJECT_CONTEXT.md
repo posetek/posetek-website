@@ -1,8 +1,53 @@
+## November 7 private report action order — local only
+
+## Local signup-first report candidate — November 7, 2026
+
+The isolated report branch adds optional, explicitly authorized existing player
+invitation support and exact-child Training continuation. It uses an additive
+sign-in document and a separate candidate-only Netlify configuration; canonical
+production routing and the served SPA remain unchanged. This is local source,
+not a source or production release. See
+[the feature contract](docs/features/PRIVATE_PARENT_REPORTS.md#optional-signup-first-report-entry--november-7-candidate)
+for capability handling, assembly, verification and held release/send gates.
+
+
+The workout button, TestFlight install/update and browser choices, and PDF download now follow
+the results and practice cards. The compact report payloads, measurements, summaries, practice
+cards and exact-child routes are unchanged. Account registration remains a separate private
+workflow; no signup link or authorization is added. This is an isolated preview candidate,
+with source integration, production publication, sends and native acceptance still separate.
+
+## November 7 private report pathway preparation — local only
+
+An isolated extension of reviewed report source `5d8a9c65` adds optional aggregate age-group
+charts for speed at 5 m, vertical jump and broad jump. Legacy reports retain their team charts;
+the deliberate native/TestFlight/browser flow, ciphertext envelope and HTTPS PDF targets stay
+unchanged. Sparse/unverified groups cannot show density or percentiles, and median lines do
+not bridge gaps. See [the payload and design contract](docs/features/PRIVATE_PARENT_PATHWAY_CHARTS.md).
+
+The baseline records already-serving `6aedefb93ea542305e9f49da` with 2,601 protected files and
+37 recovery mappings. A separate pinned `--update-pathway-charts` transition replaces only
+three reader files and appends an explicit encrypted selection over a fresh captured artifact.
+No source push, merge, production promotion, family send or native build is included. A private
+example draft requires exact artifact review and hosted acceptance before the user tests it.
+
 # PoseTek website project context
+
+## Admin reporting fixes and one-pager time on page — November 10, 2026
+
+Deployment `6af39c12b5d6443ec57767ec` makes "Last week" on the admin cards the whole previous week, counts sessions recorded on the phone as workouts (with a by-type chart and per-player lists), and adds reports sent, time on page, accounts created through the Workouts button and a trend chart to one-pager tracking. Web personal workouts can save a skip and finish.
+
+The exact production artifact preserves 2,758 prior files, including the report project's current encrypted reports. Three files changed: the application document, the reader's `loader.mjs`, and its `render.mjs`, which is the live file with one notice sentence changed. 15 hashed assets were added. The tracking Functions are at version 3 and `getClubInsightsV2` at version 14. The live reader is newer than this repository's copy, and the report project's next deploy overwrites the two reader files unless its source merges main first. Keep `[skip netlify]` on source and receipt merges. [Release handoff](docs/releases/ADMIN_REPORTING_FIXES.md) · [Production receipt](docs/releases/receipts/ADMIN_REPORTING_FIXES_PRODUCTION.json)
+
+## One-pager cohort tracking release — November 10, 2026
+
+Deployment `6af362397a8e341ea91b5788` adds a Cohort selector after Usage in each organization's All teams player view. The original 33 Vacaville reports retain their recorded activity and expiry. The verified-send closeout enrolls later reports as approved messages are recorded. The 13 November 9 drafts remain held.
+
+The exact production artifact preserves 2,722 prior files, including the current encrypted reports and reader. Only the application document changed and 25 hashed assets were added. Both existing tracking Functions are active at version 2. Keep `[skip netlify]` on source and receipt merges. [Production receipt](docs/releases/receipts/ONE_PAGER_COHORTS_PRODUCTION.json)
 
 ## Vacaville one-pager tracking release — November 9, 2026
 
-The live Admin reporting row has **One-pager tracking** after **Usage** for Vacaville’s All teams view. Opens and the two CTA clicks are measured from activation for the 33 sent reports. The exact Netlify artifact and scoped Firebase functions were verified. See the [release handoff](docs/releases/ONE_PAGER_TRACKING.md) for the owner-authorized hosted CI exception, local evidence, retention and recovery.
+This release added **One-pager tracking** after **Usage** to the Admin reporting row for Vacaville’s All teams view. Opens and the two CTA clicks are measured from activation for the 33 sent reports. The exact Netlify artifact and scoped Firebase functions were verified. See the [release handoff](docs/releases/ONE_PAGER_TRACKING.md) for the owner-authorized hosted CI exception, local evidence, retention and recovery.
 
 ## Database-first catalog compatibility release — November 7, 2026
 
@@ -47,6 +92,19 @@ mappings. Signed-in hosted acceptance is not claimed.
 [Feature](docs/features/RESULT_VALIDATION.md)
 
 ## Admin rep tracking playback — released November 6, 2026
+## Private report app entry — held preparation, November 5, 2026
+
+The report reader prepares an explicit iOS app-opening button using the mobile
+owner's versioned workout locator, with visible TestFlight install/update and
+browser recovery. Android keeps web workouts; unknown platforms get an iOS choice.
+This is source only: the current production report still uses browser workouts.
+Compatible signed TestFlight and physical-phone acceptance remain required before
+delivery. No parent or coach text follows from source integration. Read the
+[feature contract](docs/features/PRIVATE_PARENT_REPORTS.md#installed-app-boundary).
+Keep `[skip netlify]`; the existing production artifact and application runtime
+remain preserved.
+
+## Admin rep tracking playback — source fix, November 5, 2026
 
 Rep Tools loads and displays saved tracking from the exact recording folder,
 with frame playback and clear video-unavailable/metadata-only states. Viewing

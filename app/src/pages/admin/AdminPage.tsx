@@ -118,7 +118,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
         <Routes>
           <Route index element={<Navigate to={legacyAdminWorkspacePath(location.search)} state={location.state} replace />} />
           <Route path="feeds" element={<Navigate to="/feed" replace />} />
-          <Route path="drills" element={<DrillLibrary />} />
+          <Route path="drills" element={<DrillLibrary preview={preview} />} />
           <Route path="drills/new" element={<DrillForm mode="create" />} />
           <Route path="drills/:drillId" element={<DrillDetail />} />
           <Route path="drills/:drillId/edit" element={<DrillForm mode="edit" />} />
