@@ -80,19 +80,17 @@
   /* "So what do I do with these results?": the three next steps a player lands on. */
   .stats-next { display: grid; gap: 12px; }
   .stats-next-grid { display: grid; gap: 10px; }
-  .stats-next-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; width: 100%; min-height: 64px; padding: 12px 14px; border: 1px solid var(--v4-border); border-radius: 18px; background: var(--v4-card); text-align: left; }
+  .stats-next-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; align-content: center; gap: 2px 12px; width: 100%; min-height: 64px; padding: 12px 14px; border: 1px solid var(--v4-border); border-radius: 18px; background: var(--v4-card); text-align: left; }
   .stats-next-card:hover { border-color: #7cff1866; }
   .stats-next-card > .material-symbols-outlined:first-child { grid-row: 1 / span 2; color: var(--v4-accent); font-size: 24px; }
   .stats-next-card strong { grid-column: 2; font-size: 16px; font-weight: 700; }
   .stats-next-card small { grid-column: 2; font-size: 13px; color: var(--v4-secondary); }
   .stats-next-card > .material-symbols-outlined:last-child { grid-column: 3; grid-row: 1 / span 2; color: var(--v4-secondary); font-size: 18px; }
 
-  /* On a computer: the radar beside the report, the next steps three across. */
+  /* On a computer the order stays the same (the radar, then the team comparison beneath it);
+     the score cards and the next steps go three across. */
   @media (min-width: 1000px) {
-    .stats-page { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 28px; align-items: start; }
-    .stats-page > * { grid-column: 1 / -1; }
-    .stats-page > .stats-benchmarks { grid-column: 1; }
-    .stats-page > .stats-report { grid-column: 2; }
+    .stats-score-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .stats-score-value { font-size: 32px; }
     .stats-next-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }

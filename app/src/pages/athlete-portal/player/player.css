@@ -172,7 +172,7 @@
   @media (min-width: 1000px) {
     --v4-dock-height: 0px;
     .player-main { padding-top: 88px; padding-bottom: 56px; }
-    .player-main:has(> div:not([hidden]) > .stats-page) { max-width: 1080px; }
+    .player-main:has(> div:not([hidden]) > .stats-page) { max-width: 920px; }
     .player-bottom-nav { top: 0; bottom: auto; left: 0; right: 0; width: auto; max-width: none; height: 64px; transform: none; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 24px; border-width: 0 0 1px; border-radius: 0; }
     .player-bottom-nav::before { content: 'POSETEK'; position: absolute; left: 24px; top: 50%; transform: translateY(-50%); color: var(--v4-accent); font-size: 15px; font-weight: 750; letter-spacing: 1.8px; }
     .player-bottom-nav a { flex-direction: row; gap: 8px; margin: 0; padding: 0 18px; min-height: 44px; font-size: 14px; }
