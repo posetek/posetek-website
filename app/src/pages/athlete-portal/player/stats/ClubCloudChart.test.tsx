@@ -43,6 +43,28 @@ describe('club cloud chart', () => {
     expect(text(jump)).not.toContain('testing days');
   });
 
+  it('reads a speed (higher is better) as faster or slower, with the faster values higher up', () => {
+    const speeds = [{ ageGroup: 11, count: 8, mean: 9.8, sd: 0.6 }, { ageGroup: 12, count: 6, mean: 10.2, sd: 0.6 }, { ageGroup: 14, count: 12, mean: 11.0, sd: 0.7 }];
+    const speed = (best: number) => renderToStaticMarkup(<ClubCloudChart stats={stats({ unit: 'mph', higherIsBetter: true, groups: speeds, overall: { count: 26, mean: 10.5, sd: 0.8 },
+      own: { ageGroup: 12, best, results: [best] } })} title="Vacaville United · Boys" context={['Speed at 5 m', '26 players']} digits={1} />);
+    const fast = speed(11.0);
+    expect(text(fast)).toContain('Average and spread by age · Speed at 5 m · 26 players');
+    expect(text(fast)).not.toContain('lower is better');
+    expect(text(fast)).toContain('You · 11.0 mph');
+    expect(text(fast)).toMatch(/11\.0 mph 0\.8 mph faster than the U12 average/);
+    expect(fast).toContain('data-standing="better"');
+    const slow = speed(9.6);
+    expect(text(slow)).toMatch(/9\.6 mph 0\.6 mph slower than the U12 average/);
+    expect(slow).toContain('data-standing="worse"');
+    // The value axis: a larger speed sits higher on the plot (a smaller y).
+    const ticks = [...fast.matchAll(/y="([\d.]+)" text-anchor="end">([\d.]+)/g)].map(match => [Number(match[2]), Number(match[1])]);
+    expect(ticks.length).toBeGreaterThan(2);
+    for (let i = 1; i < ticks.length; i++) { expect(ticks[i][0]).toBeGreaterThan(ticks[i - 1][0]); expect(ticks[i][1]).toBeLessThan(ticks[i - 1][1]); }
+    const course = renderToStaticMarkup(<ClubCloudChart stats={stats({ unit: 'm/s', higherIsBetter: true, own: { ageGroup: 11, best: 2.1, results: [2.1] },
+      groups: [{ ageGroup: 11, count: 8, mean: 2.0, sd: 0.2 }], overall: { count: 8, mean: 2.0, sd: 0.2 } })} title="t" context={['Course speed']} digits={2} />);
+    expect(text(course)).toMatch(/2\.10 m\/s 0\.10 m\/s faster than the U11 average/);
+  });
+
   it('falls back to the whole club outside the curve, and says when there is no result', () => {
     expect(text(render(stats({ own: { ageGroup: 9, best: 7.9, results: [7.9] } })))).toContain('0.50 s slower than the club average');
     expect(text(render(stats({ own: null })))).toContain('No result for you on this test yet.');

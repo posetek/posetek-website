@@ -6,7 +6,7 @@ import PlayerExperience from '../PlayerExperience';
 import { previewData } from '../../lib/preview';
 import { HistoryList, SavedLibrary } from './HistoryAndSaved';
 import WorkoutReview from './WorkoutReview';
-import WorkoutsRoot from './WorkoutsRoot';
+import { FreeSessionBanner, HubLinks, PlanInvitationCard, PlanSummaryCard, WorkoutActions } from './WorkoutsRoot';
 import PlayerTraining from '../PlayerTraining';
 import type { HubPage } from './navigation';
 
@@ -18,22 +18,28 @@ const render = (query: string) => {
 const order = (html: string, words: string[]) => words.map(w => html.indexOf(w)).every((index, i, all) => index >= 0 && (i === 0 || index > all[i - 1]));
 
 describe('Workouts pages, in the app’s order and words', () => {
-  it('root: tests, then activities, then the three rows', () => {
+  it('root is the hub: the plan summary, Create a workout, then Saved Workouts, Workout History and Tests', () => {
     const html = render('view=workouts');
-    expect(order(html, ['Shooting', 'Shuttle', '<strong>Run</strong>', 'Walk/Hike', '15 min', '<strong>Core</strong>', 'Core circuit', '10 min', '<strong>Yoga</strong>', 'Mobility practice', '>Workout<', 'Saved Workouts', 'Workout history'])).toBe(true);
-    expect(html).not.toContain('Tests</h'); expect(html).toContain('aria-label="Shooting, Measure your striking"');
+    expect(order(html, ['<h1>Workouts</h1>', 'MY WORKOUT PLAN', 'Own your first touch', 'Week 1 of 2 · 2 sessions this week', 'Next: Keep the ball close · 30 min',
+      'Create a workout', 'One session, whenever you want.', 'Build Workout', 'Choose your focus', 'Cardio', 'Walk, run or ride', 'Saved Workouts', 'Workout History', '>Tests<'])).toBe(true);
+    // The lifetime totals are on Stats, Training Focus is hidden, and the tests have their own page.
+    for (const moved of ['Favorite focus', 'TRAINING FOCUS', 'Measure your striking', 'Core circuit', 'Create your workout']) expect(html).not.toContain(moved);
+    // Report and notification links, and links to the hub's former page, arrive here too.
+    for (const link of ['view=training', 'view=workouts&screen=workout', 'view=workouts&page=activities']) expect(render(link)).toContain('MY WORKOUT PLAN');
   });
-  it('workout hub on an active V3 plan: stats, plan card, breakdown, create', () => {
-    const html = render('view=workouts&screen=workout');
-    expect(order(html, ['<h1>Workout</h1>', 'Favorite focus', 'My workout plan', 'Week 1 of 2', 'TRAINING FOCUS', 'Create your workout'])).toBe(true);
-    expect(html).not.toContain('Saved Workouts');
-    // Report and notification links arrive here too.
-    expect(render('view=training')).toContain('My workout plan');
+  it('Tests: the six measured tests on their own page', () => {
+    const html = render('view=workouts&screen=tests');
+    expect(order(html, ['<h1>Tests</h1>', 'Shooting', 'Dribbling', 'Vertical Jump', 'Broad Jump', 'Sprint', 'Shuttle'])).toBe(true);
+    expect(html).toContain('aria-label="Shooting, Measure your striking"'); expect(html).not.toContain('MY WORKOUT PLAN');
+  });
+  it('the training totals that left the hub are not on Stats either', () => {
+    const html = render('view=stats');
+    for (const gone of ['Training totals', 'Total time', 'Favorite focus']) expect(html).not.toContain(gone);
   });
   it('My workout plan: the block, the week, the next workout, targets, drills, links', () => {
     const html = render('view=workouts&screen=plan');
     expect(order(html, ['<h1>My workout plan</h1>', 'The block', 'Week 1 of 2', 'days left', 'Next workout', 'Keep the ball close', '2 drills · ~28 min', 'This week&#x27;s targets', 'Time trained', 'This week&#x27;s drills', 'Plan details', 'Start a free session'])).toBe(true);
-    expect(html).not.toContain('Saved Workouts'); expect(html).not.toContain('Workout history');
+    expect(html).not.toContain('Saved Workouts'); expect(html).not.toContain('Workout History');
   });
   it('My workout plan from Stats opens with this week’s drills expanded', () => {
     const html = render('view=stats&screen=plan');
@@ -56,15 +62,28 @@ describe('after a finished workout', () => {
       page={name} go={() => {}} back={() => {}} hubNotice={<p>FEEDBACK INVITATION</p>} /></MemoryRouter>);
   };
   it('shows the feedback invitation on whichever Workouts page the athlete lands on', () => {
-    for (const name of ['root', 'workout', 'plan', 'saved', 'history'] as const) expect(page(name)).toContain('FEEDBACK INVITATION');
+    for (const name of ['root', 'plan', 'saved', 'history', 'tests'] as const) expect(page(name)).toContain('FEEDBACK INVITATION');
   });
 });
 
 describe('Workouts pieces', () => {
-  it('a resume banner and an active free session sit between the carousel and the rows', () => {
-    const html = renderToStaticMarkup(<WorkoutsRoot page="tests" onPage={() => {}} playerId="p" onTest={() => {}} resume={{ text: 'Resume “X” · drill 1 of 2', onOpen: () => {} }}
-      activeFreeSession={{ sessionRefs: [{}, {}], startedAt: new Date(2026, 0, 1) }} onWorkout={() => {}} onSaved={() => {}} onHistory={() => {}} />);
-    expect(order(html, ['Move with precision', 'Free session in progress', '2 drills recorded', 'Resume “X”', '>Workout<'])).toBe(true);
+  it('the plan summary leaves the next-workout line out when nothing is scheduled', () => {
+    const html = renderToStaticMarkup(<PlanSummaryCard model={{ title: 'Your training plan', schedule: 'Week 2 of 6', next: null }} onOpen={() => {}} />);
+    expect(order(html, ['MY WORKOUT PLAN', 'Your training plan', 'Week 2 of 6'])).toBe(true); expect(html).not.toContain('wk-plan-card-next');
+  });
+  it('without a plan the hub invites one, and plan length is no longer chosen here', () => {
+    const html = renderToStaticMarkup(<PlanInvitationCard onCreate={() => {}} />);
+    expect(order(html, ['WORKOUT PLAN', 'Build a routine that fits you', 'An AI plan shaped around your goals.', 'Create plan'])).toBe(true);
+    expect(html).not.toContain('weeks');
+  });
+  it('Cardio stays when the viewer cannot build a workout; the heading goes with Build Workout', () => {
+    const html = renderToStaticMarkup(<WorkoutActions onCreate={null} onCardio={() => {}} />);
+    expect(html).toContain('Cardio'); expect(html).not.toContain('Create a workout'); expect(html).not.toContain('Build Workout');
+  });
+  it('a free session in progress and the grouped links read like the app', () => {
+    const banner = renderToStaticMarkup(<FreeSessionBanner session={{ sessionRefs: [{}, {}], startedAt: new Date(2026, 0, 1) }} onClick={() => {}} />);
+    expect(order(banner, ['Free session in progress', '2 drills recorded'])).toBe(true);
+    expect(order(renderToStaticMarkup(<HubLinks onSaved={() => {}} onHistory={() => {}} onTests={() => {}} />), ['Saved Workouts', 'Workout History', 'Tests'])).toBe(true);
   });
   it('the saved library shows each workout with resume, open or its reason', () => {
     const entries = [{ id: 'cloud:a', source: 'adhoc' as const, workout: { title: 'Speed day', blocks: [{ blockId: 'b', name: 'Flying 10s', sets: 3, reps: 10, repUnit: 'meters' }], estimatedMinutes: 20 }, inProgress: true, unavailableReason: null, type: 'field' },

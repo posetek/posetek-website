@@ -95,6 +95,13 @@ describe('Coach chat history and AI sharing recovery', () => {
     harness.canChat = true; harness.handoff = false;
   });
 
+  it('shows a proposal inside the conversation, under the reply, and nowhere after the composer', () => {
+    const tree = render({ afterMessages: <p>PROPOSED WORKOUT</p> });
+    const conversation = find(tree, element => element.props?.className === 'player-chat-messages');
+    expect(text(conversation)).toContain('PROPOSED WORKOUT');
+    expect(text(tree).split('PROPOSED WORKOUT')).toHaveLength(2);
+  });
+
   it('blocks the same-event send until history loads, then sends to the selected conversation', async () => {
     const pending = deferred<ReturnType<typeof snapshot>>(); harness.get.mockReturnValueOnce(pending.promise);
     const oldTree = history(); button(oldTree, 'Selected chat').props.onClick();

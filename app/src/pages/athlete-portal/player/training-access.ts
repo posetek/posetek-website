@@ -1,5 +1,6 @@
 import { EQUIPMENT } from '../../../lib/contracts/types';
 import type { Row } from './execution';
+import { applyEquipmentChanges, equipmentChanges } from './personal-conversation';
 
 export const EQUIPMENT_LABELS: Record<string, string> = {
   ball: 'Football', cones: 'Cones', markers: 'Flat markers', wall: 'Wall for rebound passes', goal: 'Goal',
@@ -22,16 +23,38 @@ export type TrainingAccess = { schemaVersion: 1; confirmed: true; facility: keyo
   participantCount: number; space: { lengthMeters?: number; widthMeters?: number; surface?: keyof typeof SURFACES; overheadClear?: boolean; goalArea?: boolean; assumedSufficient?: boolean } };
 export type SetupDraft = { equipment: string[]; equipmentAnswered: boolean; facility: keyof typeof FACILITIES | '';
   participantCount: number | ''; lengthMeters: number | ''; widthMeters: number | ''; surface: keyof typeof SURFACES | '';
-  overheadClear: boolean; goalArea: boolean; confirmed: boolean; assumedSufficient?: boolean; overheadConfirmed?: boolean; goalAreaConfirmed?: boolean };
+  overheadClear: boolean; goalArea: boolean; confirmed: boolean; assumedSufficient?: boolean; overheadConfirmed?: boolean; goalAreaConfirmed?: boolean;
+  /** Client-only: `false` while a fresh Soccer field choice still needs its goal answer. Never sent. */
+  goalAnswered?: boolean };
 export const LOCATION_PRESETS = {
-  home: { label: 'At home', icon: 'home', description: 'Bodyweight and floor exercises', equipment: ['timer'] },
+  pitch: { label: 'Soccer field', icon: 'sports_soccer', description: 'Technical and physical workout with the ball', equipment: ['cones', 'markers', 'timer'] },
   gym: { label: 'Gym', icon: 'fitness_center', description: 'Weights, bands and a bench', equipment: ['dumbbells', 'resistanceBand', 'kettlebell', 'bench', 'timer'] },
-  pitch: { label: 'Field', icon: 'sports_soccer', description: 'Cones, markers and room to move', equipment: ['cones', 'markers', 'timer'] },
+  home: { label: 'At home', icon: 'home', description: 'Bodyweight and floor exercises', equipment: ['timer'] },
 } as const;
+/** A location's bundle. Gym and At home carry no ball or goal over from a field choice. */
 export function locationSetup(facility: keyof typeof LOCATION_PRESETS, previous = emptySetup()): SetupDraft {
-  const ballAndGoal = previous.equipment.filter(e => e === 'ball' || e === 'goal');
-  return { ...previous, facility, equipment: [...LOCATION_PRESETS[facility].equipment, ...ballAndGoal], equipmentAnswered: true,
-    participantCount: previous.participantCount || 1, assumedSufficient: true, confirmed: false };
+  const { goalAnswered, ...rest } = previous, stays = facility === 'pitch' && previous.facility === 'pitch';
+  const ballAndGoal = facility === 'pitch' ? previous.equipment.filter(e => e === 'ball' || e === 'goal') : [];
+  return { ...rest, facility, equipment: [...LOCATION_PRESETS[facility].equipment, ...ballAndGoal], equipmentAnswered: true,
+    participantCount: previous.participantCount || 1, assumedSufficient: true, confirmed: false,
+    ...(stays && goalAnswered !== undefined ? { goalAnswered } : {}) };
+}
+/** Tapping Soccer field assumes the ball and asks about a goal, unless the field was already chosen. */
+export function chooseLocation(facility: keyof typeof LOCATION_PRESETS, previous: SetupDraft): SetupDraft {
+  const next = locationSetup(facility, previous);
+  if (facility !== 'pitch') return next;
+  const stays = previous.facility === 'pitch', goal = stays && previous.equipment.includes('goal') ? ['goal'] : [];
+  return { ...next, equipment: [...new Set([...next.equipment.filter(e => e !== 'ball' && e !== 'goal'), 'ball', ...goal])],
+    goalAnswered: stays && previous.goalAnswered !== false };
+}
+export function setGoalAccess(value: SetupDraft, hasGoal: boolean): SetupDraft {
+  const equipment = value.equipment.filter(e => e !== 'goal');
+  return { ...value, equipment: hasGoal ? [...equipment, 'goal'] : equipment, equipmentAnswered: true, goalAnswered: true, confirmed: false };
+}
+/** Applies a typed request's equipment; one that says whether a goal is available answers the goal question. */
+export function withRequestedEquipment(next: SetupDraft, request: string): SetupDraft {
+  const changes = equipmentChanges(request), mentionsGoal = changes.add.includes('goal') || changes.remove.includes('goal');
+  return { ...next, equipment: applyEquipmentChanges(next.equipment, request), ...(next.goalAnswered === false && mentionsGoal ? { goalAnswered: true } : {}) };
 }
 export function clearSpaceRestrictions(value: SetupDraft): SetupDraft {
   const { overheadConfirmed: _overhead, goalAreaConfirmed: _goal, ...rest } = value;
@@ -40,8 +63,11 @@ export function clearSpaceRestrictions(value: SetupDraft): SetupDraft {
 export const emptySetup = (): SetupDraft => ({ equipment: [], equipmentAnswered: false, facility: '', participantCount: '',
   lengthMeters: '', widthMeters: '', surface: '', overheadClear: false, goalArea: false, confirmed: false });
 export function setupFromIntake(intake?: Row): SetupDraft {
-  const access = intake?.access;
-  return { ...emptySetup(), equipment: Array.isArray(intake?.equipment) ? intake.equipment.filter((e: string) => (EQUIPMENT as readonly string[]).includes(e)) : [],
+  const access = intake?.access, equipment: string[] = Array.isArray(intake?.equipment) ? intake.equipment.filter((e: string) => (EQUIPMENT as readonly string[]).includes(e)) : [];
+  // A confirmed field setup answered the goal question; only an unconfirmed
+  // saved draft without a goal still needs that answer.
+  const goalUnanswered = access?.facility === 'pitch' && access?.confirmed !== true && !equipment.includes('goal');
+  return { ...emptySetup(), equipment, ...(goalUnanswered ? { goalAnswered: false } : {}),
     equipmentAnswered: Array.isArray(intake?.equipment), facility: access?.facility in FACILITIES ? access.facility : '',
     participantCount: Number.isInteger(access?.participantCount) ? access.participantCount : intake?.setting === 'solo' ? 1 : intake?.setting === 'partner' ? 2 : '',
     lengthMeters: access?.space?.lengthMeters ?? '', widthMeters: access?.space?.widthMeters ?? '',
@@ -53,6 +79,7 @@ export function setupFromIntake(intake?: Row): SetupDraft {
 export function setupErrors(value: SetupDraft): string[] {
   const errors: string[] = [];
   if (!(value.facility in FACILITIES)) errors.push('Choose where you will train.');
+  if (value.facility === 'pitch' && value.goalAnswered === false) errors.push('Do you have a goal? Choose Yes or No.');
   if (!Number.isInteger(value.participantCount) || Number(value.participantCount) < 1 || Number(value.participantCount) > 12) errors.push('Choose how many people will train, including you (1–12).');
   if (!value.equipmentAnswered) errors.push('Select your available equipment, or choose No equipment.');
   if (value.equipment.some(e => !(EQUIPMENT as readonly string[]).includes(e))) errors.push('Choose equipment from the listed options.');

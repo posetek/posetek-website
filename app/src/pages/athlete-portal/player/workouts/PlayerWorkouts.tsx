@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
 import { drillByKey } from '../../lib/drills';
 import DrillDashboard from '../../views/DrillDashboard';
 import SessionView from '../../views/SessionView';
@@ -9,8 +8,7 @@ import { workoutsPage, workoutsRoute, workoutsShown } from './navigation';
 import PlayerFeedbackInvitation, { PlayerResultsFeedbackLink } from '../PlayerFeedbackInvitation';
 import { showResultsFeedback } from '../feedback-invitation';
 import type { Row } from '../execution';
-import { playerSearch } from '../workspace';
-import type { PlayerTabProps, WorkoutsPage } from '../workspace';
+import type { PlayerTabProps } from '../workspace';
 import { MEASURED_TESTS } from './WorkoutsRoot';
 import './workouts.css';
 
@@ -28,12 +26,11 @@ type Props = PlayerTabProps & {
 };
 
 /**
- * Workouts (the app's `TrainingHubView` workspace): the tests and activities carousel, the workout hub,
- * My workout plan, Saved Workouts, History, and each test's results. The hub's state stays mounted for
+ * Workouts (the app's `TrainingHubView`): the one-page workout hub at the root, then My workout
+ * plan, Saved Workouts, History, Tests, and each test's results. The hub's state stays mounted for
  * as long as the tab is, so a workout in progress survives a look at another page or tab.
  */
 export default function PlayerWorkouts({ ctx, route: current, go, back, active, reps, personal, statsProfile, request, onAcknowledge, onCompleted, feedbackInvitation, onDismissFeedback, onGuidedChange }: Props) {
-  const location = useLocation(), navigate = useNavigate();
   // Shown for Workouts and for My workout plan opened from Stats. While another tab is on screen the
   // last route it was shown with stays in force, so a streaming chat, the planner or an open review
   // is not torn down under the hidden tab.
@@ -41,11 +38,6 @@ export default function PlayerWorkouts({ ctx, route: current, go, back, active, 
   if (workoutsShown(current)) lastShown.current = current;
   const route = workoutsRoute(current, lastShown.current);
   const { page, test, fromStats } = workoutsPage(route);
-  const hub = page !== 'root';
-  // A swipe updates the address in place: it is not a page the browser's Back should step through.
-  const onWorkoutsPage = useCallback((next: WorkoutsPage) => {
-    navigate({ pathname: location.pathname, search: playerSearch(location.search, 'workouts', { page: next }) }, { replace: true });
-  }, [navigate, location.pathname, location.search]);
   const [guided, setGuided] = useState(false);
   useEffect(() => { onGuidedChange?.(guided && !test); }, [guided, test]);
   const drill = drillByKey(route.drill), drillReps = reps[drill.key] || [];
@@ -65,8 +57,9 @@ export default function PlayerWorkouts({ ctx, route: current, go, back, active, 
       {showResultsFeedback(ctx.access, drillReps.length) && <PlayerResultsFeedbackLink />}
     </section>}
     <div hidden={test}>
-      <PlayerTraining ctx={ctx} statsProfile={statsProfile} personal={personal} request={hub ? request : null} onAcknowledge={onAcknowledge} onCompleted={onCompleted}
-        page={page} fromStats={fromStats} active={active} go={go} back={back} workoutsPage={route.page} onWorkoutsPage={onWorkoutsPage} onTest={key => go('workouts', { drill: key })}
+      {/* A request from the Coach tab opens on the hub; it waits while a test's results cover it. */}
+      <PlayerTraining ctx={ctx} statsProfile={statsProfile} personal={personal} request={test ? null : request} onAcknowledge={onAcknowledge} onCompleted={onCompleted}
+        page={page} fromStats={fromStats} active={active} go={go} back={back} onTest={key => go('workouts', { drill: key })}
         hubNotice={feedbackInvitation ? <PlayerFeedbackInvitation onDismiss={onDismissFeedback} /> : null} onGuidedChange={setGuided} />
     </div>
   </>;

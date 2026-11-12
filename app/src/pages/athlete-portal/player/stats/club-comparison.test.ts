@@ -133,11 +133,14 @@ describe('the staff loader', () => {
       b3: [rep('r6', 'dribbling', 'E0', { protocolSide: 'right' })],
       g1: [rep('r7', 'dribbling', 'E1', { protocolSide: 'right', resultAlgorithmVersion: 'dribbling-1.3.2' })],
     };
-    mocks.call.mockReset().mockImplementation(async (_name: string, { teamId }: { teamId: string }) => ({ data: { athletes: {
-      t11: [{ id: 'me', reps: [{ id: 'r1', totalTime: 7.75, resultStatus: ok }, { id: 'r2', totalTime: 2.63, resultStatus: ok }] }, { id: 'b1', reps: [{ id: 'r3', totalTime: 7.4, resultStatus: ok }] }],
-      t14: [{ id: 'b2', reps: [{ id: 'r4', totalTime: 7.0, resultStatus: ok }, { id: 'r5', totalTime: 2.2, resultStatus: { qualified: true, duplicate: true } }] }],
-    }[teamId] || [] } }));
+    mocks.call.mockReset().mockImplementation(async (_name: string, { playerId }: { playerId: string }) => ({ data: { reps: effectiveRows[playerId] || [] } }));
   });
+  // Each athlete's effective results (`getAthleteEffectiveResults`).
+  const effectiveRows: Record<string, unknown[]> = {
+    me: [{ id: 'r1', totalTime: 7.75, resultStatus: ok }, { id: 'r2', totalTime: 2.63, resultStatus: ok }], b1: [{ id: 'r3', totalTime: 7.4, resultStatus: ok }],
+    b2: [{ id: 'r4', totalTime: 7.0, resultStatus: ok }, { id: 'r5', totalTime: 2.2, resultStatus: { qualified: true, duplicate: true } }],
+    b3: [{ id: 'r6', totalTime: 6.0, resultStatus: ok }], // an event the reprocessing never touched
+  };
   const staff = { access: 'admin' as const, playerId: 'me', organizationId: 'club', teamId: 't11' };
 
   it("returns nothing for a player's own sign-in, and reads nothing", async () => {
@@ -150,15 +153,16 @@ describe('the staff loader', () => {
     const dribble = await loadClubTest(staff, 'dribbleRight');
     expect(dribble).toMatchObject({ organizationName: 'Vacaville United', gender: 'boys', teamsOnly: false, incomplete: false });
     expect(dribble!.points).toEqual([{ playerId: 'me', ageGroup: 11, value: 7.75 }, { playerId: 'b1', ageGroup: 11, value: 7.4 }, { playerId: 'b2', ageGroup: 14, value: 7.0 }]);
-    // Only teams with reprocessed station reps are asked for their effective results.
-    expect(mocks.call.mock.calls.map(([name, data]) => [name, data])).toEqual([['getTeamLeaderboard', { teamId: 't11' }], ['getTeamLeaderboard', { teamId: 't14' }]]);
+    // Only athletes of the cohort with station-testing reps are asked for their effective results.
+    expect(mocks.call.mock.calls.map(([name, data]) => [name, data]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))).toEqual(
+      ['b1', 'b2', 'b3', 'me'].map(playerId => ['getAthleteEffectiveResults', { playerId }]));
     expect((await loadClubTest(staff, 'sprint'))!.points).toEqual([{ playerId: 'me', ageGroup: 11, value: 2.63 }]);
     expect((await loadClubTest(staff, 'jump'))!.points.map(p => [p.playerId, p.value])).toEqual([['me', 0.1764], ['b1', 0.25], ['b3', 0.2]]);
     expect(dribble!.ownResults).toEqual([7.75]);
     expect((await loadClubTest(staff, 'jump'))!.ownResults).toEqual([0.1764]);
     // Switching tests reads nothing again; rep documents are read for station-testing reps only.
     expect(mocks.context).toHaveBeenCalledTimes(1);
-    expect(mocks.call).toHaveBeenCalledTimes(2);
+    expect(mocks.call).toHaveBeenCalledTimes(4);
     expect([...mocks.queries]).toEqual(["testingEventId > ''"]);
   });
 
@@ -180,10 +184,22 @@ describe('the staff loader', () => {
     expect(jump!.points.map(p => p.playerId)).toEqual(['me', 'b1', 'b3', 'g1']);
   });
 
-  it('marks the result incomplete when a team cannot be read, and limits a coach to their teams', async () => {
+  it('marks the result incomplete when an athlete cannot be read after one retry, and limits a coach to their teams', async () => {
     mocks.context.mockResolvedValue({ ...context, role: 'coach' });
-    mocks.call.mockImplementation(async (_name: string, { teamId }: { teamId: string }) => { if (teamId === 't14') throw new Error('denied'); return { data: { athletes: [] } }; });
+    mocks.call.mockImplementation(async (_name: string, { playerId }: { playerId: string }) => { if (playerId === 'b2') throw new Error('denied'); return { data: { reps: [] } }; });
     const result = await loadClubTest({ ...staff, access: 'coach' }, 'dribbleRight');
     expect(result).toMatchObject({ teamsOnly: true, incomplete: true, points: [] });
+    expect(mocks.call.mock.calls.filter(([, data]) => data.playerId === 'b2')).toHaveLength(2);
+  });
+
+  it('retries a failed effective-results call once, so one failure is not reported as missing results', async () => {
+    let failures = 0;
+    mocks.call.mockImplementation(async (_name: string, { playerId }: { playerId: string }) => {
+      if (playerId === 'b2' && failures++ === 0) throw new Error('internal');
+      return { data: { reps: effectiveRows[playerId] || [] } };
+    });
+    const result = await loadClubTest(staff, 'dribbleRight');
+    expect(result!.incomplete).toBe(false);
+    expect(result!.points.map(point => point.playerId)).toEqual(['me', 'b1', 'b2']);
   });
 });

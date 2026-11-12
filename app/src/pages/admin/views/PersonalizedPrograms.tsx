@@ -32,6 +32,13 @@ const terminal = (status: string) => status === "complete" || status === "failed
 
 type PlannerProps = {
   role?: PlannerRole; playerId?: string; initialText?: string; onActivated?: () => void;
+  /**
+   * Staff planning from one athlete's workspace: the viewer's ordinary scope is loaded and checked
+   * as usual, then narrowed to `playerId`, and the roster controls are left out.
+   */
+  only?: boolean;
+  /** The plan length the form opens with, when the entry point named one ("Build my 6-week plan"). */
+  initialWeeks?: number;
   onScopeChange?: (scope: PlannerNavigationScope | null) => void;
 };
 
@@ -52,20 +59,22 @@ export default function PersonalizedPrograms(props: PlannerProps) {
   return <Planner key={JSON.stringify([props.role ?? "admin", props.playerId ?? "", uid, search])} {...props} uid={uid} />;
 }
 
-function Planner({ role = "admin", playerId = "", initialText = "", onActivated, onScopeChange, uid }: PlannerProps & { uid: string }) {
+function Planner({ role = "admin", playerId = "", only = false, initialWeeks, initialText = "", onActivated, onScopeChange, uid }: PlannerProps & { uid: string }) {
   const [query] = useSearchParams();
-  const initial = useRef({ orgId: role === "athlete" ? "" : query.get("orgId") ?? "", ids: playerId ? [playerId] : (query.get("players") ?? "").split(",").filter(Boolean) });
+  // One athlete, with no roster to choose from: the athlete's own planner, and staff planning from that athlete's workspace.
+  const single = role === "athlete" || (only && !!playerId);
+  const initial = useRef({ orgId: single ? "" : query.get("orgId") ?? "", ids: playerId ? [playerId] : (query.get("players") ?? "").split(",").filter(Boolean) });
   const [orgs, setOrgs] = useState<OrganizationRow[]>([]);
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [orgId, setOrgId] = useState(initial.current.orgId);
-  const [teamId, setTeamId] = useState(role === "athlete" ? "" : query.get("teamId") ?? "");
+  const [teamId, setTeamId] = useState(single ? "" : query.get("teamId") ?? "");
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [selected, setSelected] = useState(new Set(initial.current.ids));
   const [focused, setFocused] = useState(initial.current.ids[0] ?? "");
   const [search, setSearch] = useState("");
   const [evidence, setEvidence] = useState<Record<string, AthleteLoad>>({});
   const [evidenceErrors, setEvidenceErrors] = useState<Record<string, string>>({});
-  const [intake, setIntake] = useState({ ...DEFAULT_INTAKE, equipment: [...DEFAULT_INTAKE.equipment] });
+  const [intake, setIntake] = useState({ ...DEFAULT_INTAKE, ...((HORIZON_WEEKS as readonly number[]).includes(initialWeeks ?? NaN) ? { horizonWeeks: initialWeeks! } : {}), equipment: [...DEFAULT_INTAKE.equipment] });
   const [trainingContexts, setTrainingContexts] = useState<Record<string, TrainingContext>>({});
   const [goals, setGoals] = useState<string[]>([]);
   const [freeTextGoals, setFreeTextGoals] = useState(initialText);
@@ -115,7 +124,8 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
     loadPlannerScope(role, orgId, playerId || initial.current.ids[0] || "").then(scope => {
       if (!live || !isCurrent(token)) return;
       access.authorize(token); setAccessReady(true);
-      const rows = scope.players;
+      // An athlete outside the viewer's scope leaves nothing to plan for.
+      const rows = single ? scope.players.filter(player => player.id === playerId) : scope.players;
       setOrgs(scope.organizations); setTeams(scope.teams); setLimited(scope.limited);
       setNavigationContext({ requestedOrgId: orgId, orgId: scope.organizationId, teamIds: scope.teams.filter(team => team.organizationId === scope.organizationId).map(team => team.id) });
       // Do not trigger a second load while resolving the default organization.
@@ -125,7 +135,7 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
       setFocused(initial.current.ids.find(id => rows.some(p => p.id === id)) ?? rows[0]?.id ?? "");
     }).catch(e => { if (live && isCurrent(token)) failClosed(e); });
     return () => { live = false; };
-  }, [orgId, role, playerId, retry, access, clearScope, failClosed, isCurrent]);
+  }, [orgId, role, playerId, single, retry, access, clearScope, failClosed, isCurrent]);
 
   useEffect(() => {
     onScopeChange?.(currentPlannerNavigationScope(navigationContext, orgId, teamId, accessReady && canOperate()));
@@ -276,7 +286,7 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
     {limited && <p className="personalized-notice">This roster reached the service display limit. Choose a smaller organization before selecting a batch.</p>}
     <div className="personalized-setup">
       <section className="personalized-card" id="planner-evidence"><h2>1. Players & evidence</h2>
-        {role !== "athlete" && <><div className="personalized-fields"><label>Organization<select value={orgId || initial.current.orgId} onChange={e => { setTeamId(""); setOrgId(e.target.value); }} disabled={busy}>
+        {!single && <><div className="personalized-fields"><label>Organization<select value={orgId || initial.current.orgId} onChange={e => { setTeamId(""); setOrgId(e.target.value); }} disabled={busy}>
           {!orgId && !initial.current.orgId && <option value="">Independent player</option>}{orgs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select></label>
           <label>Team<select value={teamId} onChange={e => { setTeamId(e.target.value); setSelected(new Set()); }}><option value="">All teams</option>{teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label></div>
         <label>Find a player<input value={search} onChange={e => setSearch(e.target.value)} placeholder="Name or email" /></label>
@@ -286,7 +296,7 @@ function Planner({ role = "admin", playerId = "", initialText = "", onActivated,
           const load = evidence[p.id], recent = load ? recentEvidence(load.reps) : null;
           const latest = jobs.find(j => j.playerId === p.id);
           return <div key={p.id} className={`personalized-player ${focused === p.id ? "is-focused" : ""}`}>
-            {role !== "athlete" && <input type="checkbox" aria-label={`Select ${p.name}`} checked={selected.has(p.id)} disabled={!load || busy || inFlight(p.id)} onChange={() => toggle(p.id)} />}
+            {!single && <input type="checkbox" aria-label={`Select ${p.name}`} checked={selected.has(p.id)} disabled={!load || busy || inFlight(p.id)} onChange={() => toggle(p.id)} />}
             <div className="personalized-player-copy">
               <button type="button" className="personalized-player-name" disabled={busy} onClick={() => { setFocused(p.id); setReviewed(false); }}><strong>{p.name}</strong><span>{p.email || "Email unavailable"}</span></button>
               <div className="admin-row-meta personalized-player-badges">

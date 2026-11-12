@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CATEGORY_STYLE, PERIODS, PERIOD_CAPTION, PERIOD_TITLE, TIME_BASES, TIME_BASIS_EXPLANATION, TIME_BASIS_TITLE,
   breakdownEmptyText, breakdownHeadline, durationShort, durationSpoken, focusArcs, focusSlices, percent } from './hub';
 import type { FocusArc, FocusCategory, FocusSummary, Period, TimeBasis } from './hub';
+import './workouts.css';
 
 const PERIOD_KEY = 'training.breakdownPeriod', BASIS_KEY = 'training.focus.timeBasis';
 const read = (key: string) => { try { return localStorage.getItem(key); } catch { return null; } };
@@ -14,7 +15,7 @@ export function useFocusPreferences() {
   return { period, basis, setPeriod: (p: Period) => { setPeriod(p); write(PERIOD_KEY, p); }, setBasis: (b: TimeBasis) => { setBasis(b); write(BASIS_KEY, b); } };
 }
 
-/** The all-time stats row: time, workouts and favorite focus (`TrainingStatsRow`, V4 tiles). */
+/** The all-time stats row: time, workouts and favorite focus (`TrainingStatsRow`, V4 tiles). Not shown on the web now: it left the hub with the app's redesign, and Nolan took it off Stats (2026-11-12). */
 export function TrainingStatsRow({ summary, hasData }: { summary: FocusSummary; hasData: boolean }) {
   const stats = summary.periods.allTime;
   const favorite = summary.favoriteCategory ? summary.favoriteCategory === 'soccer' ? 'Soccer' : CATEGORY_STYLE[summary.favoriteCategory].name : '—';
@@ -54,7 +55,10 @@ function Donut({ arcs, selection, onSelect, total, caption }: { arcs: FocusArc[]
   </div>;
 }
 
-/** Week | Month | Year | All time, the headline, the donut and its legend (`TrainingBreakdownCard`). */
+/**
+ * Week | Month | Year | All time, the headline, the donut and its legend (`TrainingBreakdownCard`).
+ * Not on any page at present: the app keeps Training Focus hidden since the one-page hub, and so does the web.
+ */
 export function TrainingBreakdownCard({ summary, period, onPeriod, onBasis }: { summary: FocusSummary; period: Period; onPeriod: (p: Period) => void; onBasis: (b: TimeBasis) => void }) {
   const stats = summary.periods[period], slices = focusSlices(stats), arcs = focusArcs(slices);
   const [selection, setSelection] = useState<FocusCategory | null>(null);
