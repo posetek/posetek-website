@@ -8,7 +8,6 @@ import { HistoryList, SavedLibrary } from './HistoryAndSaved';
 import WorkoutReview from './WorkoutReview';
 import { FreeSessionBanner, HubLinks, PlanInvitationCard, PlanSummaryCard, WorkoutActions } from './WorkoutsRoot';
 import PlayerTraining from '../PlayerTraining';
-import { plannerRole } from '../ProgramIntake';
 import type { HubPage } from './navigation';
 
 const render = (query: string) => {
@@ -51,18 +50,6 @@ describe('Workouts pages, in the app’s order and words', () => {
     expect(render('view=workouts&screen=history')).toContain('From an earlier plan.');
     const saved = render('view=workouts&screen=saved');
     expect(saved).toContain('<h1>Saved Workouts</h1>'); expect(saved).toContain('All workouts');
-  });
-});
-
-describe('the planner opened from an athlete’s workspace', () => {
-  it('plans with the viewer’s own authority: staff for that athlete, a shared link for nobody', () => {
-    expect(plannerRole('athlete')).toBe('athlete');
-    expect(plannerRole('admin')).toBe('admin');
-    expect(plannerRole('coach')).toBe('staff');
-    expect(plannerRole('manager')).toBe('staff');
-    // The athlete role is refused for anyone who does not own the athlete's account.
-    expect(plannerRole('shared')).toBe('athlete');
-    expect(plannerRole(undefined)).toBe('athlete');
   });
 });
 

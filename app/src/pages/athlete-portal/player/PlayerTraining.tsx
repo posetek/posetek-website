@@ -74,7 +74,7 @@ type Props = {
  * plan, Saved Workouts, History and Tests share one set of plans, logs and presentations, so a workout
  * in progress survives a look at another page. Plans, logs, proposals and schedules keep their existing data access.
  */
-export default function PlayerTraining({ ctx, personal, request, onAcknowledge, onCompleted, page, fromStats = false, go, back, onTest, hubNotice, onGuidedChange, active = true }: Props) {
+export default function PlayerTraining({ ctx, statsProfile, personal, request, onAcknowledge, onCompleted, page, fromStats = false, go, back, onTest, hubNotice, onGuidedChange, active = true }: Props) {
   const preview = ctx.access === 'preview';
   const [plans, setPlans] = useState<Row[] | null>(preview ? [previewProgram()] : null), [error, setError] = useState('');
   const [intake, setIntake] = useState(false), [seed, setSeed] = useState(''), [reveal, setReveal] = useState(false);
@@ -291,7 +291,7 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
   if (plannerOpen) {
     // With no plan under it, closing the planner leaves the page instead of showing it empty.
     const closePlanner = () => { setPagePlanner(false); setIntake(false); if (planless) back(); };
-    return overlay('Training plan', closePlanner, <ProgramIntake playerId={ctx.playerId!} athlete={ctx.athlete} statsProfile={{}} preview={preview} access={ctx.access} weeks={fromStats && page === 'plan' ? STATS_PLAN_WEEKS : undefined} initialText={seed} onReady={() => { setPagePlanner(false); setIntake(false); setReveal(true); }} onBack={closePlanner} />);
+    return overlay('Training plan', closePlanner, <ProgramIntake playerId={ctx.playerId!} athlete={ctx.athlete} statsProfile={statsProfile} preview={preview} access={ctx.access} weeks={fromStats && page === 'plan' ? STATS_PLAN_WEEKS : undefined} initialText={seed} onReady={() => { setPagePlanner(false); setIntake(false); setReveal(true); }} onBack={closePlanner} />);
   }
   if (drill) return overlay(drill.name || 'Drill', () => setDrill(null), <DrillMedia drillId={drill.id} preview={preview} />);
   if (chatTarget) return overlay(chatTarget.kind === 'new' ? 'Create your workout' : 'Your workout', () => { if (!applying) { setChatTarget(null); setProposal(null); } }, <>{message}
