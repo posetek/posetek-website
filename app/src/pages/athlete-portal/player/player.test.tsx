@@ -184,10 +184,11 @@ describe('player route and preview rendering', () => {
     if (view === 'training') { expect(html).toContain('<h1>Workout</h1>'); expect(html).toContain('My workout plan'); expect(html).toContain('Create your workout'); }
     if (view === 'workouts') for (const test of ['Shooting', 'Dribbling', 'Vertical Jump', 'Broad Jump', 'Sprint', 'Shuttle']) expect(html).toContain(`<strong>${test}</strong>`);
     if (view === 'stats') {
-      // The profile is the one-pager first: the testing report, then benchmarks and the body scan.
-      const order = ['>Your report</h3>', '>Skill benchmarks</h2>', '>Body scan</h2>'].map(heading => html.indexOf(heading));
+      // The profile: the skill radar first, the testing report beneath it, then the next steps.
+      const order = ['>Skill benchmarks</h2>', 'class="stats-report"', '>So what do I do with these results?</h2>'].map(heading => html.indexOf(heading));
       expect(order.every(index => index >= 0)).toBe(true);
       expect(order).toEqual([...order].sort((a, b) => a - b));
+      expect(html).not.toContain('>Body scan</h2>');
       expect(html).not.toContain('Overall rating');
       expect(html).not.toContain('Leaderboards');
     }

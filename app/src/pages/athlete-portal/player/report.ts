@@ -51,6 +51,11 @@ export function resultText(metric: ReportMetric): string {
   }
 }
 
+/** The value alone, in the app's units, or null when the test has no usable result. */
+export function valueText(metric: ReportMetric): string | null {
+  return metric.status === 'measured' || metric.status === 'estimate' ? displayValue(metric, metric.result) : null;
+}
+
 /** A percentile is shown only for a measured or estimated result that has a value. */
 export function comparisonPercentile(metric: ReportMetric): number | null {
   if (metric.status !== 'measured' && metric.status !== 'estimate') return null;

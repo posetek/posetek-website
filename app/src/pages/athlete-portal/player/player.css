@@ -168,6 +168,16 @@
   .body-profile-grid { display: block; }
   .body-canvas-wrap { height: 330px; }
   @media (min-width: 800px) { .player-bottom-nav { max-width: 692px; left: 50%; right: auto; width: 100%; transform: translateX(-50%); } }
+  /* On a computer the dock becomes a bar across the top, and Stats gets a wider page. */
+  @media (min-width: 1000px) {
+    --v4-dock-height: 0px;
+    .player-main { padding-top: 88px; padding-bottom: 56px; }
+    .player-main:has(> div:not([hidden]) > .stats-page) { max-width: 1080px; }
+    .player-bottom-nav { top: 0; bottom: auto; left: 0; right: 0; width: auto; max-width: none; height: 64px; transform: none; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 24px; border-width: 0 0 1px; border-radius: 0; }
+    .player-bottom-nav::before { content: 'POSETEK'; position: absolute; left: 24px; top: 50%; transform: translateY(-50%); color: var(--v4-accent); font-size: 15px; font-weight: 750; letter-spacing: 1.8px; }
+    .player-bottom-nav a { flex-direction: row; gap: 8px; margin: 0; padding: 0 18px; min-height: 44px; font-size: 14px; }
+    .v4-header-compact { top: 64px; }
+  }
   @media (max-width: 360px) { .v4-activity-card strong { font-size: 18px; } .v4-activity-card small { font-size: 13px; } .v4-header-compact { margin-inline: -12px; } }
   @media (max-width: 360px) { .player-main { padding-inline: 12px; } .portal-card { padding: 15px; } .player-profile-hero { grid-template-columns: 1.4fr 1fr; } .player-identity h1 { font-size: 22px; } .player-measurements { gap: 10px; } }
   @media (max-width: 700px) {

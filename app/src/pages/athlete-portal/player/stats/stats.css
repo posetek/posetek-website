@@ -42,45 +42,60 @@
   .stats-radar-label[aria-pressed="true"] { background: #7cff1826; border-color: #7cff18b3; }
   .stats-benchmarks .provisional-estimate-note { margin: 0; }
 
-  /* The report: V4Card(padding 20, corner 24, spacing 20). */
+  /* The report, in the live one-pager's score-card layout (private-report `.pt-visual`), on the V4 theme. */
+  .stats-identity { display: grid; gap: 4px; }
   .stats-report { display: grid; gap: 16px; }
-  .stats-report-card { display: grid; gap: 20px; padding: 20px; border-radius: 24px; }
-  .stats-report-card h3 { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.3; }
-  .stats-report-empty { gap: 24px; }
-  .stats-report-heading { display: grid; gap: 8px; }
-  .stats-report-tested { display: flex; align-items: baseline; gap: 8px; }
-  .stats-report-tested h3 { margin-right: auto; }
-  .stats-report-you { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--v4-secondary); }
-  .stats-report-you i, .stats-report-marker { background: #40bfd1; border-radius: 50%; }
-  .stats-report-you i { width: 8px; height: 8px; }
-  .stats-report-row { display: grid; gap: 6px; }
-  .stats-report-row-line { display: flex; align-items: baseline; gap: 6px; margin: 0; font-size: 15px; line-height: 1.35; }
-  .stats-report-row-line > span { margin-right: auto; min-width: 0; }
-  .stats-report-row-line strong { font-weight: 700; }
-  .stats-report-row-line small { font-size: 12px; color: inherit; }
-  .stats-report-row-line b { font-size: 12px; font-weight: 700; white-space: nowrap; }
-  .stats-report-bar { position: relative; height: 16px; }
-  .stats-report-bands { position: absolute; left: 0; right: 0; top: 4.5px; height: 7px; display: flex; gap: 2px; border-radius: 2px; overflow: hidden; }
-  .stats-report-bands i { display: block; height: 100%; }
-  .stats-report-bands i:nth-child(1) { flex: 0 0 calc((100% - 4px) * .25); background: #ffffff24; }
-  .stats-report-bands i:nth-child(2) { flex: 0 0 calc((100% - 4px) * .5); background: #ffffff52; }
-  .stats-report-bands i:nth-child(3) { flex: 1 1 auto; background: #7cff187a; }
-  .stats-report-marker { position: absolute; top: 1px; width: 14px; height: 14px; box-shadow: 0 0 0 2px var(--v4-background); }
-  .stats-report-note { display: grid; gap: 10px; font-size: 15px; color: var(--v4-secondary); }
-  .stats-report-note h3 { color: #fff; }
-  .stats-report-note p { margin: 0; }
-  .stats-report-drills { gap: 12px; }
-  .stats-report-drill { display: grid; gap: 6px; width: 100%; padding: 12px; border: 1px solid var(--v4-border); border-radius: 14px; background: var(--v4-card); text-align: left; min-height: 44px; }
-  .stats-report-drill-name { display: flex; align-items: center; gap: 8px; font-size: 15px; }
-  .stats-report-drill-name strong { margin-right: auto; font-weight: 700; }
-  .stats-report-drill-name .material-symbols-outlined { color: var(--v4-accent); font-size: 16px; font-variation-settings: 'wght' 700; }
-  .stats-report-drill small { font-size: 12px; color: var(--v4-secondary); }
-  /* The one-pager's card fields: tag beside the title, the plan's dose, the catalog instruction. */
-  .stats-report-drill-name strong { min-width: 0; overflow-wrap: anywhere; }
-  .stats-report-drill-tag { flex: 0 1 auto; padding: 2px 8px; border-radius: 999px; background: #7cff181f; color: var(--v4-accent); font-size: 11px; font-weight: 600; white-space: nowrap; }
-  .stats-report-drill-dose { font-size: 13px; font-weight: 600; color: #fff; overflow-wrap: anywhere; }
-  .stats-report-drill-text { font-size: 13px; line-height: 1.4; color: #ffffffd9; }
-  .stats-report-safety { margin-top: -2px; }
+  .stats-report-heading { display: grid; gap: 4px; }
+  .stats-report-empty { display: grid; gap: 16px; padding: 20px; }
+  .stats-score-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stats-score-card { display: flex; flex-direction: column; min-width: 0; padding: 14px; border: 1px solid var(--v4-border); border-radius: 18px; background: var(--v4-card); }
+  .stats-score-card h3 { margin: 0; min-height: 2.6em; font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--v4-secondary); }
+  .stats-score-value { margin: 2px 0 12px; font-size: clamp(24px, 7vw, 32px); font-weight: 750; line-height: 1.15; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .stats-score-value.muted { font-size: 20px; color: var(--v4-secondary); }
+  .stats-track { position: relative; display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 2px; height: 9px; margin-inline: 6px; }
+  .stats-track i { border-radius: 2px; background: #ffffff52; }
+  .stats-track i:first-child { background: #ffffff24; }
+  .stats-track i:nth-child(3) { background: #7cff187a; }
+  .stats-track b { position: absolute; top: -2px; width: 13px; height: 13px; border-radius: 50%; background: #40bfd1; transform: translateX(-50%); box-shadow: 0 0 0 2px var(--v4-background-middle); }
+  .stats-score-rank { margin: 8px 0 0; font-size: 12px; font-weight: 700; }
+  .stats-score-rank.muted { color: var(--v4-secondary); font-weight: 500; }
+  .stats-score-card .stats-caption { margin-top: 3px; }
+  .stats-findings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .stats-findings > div { padding-top: 10px; border-top: 1px solid var(--v4-border); }
+  .stats-findings h3 { margin: 0; font-size: 12px; font-weight: 600; color: var(--v4-secondary); }
+  .stats-findings p { margin: 4px 0 0; font-size: 15px; font-weight: 700; }
+  .stats-drills { display: grid; gap: 10px; }
+  .stats-drills > * { margin: 0; }
+  .stats-drill { padding: 0 14px; border: 1px solid var(--v4-border); border-radius: 14px; background: var(--v4-card); }
+  .stats-drill summary { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 48px; margin: 0; padding: 10px 0; cursor: pointer; list-style: none; }
+  .stats-drill summary::-webkit-details-marker { display: none; }
+  .stats-drill summary > span:first-child { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
+  .stats-drill summary strong { font-size: 15px; font-weight: 700; }
+  .stats-drill summary small { font-size: 13px; color: var(--v4-secondary); }
+  .stats-drill summary .material-symbols-outlined { color: var(--v4-accent); font-size: 20px; transition: transform .2s ease-in-out; }
+  .stats-drill[open] summary .material-symbols-outlined { transform: rotate(180deg); }
+  .stats-drill[open] { padding-bottom: 12px; }
+  .stats-drill p { margin: 0 0 4px; font-size: 13px; line-height: 1.4; color: #ffffffd9; }
+
+  /* "So what do I do with these results?": the three next steps a player lands on. */
+  .stats-next { display: grid; gap: 12px; }
+  .stats-next-grid { display: grid; gap: 10px; }
+  .stats-next-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; width: 100%; min-height: 64px; padding: 12px 14px; border: 1px solid var(--v4-border); border-radius: 18px; background: var(--v4-card); text-align: left; }
+  .stats-next-card:hover { border-color: #7cff1866; }
+  .stats-next-card > .material-symbols-outlined:first-child { grid-row: 1 / span 2; color: var(--v4-accent); font-size: 24px; }
+  .stats-next-card strong { grid-column: 2; font-size: 16px; font-weight: 700; }
+  .stats-next-card small { grid-column: 2; font-size: 13px; color: var(--v4-secondary); }
+  .stats-next-card > .material-symbols-outlined:last-child { grid-column: 3; grid-row: 1 / span 2; color: var(--v4-secondary); font-size: 18px; }
+
+  /* On a computer: the radar beside the report, the next steps three across. */
+  @media (min-width: 1000px) {
+    .stats-page { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 28px; align-items: start; }
+    .stats-page > * { grid-column: 1 / -1; }
+    .stats-page > .stats-benchmarks { grid-column: 1; }
+    .stats-page > .stats-report { grid-column: 2; }
+    .stats-score-value { font-size: 32px; }
+    .stats-next-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
 
   /* Body scan: V4Card(padding 16) with the 314 px viewer and the height/weight strip. The shared
      viewer's page chrome (hero, name heading, staff-page cards) is not part of the app's panel. */
