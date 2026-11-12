@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "status": "published_verified",
+  "accepted": true,
+  "feature": "Admin result validation",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "deployId": "6aedefb93ea542305e9f49da",
+  "previousDeploymentId": "6aecbf94751cf215f811865f",
+  "publishedAt": "2026-11-06T15:22:23.567Z",
+  "approval": "Owner request to merge the source PR and deploy the website (2026-11-06)",
+  "websiteSource": {
+    "pullRequest": 132,
+    "head": "2bd7ff8751adcc4729458efabc7cb3e58cab7665",
+    "mergeCommit": "9d94c4bd933b9351c225aac6957e466fafb39eef",
+    "hostedCI": "passed",
+    "includedApprovedSource": {
+      "pullRequest": 128,
+      "commit": "df41305aee0f1534a26a5adbe8303713c092f1ad",
+      "mergeCommit": "60756267b2c7516f70345f5f72e359e04e021a1a",
+      "reason": "Merged, CI-passed saved tracking playback awaiting release; the result validation tool is built on it."
+    }
+  },
+  "runtime": {
+    "branch": "runtime/result-validation",
+    "base": "bc6ed7cddf848d33e277e9d90b98b16f0144e572",
+    "applicationSource": "e4c6403818a2d736558f525153e4877810c3a2d0",
+    "reconciledBaselineCommit": "51106ec2b643a8879f5ae5e3d32f730d6d7fe976",
+    "composition": [
+      "7e0aafc589e4630440e4e3fb2a5a1294ef85a224 carries the reconciled 6aecbf94 baseline (2,581 files) from main",
+      "546d27da632c796024fb4116f1e217b09d500c9f applies PR #128; keeps the runtime jump review banner and panel",
+      "5ea45271d7bd11a912d3c4abc0f55fdbb4f332a3 applies PR #132; result validation files byte-identical to the reviewed head",
+      "e4c6403818a2d736558f525153e4877810c3a2d0 keeps a metadata-only stage empty of measured evidence; playback suite isolates the raw overlay"
+    ],
+    "runtimeOnlyRetained": ["jump review panel"],
+    "heldExcluded": ["Ball Striking sessions", "policy candidate", "session candidate"]
+  },
+  "candidateDigestType": "sha256",
+  "candidateDigest": "bb5c5454b157a726faa374d530c0132502cdfced67dd2b5b84bc6f9bffca4159",
+  "artifactFiles": 2603,
+  "providerRecords": 2604,
+  "preservation": {
+    "priorServedFilesByteExact": 2582,
+    "changedExistingFiles": ["/application.html"],
+    "addedHashedAssets": 20,
+    "marketing": "byte-exact (live provider originals pinned with --preserve-marketing)",
+    "feedback": "byte-exact",
+    "coachEnrollment": "byte-exact",
+    "privateReports": "byte-exact",
+    "applicationSha1": "e1ddba3d75a25f195fa36028f90c0e0a289fc950"
+  },
+  "providerConfiguration": {
+    "onlyDifference": "build.publish",
+    "headersPreserved": 11,
+    "redirectsPreserved": 10
+  },
+  "backend": {
+    "released": false,
+    "callablesUsed": ["adminReviseRep", "adminRestoreRepRevision", "adminGetRepRevisions"],
+    "note": "Existing deployed callables only; no Functions, rules, indexes or schema change."
+  },
+  "validation": {
+    "sourceLanes": "12/12 local lanes at 2bd7ff8: 2,382 frontend tests, 105 tooling, 32 policy, guest smoke 7/7, marketing links 18/18, build, Svelte, transport, audit",
+    "sourceHostedCI": "passed (build, dependencies, policy, server, unit, ci)",
+    "runtimeLanesAt": "5ea45271d7bd11a912d3c4abc0f55fdbb4f332a3",
+    "runtimeFrontendTests": 2247,
+    "runtimeReleaseToolingTests": 155,
+    "runtimePolicyTests": 40,
+    "runtimeGuestSmoke": "7/7",
+    "afterFixAtApplicationSource": "TypeScript build clean, 886/886 admin tests, lint clean on the changed file, tracking playback 112/112, result validation preview flows",
+    "runtimeMarketingLinkLane": "not run: test file absent on the approved runtime; marketing bytes verified exact against live",
+    "trackingPlaybackBrowser": "112/112 Chromium and WebKit (synthetic loopback, writes blocked)",
+    "resultValidationPreview": "synthetic DEV preview on runtime source: flag/undo/export, needs-fix filter, focus mode with video, per-drill evidence, age curve",
+    "candidateArtifact": "passed",
+    "candidateConfiguration": "passed",
+    "candidateHttpChecks": "85/86; the one difference is /robots.txt, which is not a file and falls through to the new application entry",
+    "candidateGuestBrowser": "14/14 route loads, Chromium and WebKit, no page errors; automatic signed-out POST blocked",
+    "pathLeakScan": "no local paths in application.html or any added asset",
+    "devPreviewExcluded": true
+  },
+  "productionVerification": {
+    "status": "passed",
+    "liveAfter": "6aedefb93ea542305e9f49da",
+    "artifactFiles": 2603,
+    "providerRecords": 2604,
+    "httpChecks": "79/86 exact; the 7 others differ only in strict-transport-security and x-robots-tag between posetek.net and the netlify.app permalink, as before promotion",
+    "guestBrowser": "14/14 route loads, Chromium and WebKit, no page errors"
+  },
+  "notClaimed": [
+    "Signed-in acceptance of the hosted artifact (no owned synthetic admin was created); the owner exercised the same source on localhost against production with their own admin account",
+    "Authenticated emulator journeys",
+    "Physical-device checks"
+  ],
+  "baseline": {
+    "status": "reconciled_verified",
+    "deploymentId": "6aedefb93ea542305e9f49da",
+    "protectedFiles": 2601,
+    "recoveryMappings": 37,
+    "ordinaryPreservationBuild": "passed",
+    "releaseToolingTests": 155
+  },
+  "releaseScope": {
+    "website": "Admin result validation, saved tracking playback (PR #128), metadata-only evidence fix",
+    "excluded": ["held policy/session/Ball Striking candidates", "parent/coach report outreach", "backend", "rules", "indexes", "gateway", "catalog", "native"]
+  },
+  "recovery": "Restore the previous verified deploy 6aecbf94751cf215f811865f through the guarded exact-deploy workflow after a fresh serving-state comparison. Revisions made with the tool are reversible per rep through adminRestoreRepRevision; hosting recovery does not change rep data.",
+  "proofSha256": {
+    "candidateArtifact": "ec27c3672cdc79f8139600d1a0df5409b32a72f372f30e94842f40d8506f6b9a",
+    "candidateHttp": "2afd5d2841e0a78536c3f181bf0bea929e2d53a9b6071f515ae13aaab59efce1",
+    "candidateConfiguration": "07f50730f53e1b274766d12c5e4b02eed76e5fff8fb8dbd47aaade38396457c8",
+    "candidateGuest": "c4836da2742322a2bcedbc505d2703cdfc2bfde5a8df6a6432aca7ab8de73197",
+    "liveArtifact": "a370e7ca16afd3057c0cb83c8fe4f95f7ee9d9e8cf191b6b728895a6aed9d674",
+    "liveHttp": "c1c4aa90898891fa234472b2eeb1f5f14d5aa68ab9622903278a552059034636",
+    "liveGuest": "243183c099785a744b6b4f3d2b82b49446eabef1fe588a11b5eba592142e7fa9",
+    "preservationBuild": "5e52077fc983e0f9a9402d73e0620640927a231b611c478cb4fe1c134ef6ab6a",
+    "runtimeLanes": "8661743f41b68349147440b8c0a62ff5f5b715e35ece07403322766af4530156",
+    "sourceLanes": "f429756628832aed8e01c32aee3ec1bf01f16da2bc6c65900fe0d816032eb162",
+    "trackingPlaybackBrowser": "880b184d5e8aa936ed67bcd677fbee12e0912702386481b57167073538d447c2"
+  }
+}

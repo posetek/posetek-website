@@ -1,0 +1,176 @@
+/* The Coach tab (KickAI/LLM/AICoachTabView.swift + AIChatSurface, V4 layout). Every rule is scoped to
+   `.pt-player .coach-v4` so it wins over the older chat rules in player.css. */
+.pt-player .coach-v4 {
+  /* Where the composer sits: above the floating dock, or on the bottom edge while the dock is hidden. */
+  --coach-stick: calc(var(--v4-dock-height) + 16px + env(safe-area-inset-bottom));
+  --coach-gutter: 16px; /* .player-main's side padding */
+  --coach-orange: #ff8c33;
+  --coach-muted: #ffffffa6;
+  display: flex; flex-direction: column; min-width: 0;
+  /* The page is the tab's scroll view. A short transcript still puts the composer on the bottom edge:
+     the section reaches the composer's resting line, and the negative margin gives back the
+     difference between that line and the page's dock padding, so an empty chat does not scroll. */
+  min-height: calc(100dvh - var(--coach-top, 160px) - var(--v4-dock-height) - 16px - env(safe-area-inset-bottom));
+  margin-bottom: -24px;
+}
+.pt-player:has(.chat-composer :focus) .coach-v4 { --coach-stick: calc(8px + env(safe-area-inset-bottom)); }
+
+/* Header: History / Memory / AI sharing, the voice mode button and Technique analysis. */
+.pt-player .coach-v4 .coach-v4-header { display: grid; gap: 8px; padding: 10px 0 12px; }
+.pt-player .coach-v4 .coach-tools { display: flex; gap: 8px; min-width: 0; }
+.pt-player .coach-v4 .coach-tool-menu { position: relative; flex: 1 1 0; min-width: 0; display: flex; }
+.pt-player .coach-v4 .coach-tool { flex: 1 1 0; min-width: 0; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 0 6px; border-radius: 18px; border: 1px solid var(--v4-border); background: #ffffff08; color: #fff; font-size: 14px; font-weight: 600; line-height: 1.2; }
+.pt-player .coach-v4 .coach-tool span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pt-player .coach-v4 .coach-icon { flex: 0 0 18px; }
+.pt-player .coach-v4 .coach-tool:disabled { cursor: default; opacity: .5; }
+.pt-player .coach-v4 .coach-menu { position: absolute; z-index: 60; top: 50px; left: 0; min-width: 220px; padding: 6px; border-radius: 16px;
+  border: 1px solid var(--v4-border); background: #0d2a20f2; backdrop-filter: blur(20px); display: grid; gap: 2px; }
+.pt-player .coach-v4 .coach-menu button { width: 100%; border: 0; background: none; text-align: left; border-radius: 10px; font-size: 15px; }
+.pt-player .coach-v4 .coach-menu button:hover { background: var(--v4-card); }
+.pt-player .coach-v4 .coach-voice-mode { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px;
+  padding: 5px 16px; border: 0; border-radius: 18px; background: #ffd60a; color: #1a1a1a; font-size: 17px; font-weight: 800; }
+.pt-player .coach-v4 .coach-voice-mode .material-symbols-outlined { font-size: 18px; font-variation-settings: 'FILL' 1; }
+.pt-player .coach-v4 .coach-technique-link { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; padding: 0;
+  border: 0; border-radius: 0; background: none; color: var(--v4-accent); font-size: 15px; font-weight: 600; text-align: left; }
+.pt-player .coach-v4 .coach-technique-link .material-symbols-outlined { font-size: 20px; }
+
+/* Transcript: V4 cards, the athlete's on the right with 32 px of room on the left. */
+.pt-player .coach-v4 .coach-v4-transcript { flex: 1 0 auto; display: grid; align-content: start; gap: 12px; padding-bottom: 8px; min-width: 0; }
+.pt-player .coach-v4 .v4-card { margin: 0; }
+.pt-player .coach-v4 .coach-v4-card { display: grid; gap: 16px; }
+.pt-player .coach-v4 .coach-v4-message { display: grid; gap: 8px; min-width: 0; }
+.pt-player .coach-v4 .coach-v4-message.user { margin-left: 32px; }
+.pt-player .coach-v4 .coach-v4-label { margin: 0; font-size: 12px; line-height: 1.3; color: var(--v4-accent); }
+.pt-player .coach-v4 .coach-v4-message.user .coach-v4-label { color: var(--v4-secondary); }
+.pt-player .coach-v4 .coach-v4-greeting { margin: 0; font-size: 14px; line-height: 1.45; }
+.pt-player .coach-v4 .coach-v4-text { font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.pt-player .coach-v4 .coach-v4-text a { color: var(--v4-accent); }
+.pt-player .coach-v4 .coach-v4-text code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+.pt-player .coach-v4 .coach-loading-row { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 12px; color: var(--v4-secondary); }
+.pt-player .coach-v4 .coach-loading-row img { flex: 0 0 32px; animation: coach-glow .9s ease-in-out infinite alternate; }
+.pt-player .coach-v4 .coach-build { margin: 0; }
+@keyframes coach-glow { from { opacity: .45; } to { opacity: 1; } }
+
+.pt-player .coach-v4 .coach-unavailable { display: grid; justify-items: center; gap: 10px; padding: 60px 16px; text-align: center; }
+.pt-player .coach-v4 .coach-unavailable .material-symbols-outlined { font-size: 30px; color: var(--coach-muted); font-variation-settings: 'FILL' 1; }
+.pt-player .coach-v4 .coach-unavailable h2 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: 0; }
+.pt-player .coach-v4 .coach-unavailable p { margin: 0; font-size: 12px; font-weight: 500; color: var(--coach-muted); }
+
+/* Pinned under the transcript: the running tool, the error banner and the composer. */
+.pt-player .coach-v4 .coach-v4-bottom { position: sticky; z-index: 3; bottom: var(--coach-stick); margin: 0 calc(-1 * var(--coach-gutter)); padding: 0 var(--coach-gutter) 8px;
+  background: linear-gradient(to bottom, #04161000, #041610d9 14px); }
+.pt-player .coach-v4 .coach-tool-row { display: flex; align-items: center; gap: 6px; margin: 0; padding: 4px 0; font-size: 11px; font-weight: 600; color: var(--coach-muted); }
+.pt-player .coach-v4 .coach-spinner { display: inline-block; flex: 0 0 auto; width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid #ffffff40; border-top-color: #fff; animation: coach-spin .8s linear infinite; }
+.pt-player .coach-v4 .coach-spinner-large { width: 24px; height: 24px; border-top-color: var(--v4-accent); }
+@keyframes coach-spin { to { transform: rotate(360deg); } }
+.pt-player .coach-v4 .coach-banner { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 6px; padding: 10px; border-radius: 12px; }
+.pt-player .coach-v4 .coach-banner > div:not(.coach-sharing-off) { flex: 1; min-width: 0; }
+.pt-player .coach-v4 .coach-banner-error { background: #ff8c3326; }
+.pt-player .coach-v4 .coach-banner-error p { margin: 0; font-size: 11px; font-weight: 600; line-height: 1.4; color: #fff; }
+.pt-player .coach-v4 .coach-banner-icon { font-size: 14px; color: var(--coach-orange); font-variation-settings: 'FILL' 1; margin-top: 1px; }
+.pt-player .coach-v4 .coach-banner-sharing { background: #ffffff0f; }
+.pt-player .coach-v4 .coach-banner-sharing .coach-sharing-off { flex: 1; min-width: 0; }
+.pt-player .coach-v4 .coach-dismiss { flex: 0 0 44px; width: 44px; min-height: 44px; margin: -10px -10px -10px 0; padding: 0; border: 0; background: none;
+  color: #ffffffb3; display: grid; place-items: center; }
+.pt-player .coach-v4 .coach-dismiss .material-symbols-outlined { font-size: 16px; font-variation-settings: 'wght' 700; }
+.pt-player .coach-v4 .coach-ref { margin: 4px 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 500; color: #ffffff99; }
+.pt-player .coach-v4 .coach-banner-error .coach-ref { color: #ffffff99; font-weight: 500; margin-top: 4px; }
+.pt-player .coach-v4 .coach-transcript-error { margin: 0 0 4px; font-size: 11px; font-weight: 500; color: var(--coach-muted); }
+
+/* AISharingOffNotice. */
+.pt-player .coach-v4 .coach-sharing-off { display: grid; justify-items: start; gap: 8px; }
+.pt-player .coach-v4 .coach-sharing-off p { margin: 0; }
+.pt-player .coach-v4 .coach-sharing-off-title { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #fff; }
+.pt-player .coach-v4 .coach-sharing-off-title .material-symbols-outlined { font-size: 16px; }
+.pt-player .coach-v4 .coach-sharing-off-copy { font-size: 12px; color: var(--coach-muted); line-height: 1.4; }
+.pt-player .coach-v4 .coach-sharing-on { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 10px 14px; border: 0;
+  border-radius: 999px; background: var(--v4-accent); color: var(--v4-background); font-size: 13px; font-weight: 700; text-align: left; }
+.pt-player .coach-v4 .coach-sharing-on .material-symbols-outlined { font-size: 16px; }
+
+/* The composer card, with the runner crossing its top edge. */
+.pt-player .coach-v4 .coach-v4-composer-wrap { position: relative; padding-top: 12px; }
+.pt-player .coach-v4 .coach-runner { position: absolute; z-index: 1; top: calc(12px - 64px * .9); left: calc(-1 * var(--coach-gutter)); width: calc(100% + 2 * var(--coach-gutter)); height: 64px;
+  border: 0; background: transparent; pointer-events: none; color-scheme: normal; }
+.pt-player .coach-v4 .coach-v4-composer { position: relative; bottom: auto; z-index: 0; display: flex; align-items: flex-end; gap: 4px; margin: 0;
+  padding: 8px 8px 8px 16px; border: 1px solid var(--v4-border); border-radius: 26px;
+  background: linear-gradient(var(--v4-card), var(--v4-card)), var(--v4-background-middle); }
+.pt-player .coach-v4 .coach-v4-composer:focus-within { border-color: #ffffff40; }
+.pt-player .coach-v4 .coach-v4-composer textarea { flex: 1; min-width: 0; min-height: 44px; max-height: 124px; padding: 12px 0; border: 0; border-radius: 0;
+  background: transparent; color: #fff; font-size: 16px; line-height: 20px; resize: none; overflow-y: auto; }
+.pt-player .coach-v4 .coach-v4-composer textarea::placeholder { color: var(--v4-secondary); opacity: 1; }
+.pt-player .coach-v4 .coach-v4-composer textarea:focus-visible { outline: none; }
+.pt-player .coach-v4 .coach-v4-composer .coach-send { flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--v4-accent); color: var(--v4-background); display: grid; place-items: center; }
+.pt-player .coach-v4 .coach-v4-composer .coach-send:disabled { opacity: .4; cursor: default; }
+.pt-player .coach-v4 .coach-v4-composer .coach-stop { font-size: 20px; font-variation-settings: 'FILL' 1; }
+.pt-player .coach-v4 .coach-v4-composer .coach-mic { flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: #fff; display: grid; place-items: center; }
+
+/* Technique analysis is pushed over the chat; the chat stays mounted underneath. */
+.pt-player div:has(> .coach-v4 > .coach-technique-page) > .v4-header:not(.v4-header-compact) { display: none; }
+.pt-player .coach-v4:has(> .coach-technique-page) { min-height: 0; margin-bottom: 0; }
+.pt-player .coach-v4:has(> .coach-technique-page) > :not(.coach-technique-page) { display: none; }
+
+/* Sheets (History, Coach memory, AI sharing, Voice mode). */
+.pt-player .coach-v4 .coach-sheet-backdrop { position: fixed; z-index: 100; inset: 0; display: flex; align-items: flex-end; background: #0000008c; }
+.pt-player .coach-v4 .coach-sheet { width: 100%; max-width: 720px; margin: 0 auto; height: calc(100dvh - 10px - env(safe-area-inset-top)); display: flex; flex-direction: column;
+  border: 1px solid var(--v4-border); border-bottom: 0; border-radius: 14px 14px 0 0; outline: none;
+  background: linear-gradient(135deg, var(--v4-background), var(--v4-background-middle), var(--v4-background-end)); }
+.pt-player .coach-v4 .coach-sheet-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 52px; padding: 0 8px; border-bottom: 1px solid var(--v4-border); }
+.pt-player .coach-v4 .coach-sheet-bar h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: 0; text-align: center; }
+.pt-player .coach-v4 .coach-sheet-done { justify-self: start; min-height: 44px; padding: 0 8px; border: 0; background: none; color: #fff; font-size: 17px; }
+.pt-player .coach-v4 .coach-sheet-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 12px 16px calc(24px + env(safe-area-inset-bottom)); }
+.pt-player .coach-v4 .coach-sheet-center { min-height: 50dvh; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; }
+.pt-player .coach-v4 .coach-history-empty .material-symbols-outlined { font-size: 28px; font-variation-settings: 'wght' 700; color: var(--coach-muted); }
+.pt-player .coach-v4 .coach-history-empty p { margin: 0; font-size: 14px; font-weight: 700; }
+.pt-player .coach-v4 .coach-history-list { display: grid; gap: 8px; }
+.pt-player .coach-v4 .coach-history-row { display: grid; gap: 3px; width: 100%; min-width: 0; padding: 12px; border: 1px solid #ffffff1f; border-radius: 12px; background: #ffffff0f; text-align: left; }
+.pt-player .coach-v4 .coach-history-row strong { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pt-player .coach-v4 .coach-history-row small { font-size: 11px; font-weight: 500; color: var(--coach-muted); }
+.pt-player .coach-v4 .coach-voice-note { font-size: 15px; }
+.pt-player .coach-v4 .ai-sharing-control { margin-top: 0; }
+
+/* CoachMemoryView. */
+.pt-player .coach-v4 .coach-memory { display: grid; gap: 16px; padding: 8px 4px; }
+.pt-player .coach-v4 .coach-memory p, .pt-player .coach-v4 .coach-memory h3, .pt-player .coach-v4 .coach-memory h4 { margin: 0; }
+.pt-player .coach-v4 .coach-memory-title { font-family: ui-rounded, Inter, system-ui, sans-serif; font-size: 23px; font-weight: 700; line-height: 1.2; letter-spacing: 0; }
+.pt-player .coach-v4 .coach-memory-intro { font-size: 15px; color: var(--coach-muted); }
+.pt-player .coach-v4 .coach-progress { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--v4-secondary); }
+.pt-player .coach-v4 .coach-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin: 0; font-size: 17px; }
+.pt-player .coach-v4 .coach-switch input { appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 51px; width: 51px; height: 31px; min-height: 31px;
+  margin: 0; padding: 0; border: 0; border-radius: 999px; background: #78788052; cursor: pointer; transition: background-color .2s; }
+.pt-player .coach-v4 .coach-switch input::before { content: ''; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.pt-player .coach-v4 .coach-switch input:checked { background: var(--v4-accent); }
+.pt-player .coach-v4 .coach-switch input:checked::before { transform: translateX(20px); }
+.pt-player .coach-v4 .coach-switch input:disabled { opacity: .5; cursor: default; }
+.pt-player .coach-v4 .coach-note { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #ffffff80; }
+.pt-player .coach-v4 .coach-note .material-symbols-outlined { font-size: 14px; margin-top: 1px; }
+.pt-player .coach-v4 .coach-section-header { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: var(--coach-muted); }
+.pt-player .coach-v4 .coach-memory-card { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--v4-border); border-radius: 18px; background: var(--v4-card); }
+.pt-player .coach-v4 .coach-memory-eyebrow { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .9px; color: var(--v4-accent); }
+.pt-player .coach-v4 .coach-memory-text { font-size: 15px; }
+.pt-player .coach-v4 .coach-memory-quote { font-size: 12px; color: var(--coach-muted); }
+.pt-player .coach-v4 .coach-memory-actions { display: flex; justify-content: space-between; gap: 12px; }
+.pt-player .coach-v4 .coach-memory-actions button { padding: 0 4px; border: 0; background: none; color: var(--v4-accent); font-size: 14px; font-weight: 600; }
+.pt-player .coach-v4 .coach-memory-actions .coach-destructive { margin-left: auto; }
+.pt-player .coach-v4 .coach-memory .coach-destructive { color: #ff453a; }
+.pt-player .coach-v4 .coach-forget-all { justify-self: start; padding: 0; border: 0; background: none; font-size: 17px; }
+.pt-player .coach-v4 .coach-memory-notice { font-size: 12px; color: var(--v4-accent); }
+.pt-player .coach-v4 .coach-memory-error { display: grid; gap: 6px; justify-items: start; }
+.pt-player .coach-v4 .coach-memory-error p:first-child { font-size: 15px; color: var(--coach-orange); }
+.pt-player .coach-v4 .coach-memory-error button { border: 0; background: none; padding: 0; color: var(--v4-accent); font-size: 15px; }
+.pt-player .coach-v4 .coach-confirm { position: sticky; bottom: 0; display: grid; gap: 8px; padding: 16px; border: 1px solid var(--v4-border); border-radius: 16px; background: #0d2a20f7; }
+.pt-player .coach-v4 .coach-confirm h4 { font-size: 15px; font-weight: 700; text-align: center; }
+.pt-player .coach-v4 .coach-confirm p { font-size: 13px; color: var(--coach-muted); text-align: center; }
+.pt-player .coach-v4 .coach-confirm button { width: 100%; font-size: 17px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pt-player .coach-v4 .coach-loading-row img { animation: none; opacity: 1; }
+  .pt-player .coach-v4 .coach-spinner { animation: none; border-top-color: #ffffff40; border-right-color: #fff; }
+}
+@media (max-width: 360px) {
+  .pt-player .coach-v4 { --coach-gutter: 12px; }
+  .pt-player .coach-v4 .coach-tool { font-size: 13px; gap: 4px; padding: 0 4px; }
+}

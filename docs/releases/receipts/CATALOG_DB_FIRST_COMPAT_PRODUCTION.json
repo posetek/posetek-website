@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "status": "published_verified",
+  "accepted": true,
+  "feature": "Admin/coach database-first catalog compatibility",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "deployId": "6aeffb31ae4da62a62fc6356",
+  "previousDeploymentId": "6aeff48be31e6080ee877d2f",
+  "publishedAt": "2026-11-08T04:34:35.550Z",
+  "approval": "Owner authorization to start catalog plan steps 3-5, step 4 being this website application release (2026-11-07); runtime composition from the live lineage approved by the overseer",
+  "websiteSource": {
+    "pullRequest": 134,
+    "head": "cf5992499a36da2e7f435ac6930a378fc58b1ffc",
+    "mergeCommit": "78e572f4455893d41d779e774447c861eeb39634",
+    "hostedCI": "passed (run 42441258891 on cf599249)"
+  },
+  "runtime": {
+    "branch": "runtime/catalog-db-first-compat",
+    "base": "51106ec2b643a8879f5ae5e3d32f730d6d7fe976",
+    "baseNote": "Accepted result-validation runtime; its app/ is byte-identical to live runtime e4c6403818a2d736558f525153e4877810c3a2d0",
+    "applicationSource": "dbb380fa39efba289a0fd9c901eeb8742084a15f",
+    "reconciledBaselineCommit": "99ff6fdf5079b14b5910dee306970b5ce3ff8590",
+    "composition": [
+      "6272741, df32781, 8b37d01, a1dde30, f924ad2, 45e3a03: PR #134's six commits cherry-picked with -x (8b8fb4d, 61c986c, 1e7b181, a4409da, ef22866, cf59924); no conflicts; app/ differs from the base in exactly #134's 14 files, byte-identical to main",
+      "d98bce2 reconciles the protected baseline to live 6aeff48b (2,675 files, 37 recovery mappings)",
+      "dbb380f carries the live /signin -> /player-signin.html rewrite and the /signin and /player-signin.html header rules from 6aeff48b, so provider configuration is preserved rule for rule",
+      "99ff6fd reconciles the baseline to the published 6aeffb31"
+    ],
+    "mainNotShipped": "Main's app/ differs from the live runtime in 223 files beyond #134 (held Ball Striking routes and menu item, held privacy/support copy, main-only AI chat transport changes, and removal of the runtime's jump review panel and athlete reviewed results). None of it ships here.",
+    "runtimeOnlyRetained": ["jump review panel", "athlete reviewed results"],
+    "heldExcluded": ["Ball Striking sessions", "policy candidate", "session candidate"]
+  },
+  "priorProductionState": {
+    "preservedDeploy": "6aeff48be31e6080ee877d2f",
+    "preservedDeployNote": "CLI production deploy published 2026-11-08T04:03:25.006Z from Dylan Keller's November cohort report project (provider build.publish under /Users/dylankeller/Developer/PoseTek-Users-Parents-Coaches/...). It changed /report/index.html, render.mjs and report.css, added 30 /report/data files, added the isolated /player-signin.html with 4 /_astro assets, and served /signin from it with its own headers. It has no source in this repository. All of it is preserved byte for byte.",
+    "accidentalGitBuild": {
+      "deployId": "6aefe7d5d3b494177a620132",
+      "publishedAt": "2026-11-08T03:10:45.633Z",
+      "cause": "The PR #134 merge commit 78e572f4 lacked [skip netlify], so Netlify's Git build of main published to production.",
+      "effect": "/application.html unchanged (e1ddba3d); /index.html and /coaches/index.html rebuilt with only the astro-island uid changed (asset references identical, no local paths); 36 unreferenced application chunks added; netlify.toml record regenerated."
+    },
+    "priorApplicationRelease": "6aedefb93ea542305e9f49da"
+  },
+  "candidateDigestType": "sha256",
+  "candidateDigest": "ac6cac0fd8f69180462d0ab1a72005cb1a27af672af7d6e7c75962a52cad049a",
+  "artifactFiles": 2697,
+  "providerRecords": 2698,
+  "preservation": {
+    "priorServedFilesByteExact": 2676,
+    "changedExistingFiles": ["/application.html"],
+    "addedHashedAssets": 20,
+    "marketing": "byte-exact (live 6aeff48b provider originals pinned with --preserve-marketing: /index.html 36c122f3, /coaches/index.html 9554dd7f)",
+    "feedback": "byte-exact",
+    "coachEnrollment": "byte-exact",
+    "privateReports": "byte-exact",
+    "playerSignIn": "byte-exact (/player-signin.html 16a19ca8 and /signin served from it)",
+    "applicationSha1": "d4e89030dcd50b4aae1610a2fdb9cea4231af09e"
+  },
+  "providerConfiguration": {
+    "onlyDifference": "build.publish",
+    "headersPreserved": 13,
+    "redirectsPreserved": 11
+  },
+  "backend": {
+    "released": false,
+    "note": "No Functions, rules, indexes, schema or data change. The catalog draft import that depends on this release is a separate step."
+  },
+  "validation": {
+    "sourceHostedCI": "passed on PR #134 head cf599249",
+    "runtimeLanesAt": "45e3a03",
+    "runtimeFrontendTests": "2283/2283 (2,247 plus 36 from #134); the first combined run timed out once in interactive-pose.test.ts while cache seeding ran alongside; that file passed 10/10 alone and the full suite rerun passed",
+    "runtimeReleaseToolingTests": "155/155",
+    "runtimePolicyTests": "40/40",
+    "runtimeGuestSmoke": "7/7",
+    "runtimeOtherLanes": "lint (warnings only), Svelte 0 errors, build, marketing build, transport tests and scan, dependency audit 0 blocking",
+    "runtimeMarketingLinkLane": "not run: test file absent on the runtime branch; marketing bytes pinned to live",
+    "candidateArtifact": "passed: 2,697 files equal 2,698 provider records; all 2,676 prior files byte-exact; only /application.html changed; 20 hashed assets added",
+    "candidateConfiguration": "passed: only build.publish differs from 6aeff48b; 13 headers and 11 redirects identical",
+    "candidateHttpChecks": "102/102 against the 6aeff48b permalink (assets, application routes including /admin/drills and /admin/programs, isolated entries, /signin, /player-signin.html, /report, marketing bytes and headers)",
+    "candidateGuestBrowser": "20/20 route loads, Chromium and WebKit, no page errors, including /signin and /admin/drills; automatic signed-out POST blocked",
+    "pathLeakScan": "no local paths in application.html or any added asset",
+    "entryClosure": "every same-origin asset and /_astro import of application, marketing, feedback, coach-join, player sign-in and report entries resolves in the artifact",
+    "devPreviewExcluded": true
+  },
+  "productionVerification": {
+    "status": "passed",
+    "liveAfter": "6aeffb31ae4da62a62fc6356",
+    "artifactFiles": 2697,
+    "providerRecords": 2698,
+    "liveInventoryEqualsDraft": true,
+    "applicationServed": "d4e89030dcd50b4aae1610a2fdb9cea4231af09e",
+    "marketingServed": "unchanged: / f2ceba87, /coaches/ 7941dda8",
+    "signinServed": "Dylan's Player account page, 16a19ca8, identical to 6aeff48b",
+    "httpChecks": "88/102 exact; the 14 others differ only in strict-transport-security and x-robots-tag between posetek.net and the netlify.app permalink, as before",
+    "guestBrowser": "20/20 route loads, Chromium and WebKit, no page errors"
+  },
+  "notClaimed": [
+    "Signed-in acceptance of the hosted artifact (no synthetic admin or coach was created)",
+    "Authenticated emulator journeys",
+    "Behavior against database-first catalog documents, which do not exist in production until the separate draft import"
+  ],
+  "baseline": {
+    "status": "reconciled_verified",
+    "deploymentId": "6aeffb31ae4da62a62fc6356",
+    "protectedFiles": 2695,
+    "recoveryMappings": 37,
+    "ordinaryPreservationBuild": "passed",
+    "releaseToolingTests": 155
+  },
+  "releaseScope": {
+    "website": "PR #134 database-first catalog compatibility: validation gate on publishing, stale-save refusal, uncapped workout picker, coach dashboard published-only drills, v2 howTo in the athlete workout player",
+    "excluded": ["held policy/session/Ball Striking candidates", "main-only AI chat transport changes", "backend", "rules", "indexes", "gateway", "catalog data", "native"]
+  },
+  "recovery": "Restore 6aeff48be31e6080ee877d2f (Dylan's cohort report deploy, the immediate predecessor) through the guarded exact-deploy workflow after a fresh serving-state comparison: netlify api restoreSiteDeploy --data '{\"site_id\":\"b1ccf990-286c-4367-bb67-ca0d9ea2a020\",\"deploy_id\":\"6aeff48be31e6080ee877d2f\"}'. That restores the previous application entry and keeps the cohort reports and /signin page. A source revert alone does not republish.",
+  "proofSha256": {
+    "candidateArtifact": "4bab972e7ee2060ec57ecb2270e01398684393d34ae4f256b69f3565c48e45e2",
+    "candidateHttp": "039a09ac420d70255a5f22584cc6d5f9b04597629d95db469a3b582a79c48705",
+    "candidateConfiguration": "058ec4157828d58cd1d34617527d26572a8580ca61d7f59f5551be0f4e094cf2",
+    "candidateGuest": "ecdefc8f093f23ea2550184b592f8ca49c4cc98c1fbf99c06dba39b6289921ff",
+    "liveArtifact": "7f4a4297c1b130ad2fc9cc855368d72415e114b170069c40735c3cb6b32b1dcb",
+    "liveHttp": "1d7a2b21b87e3f9f19ebff887f50d8dca8c88e43bb98f418ffda844267a1050c",
+    "liveGuest": "0447308a3b491310758eb1a37b2b6988b2bbe78536b5325318b1e04c96e3c182",
+    "preservationBuild": "577b104fedcea0a1776d9da682e07bdc243b045fd0e04d6b301d6910d6730a03",
+    "runtimeLanes": "3fd8dedd298750671e642d33f0d576ec821c6d182b4ceffa4f3a8f346185990d",
+    "releaseToolingAfterReconcile": "05df2d8b4716d75b17227ce68647aac397c4b2b69bbac2c74fcb20ee2c7d08dc"
+  }
+}

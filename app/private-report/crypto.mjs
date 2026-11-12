@@ -27,3 +27,10 @@ export async function decryptReport(envelope, id, rawKey) {
   const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:bytes.slice(1, 13), additionalData:reportAdditionalData(id), tagLength:128}, key, bytes.slice(13));
   return JSON.parse(new TextDecoder('utf-8', {fatal:true}).decode(plain));
 }
+
+/** A separate capability that can record activity but cannot decrypt a report. */
+export async function reportTrackingToken(id, rawKey) {
+  const key = await crypto.subtle.importKey('raw', rawKey, {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+  const purpose = new TextEncoder().encode('posetek-one-pager-tracking:v1:' + id);
+  return encodeBase64Url(new Uint8Array(await crypto.subtle.sign('HMAC', key, purpose)));
+}

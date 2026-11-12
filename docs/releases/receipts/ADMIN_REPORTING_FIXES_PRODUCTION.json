@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "status": "published-and-verified",
+  "productionDeploy": "6af39c12b5d6443ec57767ec",
+  "predecessorDeploy": "6af3761aade8874285185c3a",
+  "publishedAtUtc": "2026-11-10T22:40:04.431Z",
+  "promotion": "Verified draft promoted without rebuilding (restoreSiteDeploy). The live deploy was re-read immediately before promotion and was still the predecessor.",
+  "websiteSourcePRs": [
+    141,
+    143,
+    146,
+    142
+  ],
+  "websiteMergeCommits": {
+    "141": "22c57d6",
+    "143": "645ece5",
+    "146": "cb87a1c",
+    "142": "c36e380"
+  },
+  "websiteRuntimeBranch": "runtime/admin-reporting-fixes",
+  "websiteRuntimeCommit": "e0cc95d",
+  "websiteRuntimeBase": "691db6047947210d3d94ce30cde0565a156901bb",
+  "websiteHostedCI": "passed on all four source PRs",
+  "backendSourcePRs": [
+    133,
+    140,
+    139,
+    132
+  ],
+  "backendMergeCommits": {
+    "133": "8388923",
+    "140": "b1a9362",
+    "139": "ac0bade",
+    "132": "d96edbe"
+  },
+  "backendSourceCommit": "d96edbe",
+  "backendHostedCI": "Not run: hosted jobs did not start (GitHub billing). The owner instructed on November 10, 2026 that all of this work be merged and deployed; merging and publishing used local lanes and a real-data validation. Hosted CI is not recorded as passed.",
+  "servedFiles": 2776,
+  "providerRecords": 2777,
+  "preservedFiles": 2758,
+  "removedFiles": 0,
+  "changed": {
+    "/application.html": {
+      "sha256": "1d4d77663a364ab13669fa0ae8b5868c8030b339b2363a5af18bce6df056f52e",
+      "bytes": 16112
+    },
+    "/report/loader.mjs": {
+      "sha256": "99341ffbc5fcb17fe38475dd7e4d8f208ed73d96467e34f4dec6d48669be6958",
+      "bytes": 5277,
+      "note": "Equal to main; its base equalled the predecessor's live file."
+    },
+    "/report/render.mjs": {
+      "sha256": "139dedfb3c440f727d2e301f2bc7edc533504a2ed3e7f16f0d9b4c0a5bdd8a73",
+      "bytes": 34640,
+      "note": "The predecessor's live file with one notice sentence changed. The repository copy was not used."
+    }
+  },
+  "addedAssets": 15,
+  "addedAssetPaths": [
+    "/_astro/admin-directory-lightning.dnn9ozeq.js",
+    "/_astro/adminpage.stgccl3v.js",
+    "/_astro/adminrecentworkouts.nlv0jwer.js",
+    "/_astro/applicationroot.d5oa4sjl.js",
+    "/_astro/athleteportalpage.bwnc-exh.js",
+    "/_astro/coachdetail.b2fhl-7h.js",
+    "/_astro/expanded.b1iekpkd.js",
+    "/_astro/insights.b9zlf43j.js",
+    "/_astro/insightspage.cvxoabfz.js",
+    "/_astro/monitoraccounts.bdf1lj5s.js",
+    "/_astro/monitoraccounts.dbbftix3.css",
+    "/_astro/playerdetail.ca0jf5j1.js",
+    "/_astro/playerworkouthistory.bn71rrfk.js",
+    "/_astro/supportpage.dzd2v4mj.js",
+    "/_astro/workouthistory.dloj9yi7.js"
+  ],
+  "artifactManifestSha256": "03908f8a8874317e6ae35f0a1fbcb7716c7905cb067b2730635210a3d6f197f5",
+  "orderedHeaders": 13,
+  "orderedRoutes": 12,
+  "protectedBaselineFiles": 2774,
+  "localRecoveryMappings": 37,
+  "functions": {
+    "recordOnePagerEngagement": {
+      "versionId": "3",
+      "previousVersionId": "2",
+      "sourceSha256": "659dc2b3a6010ac546c7093c7c62757832695b0725dc5ee49d6999dac13b7690",
+      "status": "ACTIVE",
+      "previousSourceSha256": "65effa199ddfacbae8cf2552cd455b10c5a49f551d9447a3f01b8b8e3c9e6a59",
+      "updatedAtUtc": "2026-11-10T22:28:47.971Z"
+    },
+    "getOnePagerEngagement": {
+      "versionId": "3",
+      "previousVersionId": "2",
+      "sourceSha256": "659dc2b3a6010ac546c7093c7c62757832695b0725dc5ee49d6999dac13b7690",
+      "status": "ACTIVE",
+      "previousSourceSha256": "65effa199ddfacbae8cf2552cd455b10c5a49f551d9447a3f01b8b8e3c9e6a59",
+      "updatedAtUtc": "2026-11-10T22:28:57.768Z"
+    },
+    "getClubInsightsV2": {
+      "versionId": "14",
+      "previousVersionId": "13",
+      "sourceSha256": "67b01da24fd7be6add2eb3ef2b87c81d5353a32201658fa95674fdbc4f3b9b07",
+      "previousSourceSha256": "81d1ba132140fcbeb0b2cc4bd3c33d8d0846a1d726dcf6163c430511855452b2",
+      "status": "ACTIVE",
+      "updatedAtUtc": "2026-11-10T22:42:40.523Z"
+    },
+    "getCoachPlayerComparison": {
+      "versionId": "8",
+      "previousVersionId": "7",
+      "sourceSha256": "67b01da24fd7be6add2eb3ef2b87c81d5353a32201658fa95674fdbc4f3b9b07",
+      "previousSourceSha256": "81d1ba132140fcbeb0b2cc4bd3c33d8d0846a1d726dcf6163c430511855452b2",
+      "status": "ACTIVE",
+      "updatedAtUtc": "2026-11-10T22:42:40.688Z"
+    },
+    "recordInsightUsage": {
+      "versionId": "10",
+      "previousVersionId": "9",
+      "sourceSha256": "67b01da24fd7be6add2eb3ef2b87c81d5353a32201658fa95674fdbc4f3b9b07",
+      "previousSourceSha256": "81d1ba132140fcbeb0b2cc4bd3c33d8d0846a1d726dcf6163c430511855452b2",
+      "status": "ACTIVE",
+      "updatedAtUtc": "2026-11-10T22:42:35.615Z"
+    },
+    "projectInsightPlayer": {
+      "versionId": "11",
+      "previousVersionId": "10",
+      "sourceSha256": "67b01da24fd7be6add2eb3ef2b87c81d5353a32201658fa95674fdbc4f3b9b07",
+      "previousSourceSha256": "81d1ba132140fcbeb0b2cc4bd3c33d8d0846a1d726dcf6163c430511855452b2",
+      "status": "ACTIVE",
+      "updatedAtUtc": "2026-11-10T22:42:41.653Z"
+    },
+    "projectInsightRecords": {
+      "versionId": "11",
+      "previousVersionId": "10",
+      "sourceSha256": "67b01da24fd7be6add2eb3ef2b87c81d5353a32201658fa95674fdbc4f3b9b07",
+      "previousSourceSha256": "81d1ba132140fcbeb0b2cc4bd3c33d8d0846a1d726dcf6163c430511855452b2",
+      "status": "ACTIVE",
+      "updatedAtUtc": "2026-11-10T22:42:49.622Z"
+    },
+    "projectInsightRevisions": {
+      "versionId": "11",
+      "previousVersionId": "10",
+      "sourceSha256": "67b01da24fd7be6add2eb3ef2b87c81d5353a32201658fa95674fdbc4f3b9b07",
+      "previousSourceSha256": "81d1ba132140fcbeb0b2cc4bd3c33d8d0846a1d726dcf6163c430511855452b2",
+      "status": "ACTIVE",
+      "updatedAtUtc": "2026-11-10T22:42:50.610Z"
+    },
+    "projectInsightFailures": {
+      "versionId": "11",
+      "previousVersionId": "10",
+      "sourceSha256": "67b01da24fd7be6add2eb3ef2b87c81d5353a32201658fa95674fdbc4f3b9b07",
+      "previousSourceSha256": "81d1ba132140fcbeb0b2cc4bd3c33d8d0846a1d726dcf6163c430511855452b2",
+      "status": "ACTIVE",
+      "updatedAtUtc": "2026-11-10T22:42:50.278Z"
+    },
+    "projectInsightArtifacts": {
+      "versionId": "11",
+      "previousVersionId": "10",
+      "sourceSha256": "67b01da24fd7be6add2eb3ef2b87c81d5353a32201658fa95674fdbc4f3b9b07",
+      "previousSourceSha256": "81d1ba132140fcbeb0b2cc4bd3c33d8d0846a1d726dcf6163c430511855452b2",
+      "status": "ACTIVE",
+      "updatedAtUtc": "2026-11-10T22:42:51.578Z"
+    },
+    "projectInsightArtifactDeletes": {
+      "versionId": "11",
+      "previousVersionId": "10",
+      "sourceSha256": "67b01da24fd7be6add2eb3ef2b87c81d5353a32201658fa95674fdbc4f3b9b07",
+      "previousSourceSha256": "81d1ba132140fcbeb0b2cc4bd3c33d8d0846a1d726dcf6163c430511855452b2",
+      "status": "ACTIVE",
+      "updatedAtUtc": "2026-11-10T22:42:51.251Z"
+    }
+  },
+  "unrelatedFunctionsPreserved": true,
+  "releaseOrder": [
+    "functions:one-pager-tracking (22:28Z)",
+    "website promotion (22:40:04Z)",
+    "functions:expanded-insights (22:42Z)"
+  ],
+  "verification": {
+    "runtime": {
+      "typescript": "passed",
+      "vitestFiles": 208,
+      "vitestTests": 2303,
+      "lint": "passed",
+      "build": "passed inside the release builder"
+    },
+    "draft": {
+      "inventoryMatchesArtifact": true,
+      "httpChecksAgainstPredecessor": "23 of 23 routes with equal status and header sets",
+      "signedOutRouteLoads": "16 of 16 in Chromium and WebKit",
+      "localPathsInChangedOrAddedFiles": 0,
+      "readerWithSyntheticReport": "Candidate reader sent opened then two 15-second viewing events in 31 seconds; the predecessor's reader sent opened only. Served locally from the artifact's reader files."
+    },
+    "live": {
+      "inventoryEqualsDraft": true,
+      "applicationSha256Prefix": "1d4d77663a36",
+      "readerFilesEqualDraft": 5,
+      "routes200": [
+        "/",
+        "/signin",
+        "/player-signin.html",
+        "/feedback",
+        "/admin/accounts",
+        "/athlete",
+        "/report/"
+      ],
+      "signedOutRouteLoads": "12 of 12 in Chromium and WebKit",
+      "trackingEndpoint": {
+        "openedUnregisteredToken": 204,
+        "viewingUnregisteredToken": 204
+      }
+    },
+    "realDataValidation": "The reporting code was run on a read-only in-memory copy of production through the website's own response checks before release: 8 views accepted, 0 refused."
+  },
+  "notClaimed": [
+    "Signed-in acceptance of the hosted site or of the published Functions; no signed-in call had reached them when this record was written.",
+    "Real-device behaviour of the report page.",
+    "Independent review of the late changes: the cohort merge, send times, accounts from the Workouts button, workout types, per-player phone sessions and the cumulative cutoff.",
+    "The Svelte check, root tooling tests and browser smoke on the runtime branch."
+  ],
+  "followUps": [
+    "The report project deploys the reader from its own source (draft website PR #140). Its next production deploy overwrites /report/loader.mjs and /report/render.mjs unless that source merges main, which would silently stop time-on-page collection.",
+    "Sessions recorded on a phone reach the server only for players with AI-sharing consent.",
+    "Backend PR #102 and website PR #131 (cumulative Time on platform) need the adjustment described in backend PR #140."
+  ]
+}

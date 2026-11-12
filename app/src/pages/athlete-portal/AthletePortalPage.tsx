@@ -226,7 +226,10 @@ export default function AthletePortalPage() {
   const activeDrill = drillByKey(drill);
   const rosterNavigation = athleteRosterNavigation(access, athlete, params.toString());
 
-  if (phase === 'ready' && (access === 'athlete' || access === 'preview')) {
+  // Staff see the player's own workspace when the link asks for it (`workspace=player`), so an
+  // admin, manager or coach can check exactly what that athlete lands on.
+  const staffPlayerView = params.get('workspace') === 'player' && !!access && ['admin', 'manager', 'coach'].includes(access);
+  if (phase === 'ready' && (access === 'athlete' || access === 'preview' || staffPlayerView)) {
     return <PlayerExperience key={playerId} ctx={ctx} initialReps={reps} />;
   }
 
@@ -258,6 +261,9 @@ export default function AthletePortalPage() {
           <Link className="quiet-button" id="rosterLink" to={rosterNavigation.to} state={access === "admin" ? { adminRestore: true } : undefined} hidden={!access || !["coach", "manager", "admin"].includes(access)}>
             <span className="material-symbols-outlined">groups</span><span>{rosterNavigation.label}</span>
           </Link>
+          <a className="quiet-button" id="playerViewLink" href={`/athlete?player=${encodeURIComponent(playerId || '')}&workspace=player`} hidden={!playerId || !access || !["coach", "manager", "admin"].includes(access)}>
+            <span className="material-symbols-outlined">smartphone</span><span>Player view</span>
+          </a>
           <button
             className="quiet-button share-button"
             id="shareButton"
@@ -349,7 +355,11 @@ export default function AthletePortalPage() {
               <span className="material-symbols-outlined">link_off</span>
               <h2>Profile unavailable</h2>
               <p>{loadError?.message || "This profile could not be opened."}</p>
-              {access !== "shared" && <Link className="primary-cta" to="/signin">Sign In</Link>}
+              {/* The signed-in account cannot open this profile: sign out and come back here with another one. */}
+              {access !== "shared" && <button type="button" className="primary-cta" id="switchAccountButton" onClick={() => {
+                const returnTo = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+                void auth.signOut().finally(() => { window.location.href = `/signin?returnTo=${returnTo}`; });
+              }}>Sign in with a different account</button>}
             </div>
           )}
           {phase === "ready" && view === "home" && (

@@ -1,0 +1,17 @@
+# Developmental reports and saved workouts
+
+The optional v1 `development` extension keeps the six results and three bands first. It adds three aggregate-only age charts, up to two strengths and priorities, position status (`verified`, `general`, `conflict`), and a descriptive saved-plan reference. Two exercise cards bind `planId`, `workoutId` and `drillId`, with instructions, exact dose, equipment and purpose. These identifiers confer no authorization. Legacy payloads remain valid. Signup capabilities and report IDs/keys are unchanged.
+
+Charts reuse the bounded pathway schema and suppress distributions below five qualified players. References use one qualified result per canonical player/metric from the latest reviewed compatible session, separated by recorded Girls/Boys and team age band. Missing results never become zero or a weakness. Dribbling and direction-change comparisons stay within the actual team/session. Existing bands use unrounded ranks even when percentile labels round to a boundary.
+
+Reports are generated from read-back active plans and their immutable catalog context. Only eligible published drills qualify. Measured priorities must match saved exercise IDs; position-based general work is labeled separately. No specialist coverage is implied when the catalog has none. Prior plans and workout logs are retained by the supported activation workflow. No new public endpoint, profile mutation, or outreach is introduced.
+
+The downloadable PDF is one page; detailed methods stay expandable on the web. Current production engagement callbacks and signup behavior are preserved. Deployment must compose only the reader, CSS and approved existing ciphertexts onto a freshly verified live inventory, preserving current routes, headers, runtime and tracking assets. November 9 examples with missing compatible corrected lineage remain private drafts, excluded from production publication and outreach.
+
+Validation: `node --test scripts/private-parent-{report,pathway,development,workout-entry,signup-entry}.test.mjs`; private release receipts bind all measurements, plan prescriptions, PDFs and phone-layout checks. No real player payloads, keys, invitations or URLs belong in Git.
+
+## Focused layout — November 10
+
+Dylan approved optional `layout: "focused-v1"`. It retains results and percentile bars, displays the same-team/session mean and eligible denominator beside each test, and replaces summary bands with supported strengths and priorities. A missing child result does not suppress a valid group mean; groups below five show no comparison. The layout hides age charts, categorical band headings, methodology disclosure and the training-plan summary, while retaining exact saved-plan drill references. Pathway code and evidence remain available for later; focused payloads do not require charts or display-only plan fields. Older payloads keep their existing rendering.
+
+Two saved-plan drills precede Open workouts and a visible Get PoseTek on iPhone button, labeled iPhone and iPad. Existing signup, exact-player continuation, native app links and engagement callbacks are preserved. The same actions appear in the one-page PDF. No plan regeneration, activation, account creation or outreach belongs to this presentation update. Verified November 9 reports may now publish without age-chart lineage, after identity, session results and saved-plan checks pass. Keep report identities and encryption keys stable.

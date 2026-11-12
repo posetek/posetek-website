@@ -17,6 +17,8 @@ import { DRILLS } from "./drills";
 import { accepted, fullName, mergeUnique, normalizeRep, num, repNumber, sessionNumber } from "./metrics";
 import { boardsFromPlayers, number } from "./mobile";
 import { assertAIJobEnabled } from '../player/ai-sharing';
+import { prefetchAthleteTestReport } from '../player/report';
+import { rememberJson, rememberRepArtifacts } from './replay-cache';
 
 export type Access = "athlete" | "coach" | "manager" | "admin" | "shared" | "preview";
 
@@ -62,6 +64,9 @@ export async function loadAuthenticated(user: any, requestedPlayer: string | nul
     access = "coach";
   }
   const athlete = { id: playerDoc.id, ...playerDoc.data() };
+  // The athlete lands on their profile, whose first section is the testing report: ask for it now
+  // rather than after the results below have loaded.
+  if (access === "athlete") prefetchAthleteTestReport(playerDoc.id);
   const effective = await cloud.httpsCallable("getAthleteEffectiveResults")({ playerId: playerDoc.id });
   const all = visibleAttempts(((effective.data as any).reps || []).map(normalizeRep));
   const reps = emptyReps();
@@ -137,7 +142,15 @@ export interface RepArtifacts {
   resultStatus?: { qualified: boolean; duplicate: boolean; reason: string; revisionId: string | null };
 }
 
+/**
+ * One rep's files for a signed-in viewer. The answer is kept in memory (replay-cache.ts) until shortly
+ * before its signed URLs expire, and a request already in flight is shared.
+ */
 export async function authArtifacts(drill: Drill, rep: any, playerId: string): Promise<RepArtifacts> {
+  return rememberRepArtifacts(drill.key, rep, playerId, () => loadAuthArtifacts(drill, rep, playerId));
+}
+
+async function loadAuthArtifacts(drill: Drill, rep: any, playerId: string): Promise<RepArtifacts> {
   if (drill.key !== "freeRecord") {
     const response = await cloud.httpsCallable("getAthleteRepMedia")({ playerId, drill: drill.key, repId: rep.id });
     return (response.data as RepArtifacts) || {};
@@ -173,11 +186,15 @@ export async function sharedArtifacts(drill: Drill, rep: any, token: string | nu
   return (result.data as any) || {};
 }
 
+/** A rep file's JSON. Its contents are kept in memory by storage location (replay-cache.ts). */
 export async function fetchJson(url: string | undefined | null): Promise<any> {
   if (!url) return null;
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) throw new Error(`Could not load ${response.status}`);
-  return response.json();
+  return rememberJson(url, async () => {
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Could not load ${response.status}`);
+    const bytes = Number(response.headers?.get?.("content-length")) || null;
+    return { json: await response.json(), bytes };
+  });
 }
 
 export async function storageJson(reference: any): Promise<any> {

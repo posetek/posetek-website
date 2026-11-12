@@ -32,6 +32,7 @@ const CoachDetail = lazy(() => import("./views/CoachDetail"));
 const PlayerDetail = lazy(() => import("./views/PlayerDetail"));
 const WorkoutEditor = lazy(() => import("./views/WorkoutEditor"));
 const RepTools = lazy(() => import("./views/RepTools"));
+const ResultValidation = lazy(() => import("./views/ResultValidation"));
 const PlannerRedirect = lazy(() => import("./views/PlannerRedirect"));
 const AnalysisWorkspace = lazy(() => import("./views/AnalysisWorkspace"));
 const PersonalizedPrograms = lazy(() => import("./views/PersonalizedPrograms"));
@@ -117,7 +118,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
         <Routes>
           <Route index element={<Navigate to={legacyAdminWorkspacePath(location.search)} state={location.state} replace />} />
           <Route path="feeds" element={<Navigate to="/feed" replace />} />
-          <Route path="drills" element={<DrillLibrary />} />
+          <Route path="drills" element={<DrillLibrary preview={preview} />} />
           <Route path="drills/new" element={<DrillForm mode="create" />} />
           <Route path="drills/:drillId" element={<DrillDetail />} />
           <Route path="drills/:drillId/edit" element={<DrillForm mode="edit" />} />
@@ -131,6 +132,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="accounts/player/:playerId/results/:drillKey/:repId" element={<RepTools />} />
           <Route path="programs" element={<PersonalizedPrograms />} />
           <Route path="analysis" element={<AnalysisWorkspace />} />
+          <Route path="result-validation" element={<ResultValidation preview={preview} />} />
           <Route path="ball-striking-sessions" element={<BallStrikingSessions preview={preview} />} />
           <Route path="ball-striking-sessions/:sessionId" element={<BallStrikingSessions preview={preview} />} />
           <Route path="ai-incidents" element={<AiIncidents />} />

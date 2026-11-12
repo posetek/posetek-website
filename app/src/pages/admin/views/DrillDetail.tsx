@@ -13,15 +13,20 @@ import { Link, useParams } from "react-router-dom";
 import { formatDoseText, formatRestText } from "../../../lib/contracts/drillV2";
 import type { CatalogDrill } from "../../../lib/contracts/drillV2";
 import { MEDIA_SLOTS, MEDIA_SLOT_LABELS, POSITION_LABELS, domainLabel, isPosition } from "../../../lib/contracts/types";
-import type { MediaSlot } from "../../../lib/contracts/types";
-import { loadDrill, mediaPlaybackUrl } from "../lib/catalog";
+import type { DrillStatus, MediaSlot } from "../../../lib/contracts/types";
+import {
+  SAVED_REFRESH_FAILED_MESSAGE, commitThenRefresh, drillStatusEditable, loadDrill, mediaPlaybackUrl, updateDrillStatus,
+} from "../lib/catalog";
 import DrillProductionPanel from "./DrillProductionPanel";
+import { StatusField } from "./StatusField";
 
 export default function DrillDetail() {
   const { drillId = "" } = useParams();
   const [drill, setDrill] = useState<CatalogDrill | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ kind: "error" | "notice"; text: string } | null>(null);
 
   useEffect(() => {
     document.title = `${drillId} | PoseTek admin`;
@@ -34,6 +39,29 @@ export default function DrillDetail() {
       .catch(loadError => setError(loadError?.message || "That drill could not be loaded."))
       .finally(() => setLoading(false));
   }, [drillId]);
+
+  // Status-only write: one transaction that re-checks the loaded version, keeps
+  // the validation publish gate and bumps drillCatalogMeta/current. The page then
+  // re-reads the drill, whose server `updatedAt` is the next change's baseline;
+  // if only that re-read fails, the change is still shown as saved.
+  async function changeStatus(next: DrillStatus) {
+    if (!drill || savingStatus) return;
+    setSavingStatus(true);
+    setStatusMessage(null);
+    try {
+      const change = await commitThenRefresh(
+        () => updateDrillStatus(drill, next),
+        () => loadDrill(drillId),
+        version => ({ ...drill, status: next, catalogVersion: version }),
+      );
+      if (change.item) setDrill(change.item);
+      if (change.refreshFailed) setStatusMessage({ kind: "notice", text: SAVED_REFRESH_FAILED_MESSAGE });
+    } catch (writeError) {
+      setStatusMessage({ kind: "error", text: writeError instanceof Error ? writeError.message : "The status could not be saved." });
+    } finally {
+      setSavingStatus(false);
+    }
+  }
 
   if (loading) return <div className="portal-loading"><span className="spinner" /><p>Loading {drillId}…</p></div>;
   if (!drill) return <p className="form-message" role="alert">{error}</p>;
@@ -55,9 +83,14 @@ export default function DrillDetail() {
           </p>
         </div>
         <div className="admin-heading-actions">
-          <span className={`admin-chip ${drill.status === "published" ? "accent" : drill.status === "archived" ? "danger" : "warn"}`}>
-            {drill.status}
-          </span>
+          {drillStatusEditable(drill) ? (
+            <StatusField compact label={`${drill.name} status`} value={drill.status} loadedStatus={drill.status} validation={drill.validation}
+                         managed={false} disabled={savingStatus} onChange={changeStatus} />
+          ) : (
+            <span className={`admin-chip ${drill.status === "published" ? "accent" : drill.status === "archived" ? "danger" : "warn"}`}>
+              {drill.status}
+            </span>
+          )}
           {drill.needsMigration ? (
             <span className="admin-chip warn">v1 — not editable here</span>
           ) : (
@@ -67,6 +100,9 @@ export default function DrillDetail() {
           )}
         </div>
       </section>
+      {statusMessage && (
+        <p className="form-message" role={statusMessage.kind === "error" ? "alert" : "status"}>{statusMessage.text}</p>
+      )}
 
       {drill.needsMigration && (
         <div className="admin-banner warn">

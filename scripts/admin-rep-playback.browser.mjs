@@ -44,6 +44,9 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
     const snapshot = async id => page.screenshot({ path: resolve(output, `${engineName}-${id}.png`), fullPage: true });
 
     await gotoCase('tracking');
+    // Measured evidence (result validation) is a separate layer with its own switch;
+    // turn it off so these pixel checks measure only the raw tracking overlay.
+    await page.getByRole('checkbox', { name: 'Measured evidence' }).uncheck();
     check(await slider.getAttribute('max') === '59', 'tracking frameCount sets bounds despite sparse array');
     check((await page.locator('.rt-frame-chip').innerText()).includes('30.00 fps'), 'metadata FPS preserved');
     check(await alpha() > 100, 'tracking person/COM/ball render actual canvas pixels');

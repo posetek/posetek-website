@@ -35,6 +35,7 @@ import {
   STATUS_PARTIAL,
   STATUS_SKIPPED,
 } from "../lib/training";
+import { teachingLinesFor } from "../lib/drillTeaching";
 import { loadCatalogDrill } from "../lib/workout-store";
 import type { WorkoutStore } from "../lib/workout-store";
 import RestTimerControls from '../player/RestTimerControls';
@@ -424,9 +425,7 @@ function BlockPage({ block, log, restRemaining, onDismissRest, restChoice, onCho
         <p className="eyebrow">How to do it</p>
         {catalogDrill ? (
           <div className="teaching-lines">
-            {catalogDrill.setup ? <TeachingLine icon="grid_on" label="Set up" text={catalogDrill.setup} /> : null}
-            {catalogDrill.execution ? <TeachingLine icon="sprint" label="Do it" text={catalogDrill.execution} /> : null}
-            {catalogDrill.successCriteria ? <TeachingLine icon="target" label="Done well" text={catalogDrill.successCriteria} /> : null}
+            {teachingLinesFor(catalogDrill).map(line => <TeachingLine key={line.label} {...line} />)}
           </div>
         ) : (
           <p className="muted-copy">Follow the dose and cues above — full setup notes for {block.drillId} aren't available here.</p>

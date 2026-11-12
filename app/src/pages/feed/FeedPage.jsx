@@ -376,7 +376,7 @@ function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, o
       `Leaderboards`
     ],
     [
-      athleteUrl(`home`),
+      athleteUrl(`stats`),
       `person`,
       `You`
     ]
@@ -399,7 +399,7 @@ function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, o
         <button aria-label={`Sharing settings`} onClick={() => setPanel(`settings`)}>
           <Icon name={`tune`} />
         </button>
-        <Link className={`social-avatar small`} aria-label={`Your profile`} to={athleteUrl(`home`)}>
+        <Link className={`social-avatar small`} aria-label={`Your profile`} to={athleteUrl(`stats`)}>
           {initials(context?.name || `You`)}
         </Link>
       </div>
@@ -598,8 +598,8 @@ function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, o
       </Link>)}
     </nav>}
   </div>;
-  return sharedPlayerShell ? <PlayerShell activeView="feed" search={location.search} pathname={location.pathname} className="player-community" navigationDisabled={!context} onSignOut={preview ? undefined : () => { void auth.signOut(); }} onNavigate={view => {
-    if (view === `feed`) setPanel(`feed`);
+  return sharedPlayerShell ? <PlayerShell activeView="home" title="Home" search={location.search} pathname={location.pathname} className="player-community" navigationDisabled={!context} onSignOut={preview ? undefined : () => { void auth.signOut(); }} onNavigate={view => {
+    if (view === `home`) setPanel(`feed`);
     else navigate(athleteUrl(view));
     window.scrollTo({ top: 0 });
   }}>{content}</PlayerShell> : content;
