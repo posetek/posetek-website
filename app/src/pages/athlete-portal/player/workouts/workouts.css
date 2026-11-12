@@ -12,6 +12,8 @@
   .wk-stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
   .wk-plan { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
   .wk-page > .v4-header + * { margin-top: 4px; }
+  /* The planner keeps the workspace's one column at any window width; its two columns are for the full-width admin page. */
+  .player-intake .personalized-planner .personalized-setup { grid-template-columns: minmax(0, 1fr); }
 
   /* Root: the one-page hub. What is in progress, the plan summary or invitation, Create a workout, then the grouped links. */
   .wk-root { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }

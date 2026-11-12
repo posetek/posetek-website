@@ -172,10 +172,12 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
     if (personalOpen && !personalGuided) closePersonal();
     if (chatTarget && !applying) { setChatTarget(null); setProposal(null); }
   }, [location.key, active, fromStats, page]);
-  // My workout plan with no plan to show opens the planner. It then stays, like the planner opened
-  // from the hub, until the athlete closes it, so an activated plan does not pull it away.
-  const planless = planPageBuilds(page, plans);
-  useEffect(() => { if (active && planless) setIntake(true); }, [active, planless]);
+  // My workout plan with no plan to show opens the planner. An activated plan does not pull it away:
+  // it stays until the athlete closes it or leaves the page. It leaves with the page, so Workouts
+  // shows its hub again rather than a planner the athlete never opened there.
+  const planless = planPageBuilds(page, plans), [pagePlanner, setPagePlanner] = useState(false);
+  useEffect(() => { if (active && planless) { setPagePlanner(true); setIntake(true); } }, [active, planless]);
+  const plannerOpen = planless || (intake && (!pagePlanner || page === 'plan'));
   // Light presentations belong to the page that opened them; ongoing work (a guided workout, a
   // workout conversation, the planner) stays until the athlete closes it.
   const lastPage = useRef(page);
@@ -183,12 +185,13 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
     if (lastPage.current === page) return;
     lastPage.current = page;
     setReview(null); setDrill(null); setFullOpen(false); setWeekDetail(null); setPanel(''); setCreateOpen(false); setAppOnly(null);
+    if (pagePlanner) { setPagePlanner(false); setIntake(false); }
   }, [page]);
 
   // Presentations inside one page open at the top and closing one returns to where the athlete was
   // on the page under it. Page changes are the workspace's: it scrolls a pushed page to the top and
   // restores a page reached with the browser's Back.
-  const overlayKey = [personalOpen && 'personal', playing && 'player', intake && 'intake', chatTarget && 'chat', review && 'review', fullOpen && 'full', createOpen && 'create', weekDetail !== null && `week:${weekDetail}`, panel, drill && `drill:${drill.id}`].filter(Boolean).join('/');
+  const overlayKey = [personalOpen && 'personal', playing && 'player', plannerOpen && 'intake', chatTarget && 'chat', review && 'review', fullOpen && 'full', createOpen && 'create', weekDetail !== null && `week:${weekDetail}`, panel, drill && `drill:${drill.id}`].filter(Boolean).join('/');
   const scrolls = useRef(new Map<string, number>()), shownOverlay = useRef({ page, key: overlayKey }), activeRef = useRef(active);
   activeRef.current = active;
   useEffect(() => {
@@ -285,10 +288,10 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
 
   // Presentations over whichever page opened them, the hub included.
   const overlay = (title: string, onClose: () => void, body: ReactNode) => <section className="wk-page"><PlayerHeader title={title} onBack={onClose} />{hubNotice}{body}</section>;
-  if (intake || planless) {
+  if (plannerOpen) {
     // With no plan under it, closing the planner leaves the page instead of showing it empty.
-    const closePlanner = () => { setIntake(false); if (planless) back(); };
-    return overlay('Training plan', closePlanner, <ProgramIntake playerId={ctx.playerId!} athlete={ctx.athlete} statsProfile={{}} preview={preview} access={ctx.access} weeks={fromStats && page === 'plan' ? STATS_PLAN_WEEKS : undefined} initialText={seed} onReady={() => { setIntake(false); setReveal(true); }} onBack={closePlanner} />);
+    const closePlanner = () => { setPagePlanner(false); setIntake(false); if (planless) back(); };
+    return overlay('Training plan', closePlanner, <ProgramIntake playerId={ctx.playerId!} athlete={ctx.athlete} statsProfile={{}} preview={preview} access={ctx.access} weeks={fromStats && page === 'plan' ? STATS_PLAN_WEEKS : undefined} initialText={seed} onReady={() => { setPagePlanner(false); setIntake(false); setReveal(true); }} onBack={closePlanner} />);
   }
   if (drill) return overlay(drill.name || 'Drill', () => setDrill(null), <DrillMedia drillId={drill.id} preview={preview} />);
   if (chatTarget) return overlay(chatTarget.kind === 'new' ? 'Create your workout' : 'Your workout', () => { if (!applying) { setChatTarget(null); setProposal(null); } }, <>{message}
