@@ -20,7 +20,9 @@ import { attemptLabel, resultLabel, sameResultStatus } from "../../../lib/result
 import type { Drill } from "../lib/drills";
 import type { Access } from "../lib/loaders";
 import { authArtifacts, fetchJson, sharedArtifacts } from "../lib/loaders";
+import { storage } from "../../../lib/firebase";
 import {
+  artifactFolder,
   frameMarkers,
   num,
   parsePose,
@@ -111,7 +113,14 @@ export async function loadRepReplay(drill: Drill, rep: any, access: Access, play
   if (rep.resultStatus && payload.resultStatus && !sameResultStatus(rep.resultStatus, payload.resultStatus)) {
     throw new Error("This result changed since it was opened. Refresh the athlete results to view the latest revision.");
   }
-  const urls = payload.artifactUrls || {};
+  const urls: Record<string, string> = { ...(payload.artifactUrls || {}) };
+  // The live media endpoint returns no tracking.json although the file is stored (its deployed
+  // version predates tracking replays; backend main returns it). Staff may read the rep's folder
+  // themselves, so they get the box replay meanwhile. A player gets it once the endpoint is redeployed.
+  if (TRACKING_DRILLS.has(drill.key) && !urls[TRACKING_ARTIFACT] && !urls["pose.json"] && playerId && ["admin", "manager", "coach"].includes(access)) {
+    try { urls[TRACKING_ARTIFACT] = await storage.ref(artifactFolder(rep, drill, playerId)).child(TRACKING_ARTIFACT).getDownloadURL(); }
+    catch { /* Not stored, or this viewer may not read the folder. */ }
+  }
   const [pose, metadata] = await Promise.all([
     fetchJson(urls["pose.json"]).catch(() => null),
     fetchJson(urls["metadata.json"]).catch(() => null),

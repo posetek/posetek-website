@@ -3,6 +3,7 @@ import PosePlayback, { edges17, edges33 } from '../../../../components/PosePlayb
 import { frameAtTime, poseTimeline } from '../../../../lib/pose-playback';
 import type { PosePoint, Timeline } from '../../../../lib/pose-playback';
 import { drawTrackingFrame } from '../../../../lib/replay-tracking';
+import type { ReplayTracking } from '../../../../lib/replay-tracking';
 import { finiteNumber, metricValue } from '../../../../lib/result-values';
 import { drillByKey } from '../../lib/drills';
 import type { Access } from '../../lib/loaders';
@@ -56,8 +57,37 @@ export function flightFrameRate(rep: Row, meta: Record<string, any>): number | n
   return rate >= 10 && rate <= 1000 ? rate : null;
 }
 
+/** The longest run of unexamined frames that is filled in (a quarter of a second at 120 frames a second). */
+const MAX_TRACKING_GAP = 30;
+
+/**
+ * The tracker examines only some frames (every tenth, then every fourth near the action), so a
+ * replay of its boxes blinks. Frames between two examined ones take the straight line between
+ * them; longer gaps stay empty.
+ */
+export function fillTracking(tracking: ReplayTracking): ReplayTracking {
+  const frames = tracking.frames.map(frame => ({ ...frame }));
+  for (const key of ['person', 'com', 'ball'] as const) {
+    let last = -1;
+    for (let index = 0; index < frames.length; index += 1) {
+      const here = frames[index][key] as Record<string, number> | null;
+      if (!here) continue;
+      if (last >= 0 && index - last > 1 && index - last <= MAX_TRACKING_GAP) {
+        const from = frames[last][key] as unknown as Record<string, number>;
+        for (let fill = last + 1; fill < index; fill += 1) {
+          const along = (fill - last) / (index - last);
+          (frames[fill] as Record<string, unknown>)[key] = Object.fromEntries(Object.keys(from).map(part => [part, from[part] + (here[part] - from[part]) * along]));
+        }
+      }
+      last = index;
+    }
+  }
+  return { ...tracking, frames };
+}
+
 const loadReplay = async (drill: ReturnType<typeof drillByKey>, rep: Row, access: Access, playerId: string) => {
-  const loaded = await loadRepReplay(drill, rep, access, playerId, null);
+  const raw = await loadRepReplay(drill, rep, access, playerId, null);
+  const loaded = raw.tracking ? { ...raw, tracking: fillTracking(raw.tracking) } : raw;
   const data = withVideoFacts(loaded, await videoFacts(loaded.mediaUrl));
   if (poseTimeline(data.playbackMetadata, frameCount(data)).times.length) return data;
   const rate = flightFrameRate(rep, data.metadata);
