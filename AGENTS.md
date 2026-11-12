@@ -17,6 +17,38 @@ PR requirements and release/deployment holds remain unchanged. Runtime tool
 approval is separate from this policy; report exact tool rejections and never
 switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.md#website-worktree-local-lane).
 
+## Athlete workspace — November 12, 2026
+
+Deployment `6af598a062c763422296510e` was published at `2026-11-12T10:56:25.482Z`
+from runtime `c86fb8f` on `runtime/player-workspace`: accepted runtime `cb70512`,
+with reviewed results removed (the founder's decision), plus the `app/` changes of
+PRs #148 to #152 and main's coach memory envelope.
+
+- Athletes get the app's four tabs: Home, Coach, Workouts and Stats. Staff open the
+  same workspace for an athlete from "Player view".
+- Stats: radar, score cards, pose player, three next-step buttons, and a club
+  comparison read from `benchmarks/club-<organizationId>` (Vacaville United only).
+- Workouts: Build Workout and plan setup use the app's connections (`workout_chat`,
+  `apply_workout_draft`, `generate_training_plan`).
+
+It preserves the prior live deploy `6af5027b` (the report project's November 12
+one-pagers) byte for byte except `/application.html`, and adds 44 hashed assets. All
+2,845 artifact files match 2,846 provider records. The reconciled baseline protects
+2,843 files with all 37 recovery mappings. The AI transport (`gateway.ts`,
+`ai-sharing.ts`, `AiCoachView.tsx`) is still the released one; held main candidates
+remain excluded.
+
+`getAthleteRepMedia` is still the September version, so athletes get no sprint,
+shuttle or dribbling replay until backend's `deployments/testing-results-media`
+package is run. Signed-in checks used the admin test account and the synthetic demo
+athlete; a real athlete's session is not claimed.
+[Release handoff](docs/releases/PLAYER_WORKSPACE.md) ·
+[Production receipt](docs/releases/receipts/PLAYER_WORKSPACE_PRODUCTION.json)
+
+**The next one-pager deploy must start from `6af598a0`.** Those deploys upload a full
+copy of the site; a copy that starts from an earlier deploy silently puts the earlier
+application back. Keep `[skip netlify]` on every source and receipt merge.
+
 ## Admin reporting fixes and one-pager time on page — November 10, 2026
 
 Deployment `6af39c12b5d6443ec57767ec` was published at `2026-11-10T22:40:04.431Z`
