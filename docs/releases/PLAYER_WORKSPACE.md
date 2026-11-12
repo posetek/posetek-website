@@ -69,7 +69,7 @@ Built with `node scripts/build-astro-release.mjs --preserve-marketing <manifest>
 |---|---|
 | `getAthleteTestReport` | Version 2 since November 12, 09:14Z (the station sprint fix; backend [#159](https://github.com/posetek/posetek-backend/pull/159) records it). |
 | `benchmarks/club-vacaville-united-soccer-club` and `clubTestResults/*` | Written November 12, 08:27Z and 08:43Z by the owner. Any signed-in account can read the statistics document; the per-athlete documents are not client-readable. |
-| `getAthleteRepMedia` | Still version 2 (September 17). **Athletes get no sprint, shuttle or dribbling replay until main's version is deployed**; staff get one through a Storage fallback. The one-function release package is merged (backend [#160](https://github.com/posetek/posetek-backend/pull/160)) and not yet run. |
+| `getAthleteRepMedia` | Version 2 (September 17) when the website was published, so athletes had no sprint, shuttle or dribbling replay; staff had one through a Storage fallback. **Version 3 was deployed November 12, 17:19Z** with backend's one-function package ([#160](https://github.com/posetek/posetek-backend/pull/160)): it signs `tracking.json` for those three tests. `getAthleteEffectiveResults` was verified unchanged. The backend receipt is `release/receipts/testing-results-media-20261112.json`. A browser check of an athlete seeing a tracking replay was not run. |
 | `getAthleteTestComparison`, `getClubTestComparison` | Not deployed. The team median and split averages in the Stats pose player are staff-only. |
 
 ## Verification
@@ -117,7 +117,7 @@ Recovery: compare fresh serving state, then restore `6af5027b28714c6f1147b4ec` w
 ## Follow-ups
 
 1. **The next one-pager deploy can silently undo this release.** Those deploys upload a full copy of the site. Unless that copy starts from `6af598a0`, it puts the earlier `/application.html` back with no error. Whoever publishes the next batch must start from the new live deploy.
-2. **Deploy `getAthleteRepMedia`** with the `deployments/testing-results-media` package (backend), so athletes get sprint, shuttle and dribbling replays.
+2. **`getAthleteRepMedia` is deployed** (November 12, 17:19Z; see the table above). Still open: seeing a tracking replay as a real athlete, and shared-link replays, which use another function and carry no tracking file.
 3. **Automatic error reports for cut-off requests** should be dropped at the source (`lib/user-issues.ts`); the new report call takes 5 to 8 seconds, so more of them will be cut off.
 4. **Club comparison data** exists for one club. The builder that wrote it is not in a repository, and `clubTestResults` has no client rule.
 5. **Released and main AI transports still differ.** Releasing main's shared transport would remove the last athlete-portal differences listed above.

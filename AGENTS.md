@@ -38,10 +38,11 @@ one-pagers) byte for byte except `/application.html`, and adds 44 hashed assets.
 `ai-sharing.ts`, `AiCoachView.tsx`) is still the released one; held main candidates
 remain excluded.
 
-`getAthleteRepMedia` is still the September version, so athletes get no sprint,
-shuttle or dribbling replay until backend's `deployments/testing-results-media`
-package is run. Signed-in checks used the admin test account and the synthetic demo
-athlete; a real athlete's session is not claimed.
+`getAthleteRepMedia` version 3 followed at 17:19Z the same day (backend's
+`deployments/testing-results-media` package), so athletes get sprint, shuttle and
+dribbling replays where an attempt has a tracking file. Signed-in checks used the
+admin test account and the synthetic demo athlete; a real athlete's session is not
+claimed.
 [Release handoff](docs/releases/PLAYER_WORKSPACE.md) ·
 [Production receipt](docs/releases/receipts/PLAYER_WORKSPACE_PRODUCTION.json)
 
