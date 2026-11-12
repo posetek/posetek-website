@@ -120,7 +120,7 @@
   "backendState": {
     "getAthleteTestReport": "Version 2 since 2026-11-12T09:14Z (station sprint fix); recorded in posetek-backend PR #159.",
     "clubComparisonData": "benchmarks/club-vacaville-united-soccer-club and clubTestResults written 2026-11-12 08:27Z and 08:43Z by the owner.",
-    "getAthleteRepMedia": "Version 2 (2026-09-17), not yet redeployed: athletes get no sprint, shuttle or dribbling replay until it is. The one-function release package is merged (posetek-backend PR #160) and not yet run.",
+    "getAthleteRepMedia": "Version 2 (2026-09-17) when the website was published. Version 3 was deployed 2026-11-12T17:19:21Z with the one-function package of posetek-backend PR #160: it signs tracking.json for sprint, change-of-direction and dribbling attempts. getAthleteEffectiveResults was verified unchanged at version 5. Backend receipt: release/receipts/testing-results-media-20261112.json.",
     "notDeployed": ["getAthleteTestComparison", "getClubTestComparison"]
   },
   "verification": {
@@ -176,7 +176,7 @@
   "recovery": "Compare fresh serving state, then restore 6af5027b28714c6f1147b4ec: netlify api restoreSiteDeploy --data '{\"site_id\":\"b1ccf990-286c-4367-bb67-ca0d9ea2a020\",\"deploy_id\":\"6af5027b28714c6f1147b4ec\"}'. That restores the previous application and keeps every report. A source revert alone does not republish.",
   "followUps": [
     "The next one-pager deploy uploads a full copy of the site; unless that copy starts from 6af598a0 it silently puts the earlier /application.html back.",
-    "Deploy getAthleteRepMedia with the deployments/testing-results-media package (posetek-backend).",
+    "getAthleteRepMedia version 3 is deployed (2026-11-12T17:19Z); a browser check of an athlete seeing a tracking replay is still open.",
     "Drop automatic error reports for cut-off requests at the source (lib/user-issues.ts).",
     "Club comparison data exists for one club; its builder is not in a repository and clubTestResults has no client rule.",
     "The released and main AI transports still differ.",
