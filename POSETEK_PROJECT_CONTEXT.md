@@ -33,6 +33,18 @@ example draft requires exact artifact review and hosted acceptance before the us
 
 # PoseTek website project context
 
+
+## Player Stats landing — November 12, 2026
+
+Deployment `6af626e37d3ff00c50b761d9` explicitly opens Stats for the player
+resolved after normal sign-in, an invitation claim or organization-code signup.
+Explicit Training links still open Workouts, and staff destinations are unchanged.
+Source [PR #157](https://github.com/posetek/posetek-website/pull/157) is merged.
+The release replaces only the isolated sign-in document and adds one hashed
+script; 2,844 predecessor files, including the athlete application and all report
+files, stay exact. The new baseline protects 2,844 files with all 37 recovery
+mappings. [Production receipt](docs/releases/receipts/PLAYER_STATS_LANDING_PRODUCTION.json)
+
 ## Admin reporting fixes and one-pager time on page — November 10, 2026
 
 Deployment `6af39c12b5d6443ec57767ec` makes "Last week" on the admin cards the whole previous week, counts sessions recorded on the phone as workouts (with a by-type chart and per-player lists), and adds reports sent, time on page, accounts created through the Workouts button and a trend chart to one-pager tracking. Web personal workouts can save a skip and finish.
