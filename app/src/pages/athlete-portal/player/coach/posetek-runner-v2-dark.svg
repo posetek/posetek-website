@@ -1,0 +1,228 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="pose-runner pose-runner-v2" viewBox="0 0 100 100" width="64" height="64" role="img" aria-label="PoseTek 33-point running pose" focusable="false" fill="none" stroke-linecap="round" stroke-linejoin="round"><title>PoseTek 33-point running pose</title><g data-layer="bones"><line data-segment="28:32" data-side="right" x1="59.88727" y1="85.42017" x2="66.16222" y2="86.38243" stroke="#c1f5e5" stroke-width="1.15"/><line data-segment="30:32" data-side="right" x1="57.56693" y1="88.6609" x2="66.16222" y2="86.38243" stroke="#c1f5e5" stroke-width="1.15"/><line data-segment="28:30" data-side="right" x1="59.88727" y1="85.42017" x2="57.56693" y2="88.6609" stroke="#c1f5e5" stroke-width="1.15"/><line data-segment="26:28" data-side="right" x1="56.99565" y1="66.77113" x2="59.88727" y2="85.42017" stroke="#c1f5e5" stroke-width="1.6"/><line data-segment="18:20" data-side="right" x1="48.2224" y1="50.72753" x2="48.63195" y2="51.54037" stroke="#c1f5e5" stroke-width="1"/><line data-segment="16:18" data-side="right" x1="46.62825" y1="48.6688" x2="48.2224" y2="50.72753" stroke="#c1f5e5" stroke-width="1"/><line data-segment="16:22" data-side="right" x1="46.62825" y1="48.6688" x2="46.41624" y2="50.81646" stroke="#c1f5e5" stroke-width="1"/><line data-segment="16:20" data-side="right" x1="46.62825" y1="48.6688" x2="48.63195" y2="51.54037" stroke="#c1f5e5" stroke-width="1"/><line data-segment="8:12" data-side="right" x1="54.17234" y1="23.46588" x2="49.13331" y2="31.85088" stroke="#c1f5e5" stroke-width="1.1"/><line data-segment="12:14" data-side="right" x1="49.13331" y1="31.85088" x2="40.0894" y2="39.71652" stroke="#c1f5e5" stroke-width="1.6"/><line data-segment="0:8" data-side="right" x1="61.31214" y1="23.25088" x2="54.17234" y2="23.46588" stroke="#c1f5e5" stroke-width="1.1"/><line data-segment="12:24" data-side="right" x1="49.13331" y1="31.85088" x2="45.89381" y2="52.92088" stroke="#c1f5e5" stroke-width="1.6"/><line data-segment="14:16" data-side="right" x1="40.0894" y1="39.71652" x2="46.62825" y2="48.6688" stroke="#c1f5e5" stroke-width="1.6"/><line data-segment="24:26" data-side="right" x1="45.89381" y1="52.92088" x2="56.99565" y2="66.77113" stroke="#c1f5e5" stroke-width="1.6"/><line data-segment="0:7" data-side="left" x1="61.31214" y1="23.25088" x2="57.42189" y2="23.46588" stroke="#d8fba2" stroke-width="1.1"/><line data-segment="15:19" data-side="left" x1="70.93052" y1="34.56731" x2="73.08372" y2="32.50471" stroke="#d8fba2" stroke-width="1"/><line data-segment="17:19" data-side="left" x1="73.14883" y1="32.10071" x2="73.08372" y2="32.50471" stroke="#d8fba2" stroke-width="1"/><line data-segment="15:21" data-side="left" x1="70.93052" y1="34.56731" x2="73.12449" y2="34.36241" stroke="#d8fba2" stroke-width="1"/><line data-segment="15:17" data-side="left" x1="70.93052" y1="34.56731" x2="73.14883" y2="32.10071" stroke="#d8fba2" stroke-width="1"/><line data-segment="11:12" data-side="cross" x1="56.75571" y1="31.85088" x2="49.13331" y2="31.85088" stroke="#ecf6d9" stroke-width="1.6"/><line data-segment="13:15" data-side="left" x1="63.33965" y1="42.38678" x2="70.93052" y2="34.56731" stroke="#d8fba2" stroke-width="1.6"/><line data-segment="23:24" data-side="cross" x1="50.10619" y1="52.92088" x2="45.89381" y2="52.92088" stroke="#ecf6d9" stroke-width="1.6"/><line data-segment="7:11" data-side="left" x1="57.42189" y1="23.46588" x2="56.75571" y2="31.85088" stroke="#d8fba2" stroke-width="1.1"/><line data-segment="11:13" data-side="left" x1="56.75571" y1="31.85088" x2="63.33965" y2="42.38678" stroke="#d8fba2" stroke-width="1.6"/><line data-segment="11:23" data-side="left" x1="56.75571" y1="31.85088" x2="50.10619" y2="52.92088" stroke="#d8fba2" stroke-width="1.6"/><line data-segment="23:25" data-side="left" x1="50.10619" y1="52.92088" x2="48.68164" y2="71.34395" stroke="#d8fba2" stroke-width="1.6"/><line data-segment="25:27" data-side="left" x1="48.68164" y1="71.34395" x2="31.53448" y2="71.25469" stroke="#d8fba2" stroke-width="1.6"/><line data-segment="27:31" data-side="left" x1="31.53448" y1="71.25469" x2="34.81504" y2="77.84037" stroke="#d8fba2" stroke-width="1.15"/><line data-segment="29:31" data-side="left" x1="27.80274" y1="70.93376" x2="34.81504" y2="77.84037" stroke="#d8fba2" stroke-width="1.15"/><line data-segment="27:29" data-side="left" x1="31.53448" y1="71.25469" x2="27.80274" y2="70.93376" stroke="#d8fba2" stroke-width="1.15"/></g><g data-layer="landmarks"><circle data-landmark="32" data-landmark-name="right_foot_index" data-side="right" cx="66.16222" cy="86.38243" r="1.25" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="18" data-landmark-name="right_pinky" data-side="right" cx="48.2224" cy="50.72753" r="0.95" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="28" data-landmark-name="right_ankle" data-side="right" cx="59.88727" cy="85.42017" r="1.8" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="12" data-landmark-name="right_shoulder" data-side="right" cx="49.13331" cy="31.85088" r="1.8" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="30" data-landmark-name="right_heel" data-side="right" cx="57.56693" cy="88.6609" r="1.25" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="26" data-landmark-name="right_knee" data-side="right" cx="56.99565" cy="66.77113" r="1.8" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="22" data-landmark-name="right_thumb" data-side="right" cx="46.41624" cy="50.81646" r="0.95" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="20" data-landmark-name="right_index" data-side="right" cx="48.63195" cy="51.54037" r="0.95" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="16" data-landmark-name="right_wrist" data-side="right" cx="46.62825" cy="48.6688" r="1.8" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="6" data-landmark-name="right_eye_outer" data-side="left" cx="57.06375" cy="20.75688" r="0.65" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="10" data-landmark-name="mouth_right" data-side="left" cx="59.81968" cy="27.12088" r="0.65" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="5" data-landmark-name="right_eye" data-side="left" cx="58.31966" cy="20.45588" r="0.65" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="8" data-landmark-name="right_ear" data-side="left" cx="54.17234" cy="23.46588" r="0.85" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="4" data-landmark-name="right_eye_inner" data-side="left" cx="59.53963" cy="20.67088" r="0.65" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="0" data-landmark-name="nose" data-side="left" cx="61.31214" cy="23.25088" r="0.95" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="9" data-landmark-name="mouth_left" data-side="left" cx="60.90287" cy="27.12088" r="0.65" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="1" data-landmark-name="left_eye_inner" data-side="left" cx="60.42223" cy="20.67088" r="0.65" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="14" data-landmark-name="right_elbow" data-side="right" cx="40.0894" cy="39.71652" r="1.8" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="19" data-landmark-name="left_index" data-side="left" cx="73.08372" cy="32.50471" r="0.95" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="2" data-landmark-name="left_eye" data-side="left" cx="60.04473" cy="20.45588" r="0.65" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="24" data-landmark-name="right_hip" data-side="right" cx="45.89381" cy="52.92088" r="1.8" fill="#c1f5e5" stroke="#041610" stroke-width="0.45"/><circle data-landmark="21" data-landmark-name="left_thumb" data-side="left" cx="73.12449" cy="34.36241" r="0.95" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="3" data-landmark-name="left_eye_outer" data-side="left" cx="59.55106" cy="20.75688" r="0.65" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="15" data-landmark-name="left_wrist" data-side="left" cx="70.93052" cy="34.56731" r="1.8" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="17" data-landmark-name="left_pinky" data-side="left" cx="73.14883" cy="32.10071" r="0.95" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="7" data-landmark-name="left_ear" data-side="left" cx="57.42189" cy="23.46588" r="0.85" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="13" data-landmark-name="left_elbow" data-side="left" cx="63.33965" cy="42.38678" r="1.8" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="23" data-landmark-name="left_hip" data-side="left" cx="50.10619" cy="52.92088" r="1.8" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="11" data-landmark-name="left_shoulder" data-side="left" cx="56.75571" cy="31.85088" r="1.8" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="25" data-landmark-name="left_knee" data-side="left" cx="48.68164" cy="71.34395" r="1.8" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="31" data-landmark-name="left_foot_index" data-side="left" cx="34.81504" cy="77.84037" r="1.25" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="27" data-landmark-name="left_ankle" data-side="left" cx="31.53448" cy="71.25469" r="1.8" fill="#ddffac" stroke="#041610" stroke-width="0.45"/><circle data-landmark="29" data-landmark-name="left_heel" data-side="left" cx="27.80274" cy="70.93376" r="1.25" fill="#ddffac" stroke="#041610" stroke-width="0.45"/></g><script><![CDATA[
+// Adapted from https://posetek-loader-v2--posetek-mobile-mockup-v2.netlify.app/v2/runner.mjs
+// Same 33-point geometry, depth ordering and 900 ms stride; mounts the supplied SVG.
+(() => {
+/** Original anatomical rig and motion; MediaPipe names/indexing are the interface. */
+const STRIDE_MS = 900;
+const LANDMARK_NAMES = Object.freeze([
+  'nose', 'left_eye_inner', 'left_eye', 'left_eye_outer',
+  'right_eye_inner', 'right_eye', 'right_eye_outer', 'left_ear', 'right_ear',
+  'mouth_left', 'mouth_right', 'left_shoulder', 'right_shoulder',
+  'left_elbow', 'right_elbow', 'left_wrist', 'right_wrist',
+  'left_pinky', 'right_pinky', 'left_index', 'right_index', 'left_thumb', 'right_thumb',
+  'left_hip', 'right_hip', 'left_knee', 'right_knee', 'left_ankle', 'right_ankle',
+  'left_heel', 'right_heel', 'left_foot_index', 'right_foot_index',
+]);
+// The connections match the pose overlay used by the website, including its
+// nose-to-ear and ear-to-shoulder face/neck connections.
+const SEGMENTS = Object.freeze([
+  [11, 12], [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19],
+  [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20],
+  [11, 23], [12, 24], [23, 24],
+  [23, 25], [25, 27], [27, 29], [29, 31], [27, 31],
+  [24, 26], [26, 28], [28, 30], [30, 32], [28, 32],
+  [0, 7], [0, 8], [7, 11], [8, 12],
+].map(Object.freeze));
+const TAU = Math.PI * 2;
+const CAMERA = Object.freeze({ yaw: 25 * Math.PI / 180, scale: 43, centerX: 48, groundY: 90 });
+const LENGTHS = Object.freeze({ thigh: 0.43, shin: 0.44, upperArm: 0.30, forearm: 0.27 });
+const normalize = value => Number.isFinite(value) ? ((value % 1) + 1) % 1 : 0;
+const precise = value => Number(value.toFixed(5));
+// Cubic Hermite knots carry explicit velocities. Matching first/last values and
+// velocities makes the periodic path C1, including its contact/flight joins.
+function curve(phase, knots) {
+  for (let i = 0; i < knots.length - 1; i++) {
+    const [start, a, da] = knots[i];
+    const [end, b, db] = knots[i + 1];
+    if (phase <= end) {
+      const span = end - start;
+      const t = (phase - start) / span;
+      const t2 = t * t, t3 = t2 * t;
+      return (2 * t3 - 3 * t2 + 1) * a + (t3 - 2 * t2 + t) * span * da
+        + (-2 * t3 + 3 * t2) * b + (t3 - t2) * span * db;
+    }
+  }
+  return knots.at(-1)[1];
+}
+
+const FOOT_X = [
+  [0, 0.30, -1.65], [0.32, -0.30, -1.85], [0.46, -0.48, 0],
+  [0.62, -0.26, 2.0], [0.78, 0.22, 2.1], [0.90, 0.37, 0], [1, 0.30, -1.65],
+];
+const FOOT_CLEARANCE = [
+  [0, 0, 0], [0.32, 0, 0], [0.48, 0.38, 2.25], [0.60, 0.51, 0],
+  [0.75, 0.31, -1.65], [0.90, 0.08, -1.15], [1, 0, 0],
+];
+const FOOT_PITCH = [
+  [0, 0.16, -2.5], [0.08, 0, 0], [0.18, 0, 0], [0.32, -0.80, -3.0],
+  [0.46, -0.72, 2.0], [0.65, -0.10, 1.2], [0.82, 0.10, 0.6],
+  [0.92, 0.23, 0], [1, 0.16, -2.5],
+];
+
+function rotateFoot(x, y, pitch) {
+  return { x: x * Math.cos(pitch) - y * Math.sin(pitch), y: x * Math.sin(pitch) + y * Math.cos(pitch) };
+}
+
+function kneeFor(hip, ankle) {
+  const dx = ankle.x - hip.x, dy = ankle.y - hip.y;
+  const distance = Math.hypot(dx, dy);
+  const along = (LENGTHS.thigh ** 2 - LENGTHS.shin ** 2 + distance ** 2) / (2 * distance);
+  const height = Math.sqrt(Math.max(0, LENGTHS.thigh ** 2 - along ** 2));
+  // The positive perpendicular places the knee forward, so it bends naturally.
+  return { x: hip.x + dx / distance * along - dy / distance * height,
+    y: hip.y + dy / distance * along + dx / distance * height, z: hip.z };
+}
+
+function armPoint(start, length, angle) {
+  return { x: start.x + length * Math.sin(angle), y: start.y - length * Math.cos(angle), z: start.z };
+}
+
+function phaseName(phase) {
+  return phase < 0.08 ? 'contact' : phase < 0.20 ? 'stance' : phase < 0.32 ? 'push-off' : phase < 0.48 ? 'flight' : 'recovery';
+}
+
+function poseAt(phase = 0) {
+  const normalized = normalize(phase);
+  const root = { x: 0, y: 0.845 + 0.025 * Math.cos(2 * TAU * (normalized - 0.38)), z: 0 };
+  const bodyYaw = 0.065 * Math.sin(TAU * (normalized - 0.08));
+  const landmarks = new Array(33);
+  const put = (index, point) => { landmarks[index] = { index, name: LANDMARK_NAMES[index], ...point }; };
+  // A restrained rigid trunk rotation adds depth without stretching the torso,
+  // arms or face. Leg IK follows each hip while the central root stays fixed.
+  const local = (x, y, z) => ({ x: root.x + x * Math.cos(bodyYaw) + z * Math.sin(bodyYaw),
+    y: root.y + y, z: -x * Math.sin(bodyYaw) + z * Math.cos(bodyYaw) });
+
+  // Rigid facial geometry retains all eleven canonical landmarks. There is no
+  // enclosing circle or invented head outline in the overlay.
+  const face = [
+    [0.350, 0.690, 0],
+    [0.315, 0.750, 0.022], [0.294, 0.755, 0.043], [0.271, 0.748, 0.062],
+    [0.315, 0.750, -0.022], [0.294, 0.755, -0.043], [0.271, 0.748, -0.062],
+    [0.205, 0.685, 0.081], [0.205, 0.685, -0.081],
+    [0.325, 0.600, 0.027], [0.325, 0.600, -0.027],
+  ];
+  face.forEach(([x, y, z], index) => put(index, local(x, y, z)));
+
+  const feet = {};
+  for (const [side, offset, zSign] of [['left', 0, 1], ['right', 1, -1]]) {
+    const legPhase = normalize(normalized + offset * 0.5);
+    const hip = local(0, 0, zSign * 0.105);
+    const shoulderLocal = { x: 0.13, y: 0.49, z: zSign * 0.19 };
+    const shoulder = local(shoulderLocal.x, shoulderLocal.y, shoulderLocal.z);
+    put(23 + offset, hip);
+    put(11 + offset, shoulder);
+
+    const pitch = curve(legPhase, FOOT_PITCH);
+    const clearance = curve(legPhase, FOOT_CLEARANCE);
+    const heelOffset = rotateFoot(-0.075, -0.06, pitch);
+    const toeOffset = rotateFoot(0.16, -0.06, pitch);
+    // A tiny smooth-max blends heel contact into toe contact without a velocity
+    // discontinuity. The contact sole remains within 0.2mm of the virtual floor.
+    const a = -heelOffset.y, b = -toeOffset.y;
+    const contactHeight = (a + b + Math.sqrt((a - b) ** 2 + 0.0004 ** 2)) / 2;
+    const ankle = { x: hip.x + curve(legPhase, FOOT_X), y: clearance + contactHeight, z: hip.z };
+    const heel = { x: ankle.x + heelOffset.x, y: ankle.y + heelOffset.y, z: hip.z };
+    const toe = { x: ankle.x + toeOffset.x, y: ankle.y + toeOffset.y, z: hip.z + zSign * 0.018 };
+    put(25 + offset, kneeFor(hip, ankle));
+    put(27 + offset, ankle);
+    put(29 + offset, heel);
+    put(31 + offset, toe);
+    feet[side] = { phase: legPhase, stage: phaseName(legPhase), pitch, clearance,
+      contact: legPhase <= 0.32, soleHeight: Math.min(heel.y, toe.y) };
+
+    // Arms counter-swing the legs. Wrist, finger and thumb landmarks form a
+    // compact relaxed hand that rotates rigidly with the forearm.
+    const angle = TAU * legPhase;
+    const upperAngle = -0.15 - 0.85 * Math.cos(angle - 0.10);
+    const lowerAngle = upperAngle + 1.65 + 0.13 * Math.sin(angle);
+    const elbow = armPoint(shoulderLocal, LENGTHS.upperArm, upperAngle);
+    const wrist = armPoint(elbow, LENGTHS.forearm, lowerAngle);
+    put(13 + offset, local(elbow.x, elbow.y, elbow.z));
+    put(15 + offset, local(wrist.x, wrist.y, wrist.z));
+    const finger = (along, across, depth) => ({
+      x: wrist.x + along * Math.sin(lowerAngle) + across * Math.cos(lowerAngle),
+      y: wrist.y - along * Math.cos(lowerAngle) + across * Math.sin(lowerAngle),
+      z: wrist.z + zSign * depth,
+    });
+    for (const [index, along, across, depth] of [[17, 0.072, 0.012, 0.025], [19, 0.080, -0.008, -0.015], [21, 0.040, -0.030, 0.015]]) {
+      const point = finger(along, across, depth);
+      put(index + offset, local(point.x, point.y, point.z));
+    }
+  }
+
+  const project = point => ({
+    x: CAMERA.centerX + CAMERA.scale * (point.x * Math.cos(CAMERA.yaw) + point.z * Math.sin(CAMERA.yaw)),
+    y: CAMERA.groundY - CAMERA.scale * point.y,
+    depth: -point.x * Math.sin(CAMERA.yaw) + point.z * Math.cos(CAMERA.yaw),
+  });
+  const projected = landmarks.map(point => ({ index: point.index, name: point.name, ...project(point) }));
+  return { phase: normalized, landmarks, projected, segments: SEGMENTS, root,
+    rootProjected: project(root), anchor: { x: CAMERA.centerX, groundY: CAMERA.groundY },
+    phaseInfo: feet, limbLengths: { ...LENGTHS }, bodyYawRadians: bodyYaw, camera: { yawDegrees: 25, scale: CAMERA.scale } };
+}
+
+const segmentDepth = (pair, pose) => (pose.projected[pair[0]].depth + pose.projected[pair[1]].depth) / 2;
+/** Mount once, update existing nodes; the preview controller owns all timing. */
+function createRunner(svg) {
+  const bones = [...svg.querySelectorAll('[data-segment]')].map(node => ({ node, pair: node.getAttribute('data-segment').split(':').map(Number) }));
+  const joints = [...svg.querySelectorAll('[data-landmark]')].map(node => ({ node, index: Number(node.getAttribute('data-landmark')) }));
+  const boneLayer = svg.querySelector('[data-layer="bones"]');
+  const jointLayer = svg.querySelector('[data-layer="landmarks"]');
+  let boneOrder = bones.map(item => item.pair.join(':')).join('|');
+  let jointOrder = joints.map(item => item.index).join(':');
+  return {
+    render(phase) {
+      const pose = poseAt(phase);
+      for (const { node, pair: [a, b] } of bones) {
+        node.setAttribute('x1', precise(pose.projected[a].x)); node.setAttribute('y1', precise(pose.projected[a].y));
+        node.setAttribute('x2', precise(pose.projected[b].x)); node.setAttribute('y2', precise(pose.projected[b].y));
+      }
+      for (const { node, index } of joints) {
+        node.setAttribute('cx', precise(pose.projected[index].x)); node.setAttribute('cy', precise(pose.projected[index].y));
+      }
+      // Existing elements are re-ordered only when camera depth ordering changes.
+      // Side colors remain tied to canonical indices, never the visible side.
+      const sortedBones = [...bones].sort((a, b) => segmentDepth(a.pair, pose) - segmentDepth(b.pair, pose));
+      const nextBoneOrder = sortedBones.map(item => item.pair.join(':')).join('|');
+      if (nextBoneOrder !== boneOrder) { boneLayer.append(...sortedBones.map(item => item.node)); boneOrder = nextBoneOrder; }
+      const sortedJoints = [...joints].sort((a, b) => pose.projected[a.index].depth - pose.projected[b.index].depth);
+      const nextJointOrder = sortedJoints.map(item => item.index).join(':');
+      if (nextJointOrder !== jointOrder) { jointLayer.append(...sortedJoints.map(item => item.node)); jointOrder = nextJointOrder; }
+    },
+  };
+}
+
+const runner = createRunner(document.querySelector('.pose-runner-v2'));
+const systemMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let frame = null;
+let previousTime = null;
+let phase = 0;
+const reduced = () => window.runnerReducedMotion || systemMotion.matches;
+const canAnimate = () => !reduced() && document.visibilityState === 'visible';
+
+function stop() {
+  if (frame !== null) cancelAnimationFrame(frame);
+  frame = null;
+  previousTime = null;
+}
+function tick(time) {
+  frame = null;
+  if (!canAnimate()) return;
+  if (previousTime !== null) phase = (phase + (time - previousTime) / STRIDE_MS) % 1;
+  previousTime = time;
+  runner.render(phase);
+  frame = requestAnimationFrame(tick);
+}
+function syncAnimation() {
+  stop();
+  if (reduced()) runner.render(0);
+  if (canAnimate()) frame = requestAnimationFrame(tick);
+}
+systemMotion.addEventListener('change', syncAnimation);
+document.addEventListener('visibilitychange', syncAnimation);
+window.addEventListener('pagehide', stop);
+window.addEventListener('pageshow', syncAnimation);
+syncAnimation();
+
+})();
+]]></script></svg>
