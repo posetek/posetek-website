@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { averageText, comparisonPercentile, nextMetric, ordinal, strongestMetric, valueText } from '../report';
+import { averageText, comparisonPercentile, ordinal, strongestMetric, valueText } from '../report';
 import type { ReportMetric, ReportState } from '../report';
 import type { ReportPractice } from './report-practice';
 import { reportDate } from './stats-format';
@@ -60,8 +60,8 @@ function ScoreCard({ metric, event, timeZone, selected, onOpen }: { metric: Repo
 }
 
 /**
- * The testing report in the live one-pager's order: the score cards, "Strong today" and
- * "Practice next", then the drills from the saved plan. It sits under the skill radar on Stats.
+ * The testing report in the live one-pager's order: the score cards, "Strong today", then the
+ * drills from the saved plan. It sits under the skill radar on Stats.
  */
 export default function StatsReport({ report: state, practice, timeZone, onOpenTest, selectedId = null, detail = null }: Props) {
   const report = state.report;
@@ -72,8 +72,8 @@ export default function StatsReport({ report: state, practice, timeZone, onOpenT
           : <p className="stats-subheadline">Your results will appear after your first assessment.</p>}
     </div>
   </section>;
-  const event = report.kind === 'event', strong = strongestMetric(report), found = nextMetric(report);
-  const next = found && found.id !== strong?.id ? found : null, samples = practice.samples;
+  // "Practice next" is not shown here (Nolan, 2026-11-11); Home still carries the report's focus line.
+  const event = report.kind === 'event', strong = strongestMetric(report), samples = practice.samples;
   return <section className="stats-report" aria-label="Your results">
     <div className="stats-report-heading">
       <h2 className="stats-section-title">Click on each drill to see more</h2>
@@ -83,9 +83,8 @@ export default function StatsReport({ report: state, practice, timeZone, onOpenT
       ? <div className="stats-score-grid">{report.metrics.map(metric => <ScoreCard key={metric.id} metric={metric} event={event} timeZone={timeZone} selected={metric.id === selectedId} onOpen={onOpenTest} />)}</div>
       : <p className="stats-secondary">No recorded test measurements are available yet.</p>}
     {detail}
-    {(strong || next) && <div className="stats-findings">
-      {strong && <div><h3>Strong today</h3><p>{strong.label}</p></div>}
-      {next && <div><h3>Practice next</h3><p>{next.label}</p></div>}
+    {strong && <div className="stats-findings">
+      <div><h3>Strong today</h3><p>{strong.label}</p></div>
     </div>}
     {samples.length > 0 && <div className="stats-drills">
       <h2 className="stats-section-title">{samples.length === 2 ? 'Two drills to try' : 'Drills to try'}</h2>

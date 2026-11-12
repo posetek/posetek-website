@@ -32,7 +32,7 @@ describe('Stats report (the live one-pager score-card layout)', () => {
   it('shows the team comparison cards, the two findings and the drills, in the one-pager order', () => {
     const html = render(state({ report: DEMO_REPORT })), plain = text(html);
     const order = ['Click on each drill to see more',
-      'Left-course dribble', 'Right-course dribble', 'Sprint', 'Vertical jump', 'Strong today', 'Practice next', 'Two drills to try', 'Cone maze', 'Wall pass rhythm', 'Clear, flat space. Stop if anything hurts.'];
+      'Left-course dribble', 'Right-course dribble', 'Sprint', 'Vertical jump', 'Strong today', 'Two drills to try', 'Cone maze', 'Wall pass rhythm', 'Clear, flat space. Stop if anything hurts.'];
     let at = -1;
     for (const item of order) { const next = plain.indexOf(item, at + 1); expect(next, item).toBeGreaterThan(at); at = next; }
     expect(html.match(/stats-score-card/g)).toHaveLength(4);
@@ -40,7 +40,7 @@ describe('Stats report (the live one-pager score-card layout)', () => {
     expect(plain).toContain('Left-course dribble 7.62 s ≈15th percentile Team avg 7.20 s · 8 results');
     expect(plain).toContain('Vertical jump 15.6 in ≈85th percentile Team avg 13.9 in · 8 results');
     expect(html).toContain('aria-label="Approximately 15th team percentile"');
-    expect(plain).toContain('Strong today Sprint Practice next Left-course dribble');
+    expect(plain).toContain('Strong today Sprint'); expect(plain).not.toContain('Practice next');
     // The one-pager's findings are titles only; the old sentences, tag and "why" line are gone.
     for (const gone of ['What you’re doing well', 'starting point', 'Why this helps you', 'Position-based', 'Leaderboard']) expect(plain).not.toContain(gone);
   });
@@ -80,7 +80,7 @@ describe('Stats report (the live one-pager score-card layout)', () => {
     expect(plain).toContain('Vertical jump 16.0 in Oct 20, 2026');
     expect(plain).toContain('Broad jump 7.0 ft Oct 12, 2026');
     expect(plain).not.toContain('Strong today');
-    expect(plain).toContain('Practice next Vertical jump');
+    expect(plain).not.toContain('Practice next');
   });
   it('limited comparison changes the personal caption only, and an empty report says so', () => {
     expect(reportCaption('individual', true)).toBe('Showing recent personal results. The testing history is too large to compare reliably.');

@@ -26,7 +26,7 @@ describe('Stats tab (V4 StatsView)', () => {
     const html = render(report()), text = visible(html);
     // Nolan's order (2026-11-11): the skill radar first, the one-pager's report beneath, then the next steps.
     const order = ['Stats', 'Jordan Rivera', 'Skill benchmarks', 'SKILL MAP', '5/5 recorded',
-      'Click on each drill to see more', 'Team avg 7.20 s · 8 results', 'Strong today', 'Practice next',
+      'Click on each drill to see more', 'Team avg 7.20 s · 8 results', 'Strong today',
       'So what do I do with these results?', 'Ask the AI Coach', 'Dive deeper on my results and get help on how to improve', 'Build my 6-week plan', 'Start a workout now', 'How to use PoseTek?', 'PoseTek is your personal assistant for your sport.'];
     let at = -1;
     for (const item of order) { const next = text.indexOf(item, at + 1); expect(next, item).toBeGreaterThan(at); at = next; }
