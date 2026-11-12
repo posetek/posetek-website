@@ -360,7 +360,9 @@ export async function staffClubComparison(viewer: ClubViewer, metricId: string):
  * results already loaded for the page; without them the document path draws no station dot.
  */
 export async function loadClubComparison(viewer: ClubViewer, metricId: string, ownEffective: () => any[] = () => []): Promise<ClubComparisonData | null> {
-  return (await documentClubComparison(viewer, metricId, ownEffective).catch(() => null)) ?? staffClubComparison(viewer, metricId);
+  // Only a club with no document falls back to the staff reads. A failure while drawing from a
+  // document is an error, never a silent switch to the other measures (times instead of speeds).
+  return (await documentClubComparison(viewer, metricId, ownEffective)) ?? staffClubComparison(viewer, metricId);
 }
 
 // MARK: - Kept statistics: shown at once on every later visit (stale-while-revalidate)
@@ -534,7 +536,8 @@ async function freshClubComparison(viewer: ClubViewer, metricId: string): Promis
  */
 export async function watchClubComparison(viewer: ClubViewer, metricId: string, ownEffective: () => any[], show: (data: ClubComparisonData | null) => void): Promise<void> {
   // The club statistics document first, for any signed-in viewer; the staff reads only without it.
-  const fromDocument = await documentClubComparison(viewer, metricId, ownEffective).catch(() => null);
+  // A failure here is reported as one; it must not fall through to the staff reads and their other measures.
+  const fromDocument = await documentClubComparison(viewer, metricId, ownEffective);
   if (fromDocument) { show(fromDocument); mark(`document:${metricId}`); return; }
   const test = CLUB_TESTS[metricId];
   if (!test || !CLUB_STAFF.has(viewer.access) || !viewer.organizationId || !viewer.playerId) { show(null); return; }
@@ -639,7 +642,8 @@ function parseOmissions(raw: unknown): ClubOmission[] {
 
 /** The testing events whose results are left out of one test for an athlete of this gender and age group. */
 export function omittedEvents(document: ClubDocument, metricId: string, place: { gender: Gender | null; ageGroup: number | null }): Set<string> {
-  return new Set((document.omitted[metricId] ?? []).filter(entry => entry.gender === place.gender && entry.ageGroup === place.ageGroup).flatMap(entry => entry.eventIds));
+  // `omitted` is read defensively: a document parsed before this field existed (kept in memory across a hot reload) has none.
+  return new Set((document.omitted?.[metricId] ?? []).filter(entry => entry.gender === place.gender && entry.ageGroup === place.ageGroup).flatMap(entry => entry.eventIds));
 }
 
 function parseCohort(raw: any): DocumentCohort | null {
