@@ -58,6 +58,88 @@ export interface PoseSequence {
     apex: number;
   };
   ball?: ({ x: number; y: number; radius: number } | null)[];
+  /**
+   * Optional scene, in the recorded-movement demo's `calibration` shape: the ArUco markers seen
+   * in the clip, a measured distance along the ground (e.g. between two gate markers) and the
+   * ground line. The bundled homepage sequences carry none, so they draw exactly as before.
+   */
+  calibration?: PoseCalibration;
+  /**
+   * Optional, for a rep recorded without pose: the athlete as one vertical line per frame at the
+   * body's centre, from the top to the bottom of the tracked body. Null where nothing was tracked.
+   */
+  centerLine?: (PoseCenterLine | null)[];
+}
+
+export interface PoseCalibration {
+  /** Each marker's corners in the phone's order (OpenCV: top-left, top-right, bottom-right, bottom-left). */
+  markers: { id?: number | null; corners: PosePoint[] }[];
+  baseline?: { start: PosePoint; end: PosePoint; distanceMeters?: number };
+  ground?: { start: PosePoint; end: PosePoint };
+}
+
+/** One frame of a centre line: its x and the y of its two ends (normalized, y down). */
+export interface PoseCenterLine {
+  x: number;
+  top: number;
+  bottom: number;
+}
+
+/** The middle of a centre line: where the body's centre is drawn. */
+export function centerLinePoint(line: PoseCenterLine | null | undefined): PosePoint | null {
+  return line ? [line.x, (line.top + line.bottom) / 2] : null;
+}
+
+type FramedPoint = readonly number[];
+/** What a whole-rep fit keeps on screen (movement/framing.ts's `Recording`). */
+export interface FramedRecording {
+  frames: FramedPoint[][];
+  ball?: ({ x: number; y: number; radius?: number } | null)[];
+  calibration?: { markers: { corners: FramedPoint[] }[]; baseline?: { start: FramedPoint; end: FramedPoint } };
+  verticalJump?: { groundY: number; baselineY: number };
+  overlays?: { groundY: number; takeoffX: number; landingX: number };
+}
+export interface RecordingBounds { minX: number; maxX: number; minY: number; maxY: number }
+
+/**
+ * The homepage recorded-movement demo's whole-rep framing (movement/framing.ts `recordingBounds`):
+ * fit the entire rep once, in source-image units, never stretching the body. A copy, not an import,
+ * so the homepage's movement bundle stays byte-for-byte as released; pose-demo-options.test.ts
+ * checks the two agree on every bundled recording.
+ */
+export function recordingBounds(recording: FramedRecording, aspect: number): RecordingBounds {
+  const points: FramedPoint[] = recording.frames.flat().filter(p => p?.length >= 2 && Number.isFinite(p[0]) && Number.isFinite(p[1]));
+  for (const marker of recording.calibration?.markers ?? []) points.push(...marker.corners);
+  const baseline = recording.calibration?.baseline;
+  if (baseline) points.push(baseline.start, baseline.end);
+  for (const ball of recording.ball ?? []) if (ball) {
+    const r = ball.radius ?? 0;
+    points.push([ball.x - r / aspect, ball.y - r], [ball.x + r / aspect, ball.y + r]);
+  }
+  if (recording.verticalJump) points.push([.5, recording.verticalJump.groundY], [.5, recording.verticalJump.baselineY]);
+  if (recording.overlays) points.push([recording.overlays.takeoffX, recording.overlays.groundY], [recording.overlays.landingX, recording.overlays.groundY]);
+  const valid = points.filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+  if (!valid.length) return { minX: 0, maxX: aspect, minY: 0, maxY: 1 };
+  return { minX: Math.min(...valid.map(p => p[0] * aspect)), maxX: Math.max(...valid.map(p => p[0] * aspect)), minY: Math.min(...valid.map(p => p[1])), maxY: Math.max(...valid.map(p => p[1])) };
+}
+
+/** movement/framing.ts `fitRecording` (copied for the same reason): the viewport that shows `bounds` whole. */
+export function fitRecording(width: number, height: number, ratio: number, bounds: RecordingBounds): PoseViewport {
+  const scale = Math.min(Math.max(1, width - 44) / Math.max(.01, bounds.maxX - bounds.minX), Math.max(1, height - 76) / Math.max(.01, bounds.maxY - bounds.minY));
+  return { width, height, ratio: Math.min(2, ratio || 1), scale, offsetX: width / 2 - (bounds.minX + bounds.maxX) / 2 * scale, offsetY: height / 2 - (bounds.minY + bounds.maxY) / 2 * scale };
+}
+
+/**
+ * What a whole-rep fit must keep on screen: every pose frame, both ends of every centre line,
+ * the same for a shadow drawn under the rep, and the sequence's markers, ball and jump overlays.
+ */
+export function framingRecording(sequence: PoseSequence, shadow?: PoseSequence | null): FramedRecording {
+  const frames: PosePoint[][] = [];
+  for (const source of shadow ? [sequence, shadow] : [sequence]) {
+    for (const frame of source.frames) frames.push(frame.filter((point): point is PosePoint => Array.isArray(point)));
+    for (const line of source.centerLine ?? []) if (line) frames.push([[line.x, line.top], [line.x, line.bottom]]);
+  }
+  return { frames, ball: sequence.ball, calibration: sequence.calibration, verticalJump: sequence.verticalJump, overlays: sequence.overlays };
 }
 
 export interface PoseDemoData {

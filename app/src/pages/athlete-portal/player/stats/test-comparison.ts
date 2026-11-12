@@ -2,6 +2,7 @@ import { db } from '../../../../lib/firebase';
 import { metricValue, visibleAttempts } from '../../../../lib/result-values';
 import { drillByKey } from '../../lib/drills';
 import { accepted, createdMillis, normalizeRep } from '../../lib/metrics';
+import { remember } from '../../lib/replay-cache';
 import type { ReportMetric } from '../report';
 import type { Row } from '../execution';
 
@@ -103,21 +104,35 @@ export function teamComparison(metricId: string, team: { playerId: string; reps:
   return { median: others.length ? others[Math.floor((others.length - 1) / 2)] : null, averages, count: bests.length };
 }
 
+const TEAM_MEMORY_MS = 5 * 60_000;
+
+/**
+ * STAFF ONLY: every rep the team recorded around the test day, one sweep of the roster (about
+ * twenty Firestore reads) kept in memory and shared by all six tests. Cached rows are read-only.
+ */
+function teamReps(athlete: Row, testDateMillis: number): Promise<{ playerId: string; reps: Row[] }[]> {
+  return remember(`team-reps:${athlete.organizationId}:${athlete.teamId}:${testDateMillis}`, async () => {
+    const roster = await db.collection('players').where('organizationId', '==', athlete.organizationId).where('teamId', '==', athlete.teamId).limit(40).get();
+    const from = new Date(testDateMillis - DAY_WINDOW), to = new Date(testDateMillis + DAY_WINDOW);
+    return Promise.all(roster.docs.map(async (doc: any) => {
+      const snapshot = await doc.ref.collection('reps').where('createdAt', '>=', from).where('createdAt', '<=', to).get().catch(() => null);
+      return { playerId: doc.id as string, reps: snapshot ? visibleAttempts(snapshot.docs.map(normalizeRep)) : [] };
+    }));
+  }, TEAM_MEMORY_MS);
+}
+
 /**
  * STAFF ONLY, for now. Reads the athlete's team from Firestore, which an admin, manager or coach
  * may do and a player may not. A player's own view needs a backend endpoint that returns the
- * median teammate's pose and the team's split averages without exposing who the teammate is.
+ * median teammate's pose and the team's split averages without exposing who the teammate is;
+ * this one function is what that endpoint replaces. Kept in memory per test, athlete, team and day.
  */
-export async function loadTeamComparison(metric: ReportMetric, athlete: Row, ownPlayerId: string, testDateMillis: number): Promise<TeamComparison | null> {
+export function loadTeamComparison(metric: ReportMetric, athlete: Row, ownPlayerId: string, testDateMillis: number): Promise<TeamComparison | null> {
   const test = METRIC_TESTS[metric.id];
-  if (!test || !athlete?.organizationId || !athlete?.teamId) return null;
+  if (!test || !athlete?.organizationId || !athlete?.teamId) return Promise.resolve(null);
   const drill = drillByKey(test.drill);
-  const roster = await db.collection('players').where('organizationId', '==', athlete.organizationId).where('teamId', '==', athlete.teamId).limit(40).get();
-  const from = new Date(testDateMillis - DAY_WINDOW), to = new Date(testDateMillis + DAY_WINDOW);
-  const team = await Promise.all(roster.docs.map(async (doc: any) => {
-    const snapshot = await doc.ref.collection('reps').where('createdAt', '>=', from).where('createdAt', '<=', to).get().catch(() => null);
-    const reps = snapshot ? visibleAttempts(snapshot.docs.map(normalizeRep)).filter((rep: Row) => accepted(rep, drill)) : [];
-    return { playerId: doc.id as string, reps };
-  }));
-  return teamComparison(metric.id, team, ownPlayerId, testDateMillis);
+  return remember(`team:${metric.id}:${ownPlayerId}:${athlete.teamId}:${testDateMillis}`, async () => {
+    const team = (await teamReps(athlete, testDateMillis)).map(member => ({ playerId: member.playerId, reps: member.reps.filter(rep => accepted(rep, drill)) }));
+    return teamComparison(metric.id, team, ownPlayerId, testDateMillis);
+  }, TEAM_MEMORY_MS);
 }

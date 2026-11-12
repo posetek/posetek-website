@@ -99,6 +99,8 @@ export interface ViewerData {
   markers: FrameMarker[];
   metadata: Record<string, any>;
   mediaSource?: string;
+  /** Every file the media answer listed (signed URLs), for viewers that draw more than the pose. */
+  artifactUrls: Record<string, string>;
 }
 
 /**
@@ -140,6 +142,7 @@ export async function loadRepReplay(drill: Drill, rep: any, access: Access, play
     playbackMetadata: tracking ? trackingTimelineMeta(meta, tracking) : meta,
     metadata: meta,
     mediaSource: payload.source,
+    artifactUrls: urls,
     metrics: repMetricSpecs(drill, rep, meta),
     markers: frameMarkers(drill, rep, rep.resultStatus ? { ...meta, ...rep } : meta),
   };

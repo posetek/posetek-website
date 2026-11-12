@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PlayerHeader } from '../PlayerShell';
 import { PlayerResultsFeedbackLink } from '../PlayerFeedbackInvitation';
 import { showResultsFeedback } from '../feedback-invitation';
@@ -12,6 +12,7 @@ import SkillBenchmarks from './SkillBenchmarks';
 import StatsReport from './StatsReport';
 import TestPosePlayer from './TestPosePlayer';
 import { METRIC_TESTS } from './test-comparison';
+import { warmStatsReplays } from './test-replay';
 import { reportPracticeSamples } from './report-practice';
 import { reportDate } from './stats-format';
 import { useReportPractice } from './use-report-practice';
@@ -45,6 +46,15 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
   const estimates = activeProvisionalEstimates(ctx.provisionalEstimates, ctx.allResultReps?.() || ctx.allStatsReps());
   const tested = report.report ? [report.report.teamName, `Tested ${reportDate(report.report.testDateMillis, timeZone)}`].filter(Boolean).join(' · ') : null;
   const open = { coach: () => go('coach'), plan: () => go('stats', { screen: 'plan' }), workout: () => go('workouts', { screen: 'workout' }) };
+  // Every test's replay loads in the background once the report is here, so the first click on a
+  // card shows its replay at once (not in the sample preview, which has no recordings).
+  const repCount = Object.values(reps).reduce((sum, list) => sum + (list?.length ?? 0), 0);
+  useEffect(() => {
+    if (!report.report || preview || !ctx.playerId) return;
+    void warmStatsReplays(report.report, reps, athlete, ctx.access, ctx.playerId);
+    // Once per report and rep list: `reps` is replaced on every refresh, and whatever is kept is reused.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report.report?.playerId, report.report?.testDateMillis, repCount, preview, ctx.playerId, ctx.access]);
   return <div className="stats-page">
     <PlayerHeader title="Stats" />
     <div className="stats-identity">
