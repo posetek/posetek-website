@@ -145,6 +145,7 @@
   .stats-next-card small { grid-column: 2; font-size: 13px; color: var(--v4-secondary); }
   .stats-next-card > .material-symbols-outlined:last-child { grid-column: 3; grid-row: 1 / span 2; color: var(--v4-secondary); font-size: 18px; }
 
+  .stats-totals { display: grid; gap: 12px; }
   .stats-how { display: grid; gap: 8px; padding: 18px; }
   .stats-how h2 { margin: 0; }
   .stats-how p { margin: 0; font-size: 15px; line-height: 1.5; color: #ffffffd9; }

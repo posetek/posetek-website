@@ -2,7 +2,8 @@
 import type { PlayerRoute } from '../workspace';
 import type { ResumeTarget } from './hub';
 
-export type HubPage = 'root' | 'workout' | 'plan' | 'saved' | 'history';
+/** The app's `TrainingHubDestination`: the hub is the root; the other pages are pushed over it. */
+export type HubPage = 'root' | 'plan' | 'saved' | 'history' | 'tests';
 
 /** Workouts is on screen for its own tab and for My workout plan opened from Stats. */
 export const workoutsShown = (route: PlayerRoute) => route.view === 'workouts' || (route.view === 'stats' && route.screen === 'plan');
@@ -15,23 +16,21 @@ export const workoutsRoute = (route: PlayerRoute, lastShown: PlayerRoute) => wor
 
 /** The hub page, whether a test's results are open, and whether the plan was opened from Stats. */
 export function workoutsPage(route: PlayerRoute): { page: HubPage; test: boolean; fromStats: boolean } {
-  const page: HubPage = route.screen === 'workout' || route.screen === 'plan' || route.screen === 'saved' || route.screen === 'history' ? route.screen : 'root';
+  const page: HubPage = route.screen === 'plan' || route.screen === 'saved' || route.screen === 'history' || route.screen === 'tests' ? route.screen : 'root';
   return { page, test: route.screen === 'test', fromStats: route.view === 'stats' };
 }
 
-/** Only the hub (stats and training focus) and History read every workout log; never while hidden. */
-export const needsAllLogs = (page: HubPage, active: boolean) => active && (page === 'workout' || page === 'history');
+/** Only History reads every workout log, and never while hidden. The lifetime totals are on Stats, which reads its own. */
+export const needsAllLogs = (page: HubPage, active: boolean) => active && page === 'history';
 
-export type ResumeAction = 'returnToPersonal' | 'openPersonal' | 'reviewOnHub' | 'review' | 'start';
+export type ResumeAction = 'openPersonal' | 'review' | 'start';
 /**
  * What a resume banner does (`TrainingHubView.beginWorkout`): a plan or saved workout starts at once,
- * unless the web's start check must be answered first; a personal guided session still live (left
- * with Back, paused under the root) is returned to rather than reopened, which would discard it.
+ * unless the web's start check must be answered first; a personal workout reopens in its own hub.
  */
-export function resumeAction(target: ResumeTarget, { needsCheck, atRoot, personalLive }: { needsCheck: boolean; atRoot: boolean; personalLive: boolean }): ResumeAction {
-  if (target.kind === 'personal') return personalLive ? 'returnToPersonal' : 'openPersonal';
-  if (needsCheck) return atRoot ? 'reviewOnHub' : 'review';
-  return 'start';
+export function resumeAction(target: ResumeTarget, { needsCheck }: { needsCheck: boolean }): ResumeAction {
+  if (target.kind === 'personal') return 'openPersonal';
+  return needsCheck ? 'review' : 'start';
 }
 
 export type ScrollStep = 'none' | 'top' | 'restore';

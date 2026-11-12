@@ -3,7 +3,7 @@
 // (`TrainingResumeTarget`), saved workouts (`SavedWorkoutsSection` / `SavedWorkoutEntry`), the plan
 // card (`MyWorkoutPlanCardModel`), My workout plan's sections (`MyWorkoutPlanSection`), the plan
 // page's content (`TrainingHubPlanPage`) and the history row summary (`TrainingHistoryView`).
-import { currentWeekNumber, localDayString, planHorizonWeeks, planLogId, weekWindow } from '../../../../lib/contracts/planV3';
+import { currentWeekNumber, localDayString, nextWorkout, planHorizonWeeks, planLogId, weekOf, weekWindow } from '../../../../lib/contracts/planV3';
 import { domainFromLegacy } from '../../../../lib/contracts/drillV2';
 import type { Row } from '../execution';
 
@@ -330,10 +330,22 @@ export function savedWorkouts(planWorkouts: Row[], logs: Record<string, Row>, pl
   }).sort((a, b) => (millis(b.generatedAt) || 0) - (millis(a.generatedAt) || 0) || String(b.id).localeCompare(String(a.id)));
 }
 
-/** "Week 3 of 6 · 2 saved"; the saved count is left out at zero. */
-export function planCardSubtitle(currentWeek: number, horizonWeeks: number, savedCount: number) {
-  const week = `Week ${currentWeek} of ${Math.max(horizonWeeks, currentWeek)}`;
-  return savedCount > 0 ? `${week} · ${savedCount} saved` : week;
+export type PlanCardModel = { title: string; schedule: string; next: string | null };
+/**
+ * The hub's plan summary (`MyWorkoutPlanCardModel`): this week's theme, "Week 1 of 6 · 2 sessions
+ * this week", and "Next: Keep the ball close · 30 min" from the same rule My workout plan uses.
+ * `logs` are the athlete's saved logs for the plan. An earlier-format plan has no next workout here.
+ */
+export function planCardModel(plan: Row, logs: Row[], now = new Date()): PlanCardModel {
+  const current = currentWeekNumber(plan, now), week = weekOf(plan, current) as Row | null;
+  const sessions = (week?.workouts || []).length, label = `Week ${current} of ${Math.max(planHorizonWeeks(plan), current)}`;
+  const next = plan.schemaVersion === 3 ? nextWorkout(plan, logs, now) : null;
+  const minutes = next ? Number((next.workout as Row).budgetMinutes) || Number((next.workout as Row).estimatedMinutes) || 0 : 0;
+  return {
+    title: String(week?.theme || '').trim() || 'Your training plan',
+    schedule: sessions > 0 ? `${label} · ${sessions} ${sessions === 1 ? 'session' : 'sessions'} this week` : label,
+    next: next ? `${next.reason === 'resume' ? 'Resume' : 'Next'}: ${(next.workout as Row).title || `Week ${next.weekNumber} workout`}${minutes > 0 ? ` · ${minutes} min` : ''}` : null,
+  };
 }
 
 export type SavedEntry = { id: string; source: 'adhoc' | 'personal'; workout: Row; inProgress: boolean; unavailableReason: string | null; type: string };
@@ -373,10 +385,9 @@ export function savedDetailLine(workout: Row, inProgress: boolean) {
 
 // MARK: - Plan page
 
-/** `TrainingHubPlanPage.content`: an active V3 plan, or from Stats any active plan. */
-export function planPagePlan(plan: Row | null, fromStats: boolean): Row | null {
-  if (!plan || plan.status !== 'active') return null;
-  return plan.schemaVersion === 3 || fromStats ? plan : null;
+/** `TrainingHubPlanPage.content`: any active plan, V3 or the earlier format. */
+export function planPagePlan(plan: Row | null): Row | null {
+  return plan && plan.status === 'active' ? plan : null;
 }
 
 export type PlanSection = 'weekRail' | 'weekCard' | 'nextWorkout' | 'legacyWorkout' | 'targets' | 'drills' | 'links' | 'freeSession';
@@ -452,7 +463,7 @@ export function historyRows(logs: Row[], sessions: Row[]): { kind: 'workout' | '
 
 /**
  * Sample finished workouts for the preview route, from an earlier plan so they never occupy a slot of
- * the sample plan. They feed the stats row, the breakdown and History; nothing is written.
+ * the sample plan. They feed the training totals on Stats and History; nothing is written.
  */
 export function previewHistory(now = new Date()): Row[] {
   const at = (days: number, hour: number) => { const d = new Date(now); d.setDate(d.getDate() - days); d.setHours(hour, 0, 0, 0); return d; };

@@ -1,5 +1,5 @@
-/* The Workouts tab: root carousel, workout hub, My workout plan, Saved Workouts, History and the
-   workout presentations. Mirrors KickAI/TrainingHub (V4 theme, HubCard/HubEyebrow/HubInfoNote). */
+/* The Workouts tab: the one-page hub at the root, My workout plan, Saved Workouts, History, Tests and
+   the workout presentations. Mirrors KickAI/TrainingHub (V4 theme, HubCard/HubEyebrow/HubInfoNote). */
 .pt-player {
   --wk-accent-soft: #7cff182e;
   --wk-muted: #ffffffa6;
@@ -10,26 +10,32 @@
   .wk-root, .wk-page { display: block; min-width: 0; }
   /* One column that may shrink: without it a wide scroller inside (the week rail of a long plan) widens the whole page. */
   .wk-stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
-  .wk-hub-content { gap: 16px; }
   .wk-plan { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
   .wk-page > .v4-header + * { margin-top: 4px; }
 
-  /* Root: the two-page carousel. Pages are inset 20px from the screen edge and the neighbor peeks. */
-  .wk-pager { display: flex; gap: 10px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-padding-inline: 20px;
-    margin-inline: -16px; padding: 2px 20px 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-  .wk-pager::-webkit-scrollbar { display: none; }
-  .wk-pager::after { content: ''; flex: 0 0 10px; }
-  .wk-pager-page { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+  /* Root: the one-page hub. What is in progress, the plan summary or invitation, Create a workout, then the grouped links. */
+  .wk-root { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .wk-root > .v4-header { margin-bottom: -8px; }
+  .wk-root > .v4-card, .wk-root > .primary-cta { margin: 0; }
   .wk-activity-card { container-type: inline-size; min-width: 0; min-height: 44px; }
-  .wk-activity-card .wk-activity-icon { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 24px; }
+  .wk-activity-card .wk-activity-icon { display: flex; align-items: center; width: 100%; height: 24px; }
   .wk-activity-card .wk-activity-icon .material-symbols-outlined { color: var(--v4-accent); font-size: 24px; }
-  .wk-activity-minutes { font-size: 12px; font-weight: 600; color: var(--v4-secondary); }
   .wk-activity-card strong { min-height: 24px; overflow-wrap: anywhere; }
   .wk-activity-card small { display: block; width: 100%; min-height: 20px; font-size: min(15px, 9.2cqi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .wk-root { display: grid; gap: 18px; }
-  .wk-root > .v4-header { margin-bottom: -6px; }
-  .wk-root .v4-row { margin-top: 0; }
-  .wk-row:focus-visible, .wk-activity-card:focus-visible { outline-offset: 2px; }
+  .wk-activity-card:focus-visible, .wk-plan-card:focus-visible, .wk-links button:focus-visible { outline-offset: 2px; }
+  /* Create a workout: the heading, then Build Workout (outlined) beside Cardio. Titles keep two lines so both cards match. */
+  .wk-actions { display: grid; gap: 12px; }
+  .wk-actions h2 { margin: 0; font-size: 21px; font-weight: 600; line-height: 1.25; letter-spacing: 0; }
+  .wk-actions p { margin: 4px 0 0; font-size: 13px; color: var(--v4-secondary); }
+  .wk-actions .wk-activity-card { border: 1px solid transparent; }
+  .wk-actions .wk-activity-card.prominent { border-color: var(--v4-border); }
+  .wk-actions .wk-activity-card strong { min-height: 48px; }
+  /* Saved Workouts, Workout History and Tests in one card. */
+  .wk-links { display: grid; border-radius: 20px; background: var(--v4-card); overflow: hidden; }
+  .wk-links button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 51px; padding: 14px 16px; border: 0; background: none; font-size: 14px; font-weight: 500; text-align: left; }
+  .wk-links button:hover { background: #ffffff0a; }
+  .wk-links .material-symbols-outlined:first-child { width: 22px; font-size: 19px; color: var(--v4-secondary); }
+  .wk-links .material-symbols-outlined:last-child { margin-left: auto; font-size: 16px; color: var(--v4-secondary); }
 
   /* Banners */
   .wk-resume { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 54px; padding: 12px 16px; border-radius: 999px; border: 1px solid var(--v4-border); background: var(--v4-card);
@@ -73,7 +79,7 @@
   .wk-text-button { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--v4-accent); font-size: 12px; font-weight: 600; }
   .wk-loading { display: flex; align-items: center; gap: 10px; justify-content: center; color: var(--wk-muted); font-size: 13px; padding: 24px 0; margin: 0; }
   .wk-spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #ffffff33; border-top-color: #fff; animation: wk-spin .9s linear infinite; }
-  .wk-hub .primary-cta, .wk-page > .primary-cta { margin: 0; }
+  .wk-page > .primary-cta { margin: 0; }
 
   /* Stats row and breakdown */
   .wk-stats-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -123,13 +129,15 @@
   .wk-focus-row i b { display: block; height: 100%; border-radius: inherit; background: color-mix(in srgb, var(--focus) 85%, transparent); }
 
   /* The My workout plan card */
-  .wk-plan-card { display: flex; align-items: center; gap: 16px; width: 100%; min-height: 73px; padding: 12px 14px; border-radius: 26px; border: 1px solid var(--v4-border); background: var(--v4-card); text-align: left; }
-  .wk-plan-card > span:nth-child(2) { flex: 1; display: grid; gap: 4px; min-width: 0; }
-  .wk-plan-card strong { font-size: 17px; font-weight: 600; }
-  .wk-plan-card small { font-size: 14px; color: var(--v4-secondary); }
-  .wk-plan-card-icon { color: var(--v4-accent); font-size: 24px; }
-  .wk-plan-card-arrow { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--v4-border); background: #04161099; color: var(--v4-accent); font-size: 20px; }
-  .wk-invite-title { margin: 0; font-size: 24px; font-weight: 700; }
+  /* The hub's plan summary, and the invitation that takes its place without a plan. */
+  .wk-plan-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; width: 100%; margin: 0; padding: 16px; border-radius: 24px; border: 1px solid var(--v4-border); background: var(--v4-card); text-align: left; overflow-wrap: anywhere; }
+  .wk-plan-card-label { display: flex; align-items: center; gap: 8px; color: var(--v4-accent); font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+  .wk-plan-card-label .material-symbols-outlined { font-size: 19px; }
+  .wk-plan-card-label .material-symbols-outlined:last-child:not(:first-child) { margin-left: auto; color: #fff; font-size: 16px; }
+  .wk-plan-card strong { font-size: 19px; font-weight: 600; line-height: 1.25; }
+  .wk-plan-card small { font-size: 13px; color: var(--v4-secondary); }
+  .wk-plan-card-next { padding-top: 10px; border-top: 1px solid var(--v4-border); font-size: 13px; font-weight: 500; }
+  .wk-plan-card .wk-secondary { margin-top: 2px; }
 
   /* My workout plan */
   .wk-rail { display: flex; gap: 8px; overflow-x: auto; padding: 0 2px 2px; scrollbar-width: none; }
@@ -277,10 +285,9 @@
   .wk-test-note { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 16px; background: var(--v4-card); border: 1px solid var(--v4-border); color: var(--wk-muted); font-size: 13px; }
   .wk-test-note .material-symbols-outlined { color: var(--v4-accent); font-size: 18px; }
 
-  @media (prefers-reduced-motion: reduce) { .wk-pager { scroll-behavior: auto; } .wk-spinner { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .wk-spinner { animation: none; } }
   @media (max-width: 360px) {
     /* player.css narrows the page gutter to 12px here; full-bleed rows follow it. */
-    .wk-pager { margin-inline: -12px; }
     .wk-page > .v4-header-compact, .personal-embedded > .v4-header-compact, .wk-test-page > .v4-header-compact { margin-inline: -12px; }
     .wk-stat strong { font-size: 19px; }
     .wk-segments button { font-size: 13px; }

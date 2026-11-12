@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { blockSeconds, blockTimes, breakdownHeadline, countedLogs, durationShort, endReasonChip, findResume, focusArcs, focusCategory, focusSlices, focusSummary,
-  freeSessionSummary, historyBlockSummary, historyRows, planCardSubtitle, planPagePlan, planSections, resumeBannerText, savedDetailLine, savedEntries, savedWorkouts, weekDrillLine } from './hub';
+  freeSessionSummary, historyBlockSummary, historyRows, planCardModel, planPagePlan, planSections, resumeBannerText, savedDetailLine, savedEntries, savedWorkouts, weekDrillLine } from './hub';
 import type { Row } from '../execution';
 import { doseLine } from './MyWorkoutPlan';
 import { appWorkoutsLink, appleTouchDevice } from './AppOnlySheet';
@@ -84,10 +84,24 @@ describe('resume, saved workouts and the plan card', () => {
     expect(entries.find(e => e.id === 'personal:pw')?.unavailableReason).toBe('Completed · create an edited copy to practice again.');
     expect(savedDetailLine({ blocks: [{}], estimatedMinutes: 20 }, true)).toBe('1 drill · ~20 min · In progress');
   });
-  it('words the plan card and picks the plan page content', () => {
-    expect(planCardSubtitle(3, 6, 2)).toBe('Week 3 of 6 · 2 saved'); expect(planCardSubtitle(7, 6, 0)).toBe('Week 7 of 7');
-    expect(planPagePlan(plan(), false)?.id).toBe('p'); expect(planPagePlan(plan({ schemaVersion: 2 }), false)).toBeNull();
-    expect(planPagePlan(plan({ schemaVersion: 2 }), true)?.id).toBe('p'); expect(planPagePlan(plan({ status: 'completed' }), true)).toBeNull();
+  it('summarizes the plan on the hub: this week’s theme, its sessions and the next workout', () => {
+    // Monday of week 1 in the plan's timezone.
+    const now = new Date('2026-11-09T20:00:00Z');
+    const themed = plan({ weeks: [{ weekNumber: 1, theme: 'Own your first touch', workouts: [
+      { workoutId: 'a', order: 1, title: 'Keep the ball close', budgetMinutes: 30, blocks: [] }, { workoutId: 'b', order: 2, title: 'Quick feet', estimatedMinutes: 25, blocks: [] }] }] });
+    expect(planCardModel(themed, [], now)).toEqual({ title: 'Own your first touch', schedule: 'Week 1 of 4 · 2 sessions this week', next: 'Next: Keep the ball close · 30 min' });
+    // The athlete's saved logs move it on: a finished slot is passed, one in progress is resumed.
+    const log = (workoutId: string, over: Row = {}) => ({ id: `p_${workoutId}`, planId: 'p', source: 'plan', workoutId, startedAt: now, ...over });
+    expect(planCardModel(themed, [log('a', { endedAt: now })], now).next).toBe('Next: Quick feet · 25 min');
+    expect(planCardModel(themed, [log('b')], now).next).toBe('Resume: Quick feet · 25 min');
+    expect(planCardModel(themed, [log('a', { endedAt: now }), log('b', { endedAt: now })], now).next).toBeNull();
+    // No theme, one session; and an earlier-format plan, which has no next workout on the web.
+    expect(planCardModel(plan(), [], now)).toMatchObject({ title: 'Your training plan', schedule: 'Week 1 of 4 · 1 session this week', next: 'Next: Week 1 work' });
+    expect(planCardModel(plan({ schemaVersion: 2, weeks: [] }), [], now)).toEqual({ title: 'Your training plan', schedule: 'Week 1 of 4', next: null });
+  });
+  it('picks the plan page content and its sections', () => {
+    expect(planPagePlan(plan())?.id).toBe('p'); expect(planPagePlan(plan({ schemaVersion: 2 }))?.id).toBe('p');
+    expect(planPagePlan(plan({ status: 'completed' }))).toBeNull(); expect(planPagePlan(null)).toBeNull();
     expect(planSections(true, true)).toEqual(['weekRail', 'weekCard', 'nextWorkout', 'targets', 'drills', 'links', 'freeSession']);
     expect(planSections(false, false)).not.toContain('legacyWorkout');
     expect(weekDrillLine(plan().weeks[0], 'DRB-1')).toBe('In 1 workout this week · dose shown in each workout');

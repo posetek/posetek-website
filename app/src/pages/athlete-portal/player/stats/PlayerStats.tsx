@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PlayerHeader } from '../PlayerShell';
+import { TrainingStatsRow, useFocusPreferences } from '../workouts/TrainingFocus';
+import { focusSummary } from '../workouts/hub';
+import { allWorkoutLogs, useAllWorkoutLogs } from '../workouts/use-workout-logs';
 import { PlayerResultsFeedbackLink } from '../PlayerFeedbackInvitation';
 import { showResultsFeedback } from '../feedback-invitation';
 import { fullName } from '../../lib/metrics';
@@ -33,11 +36,16 @@ const NEXT_STEPS = [
  * the testing report in the live one-pager's score-card layout. A card picks the test shown in
  * the pose player under the cards (the athlete's best rep as pose only, the team's median athlete
  * as a shadow, the rep's numbers beside the team's averages). Then "Strong today" / "Practice
- * next", two drills to try, "So what do I do with these results?" and "How to use PoseTek?".
+ * next", two drills to try, "So what do I do with these results?", the lifetime training totals
+ * (moved here from the workout hub, as in the app) and "How to use PoseTek?".
  * The body scan and the streak/session/favorite tiles are deliberately not shown here.
  */
-export default function PlayerStats({ ctx, go, profile, athlete, report, reps, preview, timeZone }: Props) {
+export default function PlayerStats({ ctx, go, profile, athlete, report, reps, preview, timeZone, active, personal }: Props) {
   const practice = useReportPractice(ctx.playerId, preview);
+  // Training totals (`StatsView` "Training totals"): all time, on the time basis remembered on this device.
+  const workoutLogs = useAllWorkoutLogs(ctx.playerId, preview, active), basis = useFocusPreferences().basis;
+  const personalLogs = personal.enabled ? personal.logs : null;
+  const totals = useMemo(() => focusSummary(allWorkoutLogs(workoutLogs.logs, [], personalLogs || {}), new Date(), basis), [workoutLogs.logs, personalLogs, basis]);
   const [picked, setPicked] = useState<string | null>(null);
   // Until a card is chosen the player shows the first test that has a result.
   const metrics = report.report?.metrics.filter(metric => METRIC_TESTS[metric.id]) ?? [];
@@ -46,7 +54,7 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
   const samples = report.report ? reportPracticeSamples(practice.plan, report.report.playerId, practice.catalog) : [];
   const estimates = activeProvisionalEstimates(ctx.provisionalEstimates, ctx.allResultReps?.() || ctx.allStatsReps());
   const tested = report.report ? [report.report.teamName, `Tested ${reportDate(report.report.testDateMillis, timeZone)}`].filter(Boolean).join(' · ') : null;
-  const open = { coach: () => go('coach'), plan: () => go('stats', { screen: 'plan' }), workout: () => go('workouts', { screen: 'workout' }) };
+  const open = { coach: () => go('coach'), plan: () => go('stats', { screen: 'plan' }), workout: () => go('workouts') };
   // Every test's replay loads in the background once the report is here, so the first click on a
   // card shows its replay at once (not in the sample preview, which has no recordings).
   const repCount = Object.values(reps).reduce((sum, list) => sum + (list?.length ?? 0), 0);
@@ -79,6 +87,10 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
         </button>)}
       </div>
     </section>
+    {workoutLogs.loaded && !workoutLogs.error && <section className="stats-totals" aria-labelledby="stats-totals-title">
+      <h2 id="stats-totals-title" className="stats-section-title">Training totals</h2>
+      <TrainingStatsRow summary={totals} hasData={totals.periods.allTime.workoutsCompleted > 0} />
+    </section>}
     <section className="v4-card stats-how" aria-labelledby="stats-how-title">
       <h2 id="stats-how-title" className="stats-section-title">How to use PoseTek?</h2>
       <p>PoseTek is your personal assistant for your sport. We use your test results, your position, your coach’s feedback and more to build workouts and plans made for you, ready to follow in the app.</p>
