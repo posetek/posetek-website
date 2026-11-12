@@ -16,7 +16,7 @@ vi.mock('../../../../lib/organization-data', () => ({ getClubContext: mocks.cont
 
 import { clearReplayCache } from '../../lib/replay-cache';
 import {
-  CLUB_TESTS, athleteGender, clubPoints, cohortMembers, loadClubTest, plotInputs, profileBest, repLabel, reprocessedEvents, stationBests, teamAgeGroup, teamGender,
+  CLUB_TESTS, athleteGender, clubPoints, cohortMembers, loadClubComparison, loadClubTest, profileBest, repLabel, reprocessedEvents, stationBests, stationEventBests, teamAgeGroup, teamGender,
 } from './club-comparison';
 
 describe('gender and age group', () => {
@@ -77,6 +77,16 @@ describe('best result per athlete', () => {
     expect([...stationBests(CLUB_TESTS.dribbleLeft, labels, effective, events)]).toEqual([['a', 8.98]]);
     expect([...stationBests(CLUB_TESTS.sprint, labels, effective, events)]).toEqual([]);
   });
+  it("keeps the athlete's best on each testing event, from the same results", () => {
+    const more = [...labels, label('a', '9', { testingEventId: 'later', protocolSide: 'right', resultAlgorithmVersion: 'dribbling-1.3.2' }),
+      label('a', '10', { testingEventId: 'later', protocolSide: 'right' })];
+    const values = new Map<string, unknown>([...effective, ['a/9', { totalTime: 7.6, resultStatus: ok }], ['a/10', { totalTime: 7.9, resultStatus: ok }]]);
+    const events = reprocessedEvents(more);
+    expect(stationEventBests(CLUB_TESTS.dribbleRight, more, values, events, 'a')).toEqual([7.75, 7.6]);
+    expect(stationBests(CLUB_TESTS.dribbleRight, more, values, events).get('a')).toBe(7.6);
+    expect(stationEventBests(CLUB_TESTS.dribbleRight, more, values, events, 'b')).toEqual([7.5]);
+    expect(stationEventBests(CLUB_TESTS.dribbleLeft, more, values, events, 'b')).toEqual([]);
+  });
   it('reads a profile best in metres, and nothing malformed', () => {
     expect(profileBest({ version: 5, bests: { verticalJumpHeight: { value: 0.1764, unit: 'm' } } }, 'verticalJumpHeight')).toBe(0.1764);
     expect(profileBest({ version: 5, bests: { verticalJumpHeight: { value: 7, unit: 'in' } } }, 'verticalJumpHeight')).toBeNull();
@@ -92,19 +102,14 @@ describe('best result per athlete', () => {
   });
 });
 
-describe('points on the age curve', () => {
-  it("places each athlete at their team's age group without a name, and finds the athlete's own point", () => {
+describe('points by age group', () => {
+  it("places each athlete at their team's age group, and only athletes with a result", () => {
     const points = clubPoints(new Map([['me', 7.75], ['a', 7.5], ['b', 7.1], ['c', 8], ['d', 6.9], ['e', 7.3], ['lost', 7]]),
       [{ id: 'me', teamId: 'u11' }, { id: 'a', teamId: 'u11' }, { id: 'b', teamId: 'u11' }, { id: 'c', teamId: 'u11' }, { id: 'd', teamId: 'u11' }, { id: 'e', teamId: 'u14' }, { id: 'lost', teamId: 'none' }, { id: 'x', teamId: 'u11' }],
       new Map([['u11', 11], ['u14', 14], ['none', null]]));
     expect(points.map(p => p.playerId)).toEqual(['me', 'a', 'b', 'c', 'd', 'e', 'lost']);
-    const plot = plotInputs(points, 'me');
-    expect(plot.own).toEqual({ playerId: 'me', ageGroup: 11, value: 7.75 });
-    expect(plot.missingAge).toBe(1);
-    expect(plot.points.every(point => point.name === '')).toBe(true);
-    expect(plot.points.find(point => point.playerId === 'e')).toMatchObject({ age: 14, value: 7.3 });
-    // Five athletes at U11 make a curve point, drawn on the age group itself.
-    expect(plot.curve.map(point => [point.age, point.median, point.n])).toEqual([[11, 7.5, 5]]);
+    expect(points.find(point => point.playerId === 'e')).toEqual({ playerId: 'e', ageGroup: 14, value: 7.3 });
+    expect(points.find(point => point.playerId === 'lost')!.ageGroup).toBeNull();
   });
 });
 
@@ -149,10 +154,23 @@ describe('the staff loader', () => {
     expect(mocks.call.mock.calls.map(([name, data]) => [name, data])).toEqual([['getTeamLeaderboard', { teamId: 't11' }], ['getTeamLeaderboard', { teamId: 't14' }]]);
     expect((await loadClubTest(staff, 'sprint'))!.points).toEqual([{ playerId: 'me', ageGroup: 11, value: 2.63 }]);
     expect((await loadClubTest(staff, 'jump'))!.points.map(p => [p.playerId, p.value])).toEqual([['me', 0.1764], ['b1', 0.25], ['b3', 0.2]]);
+    expect(dribble!.ownResults).toEqual([7.75]);
+    expect((await loadClubTest(staff, 'jump'))!.ownResults).toEqual([0.1764]);
     // Switching tests reads nothing again; rep documents are read for station-testing reps only.
     expect(mocks.context).toHaveBeenCalledTimes(1);
     expect(mocks.call).toHaveBeenCalledTimes(2);
     expect([...mocks.queries]).toEqual(["testingEventId > ''"]);
+  });
+
+  it('turns the same results into statistics for the chart, in the units of the cards', async () => {
+    const jump = await loadClubComparison(staff, 'jump');
+    expect(jump).toMatchObject({ organizationName: 'Vacaville United', gender: 'boys', teamsOnly: false, incomplete: false });
+    expect(jump!.stats).toMatchObject({ unit: 'in', higherIsBetter: true, athletes: 3, groups: [] });
+    expect(jump!.stats.overall.mean).toBeCloseTo(((0.1764 + 0.25 + 0.2) / 3) * 39.37007874, 6);
+    expect(jump!.stats.own!.ageGroup).toBe(11);
+    expect(jump!.stats.own!.best).toBeCloseTo(6.944881, 5);
+    expect(jump!.stats.own!.results).toHaveLength(1);
+    expect(await loadClubComparison({ ...staff, access: 'athlete' }, 'jump')).toBeNull();
   });
 
   it('compares with everyone, and says so, when no gender is recorded', async () => {

@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // The club comparison under the pose player on Stats (Nolan, 2026-11-11): where the athlete sits
 // among every athlete of their club and gender for the picked test, one best result each, drawn
-// on the admin organization age curve (admin/views/AgeCurve.tsx). No other athlete is identified:
-// the points carry a value and an age group only, and player ids never leave this module's keys.
+// as the club's average and spread by age group (ClubCloudChart.tsx, maths in club-cloud.ts). The
+// chart receives statistics only (`ClubStats`); here they are computed from the staff reads below
+// until a backend callable returns them (`loadClubComparison`). No other athlete is identified.
 //
 // Where the values come from (both are the server's corrected readers, never a rep's own fields):
 // - Sprint, shuttle run and both dribble courses: the newly processed station results only. A
@@ -22,11 +23,12 @@
 
 import { cloud, db } from '../../../../lib/firebase';
 import { getClubContext } from '../../../../lib/organization-data';
-import { ageMedianCurve, genderOf } from '../../../admin/lib/ageCurve';
-import type { AgePoint, CurvePoint } from '../../../admin/lib/ageCurve';
+import { genderOf } from '../../../admin/lib/ageCurve';
 import { DRILLS } from '../../lib/drills';
 import type { Access } from '../../lib/loaders';
 import { remember } from '../../lib/replay-cache';
+import { clubStats } from './club-cloud';
+import type { ClubStats } from './club-cloud';
 
 export type ClubDisplay = { unit: string; scale: number; digits: number };
 export type ClubTest = {
@@ -118,20 +120,39 @@ export function reprocessedEvents(labels: RepLabel[]): Set<string> {
 const positive = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0;
 
 /**
- * Each athlete's best station result for one test: reps of a newly processed event, on the test's
+ * Every station result that counts for one test: reps of a newly processed event, on the test's
  * course, that the effective reader returned as qualified and not a duplicate. `effective` is keyed
  * `${playerId}/${repId}`.
  */
-export function stationBests(test: ClubTest, labels: RepLabel[], effective: Map<string, any>, events: Set<string>): Map<string, number> {
-  const best = new Map<string, number>();
-  for (const label of labels) {
-    if (label.drill !== test.drill || !label.eventId || !events.has(label.eventId) || (test.side && label.side !== test.side)) continue;
+function stationResults(test: ClubTest, labels: RepLabel[], effective: Map<string, any>, events: Set<string>): { playerId: string; eventId: string; value: number }[] {
+  return labels.flatMap(label => {
+    if (label.drill !== test.drill || !label.eventId || !events.has(label.eventId) || (test.side && label.side !== test.side)) return [];
     const rep = effective.get(`${label.playerId}/${label.repId}`);
-    if (!rep || rep.resultStatus?.qualified !== true || rep.resultStatus?.duplicate === true || !positive(rep.totalTime)) continue;
-    const current = best.get(label.playerId);
-    if (current === undefined || (test.higherIsBetter ? rep.totalTime > current : rep.totalTime < current)) best.set(label.playerId, rep.totalTime);
-  }
+    if (!rep || rep.resultStatus?.qualified !== true || rep.resultStatus?.duplicate === true || !positive(rep.totalTime)) return [];
+    return [{ playerId: label.playerId, eventId: label.eventId, value: rep.totalTime as number }];
+  });
+}
+
+/** The best of each group of results, in first-seen order. */
+function bestBy(results: { value: number }[], key: (index: number) => string, higherIsBetter: boolean): Map<string, number> {
+  const best = new Map<string, number>();
+  results.forEach((result, index) => {
+    const current = best.get(key(index));
+    if (current === undefined || (higherIsBetter ? result.value > current : result.value < current)) best.set(key(index), result.value);
+  });
   return best;
+}
+
+/** Each athlete's best station result for one test (see `stationResults`). */
+export function stationBests(test: ClubTest, labels: RepLabel[], effective: Map<string, any>, events: Set<string>): Map<string, number> {
+  const results = stationResults(test, labels, effective, events);
+  return bestBy(results, index => results[index].playerId, test.higherIsBetter);
+}
+
+/** One athlete's best station result on each testing event they took part in (the same results). */
+export function stationEventBests(test: ClubTest, labels: RepLabel[], effective: Map<string, any>, events: Set<string>, playerId: string): number[] {
+  const results = stationResults(test, labels, effective, events).filter(result => result.playerId === playerId);
+  return [...bestBy(results, index => results[index].eventId, test.higherIsBetter).values()];
 }
 
 /** One profile best in metres (the contract's unit), or null. */
@@ -140,7 +161,7 @@ export function profileBest(profile: any, metric: string): number | null {
   return best && best.unit === 'm' && positive(best.value) ? best.value : null;
 }
 
-// MARK: - Points on the age curve
+// MARK: - One point per athlete, at their team's age group
 
 export type ClubPoint = { playerId: string; ageGroup: number | null; value: number };
 
@@ -149,22 +170,6 @@ export function clubPoints(values: Map<string, number>, members: ClubMember[], t
     const value = values.get(member.id);
     return value === undefined ? [] : [{ playerId: member.id, ageGroup: teamAge.get(member.teamId) ?? null, value }];
   });
-}
-
-/**
- * The age curve's inputs: one point per athlete at their team's age group (no names), the club's
- * median and middle half per age group, and this athlete's own point. An age group is a whole
- * number, so the curve's one-year bins (centred half a year in) are moved back onto it.
- */
-export function plotInputs(points: ClubPoint[], ownId: string): { points: AgePoint[]; curve: CurvePoint[]; own: ClubPoint | null; missingAge: number } {
-  const placed = points.filter(point => point.ageGroup !== null);
-  const agePoints: AgePoint[] = placed.map(point => ({ playerId: point.playerId, name: '', age: point.ageGroup!, exactAge: true, value: point.value, repKey: point.playerId }));
-  return {
-    points: agePoints,
-    curve: ageMedianCurve(agePoints).map(point => ({ ...point, age: point.age - 0.5 })),
-    own: points.find(point => point.playerId === ownId) ?? null,
-    missingAge: points.length - placed.length,
-  };
 }
 
 // MARK: - Loading (staff)
@@ -182,6 +187,8 @@ export type ClubTestResult = {
   /** Some athletes' or teams' results could not be read. */
   incomplete: boolean;
   points: ClubPoint[];
+  /** This athlete's best on each testing event (station tests); their profile best (jumps). */
+  ownResults: number[];
 };
 
 type Cohort = { key: string; organizationName: string; gender: Gender | null; teamsOnly: boolean; members: ClubMember[]; teamAge: Map<string, number | null> };
@@ -247,16 +254,37 @@ export async function loadClubTest(viewer: ClubViewer, metricId: string): Promis
   const cohort = await cohortFor({ ...viewer, organizationId: viewer.organizationId, playerId: viewer.playerId });
   const profiles = profileSource(cohort), station = stationSource(cohort);
   (test.source === 'profile' ? station : profiles).catch(() => { /* reported by its own test */ });
-  let values: Map<string, number>, failed: number;
+  let values: Map<string, number>, failed: number, ownResults: number[];
   if (test.source === 'profile') {
     const read = await profiles;
     values = new Map([...read.profiles].flatMap(([id, profile]) => { const value = profileBest(profile, test.metric!); return value === null ? [] : [[id, value] as [string, number]]; }));
     failed = read.failed;
+    ownResults = values.has(viewer.playerId) ? [values.get(viewer.playerId)!] : [];
   } else {
     const read = await station;
     values = stationBests(test, read.labels, read.effective, read.events);
     failed = read.failed;
+    ownResults = stationEventBests(test, read.labels, read.effective, read.events, viewer.playerId);
   }
   return { organizationName: cohort.organizationName, gender: cohort.gender, teamsOnly: cohort.teamsOnly, incomplete: failed > 0,
-    points: clubPoints(values, cohort.members, cohort.teamAge) };
+    points: clubPoints(values, cohort.members, cohort.teamAge), ownResults };
 }
+
+// MARK: - The chart's statistics
+
+export type ClubComparisonData = Omit<ClubTestResult, 'points' | 'ownResults'> & { stats: ClubStats };
+
+/** The club comparison as statistics (`ClubStats`), computed here from the staff reads above. */
+export async function staffClubComparison(viewer: ClubViewer, metricId: string): Promise<ClubComparisonData | null> {
+  const test = CLUB_TESTS[metricId];
+  const result = test && viewer.playerId ? await loadClubTest(viewer, metricId) : null;
+  if (!test || !result) return null;
+  const { points, ownResults, ...about } = result;
+  return { ...about, stats: clubStats(points, { ownId: viewer.playerId!, ownResults, unit: test.display.unit, scale: test.display.scale, higherIsBetter: test.higherIsBetter }) };
+}
+
+/**
+ * Where the Stats page's club comparison comes from. The backend callable that returns the same
+ * statistics (without reading any athlete's results in the browser) replaces this line when deployed.
+ */
+export const loadClubComparison: (viewer: ClubViewer, metricId: string) => Promise<ClubComparisonData | null> = staffClubComparison;
