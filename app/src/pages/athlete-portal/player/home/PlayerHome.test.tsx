@@ -9,11 +9,11 @@ import type { PlayerTabProps } from '../workspace';
 
 const report = (withReport: boolean): ReportState => ({ report: withReport ? { ...DEMO_REPORT, playerId: 'preview-player' } : null, limitedComparison: false, error: null, loading: false, reload: () => {} });
 
-function render(query: string, { access = 'preview', withReport = true } = {}) {
+function render(query: string, { access = 'preview', withReport = true, athlete = { name: 'Avery Demo' } as Record<string, unknown> } = {}) {
   const props = {
-    ctx: { access, playerId: 'preview-player', athlete: { name: 'Avery Demo' }, notify: () => {}, allStatsReps: () => [] },
+    ctx: { access, playerId: 'preview-player', athlete, notify: () => {}, allStatsReps: () => [] },
     route: { view: 'home', screen: null, page: 'tests', drill: 'shooting', session: null, rep: null },
-    go: () => {}, back: () => {}, active: true, preview: access === 'preview', athlete: { name: 'Avery Demo' }, reps: {},
+    go: () => {}, back: () => {}, active: true, preview: access === 'preview', athlete, reps: {},
     personal: {}, report: report(withReport),
   } as unknown as PlayerTabProps;
   return renderToStaticMarkup(<MemoryRouter initialEntries={[`/athlete?preview=1&view=home${query}`]}><PlayerHome {...props} /></MemoryRouter>);
@@ -67,5 +67,10 @@ describe('Home (AthleteWorkspaceHome)', () => {
   });
   it('names the athlete for a staff viewer', () => {
     expect(render('&homePreview=week-empty', { access: 'coach' })).toContain('Avery Demo’s week');
+  });
+  it('names an athlete whose record carries first and last name only, as player records do', () => {
+    const html = render('&homePreview=week-empty', { access: 'admin', athlete: { firstName: 'Avery', lastName: 'Cole' } });
+    expect(html).toContain('Avery Cole’s week');
+    expect(html).not.toContain('>’s week');
   });
 });

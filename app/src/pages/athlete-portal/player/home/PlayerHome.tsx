@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { auth } from '../../../../lib/firebase';
+import { fullName } from '../../lib/metrics';
 import { PlayerHeader } from '../PlayerShell';
 import { useCoachConfig } from '../gateway';
 import type { PlayerTabProps } from '../workspace';
@@ -39,7 +40,8 @@ export default function PlayerHome({ ctx, preview, active, athlete, report, pers
     activities: mode === 'feed-empty' ? [] : previewActivities(),
   } : undefined;
   const feed = useHomeFeed({ enabled, active, identity: `${auth.currentUser?.uid ?? ''}:${ctx.playerId ?? ''}`, sample });
-  const playerName = typeof athlete?.name === 'string' ? athlete.name : '';
+  // Player records carry first and last name; only some carry `name`. Staff see "<name>’s week".
+  const playerName = fullName(athlete);
   const organizationName = feed.context?.organizationName;
   const recapPreview = (mode?.startsWith('week-') ? mode.slice(5) : undefined) as RecapPreview;
   const phase = feed.phase;
