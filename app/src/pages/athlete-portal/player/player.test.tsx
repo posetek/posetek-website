@@ -186,7 +186,8 @@ describe('player route and preview rendering', () => {
     if (view === 'training' || view === 'workouts') { expect(html).toContain('<h1>Workouts</h1>'); expect(html).toContain('MY WORKOUT PLAN'); expect(html).toContain('Build Workout'); }
     // The six tests are a page of their own now; an older results link still opens a test.
     if (view === 'workouts') expect(html).not.toContain('<strong>Shooting</strong>');
-    if (view === 'stats') expect(html.indexOf('>Training totals</h2>')).toBeGreaterThan(html.indexOf('>So what do I do with these results?</h2>'));
+    // Stats carries neither the lifetime training totals nor the drills from the plan (Nolan, 2026-11-12).
+    if (view === 'stats') for (const gone of ['Training totals', 'rills to try', 'Clear, flat space']) expect(html).not.toContain(gone);
     if (view === 'stats') {
       // The profile: the skill radar first, the testing report beneath it, then the next steps.
       const order = ['>Skill benchmarks</h2>', 'class="stats-report"', '>So what do I do with these results?</h2>'].map(heading => html.indexOf(heading));

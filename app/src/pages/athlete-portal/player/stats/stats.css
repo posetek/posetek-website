@@ -122,18 +122,6 @@
   .stats-findings > div { padding-top: 10px; border-top: 1px solid var(--v4-border); }
   .stats-findings h3 { margin: 0; font-size: 12px; font-weight: 600; color: var(--v4-secondary); }
   .stats-findings p { margin: 4px 0 0; font-size: 15px; font-weight: 700; }
-  .stats-drills { display: grid; gap: 10px; }
-  .stats-drills > * { margin: 0; }
-  .stats-drill { padding: 0 14px; border: 1px solid var(--v4-border); border-radius: 14px; background: var(--v4-card); }
-  .stats-drill summary { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 48px; margin: 0; padding: 10px 0; cursor: pointer; list-style: none; }
-  .stats-drill summary::-webkit-details-marker { display: none; }
-  .stats-drill summary > span:first-child { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; min-width: 0; }
-  .stats-drill summary strong { font-size: 15px; font-weight: 700; }
-  .stats-drill summary small { font-size: 13px; color: var(--v4-secondary); }
-  .stats-drill summary .material-symbols-outlined { color: var(--v4-accent); font-size: 20px; transition: transform .2s ease-in-out; }
-  .stats-drill[open] summary .material-symbols-outlined { transform: rotate(180deg); }
-  .stats-drill[open] { padding-bottom: 12px; }
-  .stats-drill p { margin: 0 0 4px; font-size: 13px; line-height: 1.4; color: #ffffffd9; }
 
   /* "So what do I do with these results?": the three next steps a player lands on. */
   .stats-next { display: grid; gap: 12px; }
@@ -145,7 +133,6 @@
   .stats-next-card small { grid-column: 2; font-size: 13px; color: var(--v4-secondary); }
   .stats-next-card > .material-symbols-outlined:last-child { grid-column: 3; grid-row: 1 / span 2; color: var(--v4-secondary); font-size: 18px; }
 
-  .stats-totals { display: grid; gap: 12px; }
   .stats-how { display: grid; gap: 8px; padding: 18px; }
   .stats-how h2 { margin: 0; }
   .stats-how p { margin: 0; font-size: 15px; line-height: 1.5; color: #ffffffd9; }

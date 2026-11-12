@@ -1,8 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PlayerHeader } from '../PlayerShell';
-import { TrainingStatsRow, useFocusPreferences } from '../workouts/TrainingFocus';
-import { focusSummary } from '../workouts/hub';
-import { allWorkoutLogs, useAllWorkoutLogs } from '../workouts/use-workout-logs';
 import { PlayerResultsFeedbackLink } from '../PlayerFeedbackInvitation';
 import { showResultsFeedback } from '../feedback-invitation';
 import { fullName } from '../../lib/metrics';
@@ -17,9 +14,7 @@ import TestPosePlayer from './TestPosePlayer';
 import ClubComparison from './ClubComparison';
 import { METRIC_TESTS } from './test-comparison';
 import { warmStatsReplays } from './test-replay';
-import { reportPracticeSamples } from './report-practice';
 import { reportDate } from './stats-format';
-import { useReportPractice } from './use-report-practice';
 import './stats.css';
 
 type Props = PlayerTabProps & {
@@ -43,23 +38,17 @@ const NEXT_STEPS = [
  * Stats, the page a player lands on (Nolan, 2026-11-11): the name, the skill radar first, then
  * the testing report in the live one-pager's score-card layout. A card picks the test shown in
  * the pose player under the cards (the athlete's best rep as pose only, the team's median athlete
- * as a shadow, the rep's numbers beside the team's averages). Then "Strong today" / "Practice
- * next", two drills to try, "So what do I do with these results?", the lifetime training totals
- * (moved here from the workout hub, as in the app) and "How to use PoseTek?".
- * The body scan and the streak/session/favorite tiles are deliberately not shown here.
+ * as a shadow, the rep's numbers beside the team's averages). Then "Strong today", "So what do I
+ * do with these results?" and "How to use PoseTek?".
+ * Deliberately not shown here: the body scan, the streak/session/favorite tiles, and (Nolan,
+ * 2026-11-12) the two drills from the plan and the lifetime training totals.
  */
-export default function PlayerStats({ ctx, go, profile, athlete, report, reps, preview, timeZone, active, personal, onStartWorkout }: Props) {
-  const practice = useReportPractice(ctx.playerId, preview);
-  // Training totals (`StatsView` "Training totals"): all time, on the time basis remembered on this device.
-  const workoutLogs = useAllWorkoutLogs(ctx.playerId, preview, active), basis = useFocusPreferences().basis;
-  const personalLogs = personal.enabled ? personal.logs : null;
-  const totals = useMemo(() => focusSummary(allWorkoutLogs(workoutLogs.logs, [], personalLogs || {}), new Date(), basis), [workoutLogs.logs, personalLogs, basis]);
+export default function PlayerStats({ ctx, go, profile, athlete, report, reps, preview, timeZone, onStartWorkout }: Props) {
   const [picked, setPicked] = useState<string | null>(null);
   // Until a card is chosen the player shows the first test that has a result.
   const metrics = report.report?.metrics.filter(metric => METRIC_TESTS[metric.id]) ?? [];
   const selected = metrics.find(metric => metric.id === picked) ?? metrics.find(metric => metric.result) ?? metrics[0] ?? null;
   const openTest = (metric: ReportMetric) => { if (METRIC_TESTS[metric.id]) setPicked(metric.id); };
-  const samples = report.report ? reportPracticeSamples(practice.plan, report.report.playerId, practice.catalog) : [];
   const estimates = activeProvisionalEstimates(ctx.provisionalEstimates, ctx.allResultReps?.() || ctx.allStatsReps());
   const tested = report.report ? [report.report.teamName, `Tested ${reportDate(report.report.testDateMillis, timeZone)}`].filter(Boolean).join(' · ') : null;
   const open = { coach: () => go('coach'), plan: () => go('stats', { screen: 'plan' }), workout: onStartWorkout ?? (() => go('workouts')) };
@@ -79,7 +68,7 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
       {tested && <p className="stats-caption">{tested}</p>}
     </div>
     <SkillBenchmarks profile={profile} estimates={estimates} />
-    <StatsReport report={report} practice={{ samples, loading: practice.loading, error: practice.error }} timeZone={timeZone} onOpenTest={openTest}
+    <StatsReport report={report} timeZone={timeZone} onOpenTest={openTest}
       selectedId={selected?.id ?? null}
       // The sample-data preview has no recordings to replay.
       detail={selected && report.report && !preview ? <><TestPosePlayer key={selected.id} metric={selected} report={report.report} reps={reps} athlete={athlete}
@@ -95,10 +84,6 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
         </button>)}
       </div>
     </section>
-    {workoutLogs.loaded && !workoutLogs.error && <section className="stats-totals" aria-labelledby="stats-totals-title">
-      <h2 id="stats-totals-title" className="stats-section-title">Training totals</h2>
-      <TrainingStatsRow summary={totals} hasData={totals.periods.allTime.workoutsCompleted > 0} />
-    </section>}
     <section className="v4-card stats-how" aria-labelledby="stats-how-title">
       <h2 id="stats-how-title" className="stats-section-title">How to use PoseTek?</h2>
       <p>PoseTek is your personal assistant for your sport. We use your test results, your position, your coach’s feedback and more to build workouts and plans made for you, ready to follow in the app.</p>

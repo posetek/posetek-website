@@ -32,9 +32,9 @@ describe('Workouts pages, in the app’s order and words', () => {
     expect(order(html, ['<h1>Tests</h1>', 'Shooting', 'Dribbling', 'Vertical Jump', 'Broad Jump', 'Sprint', 'Shuttle'])).toBe(true);
     expect(html).toContain('aria-label="Shooting, Measure your striking"'); expect(html).not.toContain('MY WORKOUT PLAN');
   });
-  it('Stats carries the training totals that left the hub', () => {
+  it('the training totals that left the hub are not on Stats either', () => {
     const html = render('view=stats');
-    expect(order(html, ['>Training totals</h2>', 'Total time', 'Workouts', 'Favorite focus'])).toBe(true);
+    for (const gone of ['Training totals', 'Total time', 'Favorite focus']) expect(html).not.toContain(gone);
   });
   it('My workout plan: the block, the week, the next workout, targets, drills, links', () => {
     const html = render('view=workouts&screen=plan');

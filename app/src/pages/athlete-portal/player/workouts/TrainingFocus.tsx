@@ -15,7 +15,7 @@ export function useFocusPreferences() {
   return { period, basis, setPeriod: (p: Period) => { setPeriod(p); write(PERIOD_KEY, p); }, setBasis: (b: TimeBasis) => { setBasis(b); write(BASIS_KEY, b); } };
 }
 
-/** The all-time stats row: time, workouts and favorite focus (`TrainingStatsRow`, V4 tiles). Shown on Stats under "Training totals". */
+/** The all-time stats row: time, workouts and favorite focus (`TrainingStatsRow`, V4 tiles). Not shown on the web now: it left the hub with the app's redesign, and Nolan took it off Stats (2026-11-12). */
 export function TrainingStatsRow({ summary, hasData }: { summary: FocusSummary; hasData: boolean }) {
   const stats = summary.periods.allTime;
   const favorite = summary.favoriteCategory ? summary.favoriteCategory === 'soccer' ? 'Soccer' : CATEGORY_STYLE[summary.favoriteCategory].name : '—';

@@ -5,17 +5,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { DEMO_REPORT } from '../report';
 import type { AthleteTestReport, ReportState } from '../report';
 import StatsReport, { reportCaption, teamAverageText } from './StatsReport';
-import type { PracticeView } from './StatsReport';
 
 const state = (patch: Partial<ReportState>): ReportState => ({ report: null, limitedComparison: false, error: null, loading: false, reload: () => {}, ...patch });
-const practice: PracticeView = { samples: [
-  { id: 'DRB-005', name: 'Cone maze', reason: 'General practice from your saved plan, not a drill selected here to correct a measured weakness.',
-    tag: 'Dribbling', dose: '3 x 60 s · 30s rest · ~14 min', instruction: 'Keep each repetition controlled.', equipment: 'Football, Cones' },
-  { id: 'PAS-001', name: 'Wall pass rhythm', reason: 'General practice from your saved plan, not a drill selected here to correct a measured weakness. Builds first touch.',
-    tag: null, dose: null, instruction: null, equipment: null },
-], loading: false, error: null };
-const render = (report: ReportState, view: PracticeView = practice) =>
-  renderToStaticMarkup(<StatsReport report={report} practice={view} timeZone="Asia/Tokyo" />);
+const render = (report: ReportState) => renderToStaticMarkup(<StatsReport report={report} timeZone="Asia/Tokyo" />);
 // `\s` also folds the non-breaking spaces the team-average line uses.
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -29,12 +21,14 @@ function elements(node: ReactNode): ReactElement<any>[] {
 }
 
 describe('Stats report (the live one-pager score-card layout)', () => {
-  it('shows the team comparison cards, the two findings and the drills, in the one-pager order', () => {
+  it('shows the team comparison cards and Strong today, in the one-pager order, and no drills from the plan', () => {
     const html = render(state({ report: DEMO_REPORT })), plain = text(html);
     const order = ['Click on each drill to see more',
-      'Left-course dribble', 'Right-course dribble', 'Sprint', 'Vertical jump', 'Strong today', 'Two drills to try', 'Cone maze', 'Wall pass rhythm', 'Clear, flat space. Stop if anything hurts.'];
+      'Left-course dribble', 'Right-course dribble', 'Sprint', 'Vertical jump', 'Strong today'];
     let at = -1;
     for (const item of order) { const next = plain.indexOf(item, at + 1); expect(next, item).toBeGreaterThan(at); at = next; }
+    // The drills from the saved plan are not part of Stats (Nolan, 2026-11-12).
+    expect(plain).not.toContain('rills to try'); expect(plain).not.toContain('Clear, flat space'); expect(html).not.toContain('<details');
     expect(html.match(/stats-score-card/g)).toHaveLength(4);
     expect(html.match(/left:(\d+)%/g)).toEqual(['left:15%', 'left:50%', 'left:85%', 'left:85%']);
     expect(plain).toContain('Left-course dribble 7.62 s ≈15th percentile Team avg 7.20 s · 8 results');
@@ -90,25 +84,12 @@ describe('Stats report (the live one-pager score-card layout)', () => {
     expect(plain).toContain('No recorded test measurements are available yet.');
     expect(plain).not.toContain('Practice next');
   });
-  it('shows each drill as a collapsible row and leaves out missing fields', () => {
-    const html = render(state({ report: DEMO_REPORT })), plain = text(html);
-    expect(html.match(/<details/g)).toHaveLength(2);
-    // `expand_more` is the row's icon ligature.
-    expect(plain).toContain('Two drills to try Cone maze 3 x 60 s · 30s rest · ~14 min expand_more Keep each repetition controlled. Equipment: Football, Cones Wall pass rhythm expand_more Clear, flat space.');
-    expect(plain.match(/Equipment:/g)).toHaveLength(1);
-    expect(text(render(state({ report: DEMO_REPORT }), { ...practice, samples: practice.samples.slice(0, 1) }))).toContain('Drills to try Cone maze');
-    // No saved plan, a plan still loading or a plan error: the drills block is simply absent.
-    for (const view of [{ samples: [], loading: false, error: null }, { samples: [], loading: true, error: null }, { samples: [], loading: false, error: 'denied' }]) {
-      const empty = text(render(state({ report: DEMO_REPORT }), view));
-      expect(empty).not.toContain('rills to try'); expect(empty).not.toContain('Clear, flat space');
-    }
-  });
   it('loading, error with Try again, and no report', () => {
     expect(text(render(state({ loading: true })))).toBe('Loading your results');
     const reload = vi.fn();
     const error = state({ error: 'Testing results could not be loaded.', reload });
     expect(text(render(error))).toBe('Testing results could not be loaded. Try again');
-    const retry = elements(StatsReport({ report: error, practice })).find(element => element.type === 'button');
+    const retry = elements(StatsReport({ report: error })).find(element => element.type === 'button');
     retry!.props.onClick();
     expect(reload).toHaveBeenCalledTimes(1);
     expect(text(render(state({})))).toBe('Your results will appear after your first assessment.');
