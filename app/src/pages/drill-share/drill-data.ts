@@ -3,7 +3,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { visibleAttempts, sameResultStatus } from "../../lib/result-values";
+import { visibleAttempts } from "../../lib/result-values";
 import { parseProvisionalEstimates, type ProvisionalEstimate } from "../../lib/provisional-estimates";
 import { cloud, db } from "../../lib/firebase";
 import { findCoach, findPlayer, ownsPlayer } from "../../lib/identity";
@@ -95,9 +95,6 @@ export async function loadArtifacts({ rep, config, playerId, shareToken, preview
     ? await cloud.httpsCallable("getAthleteSharedRepArtifacts")({ token: shareToken, drill: config.key, repId: rep.id })
     : await cloud.httpsCallable("getAthleteRepMedia")({ playerId, drill: config.key, repId: rep.id });
   const payload = (response.data || {}) as any;
-  if (rep.resultStatus && payload.resultStatus && !sameResultStatus(rep.resultStatus, payload.resultStatus)) {
-    throw new Error("This result changed. Refresh the athlete results to view the latest revision.");
-  }
   const urls = payload.artifactUrls || {};
   const pairs = await Promise.all(config.artifacts.map(async fileName => {
     const url = urls[fileName];
