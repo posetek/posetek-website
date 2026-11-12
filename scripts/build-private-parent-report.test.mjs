@@ -5,6 +5,8 @@ import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { buildPrivateParentReport } from './build-private-parent-report.mjs';
+import { sealReport } from './seal-parent-report.mjs';
+import { decryptReport, parseReportFragment } from '../app/private-report/crypto.mjs';
 
 const sha = bytes => createHash('sha1').update(bytes).digest('hex');
 const files = {
@@ -140,18 +142,39 @@ test('workout transition is explicit, mutually exclusive and cannot replace othe
   await assert.rejects(readFile(join(f.evidenceDirectory, 'guard-ran')), { code: 'ENOENT' });
 });
 
-test('explicit append preserves the complete reader and old reports; adds only new encrypted snapshots', async t => {
-  const f = await fixture(t), existing = await addExistingReports(f);
+test('explicit append preserves the current reader and old reports and adds sealed score-card reports', async t => {
+  const f = await fixture(t);
+  for (const name of ['index.html', 'report.css', 'render.mjs', 'crypto.mjs', 'loader.mjs']) {
+    const source = await readFile(new URL('../app/private-report/' + name, import.meta.url));
+    await put(f.root, 'app/private-report/' + name, source);
+  }
+  const existing = await addExistingReports(f);
   const sealedDirectory = join(f.root, '.netlify/sealed');
-  const envelope = Buffer.concat([Buffer.from([1]), Buffer.alloc(45, 23)]);
-  for (const id of ['c'.repeat(32), 'd'.repeat(32)]) await put(sealedDirectory, id + '.bin', envelope);
+  const payloads = ['One', 'Two'].map(firstName => ({
+    version: 1, name: 'Synthetic Athlete ' + firstName, firstName,
+    playerId: 'syntheticPlayer' + firstName, team: 'Example Team', coach: 'Example Coach',
+    testDate: 'Nov 10, 2026', focusTitle: 'Your results', focusText: 'Synthetic fixture.',
+    resultsFirst: true, visualLayout: 'score-cards-v1',
+    metrics: [{label: 'Dribble', result: '7.10 s', percentile: 50, band: 'middle', average: '7.20 s', count: 12}],
+    summary: [], exercises: [], methodNotes: [],
+  }));
+  const reports = payloads.map(payload => sealReport(payload));
+  for (const report of reports) await put(sealedDirectory, report.id + '.bin', report.envelope);
+
   const receipt = await f.run({ sealedDirectory, append: true });
   assert.equal(receipt.mode, 'append-encrypted-reports');
-  assert.equal(receipt.addedFiles.length, 2);
-  assert(receipt.addedFiles.every(path => path.endsWith('.bin')));
+  assert.equal(receipt.readerTransition, null);
+  assert.deepEqual(receipt.addedFiles, reports.map(report => '/report/data/' + report.id + '.bin').sort());
   assert.equal(receipt.preservedFiles, Object.keys(files).length + Object.keys(existing).length);
+  assert.equal(receipt.allPredecessorFilesUnchanged, true);
   for (const [name, bytes] of Object.entries(existing)) assert.deepEqual(await readFile(join(f.root, 'production-dist', name)), bytes);
   for (const [name, text] of Object.entries(files)) assert.equal(await readFile(join(f.root, 'production-dist', name), 'utf8'), text);
+  for (const [index, report] of reports.entries()) {
+    const bytes = await readFile(join(f.root, 'production-dist/report/data', report.id + '.bin'));
+    assert.deepEqual(bytes, report.envelope);
+    const { id, key } = parseReportFragment('#' + report.fragment);
+    assert.deepEqual(await decryptReport(bytes, id, key), payloads[index]);
+  }
   await assert.rejects(readFile(join(f.root, 'production-dist/report/raw.json')), { code: 'ENOENT' });
 });
 

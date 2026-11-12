@@ -33,6 +33,20 @@ example draft requires exact artifact review and hosted acceptance before the us
 
 # PoseTek website project context
 
+## Private report score cards — November 12, 2026
+
+The live reader selects score cards when a decrypted report has
+`visualLayout: 'score-cards-v1'`, `resultsFirst: true`, and no pathway charts.
+The cards show each result, available team comparison and practice details,
+followed by signup, iPhone/iPad install and the existing PDF download.
+Other reports use their existing layout.
+
+The reader source in `app/private-report/` matches the protected reader hashes
+in `deployment/homepage-baseline.json` for deployment `6af598a062c763422296510e`.
+The append builder checks that the reader matches the serving baseline.
+Family report inputs, encrypted files, PDF files and access links are kept
+outside source control.
+
 ## Admin reporting fixes and one-pager time on page — November 10, 2026
 
 Deployment `6af39c12b5d6443ec57767ec` makes "Last week" on the admin cards the whole previous week, counts sessions recorded on the phone as workouts (with a by-type chart and per-player lists), and adds reports sent, time on page, accounts created through the Workouts button and a trend chart to one-pager tracking. Web personal workouts can save a skip and finish.

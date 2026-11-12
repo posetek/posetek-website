@@ -191,6 +191,19 @@ that collide under the provider's normalized, case-insensitive paths are rejecte
 before the preservation build. Empty batches, plaintext/key files and reader drift
 are rejected. Do not reuse an obsolete predecessor inventory.
 
+For the score-card layout, set `visualLayout` to `score-cards-v1` in a private
+v1 payload that uses `resultsFirst: true` and has no pathway charts. Seal it with
+`node scripts/seal-parent-report.mjs <private-input.json> <private-output-dir>`.
+Copy only the encrypted `.bin` into the binary-only directory passed to
+`--sealed-dir`. Keep the input and the sealer's `link-private.json` in the
+restricted batch ledger outside the repository. No reader transition is needed
+when the serving reader matches the checked-in files.
+
+Run `node --test scripts/build-private-parent-report.test.mjs` to verify local
+append with synthetic sealed payloads. Run
+`node --test scripts/private-parent-report.browser.mjs` with Chromium and WebKit
+installed to verify score-card rendering, signup and PDF download on loopback.
+
 The preceding browser-only source (`6b2f4dd`, PR #120) supports a label-only
 transition from the initial unsent-preview label to “Private player report” using
 `--append --update-entry-label`. That command requires the matching, unchanged

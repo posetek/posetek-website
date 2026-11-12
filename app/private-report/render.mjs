@@ -384,6 +384,52 @@ function makeMetric(metric, focused = false) {
   return row;
 }
 
+function makeVisualMetric(metric) {
+  const card = element('article', 'pt-score-card');
+  const label = element('h3', '', metric.label);
+  const result = element('p', metric.result ? 'pt-score-value' : 'pt-score-value pt-score-unavailable',
+    metric.result || 'Retest');
+  card.append(label, result);
+
+  const comparison = element('div', 'pt-score-comparison');
+  if (metric.percentile !== null) {
+    const track = element('div', 'pt-track');
+    track.setAttribute('aria-hidden', 'true');
+    track.append(element('span'), element('span'), element('span'));
+    const marker = element('i', 'pt-marker');
+    marker.style.left = `${metric.percentile}%`;
+    track.append(marker);
+    comparison.append(track, element('p', 'pt-score-rank', `≈${ordinal(metric.percentile)} percentile`));
+  } else {
+    comparison.append(element('p', 'pt-score-rank pt-score-muted', 'No percentile'));
+  }
+  const count = metric.count ?? 0;
+  if (count >= 5 && metric.average) {
+    comparison.append(element('p', 'pt-score-average', `Team avg ${metric.average} · ${count} results`));
+  } else {
+    const caption = count ? `Team avg unavailable · ${count} results` : 'Team avg unavailable';
+    comparison.append(element('p', 'pt-score-average', caption));
+  }
+  card.append(comparison);
+  if (metric.note) card.append(element('p', 'pt-score-note', metric.note));
+  return card;
+}
+
+function makeVisualFindings(report) {
+  const section = element('section', 'pt-development pt-score-findings');
+  for (const [key, title] of [['strengths', 'Strong today'], ['priorities', 'Practice next']]) {
+    const items = report.development[key];
+    if (!items.length) continue;
+    const block = element('div', 'pt-score-finding');
+    block.append(element('h2', '', title));
+    const list = element('ul');
+    for (const item of items) list.append(element('li', '', item.title));
+    block.append(list);
+    section.append(block);
+  }
+  return section;
+}
+
 function makeDetails(report) {
   const details = element('details', 'pt-details');
   details.append(element('summary', '', 'How to read this + team averages'));
@@ -433,7 +479,7 @@ function workoutAnchor(text, href, className = 'pt-recovery-link', onActivate) {
   return link;
 }
 
-function makeWorkoutEntry(report, record) {
+function makeWorkoutEntry(report, record, visual = false) {
   const links = workoutLinks(report.playerId);
   const entry = element('div', 'pt-workout-entry');
   if (!links) {
@@ -445,6 +491,21 @@ function makeWorkoutEntry(report, record) {
     const workout = workoutAnchor(`Open ${report.firstName}’s workouts`, playerSignupLink(report.playerSignupUrl, report.playerId), 'pt-primary', record && (() => record('workouts')));
     // Keep the report open while signup starts. WebKit can cancel the event
     // during same-tab navigation even when the request has keepalive enabled.
+    if (visual) {
+      workout.textContent = 'Sign up for workouts';
+      if (record) workout.target = '_blank';
+      const signIn = `/signin?reportPlayer=${encodeURIComponent(report.playerId)}`;
+      entry.append(
+        workout,
+        workoutAnchor('Get PoseTek on iPhone or iPad', links.install, 'pt-install-button', record && (() => record('testflight'))),
+        element('p', 'pt-cta-note', 'Create your player login first, then use it in the app.'),
+      );
+      const recovery = element('div', 'pt-recovery-links');
+      recovery.append(workoutAnchor('Sign in', signIn));
+      if (platform !== 'android') recovery.append(workoutAnchor('Open PoseTek', links.native));
+      entry.append(recovery);
+      return entry;
+    }
     const guidance = element('p', 'pt-cta-note', `First, create ${report.firstName}’s player login with the filled-in code, or sign in if it’s already set up.${record ? ' Opens in a new tab.' : ''}`);
     if (record) {
       workout.target = '_blank';
@@ -511,16 +572,19 @@ function makeInstallSteps(links, record) {
 }
 
 /** Render only an already-decrypted report. Report strings are always plain text. */
-export function renderReport(report, record) {
+export function renderReport(report, record, {visual = report?.visualLayout === 'score-cards-v1'} = {}) {
   clearReport();
   const pdf = validate(report);
   const mount = document.getElementById('report-root');
   if (!mount) throw new Error('Missing report mount');
   const focused = report.layout === 'focused-v1';
+  visual = visual && report.resultsFirst === true && !report.pathwayCharts;
   const phone = element('article', focused ? 'pt-phone pt-focused' : 'pt-phone');
+  if (visual) phone.classList.add('pt-visual');
   const header = element('header', 'pt-top');
   header.append(element('div', 'pt-brand', 'POSETEK'));
-  header.append(element('h1', '', `${report.firstName}’s ${report.pathwayCharts ? 'testing' : 'team'} snapshot`));
+  const title = visual ? `${report.firstName}’s test results` : `${report.firstName}’s ${report.pathwayCharts ? 'testing' : 'team'} snapshot`;
+  header.append(element('h1', '', title));
   header.append(element('p', '', `${report.name} · ${report.team}`));
   header.append(element('p', '', `Coach ${report.coach} · Tested ${report.testDate}`));
   if (report.reviewNotice) header.append(element('p', 'pt-coverage', report.reviewNotice));
@@ -533,7 +597,7 @@ export function renderReport(report, record) {
   }
 
   const actions = element('div', 'pt-actions');
-  actions.append(makeWorkoutEntry(report, record));
+  actions.append(makeWorkoutEntry(report, record, visual));
   const downloadRow = element('div', 'pt-download-row');
   const download = element('button', 'pt-quiet-button', 'Download PDF');
   download.type = 'button';
@@ -552,6 +616,14 @@ export function renderReport(report, record) {
 
   if (report.pathwayCharts) {
     main.append(makePathways(report), makeCorrectedResults(report));
+  } else if (visual) {
+    const scores = element('section', 'pt-score-section');
+    scores.append(element('h2', '', 'Team comparison'),
+      element('p', 'pt-score-intro', 'Approximate team percentiles. Further right is stronger.'));
+    const grid = element('div', 'pt-score-grid');
+    for (const metric of report.metrics) grid.append(makeVisualMetric(metric));
+    scores.append(grid);
+    main.append(scores);
   } else {
   const sectionTitle = element('div', 'pt-section-title');
   const personal = element('span', 'pt-you');
@@ -571,13 +643,27 @@ export function renderReport(report, record) {
     row.append(element('strong', '', summary.label), element('span', '', summary.text));
     meaning.append(row);
   }
-  if (!focused && report.summary.length) main.append(meaning);
-  if (report.development) main.append(makeDevelopment(report));
-  if (!focused && !report.pathwayCharts) main.append(makeDetails(report));
+  if (!focused && !visual && report.summary.length) main.append(meaning);
+  if (report.development) main.append(visual ? makeVisualFindings(report) : makeDevelopment(report));
+  if (!focused && !visual && !report.pathwayCharts) main.append(makeDetails(report));
   if (report.exercises.length) {
     const practice = element('section');
-    practice.append(element('h2', 'pt-practice-title', report.development ? 'Two drills from your plan' : 'A little practice to get started'));
+    practice.append(element('h2', 'pt-practice-title', visual ? 'Two drills to try' :
+      report.development ? 'Two drills from your plan' : 'A little practice to get started'));
     for (const exercise of report.exercises) {
+      if (visual) {
+        const drill = element('details', 'pt-drill pt-score-drill');
+        const summary = element('summary');
+        summary.append(element('strong', '', exercise.title), element('span', 'pt-dose', exercise.dose));
+        drill.append(summary, element('p', '', exercise.instruction));
+        if (report.development) {
+          drill.append(element('p', 'pt-equipment', `Equipment: ${exercise.equipment}`));
+          drill.dataset.drillId = exercise.drillId;
+          drill.dataset.workoutId = exercise.workoutId;
+        }
+        practice.append(drill);
+        continue;
+      }
       const drill = element('article', 'pt-drill');
       const top = element('div', 'pt-drill-top');
       top.append(element('h3', '', exercise.title), element('span', 'pt-drill-tag', exercise.tag));
