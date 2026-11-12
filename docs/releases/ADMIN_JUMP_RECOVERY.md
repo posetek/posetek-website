@@ -76,8 +76,8 @@ prove physical measurement accuracy, qualify all browser codecs, or give
 recovered results verified ranking credit. Nonzero source origins and uncertain
 frame mappings stay blocked until their mapping is established.
 
-Source PR #109 remains unmerged because the coordinated Backend hosted CI has a
-billing hold; no billing change or merge override is authorized by this receipt.
+Source PR #109 stayed unmerged until it merged in November 2026, because the
+coordinated Backend hosted CI had a billing hold; no billing change or merge override is authorized by this receipt.
 Keep `[skip netlify]` on source/receipt integration and keep runtime branches
 separate. Future production work must verify the current live inventory and
 preserve the released application. Corrections use a reviewed fix-forward

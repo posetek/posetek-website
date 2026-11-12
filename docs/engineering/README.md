@@ -75,7 +75,7 @@ gateway, catalog or native release is included. Earlier sections are historical.
 
 ## Admin jump recovery release — October 30, 2026
 
-Exact deployment `6ae4fc4e990d28e8d584e696` is published and byte-verified. Admin
+Exact deployment `6ae4fc4e990d28e8d584e696` was published on October 30 and byte-verified. Admin
 Rep Tools reviews original jump recordings using manual marker selection or
 flight-time brackets. Recovered values remain labeled ESTIMATE, stored apart
 from legacy height fields, excluded from verified rankings and restorable.
