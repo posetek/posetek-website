@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6af39c12b5d6443ec57767ec",
+  "deploymentId": "6af5027b28714c6f1147b4ec",
   "sourceCommit": null,
-  "url": "https://6af39c12b5d6443ec57767ec--posetek.netlify.app",
+  "url": "https://6af5027b28714c6f1147b4ec--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "67bf7e506341da73f98730327154503c0d691f00",
-    "size": 6671,
+    "sha": "58b31e8c0c415a6974f0b26b8fab0d0ff6613bf2",
+    "size": 6886,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -13580,6 +13580,16 @@
       "size": 11051
     },
     {
+      "path": "/report/data/3ylx78mhlvklkrvgvt9awjcqzhg0dxrb.bin",
+      "sha": "c531435a78d20dda7eaa9476299b9019347baa67",
+      "size": 9426
+    },
+    {
+      "path": "/report/data/4pazkbsvk6vetlywyfgsksdqggkowrvb.bin",
+      "sha": "daeef5406dd2e0df757827a368011f077d4614e2",
+      "size": 9846
+    },
+    {
       "path": "/report/data/5s_vf3lqujwbfuojgpetigfxopqlppz9.bin",
       "sha": "878f9c7dbb5145b77f31cb3548bf5fc38a21a9c5",
       "size": 10588
@@ -13590,9 +13600,19 @@
       "size": 11165
     },
     {
+      "path": "/report/data/6tyg5x1nbuzgbqc-vb_s2wxktws16o84.bin",
+      "sha": "d66ca1b9e1c06fc54f5ffd6d564cd1bfcc3b9410",
+      "size": 9407
+    },
+    {
       "path": "/report/data/7i0c8pzv1xctftch-_w7alv76u-jcqz7.bin",
       "sha": "5c3032a95cf9a0214fc00b1962d0b8aa4897edf9",
       "size": 10806
+    },
+    {
+      "path": "/report/data/7wohlxxjatwxtt_xzhuc4ra_jmesqt2k.bin",
+      "sha": "0a1f0426b1649e3a9fa7bce312fe226438eae841",
+      "size": 9282
     },
     {
       "path": "/report/data/8og0kevose5rk2hylo0na5v_jfxpbekg.bin",
@@ -13605,9 +13625,19 @@
       "size": 11211
     },
     {
+      "path": "/report/data/8w5xdfheidsjwzz4gseohcpeq1hpa3kx.bin",
+      "sha": "64a4c633f338ecc1aecdead2fdc4b866e29b4fe4",
+      "size": 9289
+    },
+    {
       "path": "/report/data/94youb1h8ydlbimkem6eecy7zyhx72b-.bin",
       "sha": "470675f1610c923678d9c15b4163e5825ca53fb2",
       "size": 49661
+    },
+    {
+      "path": "/report/data/9dnaca4lmppcb5zflyf4ph1fz8ivz7ic.bin",
+      "sha": "9b7bb023c896dd6602e45b7a32460f55fd870e31",
+      "size": 9310
     },
     {
       "path": "/report/data/abnqk_j2uc8vikx-bh9vsyiluz5zskrf.bin",
@@ -13635,6 +13665,11 @@
       "size": 10651
     },
     {
+      "path": "/report/data/dqsnpnhruspjfcgrux1d0eahq5pqczy2.bin",
+      "sha": "f1b8097526ee0f9ef6cedf231b0aded7a72f91f7",
+      "size": 9854
+    },
+    {
       "path": "/report/data/dtwuad8cre8_axij1ww7efjy3bznaxpk.bin",
       "sha": "9db61a6b5fddbcc542dc867f95a3f825b01bde52",
       "size": 10697
@@ -13650,6 +13685,11 @@
       "size": 11412
     },
     {
+      "path": "/report/data/eawzvllwvwrxth474sen8hfvwa04qcwj.bin",
+      "sha": "82ab9519e2b2c7e76e1874e013fe17e6c795659e",
+      "size": 9200
+    },
+    {
       "path": "/report/data/edzlyij0v7ocoxldiv95xkmjgd9xzpie.bin",
       "sha": "2131bd02bff2a604ca863b38ded6f58fc583d3f7",
       "size": 10015
@@ -13658,6 +13698,11 @@
       "path": "/report/data/eg9wb2dbvhrsluo3la53lqb5f3ipdgcs.bin",
       "sha": "f1c2a80095a16671c70a5218063704102d1c790e",
       "size": 11051
+    },
+    {
+      "path": "/report/data/fdox9jiumbewc4suxxq0heihbc8c4tbe.bin",
+      "sha": "d8541c44f3b797253a029e181d110575d9405984",
+      "size": 8995
     },
     {
       "path": "/report/data/g9xzya_-oe3r82u5itm_fhceqhilyj1_.bin",
@@ -13670,9 +13715,24 @@
       "size": 11301
     },
     {
+      "path": "/report/data/gi6mqccdtk0k3y5wsn3lba7-c6ebnl-p.bin",
+      "sha": "9fb5b5e0dc1c7104b394ea9043389f29958114fa",
+      "size": 9484
+    },
+    {
       "path": "/report/data/heb-exqx-w6pgvjo7ga5nowxmkaikbkk.bin",
       "sha": "a26419c7a7d82f94a04c7adc5cefa2a33328cae4",
       "size": 10951
+    },
+    {
+      "path": "/report/data/hrelfyvqubruj3yz91ox1oambbgq2gs5.bin",
+      "sha": "aee486a1d2544f96e158bad61add3f8ebac7b267",
+      "size": 9309
+    },
+    {
+      "path": "/report/data/ihboerslcpwhsj3uq_-4tagncnvrkmpw.bin",
+      "sha": "194d7a1b171bedefa1d5f7efa53918aa9decc5a5",
+      "size": 8823
     },
     {
       "path": "/report/data/ivyypuxcq9a-ftvpzbymscwxt1u5l7tn.bin",
@@ -13695,14 +13755,39 @@
       "size": 11160
     },
     {
+      "path": "/report/data/kkl29zil-gdbadsfiyyy9sadoyrzkwva.bin",
+      "sha": "174e899d2f62f5c60f091a49e260491fbc16d00d",
+      "size": 9551
+    },
+    {
+      "path": "/report/data/kouwr2hibupvhytvpg1apjf79dmwi699.bin",
+      "sha": "9eda305a95e8d0fae336eaaef08bf81bb4ee4aa6",
+      "size": 9431
+    },
+    {
       "path": "/report/data/ks0znohbix0zst1ki3tsqhb32kyvo0g_.bin",
       "sha": "9d9d24779dd0431b34912353d941818e89df8136",
       "size": 11048
     },
     {
+      "path": "/report/data/l_thfuany-38b-92wf-gscevcc0xlvvn.bin",
+      "sha": "fd437efdb214deb4e72c228b7be937c4be93137f",
+      "size": 8927
+    },
+    {
+      "path": "/report/data/lbbk1vds0kxzncvva4mlinhrvrmzfhhw.bin",
+      "sha": "c121e14d2999ca10de0cf42c5b41f31ab6b68d81",
+      "size": 9833
+    },
+    {
       "path": "/report/data/ly0tes2angrjbidxdybdj24wltvmlz0x.bin",
       "sha": "2a79e8be03637d72d41f8795c78e421ea3e94cab",
       "size": 11339
+    },
+    {
+      "path": "/report/data/majtmbmnqrwnparlbrnjoitrybzl1ggb.bin",
+      "sha": "18755ac7efb4e4f3d1a5c787e771d44dadf62c5f",
+      "size": 9654
     },
     {
       "path": "/report/data/mbdqzytr4byw_bpyals8e1ro_lfskytp.bin",
@@ -13730,6 +13815,21 @@
       "size": 11414
     },
     {
+      "path": "/report/data/nxdz8cxwfbh3uxqtbw5dcukqy87w7kgy.bin",
+      "sha": "27ed1b6d188e5ccbb2d5bfd881a1af4e93366030",
+      "size": 9320
+    },
+    {
+      "path": "/report/data/nzy0wkeqwek3rm0_mjfq9byb8-e4wis6.bin",
+      "sha": "9e181c9455455ff7f5befb66e3a4ee1745eae41d",
+      "size": 9401
+    },
+    {
+      "path": "/report/data/ogm4h5xtttewgweqcvtq7cj2sh0xczu_.bin",
+      "sha": "4cfa853c7a6270e3f4bc293b91829a2574523220",
+      "size": 9551
+    },
+    {
       "path": "/report/data/omrp_cvatoptoh0zf7quqrkpfpzqrhek.bin",
       "sha": "05710465a5ee0e399cae212afc9e5c7f276ed85b",
       "size": 11158
@@ -13748,6 +13848,21 @@
       "path": "/report/data/setrocgdn3sgijajmtbb8vtj7lbuoeye.bin",
       "sha": "276bcdfb65f83cb4209a989547641de5f0df1e7f",
       "size": 10142
+    },
+    {
+      "path": "/report/data/sruqsiux5ee58se22j4lqtkowupovyjb.bin",
+      "sha": "b4ee9c632b69ac590449477943d76b3f8166c69a",
+      "size": 9742
+    },
+    {
+      "path": "/report/data/tupmnw19cab-l9y-bxiqxdipfqq7pprf.bin",
+      "sha": "1330ea6ba7323c589df0200f9c9683f156a3ef4d",
+      "size": 9212
+    },
+    {
+      "path": "/report/data/u2l5kbyta4pl4y10wvhafpzwpg9ce77l.bin",
+      "sha": "645d4838dc99b5323918cbcef754fa000b20e06b",
+      "size": 9559
     },
     {
       "path": "/report/data/udl-0cjj-oszjxh5kft-f-g-jmcl6sqj.bin",
@@ -13770,6 +13885,11 @@
       "size": 11046
     },
     {
+      "path": "/report/data/wsdugoual4cpnv59tjbosy5k-lln9k52.bin",
+      "sha": "e832369102d2b3f860df6ac524e6e7e116a15188",
+      "size": 8846
+    },
+    {
       "path": "/report/data/wuovoqf5qdwxccny8grf_hfhm2kuhsxm.bin",
       "sha": "d9593e447f3fb4aa78451c9e47c92952a605e8fe",
       "size": 11365
@@ -13788,6 +13908,11 @@
       "path": "/report/data/x3vhmcsc-c5vx1rxjbfnxfrpzlfmgyje.bin",
       "sha": "0c64054f7a647da4c87f01129d265792ef5fb3d7",
       "size": 11020
+    },
+    {
+      "path": "/report/data/xd6cqosvrpz_gahtxn1y2dxylrxw1evw.bin",
+      "sha": "ec64d0183b1a46e16a46fb07c2fd321f0e96d2fb",
+      "size": 9471
     },
     {
       "path": "/report/data/ys_oawdi-nmgh5im9a-k1o6n0dl0ol8q.bin",
@@ -13811,13 +13936,13 @@
     },
     {
       "path": "/report/render.mjs",
-      "sha": "266157deccf4e0117a79f088057b5fb85a8a4b0f",
-      "size": 34640
+      "sha": "86c58ad9d2d668872548d39399fb8041faa5f134",
+      "size": 38722
     },
     {
       "path": "/report/report.css",
-      "sha": "6e4fd86ba9fbc16fb7d8b0458837594521d296f3",
-      "size": 11905
+      "sha": "2ac57f2f9e42208b5b9f7efe84c7b1181509bd0c",
+      "size": 14870
     },
     {
       "path": "/sessions 2.html",
