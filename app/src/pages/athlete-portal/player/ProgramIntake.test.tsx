@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 vi.mock('../../../lib/firebase', () => ({ default: {}, auth: { currentUser: { uid: 'auth-player' } }, db: {}, cloud: {}, storage: {} }));
-import ProgramIntake, { initialPlanWeeks, planIntakeAccess, planIntakeBlock, planRequestParams, requestPlan } from './ProgramIntake';
+import ProgramIntake, { initialPlanWeeks, planIntakeAccess, planIntakeBlock, planNeedsSharing, planRequestParams, requestPlan } from './ProgramIntake';
 import type { PlanAnswers } from './ProgramIntake';
 
 const answers = (over: Partial<PlanAnswers> = {}): PlanAnswers => ({ weeks: 6, goals: ['dribbling'], text: '', days: 3, setting: 'solo', age: 15, pain: false, ...over });
@@ -53,6 +53,21 @@ describe('plan setup: the app’s questions on generate_training_plan', () => {
   it('prefills a known age, and asks when none is recorded', () => {
     expect(render({ athlete: { age: 17, ageRecordedAt: new Date() } })).toContain('<strong>17</strong>');
     expect(render()).toContain('aria-valuetext="Not chosen"');
+  });
+});
+
+describe('a request refused for AI sharing', () => {
+  it('is recognised from this browser’s switch and from the rules’ consent check, and from nothing else', () => {
+    expect(planNeedsSharing(Object.assign(new Error('AI sharing is off on this browser.'), { code: 'ai_consent_required' }))).toBe(true);
+    expect(planNeedsSharing(Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' }))).toBe(true);
+    for (const other of [new Error('offline'), Object.assign(new Error('x'), { code: 'unavailable' }), null, undefined, 'permission-denied']) {
+      expect(planNeedsSharing(other)).toBe(false);
+    }
+  });
+  it('shows no AI sharing prompt until a request has been refused', () => {
+    const html = render();
+    expect(html).not.toContain('Turn on AI sharing');
+    expect(html).not.toContain('Review AI sharing');
   });
 });
 
