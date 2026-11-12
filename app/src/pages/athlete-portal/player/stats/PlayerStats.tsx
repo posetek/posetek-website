@@ -22,9 +22,17 @@ import { reportDate } from './stats-format';
 import { useReportPractice } from './use-report-practice';
 import './stats.css';
 
-type Props = PlayerTabProps & { profile: ReturnType<typeof playerProfile>; dataset: Row; timeZone?: string };
+type Props = PlayerTabProps & {
+  profile: ReturnType<typeof playerProfile>; dataset: Row; timeZone?: string;
+  /** "Start a workout now": the workspace opens Workouts with its workout builder up. */
+  onStartWorkout?: () => void;
+};
 
-/** The three next steps offered under the results. Each opens a page the workspace already has. */
+/**
+ * The three next steps offered under the results. Each opens what the workspace already has for
+ * it: the Coach tab, My workout plan (the planner when there is no plan yet), and the builder the
+ * hub's Build Workout card opens.
+ */
 const NEXT_STEPS = [
   { key: 'coach', icon: 'forum', title: 'Ask the AI Coach', detail: 'Dive deeper on my results and get help on how to improve' },
   { key: 'plan', icon: 'calendar_month', title: 'Build my 6-week plan', detail: 'Made from your stats and schedule' },
@@ -40,7 +48,7 @@ const NEXT_STEPS = [
  * (moved here from the workout hub, as in the app) and "How to use PoseTek?".
  * The body scan and the streak/session/favorite tiles are deliberately not shown here.
  */
-export default function PlayerStats({ ctx, go, profile, athlete, report, reps, preview, timeZone, active, personal }: Props) {
+export default function PlayerStats({ ctx, go, profile, athlete, report, reps, preview, timeZone, active, personal, onStartWorkout }: Props) {
   const practice = useReportPractice(ctx.playerId, preview);
   // Training totals (`StatsView` "Training totals"): all time, on the time basis remembered on this device.
   const workoutLogs = useAllWorkoutLogs(ctx.playerId, preview, active), basis = useFocusPreferences().basis;
@@ -54,7 +62,7 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
   const samples = report.report ? reportPracticeSamples(practice.plan, report.report.playerId, practice.catalog) : [];
   const estimates = activeProvisionalEstimates(ctx.provisionalEstimates, ctx.allResultReps?.() || ctx.allStatsReps());
   const tested = report.report ? [report.report.teamName, `Tested ${reportDate(report.report.testDateMillis, timeZone)}`].filter(Boolean).join(' · ') : null;
-  const open = { coach: () => go('coach'), plan: () => go('stats', { screen: 'plan' }), workout: () => go('workouts') };
+  const open = { coach: () => go('coach'), plan: () => go('stats', { screen: 'plan' }), workout: onStartWorkout ?? (() => go('workouts')) };
   // Every test's replay loads in the background once the report is here, so the first click on a
   // card shows its replay at once (not in the sample preview, which has no recordings).
   const repCount = Object.values(reps).reduce((sum, list) => sum + (list?.length ?? 0), 0);

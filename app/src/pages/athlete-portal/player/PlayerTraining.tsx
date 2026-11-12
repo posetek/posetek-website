@@ -25,7 +25,7 @@ import type { PlayerGo } from './workspace';
 import type { SourceWorkout } from './personal-workouts';
 import { PlayerHeader } from './PlayerShell';
 import { findResume, planCardModel, planPagePlan, resumeBannerText, savedEntries, savedWorkouts } from './workouts/hub';
-import { needsAllLogs, overlayScroll, resumeAction } from './workouts/navigation';
+import { BUILD_WORKOUT, STATS_PLAN_WEEKS, buildWorkoutOpens, needsAllLogs, overlayScroll, planPageBuilds, resumeAction } from './workouts/navigation';
 import type { HubPage } from './workouts/navigation';
 import type { ResumeTarget, SavedEntry } from './workouts/hub';
 import MyWorkoutPlan, { Eyebrow, InfoNote, PlanWeekDetail } from './workouts/MyWorkoutPlan';
@@ -130,7 +130,20 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
     }, e => setError(e.message));
   }, [ctx.playerId, preview]);
   useEffect(() => {
-    if (!request || !plans || playing || review || chatTarget || (!preview && !config)) return;
+    if (!request || !plans || (!preview && !config)) return;
+    if (request.destination === BUILD_WORKOUT) {
+      // "Start a workout now" on Stats opens what the hub's Build Workout card opens. It waits for
+      // the saved workout selection to settle, which the card has by the time it can be tapped.
+      if (personal.enabled && !personal.selectionReady) return;
+      if (buildWorkoutOpens({ playing: !!playing, builderOpen: personalOpen || !!chatTarget, canCreate: !!createWorkout })) {
+        setReview(null); setFullOpen(false); setDrill(null); setWeekDetail(null); setPanel('');
+        // The earlier builder is drawn under the planner, so a planner left open would cover it.
+        if (!personal.enabled) setIntake(false);
+        createWorkout!();
+      }
+      onAcknowledge(); return;
+    }
+    if (playing || review || chatTarget) return;
     setSeed(request.request || '');
     if (request.destination === 'personal_workout' && personal.enabled) {
       setPersonalSource(undefined); setPersonalSelected(undefined); setPersonalHandoff(request); setPersonalCreate(!request.conversationId); setConversationOpen(!!request.conversationId); setPersonalOpen(true); setPersonalEntry(v => v + 1);
@@ -148,9 +161,21 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
       setChatTarget(supplied && (supplied.kind === 'adhoc' || (supplied.kind === 'new' && supplied.planId === plan.id)) ? supplied : { kind: 'new', planId: plan.id, timeAvailableMinutes: 30, energy: 'normal' });
     } else setIntake(true);
     onAcknowledge();
-  }, [request, plans, playing, review, chatTarget, personal.enabled, config]);
+  }, [request, plans, playing, review, chatTarget, personal.enabled, personal.selectionReady, config]);
   useEffect(() => { onGuidedChange?.(!!playing || (personalOpen && personalGuided)); }, [playing, personalOpen, personalGuided]);
   useEffect(() => { if (fromStats && page === 'plan') { setSelected(null); setDrillsExpanded(true); } }, [fromStats, page]);
+  // "Build my 6-week plan" on Stats asks for the plan: a workout builder left open in this tab
+  // closes as its own Back would (its conversation is kept), so it cannot cover the plan. A workout
+  // being followed stays.
+  useEffect(() => {
+    if (!active || !fromStats || page !== 'plan') return;
+    if (personalOpen && !personalGuided) closePersonal();
+    if (chatTarget && !applying) { setChatTarget(null); setProposal(null); }
+  }, [location.key, active, fromStats, page]);
+  // My workout plan with no plan to show opens the planner. It then stays, like the planner opened
+  // from the hub, until the athlete closes it, so an activated plan does not pull it away.
+  const planless = planPageBuilds(page, plans);
+  useEffect(() => { if (active && planless) setIntake(true); }, [active, planless]);
   // Light presentations belong to the page that opened them; ongoing work (a guided workout, a
   // workout conversation, the planner) stays until the athlete closes it.
   const lastPage = useRef(page);
@@ -260,7 +285,11 @@ export default function PlayerTraining({ ctx, personal, request, onAcknowledge, 
 
   // Presentations over whichever page opened them, the hub included.
   const overlay = (title: string, onClose: () => void, body: ReactNode) => <section className="wk-page"><PlayerHeader title={title} onBack={onClose} />{hubNotice}{body}</section>;
-  if (intake) return overlay('Training plan', () => setIntake(false), <ProgramIntake playerId={ctx.playerId!} athlete={ctx.athlete} statsProfile={{}} preview={preview} initialText={seed} onReady={() => { setIntake(false); setReveal(true); }} onBack={() => setIntake(false)} />);
+  if (intake || planless) {
+    // With no plan under it, closing the planner leaves the page instead of showing it empty.
+    const closePlanner = () => { setIntake(false); if (planless) back(); };
+    return overlay('Training plan', closePlanner, <ProgramIntake playerId={ctx.playerId!} athlete={ctx.athlete} statsProfile={{}} preview={preview} access={ctx.access} weeks={fromStats && page === 'plan' ? STATS_PLAN_WEEKS : undefined} initialText={seed} onReady={() => { setIntake(false); setReveal(true); }} onBack={closePlanner} />);
+  }
   if (drill) return overlay(drill.name || 'Drill', () => setDrill(null), <DrillMedia drillId={drill.id} preview={preview} />);
   if (chatTarget) return overlay(chatTarget.kind === 'new' ? 'Create your workout' : 'Your workout', () => { if (!applying) { setChatTarget(null); setProposal(null); } }, <>{message}
     <CoachChat key={JSON.stringify(chatTarget)} playerId={ctx.playerId!} preview={preview} capability="workout_chat" context={{ workoutRef: chatTarget }} initialText={seed} onDraft={setProposal} />

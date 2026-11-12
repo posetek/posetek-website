@@ -20,6 +20,24 @@ export function workoutsPage(route: PlayerRoute): { page: HubPage; test: boolean
   return { page, test: route.screen === 'test', fromStats: route.view === 'stats' };
 }
 
+/**
+ * My workout plan has nothing to show until a plan is active, so the page is then where one is
+ * built: "Build my 6-week plan" on Stats, and a saved link, land on the planner, not an empty page.
+ */
+export const planPageBuilds = (page: HubPage, plans: { status?: string }[] | null) => page === 'plan' && !!plans && !plans.some(plan => plan.status === 'active');
+
+/** "Build my 6-week plan" on Stats opens the planner at the length the button names. */
+export const STATS_PLAN_WEEKS = 6;
+
+/** What Stats asks of Workouts for "Start a workout now". The Coach tab's handoffs carry the gateway's own destinations. */
+export const BUILD_WORKOUT = 'build_workout';
+/**
+ * Whether that request opens the builder the hub's Build Workout card opens. A workout being
+ * followed and a builder already open stay as the athlete left them; a viewer with no builder
+ * lands on the hub.
+ */
+export const buildWorkoutOpens = (state: { playing: boolean; builderOpen: boolean; canCreate: boolean }) => !state.playing && !state.builderOpen && state.canCreate;
+
 /** Only History reads every workout log, and never while hidden. The lifetime totals are on Stats, which reads its own. */
 export const needsAllLogs = (page: HubPage, active: boolean) => active && page === 'history';
 

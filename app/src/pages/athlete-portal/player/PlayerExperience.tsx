@@ -18,6 +18,7 @@ import { playerRoute, playerSearch } from './workspace';
 import type { PlayerDestination, PlayerTabProps } from './workspace';
 import PlayerHome from './home/PlayerHome';
 import PlayerWorkouts from './workouts/PlayerWorkouts';
+import { BUILD_WORKOUT } from './workouts/navigation';
 import PlayerStats from './stats/PlayerStats';
 import AccountSettings from './account/AccountSettings';
 import { useAthleteTestReport } from './report';
@@ -58,6 +59,9 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
     return () => { stop(); document.removeEventListener('visibilitychange', hide); };
   }, [preview, feedbackOwner]);
   useEffect(() => { if (!workoutsShown) setFeedbackInvitation(false); }, [workoutsShown]);
+  // A "Start a workout now" request Workouts had no chance to answer goes when the athlete leaves,
+  // so the builder never opens by itself on a later visit.
+  useEffect(() => { if (route.view !== 'workouts') setRequest(old => old?.destination === BUILD_WORKOUT ? null : old); }, [route.view]);
   const completedWorkout = () => {
     const current = () => feedbackContext.current.access === 'athlete' && feedbackContext.current.workoutsShown
       && feedbackContext.current.playerId === feedbackOwner.playerId && !!feedbackOwner.uid
@@ -104,6 +108,8 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
     navigate({ pathname: location.pathname, search: playerSearch(location.search, view, to) }, { replace: to.replace });
     window.scrollTo({ top: 0 });
   };
+  // "Start a workout now" on Stats: Workouts opens with the builder its Build Workout card opens.
+  const startWorkout = () => { setRequest({ destination: BUILD_WORKOUT }); go('workouts'); };
   const back = () => {
     const previous = trail.current[trail.current.length - 2];
     // A test opened from a Stats score card goes back to Stats, the page it was opened from.
@@ -130,7 +136,7 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
       {visited.has('coach') && <div hidden={route.view !== 'coach'}><PlayerHeader title="Coach" /><CoachChat playerId={ctx.playerId!} preview={preview} personalStore={personal} athlete={athlete} active={route.view === 'coach' && !accountSettings}
         technique={{ reps: all, onReplay: rep => go('workouts', { drill: 'shooting', session: rep.sessionFolder || `session${rep.sessionNumber}`, rep: rep.id }) }} onHandoff={r => { setRequest(r); if (r.conversationId) navigate({ pathname: location.pathname, search: personalDraftLink(location.search, r.conversationId) }); else go('workouts'); }} /></div>}
       {(visited.has('workouts') || statsPlan) && <div hidden={!workoutsShown}><PlayerWorkouts {...tab('workouts')} active={workoutsShown && !accountSettings} statsProfile={intakeSnapshot(profile)} request={route.view === 'workouts' ? request : null} onAcknowledge={() => setRequest(null)} onCompleted={completedWorkout} feedbackInvitation={feedbackInvitation} onDismissFeedback={() => setFeedbackInvitation(false)} onGuidedChange={setGuided} /></div>}
-      {visited.has('stats') && <div hidden={route.view !== 'stats' || statsPlan}><PlayerStats {...tab('stats')} active={route.view === 'stats' && !statsPlan} profile={profile} dataset={dataset} /></div>}
+      {visited.has('stats') && <div hidden={route.view !== 'stats' || statsPlan}><PlayerStats {...tab('stats')} active={route.view === 'stats' && !statsPlan} profile={profile} dataset={dataset} onStartWorkout={startWorkout} /></div>}
       {accountSettings && <AccountSettings ctx={playerCtx} onClose={() => setAccountSettings(false)} />}
   </PlayerShell>;
 }
