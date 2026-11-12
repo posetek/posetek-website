@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import TrainingSetup from './TrainingSetup';
-import { confirmedSetup, setupErrors, setupSignature, setupSummary } from './training-access';
+import { confirmedSetup, setupErrors, setupSignature, setupSummary, withRequestedEquipment } from './training-access';
 import type { SetupDraft } from './training-access';
 import { WORKOUT_FOCUSES, clearGuidedWorkout, focusFromRequest, focusLabel, guidedRequest, nearestMinuteIndex, nearestSupportedMinutes, readGuidedWorkout, rememberGuidedWorkout, restoredGuidedSetup, supportedSliderMinutes, toggleWorkoutFocus } from './guided-workout';
 import { personalAge } from './personal-workouts';
 import { readOwnPlayerAge, saveOwnPlayerAge } from './player-age';
-import { applyEquipmentChanges, suppliedWorkoutConditions } from './personal-conversation';
+import { suppliedWorkoutConditions } from './personal-conversation';
 import type { PersonalWorkoutStore } from './use-personal-workouts';
 import type { Row } from './execution';
 
@@ -102,7 +102,7 @@ export default function WorkoutSetupWizard({ store, playerId, athlete, setup, on
     <div className="workout-wizard-progress"><span>Step {index + 1} of {activeSteps.length}</span><span>{displayedStep === 'ready' ? 'Ready to review' : 'Your session, your way'}</span><div aria-hidden="true">{activeSteps.map((s, i) => <i key={s} className={i <= index ? 'complete' : ''} />)}</div></div>
     <fieldset disabled={disabled || ageSaving}>
       {displayedStep === 'focus' && <><h2 ref={heading} tabIndex={-1}>What do you want to work on?</h2><p className="muted-copy">Choose up to two. Your AI coach will build the session around them.</p><div className="workout-resource-chips">{focus.filter(domain => !WORKOUT_FOCUSES.some(f => f.domain === domain)).map(domain => <button type="button" key={domain} aria-label={`Remove ${focusLabel(domain)} focus`} onClick={() => setFocus(toggleWorkoutFocus(focus, domain))}>{focusLabel(domain)} <span aria-hidden="true">×</span></button>)}</div><div className="workout-choice-grid workout-focus-options" role="group" aria-label="Workout focus">{WORKOUT_FOCUSES.map(f => <button type="button" key={f.domain} className="workout-choice" aria-pressed={focus.includes(f.domain)} disabled={focus.length === 2 && !focus.includes(f.domain)} onClick={() => setFocus(toggleWorkoutFocus(focus, f.domain))}><span className="material-symbols-outlined" aria-hidden="true">{f.icon}</span><span><strong>{f.label}</strong><small>{f.detail}</small></span><span className="workout-choice-check" aria-hidden="true">{focus.includes(f.domain) ? '✓' : '+'}</span></button>)}</div>{initialRequest && <details className="workout-carried-intent"><summary>Your request is included</summary><p>{initialRequest}</p></details>}</>}
-      {displayedStep === 'setup' && <><h2 ref={heading} tabIndex={-1} className="sr-only">Your training setting</h2><TrainingSetup value={setup} onChange={next => onSetup(next.facility !== setup.facility ? { ...next, equipment: applyEquipmentChanges(next.equipment, initialRequest) } : next)} inline /></>}
+      {displayedStep === 'setup' && <><h2 ref={heading} tabIndex={-1} className="sr-only">Your training setting</h2><TrainingSetup value={setup} onChange={next => { setError(''); onSetup(next.facility !== setup.facility ? withRequestedEquipment(next, initialRequest) : next); }} inline /></>}
       {displayedStep === 'time' && <>
         <h2 ref={heading} tabIndex={-1}>How much time do you have?</h2><p className="muted-copy">Choose an approximate target. You’ll see the calculated duration before publishing.</p>
         {sliderMinutes.length ? <label className="workout-slider" htmlFor={`${id}-time`}><span><strong>{minutes}</strong> minutes</span><input id={`${id}-time`} type="range" min={0} max={sliderMinutes.length - 1} step={1} value={sliderIndex} disabled={assessing} aria-valuetext={`${sliderMinutes[sliderIndex]} minutes`} onChange={e => { setMinutes(sliderMinutes[Number(e.target.value)]); setCustomTime(false); }} /><small><span>{sliderMinutes[0]} min</span><span>{sliderMinutes.at(-1)} min</span></small></label> : <div className="workout-slider"><span><strong>{minutes}</strong> minutes</span><small>{availability === 'unavailable' ? 'Your requested time is saved.' : availability === 'available' ? 'Choose an exact supported target below.' : 'Your approximate target'}</small></div>}
