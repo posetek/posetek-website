@@ -12,6 +12,7 @@ import SkillBenchmarks from './SkillBenchmarks';
 import StatsReport from './StatsReport';
 import TestPosePlayer from './TestPosePlayer';
 import ClubComparison from './ClubComparison';
+import { prefetchClubComparison } from './club-comparison';
 import { METRIC_TESTS } from './test-comparison';
 import { warmStatsReplays } from './test-replay';
 import { reportDate } from './stats-format';
@@ -61,6 +62,11 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
     // Once per report and rep list: `reps` is replaced on every refresh, and whatever is kept is reused.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report.report?.playerId, report.report?.testDateMillis, repCount, preview, ctx.playerId, ctx.access]);
+  // The club comparison's reads start when Stats opens, not when the report arrives (staff only).
+  useEffect(() => {
+    if (preview || !ctx.playerId) return;
+    prefetchClubComparison({ access: ctx.access, playerId: ctx.playerId, organizationId: athlete?.organizationId || null, teamId: athlete?.teamId || null, gender: athlete?.gender });
+  }, [preview, ctx.access, ctx.playerId, athlete?.organizationId, athlete?.teamId, athlete?.gender]);
   return <div className="stats-page">
     <PlayerHeader title="Stats" />
     <div className="stats-identity">
@@ -73,7 +79,7 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
       // The sample-data preview has no recordings to replay.
       detail={selected && report.report && !preview ? <><TestPosePlayer key={selected.id} metric={selected} report={report.report} reps={reps} athlete={athlete}
         access={ctx.access} playerId={ctx.playerId} onAllAttempts={() => go('workouts', { drill: METRIC_TESTS[selected.id].drill, from: 'stats' })} />
-        <ClubComparison metric={selected} access={ctx.access} playerId={ctx.playerId} athlete={athlete} /></> : null} />
+        <ClubComparison metric={selected} access={ctx.access} playerId={ctx.playerId} athlete={athlete} reps={reps} /></> : null} />
     <section className="stats-next" aria-labelledby="stats-next-title">
       <h2 id="stats-next-title" className="stats-section-title">So what do I do with these results?</h2>
       <div className="stats-next-grid">

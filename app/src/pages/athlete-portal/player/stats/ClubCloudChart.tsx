@@ -9,8 +9,8 @@ const ACCENT = '#7cff18';
 /** The card's colour, for the ring that keeps a point legible over the cloud. */
 const SURFACE = '#10291f';
 const LAYERS = cloudLayers();
-/** Units of time, where a smaller value is quicker. */
-const TIME_UNITS = new Set(['s']);
+/** Units of time or speed: a difference reads as faster or slower (by `higherIsBetter`). */
+const PACE_UNITS = new Set(['s', 'mph', 'm/s']);
 
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 
@@ -77,12 +77,12 @@ export default function ClubCloudChart({ stats, title, context, digits }: { stat
   };
 
   // The line under the plot: the best against the average of the athlete's age group.
-  const time = TIME_UNITS.has(stats.unit);
+  const pace = PACE_UNITS.has(stats.unit);
   const versus = standing ? (standing.ageGroup !== null ? `the U${standing.ageGroup} average` : 'the club average') : '';
   const gap = standing ? Math.abs(standing.difference) : 0;
   const level = standing !== null && Number(gap.toFixed(digits)) === 0;
-  const chip = !standing ? null : level ? 'level' : `${shown(gap)} ${time ? (standing.difference < 0 ? 'faster' : 'slower') : (standing.difference > 0 ? 'above' : 'below')}`;
-  const tail = !standing ? '' : level ? `with ${versus}` : time ? `than ${versus}` : versus;
+  const chip = !standing ? null : level ? 'level' : `${shown(gap)} ${pace ? (standing.better ? 'faster' : 'slower') : (standing.difference > 0 ? 'above' : 'below')}`;
+  const tail = !standing ? '' : level ? `with ${versus}` : pace ? `than ${versus}` : versus;
   // A difference under a tenth of the spread is shown, but not coloured as better or worse.
   const tone = !standing || level || gap < 0.1 * standing.sd ? 'level' : standing.better ? 'better' : 'worse';
   const days = own && own.results.length > 1 ? `best of ${own.results.length} testing days` : null;
