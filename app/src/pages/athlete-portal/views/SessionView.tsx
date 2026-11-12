@@ -16,7 +16,7 @@ import {
   trackingTimelineMeta,
   type ReplayTracking,
 } from "../../../lib/replay-tracking";
-import { attemptLabel, resultLabel, sameResultStatus } from "../../../lib/result-values";
+import { attemptLabel, resultLabel } from "../../../lib/result-values";
 import type { Drill } from "../lib/drills";
 import type { Access } from "../lib/loaders";
 import { authArtifacts, fetchJson, sharedArtifacts } from "../lib/loaders";
@@ -112,9 +112,6 @@ export async function loadRepReplay(drill: Drill, rep: any, access: Access, play
   const payload = access === "shared"
     ? await sharedArtifacts(drill, rep, shareToken)
     : await authArtifacts(drill, rep, playerId!);
-  if (rep.resultStatus && payload.resultStatus && !sameResultStatus(rep.resultStatus, payload.resultStatus)) {
-    throw new Error("This result changed since it was opened. Refresh the athlete results to view the latest revision.");
-  }
   const urls: Record<string, string> = { ...(payload.artifactUrls || {}) };
   // The live media endpoint returns no tracking.json although the file is stored (its deployed
   // version predates tracking replays; backend main returns it). Staff may read the rep's folder

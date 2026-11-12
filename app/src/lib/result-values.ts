@@ -20,10 +20,6 @@ export function resultLabel(rep: any): string {
   return rep.resultStatus.reason === "acceptedRevision" ? "Reviewed result" : "Verified result";
 }
 
-export function sameResultStatus(left: any, right: any): boolean {
-  return ["qualified", "duplicate", "reason", "revisionId"].every(key => left?.[key] === right?.[key]);
-}
-
 export function metricValue(rep: any, field: string, meta: any = {}, fallbacks: string[] = []): number | null {
   if (!resultUsable(rep) || (!rep.resultStatus && !resultUsable(meta))) return null;
   const sources = rep.resultStatus ? [rep] : [meta, rep];
