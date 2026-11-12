@@ -17,11 +17,13 @@ const entries = new Map([
   ["/coach-join.html", "<!-- posetek-coach-enrollment-entry -->"],
 ]);
 
-export async function composeAstroRelease(root, { marketingSnapshot, fetchImpl = fetch } = {}) {
+const isolatedEntries = new Set(["/feedback.html", "/coach-join.html"]);
+
+export async function composeAstroRelease(root, { marketingSnapshot, preserveIsolatedEntries = false, fetchImpl = fetch } = {}) {
   root = resolve(root);
   const source = join(root, "app/astro-dist"), output = join(root, "production-dist");
   const baseline = JSON.parse(await readFile(join(root, "deployment/homepage-baseline.json"), "utf8"));
-  const protectedFiles = new Map();
+  const protectedFiles = new Map(), preservedIsolated = new Map();
   for (const file of baseline.files) {
     const key = file.path.toLowerCase(), prior = protectedFiles.get(key);
     if (prior && (prior.sha !== file.sha || prior.size !== file.size)) throw new Error("Conflicting folded baseline path");
@@ -30,7 +32,9 @@ export async function composeAstroRelease(root, { marketingSnapshot, fetchImpl =
     await assertPlainPath(output, target);
     const bytes = await readFile(target);
     if (sha1(bytes) !== file.sha || bytes.length !== file.size) throw new Error("Baseline not verified: " + file.path);
+    if (preserveIsolatedEntries && isolatedEntries.has(file.path)) preservedIsolated.set(file.path, { path: file.path, sha: file.sha, size: file.size, bytes });
   }
+  if (preserveIsolatedEntries && preservedIsolated.size !== isolatedEntries.size) throw new Error("Both isolated entries require verified baseline records");
   const marketing = marketingSnapshot ? await readAstroMarketingSnapshot(root, marketingSnapshot, protectedFiles, { fetchImpl }) : null;
   const prepared = [];
   async function inspect(directory, prefix = "") {
@@ -61,6 +65,7 @@ export async function composeAstroRelease(root, { marketingSnapshot, fetchImpl =
     const index = prepared.findIndex(row => row.path === entry.path);
     prepared[index] = entry;
   }
+  for (const entry of preservedIsolated.values()) prepared[prepared.findIndex(row => row.path === entry.path)] = entry;
   const added = await mergeAstroAssets(source, output, [...protectedFiles.values()]);
   for (const entry of prepared) {
     const target = containedPath(output, entry.path);
@@ -69,7 +74,7 @@ export async function composeAstroRelease(root, { marketingSnapshot, fetchImpl =
   }
   let preservedFiles = 0;
   for (const file of protectedFiles.values()) {
-    if (["/application.html", "/feedback.html"].includes(file.path) || !marketing && entries.has(file.path)) continue;
+    if (file.path === "/application.html" || !preservedIsolated.has(file.path) && (file.path === "/feedback.html" || !marketing && entries.has(file.path))) continue;
     const bytes = await readFile(resolve(output, "." + file.path));
     if (sha1(bytes) !== file.sha || bytes.length !== file.size) throw new Error("Unrelated file changed: " + file.path);
     preservedFiles++;
@@ -78,6 +83,7 @@ export async function composeAstroRelease(root, { marketingSnapshot, fetchImpl =
   const receipt = { framework: "astro", baselineDeploymentId: baseline.deploymentId, preservedFiles, documents, added,
     ...(marketing ? { marketingPreserved: true, marketingDeploymentId: marketing.deploymentId, marketingLiveVerification: marketing.served,
       preservedMarketing: marketing.documents.map(({ bytes, ...record }) => record) } : {}),
+    ...(preserveIsolatedEntries ? { isolatedEntriesPreserved: true, preservedIsolatedEntries: [...preservedIsolated.values()].map(({ bytes, ...record }) => record) } : {}),
     application: documents.find(entry => entry.path === "/application.html"),
     homepageSha: documents.find(entry => entry.path === "/index.html").sha,
     coachesSha: documents.find(entry => entry.path === "/coaches/index.html").sha };
@@ -86,15 +92,27 @@ export async function composeAstroRelease(root, { marketingSnapshot, fetchImpl =
   return receipt;
 }
 
+export function parseAstroReleaseArgs(args) {
+  const options = {}, usage = "Usage: node scripts/build-astro-release.mjs [--preserve-marketing <manifest-path>] [--preserve-isolated-entries]";
+  for (let index = 0; index < args.length; index++) {
+    if (args[index] === "--preserve-marketing" && !options.marketingSnapshot) {
+      const path = args[++index];
+      if (!path || path.startsWith("--")) throw new Error(usage);
+      options.marketingSnapshot = resolve(path);
+    } else if (args[index] === "--preserve-isolated-entries" && !options.preserveIsolatedEntries) options.preserveIsolatedEntries = true;
+    else throw new Error(usage);
+  }
+  return options;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2);
-  if (args.length && (args.length !== 2 || args[0] !== "--preserve-marketing" || !args[1] || args[1].startsWith("--"))) throw new Error("Usage: node scripts/build-astro-release.mjs [--preserve-marketing <manifest-path>]");
+  const options = parseAstroReleaseArgs(process.argv.slice(2));
   const root = fileURLToPath(new URL("../", import.meta.url));
   const result = spawnSync(process.execPath, [join(root, "scripts/build-production.mjs")], {
     cwd: root, stdio: "inherit", windowsHide: true, env: { ...process.env, ASTRO_TELEMETRY_DISABLED: "1" },
   });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error("Ordinary preservation build failed");
-  const receipt = await composeAstroRelease(root, args.length ? { marketingSnapshot: resolve(args[1]) } : {});
+  const receipt = await composeAstroRelease(root, options);
   console.log(JSON.stringify({ framework: receipt.framework, preservedFiles: receipt.preservedFiles, addedAssets: receipt.added.length, documents: receipt.documents }));
 }

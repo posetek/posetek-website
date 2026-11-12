@@ -18,7 +18,7 @@ and qualifies the parent organization's reporting coverage.
 | Overview | Separate recorded-timer and estimated-app-use rankings, four named follow-up groups, team comparisons and people. Summary actions focus the matching list after its new report arrives. |
 | Teams | Reporting roster denominators, recorded sign-in, active players, collection coverage, starts/completions, recorded timer and elapsed estimates. Counts and percentages use the same complete filtered cohort. Teams without reporting members remain navigable. |
 | Workouts | Searchable and server-sorted players, period starts/completions and durations, exact latest saved workout, outcome and current-week assignments. One expanded player loads five recent distinct sessions; an opened session loads its existing recorded observation. |
-| Usage | Estimated engagement, active days, website/iOS collection, and latest retained activity window. Most recently observed activity sorts first. |
+| Usage | Estimated engagement, active days, website/iOS collection, and last observed feature with its retained 15-minute window. Most recently observed activity sorts first. |
 | Testing | Existing summaries, charts, qualifications and the detailed player table, with real player-record links and server pagination. |
 
 Ordinary rows become labeled cards on phones. Dense testing evidence retains
@@ -64,6 +64,23 @@ for historical periods. Existing period/timezone/exclusion/testing rules remain
 unchanged. Each view explains these limits under **How this is measured**.
 
 ## Compatible contract
+
+### Last observed feature in Usage
+
+Published November 4, 2026. [Production handoff](../releases/ADMIN_LAST_OBSERVED_FEATURE.md)
+
+The Usage tab requests `includeLastFeatureEvidence: true` alongside the
+existing administrator options. Each displayed player's latest activity window
+can include `featureEvidence`. The column pairs the feature with its 15-minute
+window in the selected reporting timezone. A window can predate the requested
+start if the player's most recent observation was earlier.
+
+For recent retained intervals, `basis: "latestInterval"` identifies the feature
+with the latest recorded activity in that window. Features tied at the
+latest observation are listed together. When only aggregate evidence is available, `basis: "window"`
+identifies the features credited in the window. Their order is unknown.
+Older servers can omit feature evidence and still supply the activity window.
+These observations describe engagement and do not establish a logout or app close.
 
 Only administrator reporting views send:
 

@@ -17,7 +17,7 @@ The decrypted payload has these fields:
 | `name`, `firstName` | Display name and short name; plain text |
 | `team`, `coach`, `testDate` | Display-ready labels; `coach` is the name without the “Coach” prefix |
 | `focusTitle`, `focusText` | Brief next-step heading and explanation |
-| `playerId` | Existing athlete document ID, used only in the HTTPS workout link |
+| `playerId` | Existing athlete document ID, used only to construct workout links |
 | `metrics` | Up to 16 `{label, result, percentile, band, average, count, note?}` objects |
 | `summary` | Up to 6 `{label, text}` objects |
 | `exercises` | Up to 6 `{title, tag, dose, instruction}` objects |
@@ -39,8 +39,20 @@ rounding and accurate saved-plan versus optional-example labels. The renderer
 does not calculate, fabricate or reinterpret measurements.
 
 All strings are inserted with `textContent`; no report field is parsed as HTML.
-Only the constant PoseTek HTTPS athlete destination is used, with `playerId`
-encoded as a query value. PDF downloads use a temporary local blob URL and a
+The reader builds only fixed PoseTek HTTPS and versioned native Training locators
+from IDs containing 1–128 ASCII letters, digits, `_` or `-`. A previously accepted
+v1 ID outside that workout grammar still renders its report and PDF, with no
+workout link. Installation recovery uses the fixed public TestFlight URL with no
+report data. PDF downloads use a temporary local blob URL and a
 generic filename. Keep real child data, account IDs, encrypted payloads and PDFs
 outside the public source checkout. Synthetic browser verification belongs in
 local test fixtures or the report delivery tests, not a shipped example report.
+
+### Results-first presentation
+
+`resultsFirst` is an optional boolean. When true, omit the introductory focus
+card and begin the classic body with “Where [firstName] stands”. Legacy payloads
+keep their focus card. The publisher supplies all three summary bands with the
+actual test names and displayed results; never replace more than three results
+with a count. Keep existing unrounded-percentile band assignments and exclude
+unavailable or insufficient-comparison results. Empty bands must say so.

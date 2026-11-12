@@ -1,5 +1,33 @@
 # PoseTek website
 
+## Admin tab persistence release — November 5, 2026
+
+Deployment `6aec430f45bc0d0841566ba7` was published at
+`2026-11-05T09:00:17.782Z` with runtime `6ea75c7`. People & organizations
+offers only current numeric-version-2 organizations and reuses fresh scoped
+context, roster and exact report responses across tab roundtrips for up to
+60 seconds. Refresh, expiry and Auth/scope boundaries invalidate reuse.
+The reconciled baseline protects 2,568 files with all 37 recovery mappings.
+[Release handoff](docs/releases/ADMIN_TAB_PERSISTENCE.md) ·
+[Production receipt](docs/releases/receipts/ADMIN_TAB_PERSISTENCE_PRODUCTION.json)
+
+Source [PR #124](https://github.com/posetek/posetek-website/pull/124) and
+[PR #125](https://github.com/posetek/posetek-website/pull/125) are merged. Only
+`application.html` changed among prior served files; 17 hashed assets were added.
+Marketing, feedback, coach enrollment and all six private-report files remain exact.
+
+The [broader backend plan](docs/engineering/ADMIN_REPORT_EFFICIENCY_PLAN.md)
+remains proposed. Held policy, session and Ball Striking candidates and report
+outreach remain held. Keep `[skip netlify]` on source/receipt integration.
+
+Earlier entries are historical release records.
+
+## Admin Usage release — November 4, 2026
+
+Deployment `6aeb76624e362b0c48f30421` is live with runtime `6d105a7` and `getClubInsightsV2` version 11. Admin Usage shows each displayed player's last observed feature and its 15-minute activity window. The baseline protects 2,551 files and retains 37 recovery mappings. [Release handoff](docs/releases/ADMIN_LAST_OBSERVED_FEATURE.md) · [Production receipt](docs/releases/receipts/ADMIN_LAST_OBSERVED_FEATURE_PRODUCTION.json)
+
+Earlier entries are historical release records.
+
 ## Safari marketing link activation release — November 3, 2026
 
 Exact deployment `6aea6ecaca4a6743660ac238` is live. Animated public labels now

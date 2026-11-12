@@ -1,4 +1,165 @@
+## November 7 private report action order — local only
+
+## Local signup-first report candidate — November 7, 2026
+
+The isolated report branch adds optional, explicitly authorized existing player
+invitation support and exact-child Training continuation. It uses an additive
+sign-in document and a separate candidate-only Netlify configuration; canonical
+production routing and the served SPA remain unchanged. This is local source,
+not a source or production release. See
+[the feature contract](docs/features/PRIVATE_PARENT_REPORTS.md#optional-signup-first-report-entry--november-7-candidate)
+for capability handling, assembly, verification and held release/send gates.
+
+
+The workout button, TestFlight install/update and browser choices, and PDF download now follow
+the results and practice cards. The compact report payloads, measurements, summaries, practice
+cards and exact-child routes are unchanged. Account registration remains a separate private
+workflow; no signup link or authorization is added. This is an isolated preview candidate,
+with source integration, production publication, sends and native acceptance still separate.
+
+## November 7 private report pathway preparation — local only
+
+An isolated extension of reviewed report source `5d8a9c65` adds optional aggregate age-group
+charts for speed at 5 m, vertical jump and broad jump. Legacy reports retain their team charts;
+the deliberate native/TestFlight/browser flow, ciphertext envelope and HTTPS PDF targets stay
+unchanged. Sparse/unverified groups cannot show density or percentiles, and median lines do
+not bridge gaps. See [the payload and design contract](docs/features/PRIVATE_PARENT_PATHWAY_CHARTS.md).
+
+The baseline records already-serving `6aedefb93ea542305e9f49da` with 2,601 protected files and
+37 recovery mappings. A separate pinned `--update-pathway-charts` transition replaces only
+three reader files and appends an explicit encrypted selection over a fresh captured artifact.
+No source push, merge, production promotion, family send or native build is included. A private
+example draft requires exact artifact review and hosted acceptance before the user tests it.
+
 # PoseTek website project context
+
+## Admin reporting fixes and one-pager time on page — November 10, 2026
+
+Deployment `6af39c12b5d6443ec57767ec` makes "Last week" on the admin cards the whole previous week, counts sessions recorded on the phone as workouts (with a by-type chart and per-player lists), and adds reports sent, time on page, accounts created through the Workouts button and a trend chart to one-pager tracking. Web personal workouts can save a skip and finish.
+
+The exact production artifact preserves 2,758 prior files, including the report project's current encrypted reports. Three files changed: the application document, the reader's `loader.mjs`, and its `render.mjs`, which is the live file with one notice sentence changed. 15 hashed assets were added. The tracking Functions are at version 3 and `getClubInsightsV2` at version 14. The live reader is newer than this repository's copy, and the report project's next deploy overwrites the two reader files unless its source merges main first. Keep `[skip netlify]` on source and receipt merges. [Release handoff](docs/releases/ADMIN_REPORTING_FIXES.md) · [Production receipt](docs/releases/receipts/ADMIN_REPORTING_FIXES_PRODUCTION.json)
+
+## One-pager cohort tracking release — November 10, 2026
+
+Deployment `6af362397a8e341ea91b5788` adds a Cohort selector after Usage in each organization's All teams player view. The original 33 Vacaville reports retain their recorded activity and expiry. The verified-send closeout enrolls later reports as approved messages are recorded. The 13 November 9 drafts remain held.
+
+The exact production artifact preserves 2,722 prior files, including the current encrypted reports and reader. Only the application document changed and 25 hashed assets were added. Both existing tracking Functions are active at version 2. Keep `[skip netlify]` on source and receipt merges. [Production receipt](docs/releases/receipts/ONE_PAGER_COHORTS_PRODUCTION.json)
+
+## Database-first catalog compatibility release — November 7, 2026
+
+Deployment `6aeffb31ae4da62a62fc6356` was published at
+`2026-11-08T04:34:35.550Z` from runtime `dbb380f` (`runtime/catalog-db-first-compat`,
+based on accepted `51106ec`, whose application equals live runtime `e4c6403`).
+It ships PR #134:
+- The admin drill editor offers `published` only when catalog validation allows it,
+  and refuses stale saves.
+- The workout picker is uncapped.
+- The coach dashboard lists published drills only.
+- The athlete workout player card shows the v2 how-to.
+
+Main itself was not shipped. Its `app/` still carries held Ball Striking and
+policy source and lacks the runtime's jump review and reviewed results.
+
+The release preserves the prior live deploy `6aeff48b`, Dylan Keller's November
+cohort reports. That includes the isolated `/player-signin.html`, the `/signin`
+rewrite and headers, which this record also brings to main's `netlify.toml`. All
+2,697 artifact files match 2,698 provider records; only `/application.html` changed,
+with 20 hashed assets added. The reconciled baseline protects 2,695 files with all 37
+recovery mappings. Signed-in hosted acceptance is not claimed.
+[Release handoff](docs/releases/CATALOG_DB_FIRST_COMPAT_RELEASE.md) ·
+[Production receipt](docs/releases/receipts/CATALOG_DB_FIRST_COMPAT_PRODUCTION.json)
+
+## Admin result validation release — November 6, 2026
+
+Deployment `6aedefb93ea542305e9f49da` was published at
+`2026-11-06T15:22:23.567Z` from runtime `e4c6403` (`runtime/result-validation`,
+based on accepted `bc6ed7c`). **Review tools → Result validation** steps through a
+testing session's reps to validate, adjust or flag each one, always with a reviewer
+note. A flag leaves the result displayed. Any decision can be undone, and notes
+export as JSON. Each rep shows per-drill evidence, focus mode and the organization
+age curve. Writes use the existing revision callables only.
+
+The saved tracking playback below shipped in the same artifact. All 2,603 artifact
+files match 2,604 provider records; only `/application.html` changed, with 20 hashed
+assets added. The reconciled baseline protects 2,601 files with all 37 recovery
+mappings. Signed-in hosted acceptance is not claimed.
+[Release handoff](docs/releases/RESULT_VALIDATION_RELEASE.md) ·
+[Production receipt](docs/releases/receipts/RESULT_VALIDATION_PRODUCTION.json) ·
+[Feature](docs/features/RESULT_VALIDATION.md)
+
+## Admin rep tracking playback — released November 6, 2026
+## Private report app entry — held preparation, November 5, 2026
+
+The report reader prepares an explicit iOS app-opening button using the mobile
+owner's versioned workout locator, with visible TestFlight install/update and
+browser recovery. Android keeps web workouts; unknown platforms get an iOS choice.
+This is source only: the current production report still uses browser workouts.
+Compatible signed TestFlight and physical-phone acceptance remain required before
+delivery. No parent or coach text follows from source integration. Read the
+[feature contract](docs/features/PRIVATE_PARENT_REPORTS.md#installed-app-boundary).
+Keep `[skip netlify]`; the existing production artifact and application runtime
+remain preserved.
+
+## Admin rep tracking playback — source fix, November 5, 2026
+
+Rep Tools loads and displays saved tracking from the exact recording folder,
+with frame playback and clear video-unavailable/metadata-only states. Viewing
+tracking does not change measurements or annotations. It does not recover
+original camera images. Merged as PR #128; released in deployment
+`6aedefb93ea542305e9f49da` with result validation. See the
+[behavior and validation handoff](docs/features/ADMIN_REP_TRACKING_PLAYBACK.md).
+
+## Admin reporting refresh release — November 5, 2026
+
+Deployment `6aecbf94751cf215f811865f` was published at
+`2026-11-05T19:06:24.045Z` with runtime `bc6ed7c` and
+`getClubInsightsV2` version 12. Organization reports now show six comparison
+cards, age-by-drill Testing, station analytics and daily usage lines. Shared
+summaries persist across tab transitions; player tables finish Workouts and Usage.
+
+Candidate and live signed-in Chromium/WebKit checks passed, as did all 27 deployed
+API assertions. All 2,583 artifact files match 2,584 provider records. The
+reconciled baseline protects 2,581 files and retains all 37 recovery mappings.
+[Release handoff](docs/releases/ADMIN_REPORTING_REFRESH.md) ·
+[Production receipt](docs/releases/receipts/ADMIN_REPORTING_REFRESH_PRODUCTION.json)
+
+Website PR #127 and Backend PR #94 are merged. Backend hosted CI remained blocked
+by billing; the owner authorized a one-release exception backed by seven passing
+local lanes. Website hosted CI passed. New workout funnel wiring/UI remains a
+[separate follow-up](docs/features/WORKOUT_REPORTING_FUNNEL_HANDOFF.md). Keep
+`[skip netlify]` on source/receipt integration; held candidates and outreach remain held.
+
+## Admin tab persistence release — November 5, 2026
+
+Deployment `6aec430f45bc0d0841566ba7` was published at
+`2026-11-05T09:00:17.782Z` with runtime `6ea75c7`. People & organizations
+offers only current numeric-version-2 organizations and reuses fresh scoped
+context, roster and exact report responses across tab roundtrips for up to
+60 seconds. Refresh, expiry and Auth/scope boundaries invalidate reuse.
+The reconciled baseline protects 2,568 files with all 37 recovery mappings.
+[Release handoff](docs/releases/ADMIN_TAB_PERSISTENCE.md) ·
+[Production receipt](docs/releases/receipts/ADMIN_TAB_PERSISTENCE_PRODUCTION.json)
+
+Source [PR #124](https://github.com/posetek/posetek-website/pull/124) and
+[PR #125](https://github.com/posetek/posetek-website/pull/125) are merged. Only
+`application.html` changed among prior served files; 17 hashed assets were added.
+Marketing, feedback, coach enrollment and all six private-report files remain exact.
+
+Earlier entries are historical release records.
+
+The client release does not implement backend cohort sessions, compact projections
+or a SQL report reader. The [implementation plan](docs/engineering/ADMIN_REPORT_EFFICIENCY_PLAN.md)
+keeps those phases proposed. Source and actual-hook synthetic evidence remain in
+the [loading review](docs/features/ADMIN_REPORT_LOADING.md); real hosted/live
+acceptance and the rejected equality-query draft are recorded in the release
+handoff. Held policy, session and Ball Striking candidates and report outreach
+remain held. Keep `[skip netlify]` on source/receipt integration.
+
+## Admin Usage release — November 4, 2026
+
+Deployment `6aeb76624e362b0c48f30421` is live with runtime `6d105a7` and `getClubInsightsV2` version 11. Admin Usage shows each displayed player's last observed feature and its 15-minute activity window. The baseline protects 2,551 files and retains 37 recovery mappings. [Release handoff](docs/releases/ADMIN_LAST_OBSERVED_FEATURE.md) · [Production receipt](docs/releases/receipts/ADMIN_LAST_OBSERVED_FEATURE_PRODUCTION.json)
+
+Earlier entries are historical release records.
 
 ## Safari marketing link activation release — November 3, 2026
 

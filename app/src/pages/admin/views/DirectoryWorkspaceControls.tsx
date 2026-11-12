@@ -5,10 +5,11 @@ import { AGE_BANDS, DIVISIONS, USAGE_FEATURES, ageLabel, divisionLabel } from ".
 import type { ExpandedRequest } from "../../insights/lib/expandedQuery";
 import { FEATURE_LABELS, TESTING_LABELS, WORKOUT_LABELS, USAGE_LABELS } from "../../insights/lib/expanded";
 
-type View = "list" | WorkspaceReportView;
-export function DirectoryWorkspaceTabs({ active, listLabel, onChange }: { active: View; listLabel: string; onChange(view: View): void }) {
+type View = "list" | WorkspaceReportView | "one-pagers";
+export function DirectoryWorkspaceTabs({ active, listLabel, onePagers = false, onChange }: { active: View; listLabel: string; onePagers?: boolean; onChange(view: View): void }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const views: [View, string][] = [["list", listLabel], ["overview", "Overview"], ["testing", "Testing"], ["workouts", "Workouts"], ["usage", "Usage"]];
+  if (onePagers) views.push(["one-pagers", "One-pager tracking"]);
   return <div className="workspace-report-tabs directory-workspace-tabs" role="tablist" aria-label="Directory and reporting views">{views.map(([view, label], index) => <button type="button" key={view}
     ref={node => { refs.current[index] = node; }} id={`workspace-report-tab-${view}`} role="tab" aria-selected={active === view}
     aria-controls={`workspace-report-panel-${view}`} tabIndex={active === view ? 0 : -1} onClick={() => onChange(view)} onKeyDown={event => {

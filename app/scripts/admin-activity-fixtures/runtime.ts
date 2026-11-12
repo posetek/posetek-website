@@ -2,6 +2,7 @@
 // Keep the actual report transport, validation, identity and retry hooks in use.
 import { PREVIEW_CHOICES, previewInsights } from '/src/pages/insights/lib/preview';
 import { expandedRequest } from '/src/pages/insights/lib/expandedQuery';
+import { dailyUsageStart } from '/src/pages/insights/lib/dailyUsage';
 import { requestFromWorkspacePayload } from '/src/pages/admin/lib/workspaceMetricsData';
 
 export const AS_OF = Date.parse('2026-11-03T18:00:00Z');
@@ -52,8 +53,20 @@ export const directorySource = {
   lookup: () => read('lookup', {}, () => ({ players: people(), limited: false })),
 };
 
-function extended(row, cutoff, uid) {
+const observedFeatures = [
+  { features: ['results'], basis: 'latestInterval' },
+  { features: ['training', 'results'], basis: 'latestInterval' },
+  { features: ['overview'], basis: 'window' },
+  { features: ['training', 'overview'], basis: 'window' },
+];
+
+function extended(row, cutoff, uid, includeLastFeatureEvidence) {
   const index = Number(row.id.replace('synthetic-', ''));
+  const windowEnd = cutoff - (index % 8) * 900_000;
+  const lastActivityWindow = row.usage.collected && row.usage.activeMinutes > 0
+    ? { startMillis: windowEnd - 900_000, endMillis: windowEnd,
+      ...(includeLastFeatureEvidence ? { featureEvidence: observedFeatures[index % observedFeatures.length] } : {}) }
+    : null;
   const signInStatus = ['unknown', 'none', 'recorded', 'unlinked'][index % 4];
   const latest = row.workouts.started ? { source: index % 2 ? 'personalWorkoutLogs' : 'workoutLogs', logId: `fixture-${index}-first`, title: `Synthetic session ${index}`,
     startedAtMillis: AS_OF - (index + 1) * 3_600_000, endedAtMillis: row.workouts.status === 'inProgress' ? null : AS_OF - (index + 1) * 3_600_000 + 1_800_000,
@@ -65,7 +78,7 @@ function extended(row, cutoff, uid) {
   const copy = { ...row, firstName: `${uid === 'synthetic-admin-two' ? 'Second account ' : ''}${label[0]}`, lastName: label[1],
     usage: { ...row.usage }, workouts: { ...row.workouts },
     adminReporting: { signIn: { status: signInStatus, lastSignInAtMillis: signInStatus === 'recorded' ? AS_OF - 86_400_000 : null },
-      usage: { lastActivityWindow: row.usage.collected && row.usage.activeMinutes > 0 ? { startMillis: cutoff - 900_000, endMillis: cutoff } : null },
+      usage: { lastActivityWindow },
       workouts: { latest }, assigned } };
   if (index === 46) { copy.workouts.timerMinutes = 137; copy.workouts.timerRecords = 3; copy.usage = { ...copy.usage, collected: true, webCollected: true, iosCollected: true, activeMinutes: 201, webMinutes: 151, iosMinutes: 65, activeDays: 8 }; }
   return copy;
@@ -75,13 +88,50 @@ const matchFollowUp = (row, followUp) => followUp === 'active' ? row.usage.colle
   : followUp === 'noActivity' ? row.usage.collected && row.usage.activeMinutes === 0
     : followUp === 'unfinishedAssigned' ? row.adminReporting.assigned.status === 'available' && row.adminReporting.assigned.remaining > 0
       : followUp === 'noCompletion' ? row.workouts.completed === 0 : true;
+// Synthetic aggregate contract for the admin Testing view, independent of roster pagination.
+function testingAnalytics(population, request) {
+  const shift = (date, days) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+  const weekStart = shift(request.endDate, -((new Date(`${request.endDate}T12:00:00Z`).getUTCDay() + 6) % 7));
+  const count = population.length, timingSamples = Math.floor(count * .65);
+  const drills = [['shooting', 'm/s', 16], ['sprint', 'm/s', 5], ['jump', 'm', .3], ['broadJump', 'm', 1.4], ['changeOfDirection', 's', 5], ['dribbling', 's', 9]];
+  return { version: 1,
+    performance: drills.map(([drill, unit, base], drillIndex) => ({ drill, unit, lowerIsBetter: unit === 's',
+      points: population.filter((_, index) => index % 7 !== drillIndex).map((row, index) => ({ playerId: row.id, name: `${row.firstName} ${row.lastName}`, age: row.age, division: row.division,
+        value: base * (.75 + ((index * 7 + drillIndex * 3) % 17) / 32 + (row.age === null ? 0 : (row.age - 10) / 90)) })) })),
+    weekly: { weekStart, weekEnd: request.endDate, previousWeekStart: shift(weekStart, -7), previousWeekEnd: shift(weekStart, -1),
+      playersTested: Math.floor(count * .7), previousPlayersTested: Math.floor(count * .6),
+      rotation: { meanMs: timingSamples ? 1_140_000 : null, samples: timingSamples },
+      previousRotation: { meanMs: timingSamples ? 1_350_000 : null, samples: Math.floor(timingSamples * .8) } },
+    stations: count ? ['Power & jumping', 'Speed & agility', 'Ball skills'].map((label, index) => ({ id: `synthetic-station-${index + 1}`, order: index + 1, label,
+      completedPlayers: Math.max(0, timingSamples - index), eligiblePlayers: count, syncedReps: Math.max(0, timingSamples - index) * 6, plannedReps: count * 6,
+      failed: index + 1, partial: index, elapsedMeanMs: timingSamples ? [240_000, 300_000, 360_000][index] : null, timingSamples: Math.max(0, timingSamples - index) })) : [] };
+}
+function participationMetrics(population, request) {
+  const shift = (date, days) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+  const startDate = shift(request.endDate, -((new Date(`${request.endDate}T12:00:00Z`).getUTCDay() + 6) % 7));
+  const metric = (value, previousValue, note) => ({ value, previousValue, status: 'available', note });
+  const count = population.length;
+  return { version: 1, windows: { current: { startDate, endDate: request.endDate }, previous: { startDate: shift(startDate, -7), endDate: shift(startDate, -1) },
+      cumulative: { endDate: request.endDate, previousEndDate: shift(request.endDate, -7) } },
+    topTrainingPlayers: [...population].sort((a, b) => b.usage.activeMinutes - a.usage.activeMinutes).slice(0, 5).map(row => ({ id: row.id, name: `${row.firstName} ${row.lastName}`, activeMinutes: row.usage.activeMinutes * .7 })),
+    cards: { testedPlayers: metric(Math.floor(count * .85), Math.floor(count * .75), 'Four distinct recorded drills; failures included.'),
+      claimedAccounts: metric(Math.floor(count * .7), Math.floor(count * .6), 'Claimed through each cutoff.'),
+      iosDownloads: metric(Math.floor(count * .6), Math.floor(count * .55), 'Players with positive retained iOS activity; not App Store installations.'),
+      repeatUsers: metric(Math.floor(count * .3), Math.floor(count * .25), 'Players active on two or more distinct local days in the report week to date and in the whole previous week; same-day visits count once.'),
+      weeklyUsers: metric(Math.floor(count * .45), Math.floor(count * .5), 'Distinct active players in the report week to date and in the whole previous week.'),
+      platformMinutes: metric(count * 3.7, count * 3.2, 'Simultaneous website and iOS time counted once.') } };
+}
+const featureDays = days => days.map((day, index) => ({ ...day, featureMinutes: day.activeMinutes === null ? null : { workout: day.activeMinutes * (index % 7 > 4 ? .5 : .2), training: day.activeMinutes * .15, video: day.activeMinutes * .15, results: day.activeMinutes * .1, overview: day.activeMinutes * (index % 7 > 4 ? .05 : .35), other: day.activeMinutes * .05 } }));
 function report(payload, uid) {
   const request = { ...requestFromWorkspacePayload(payload), orgId: payload.scope.organizationId || '', teamId: payload.scope.teamId || '' };
   // The response echoes the selected search even though aggregate population is
   // intentionally calculated before name filtering.
   const original = previewInsights(request, 0, reportMode === 'empty' ? 'empty' : 'longNames');
+  const historyStart = dailyUsageStart(request.endDate, "2m");
+  const history = previewInsights({ ...request, startDate: historyStart }, 0, reportMode === "empty" ? "empty" : "longNames");
   const cutoff = Math.floor(Math.min(AS_OF, Date.parse(`${request.endDate}T23:59:59Z`)) / 900_000) * 900_000;
-  const population = Array.from({ length: 4 }, (_, page) => previewInsights({ ...request, rosterSearch: '' }, page, reportMode === 'empty' ? 'empty' : 'longNames').players).flat().map(row => extended(row, cutoff, uid));
+  const population = Array.from({ length: 4 }, (_, page) => previewInsights({ ...request, rosterSearch: '' }, page, reportMode === 'empty' ? 'empty' : 'longNames').players).flat()
+    .map(row => extended(row, cutoff, uid, payload.includeLastFeatureEvidence === true));
   const followUp = payload.adminReporting?.followUp || 'all', sort = payload.adminReporting?.sort || 'name';
   const name = row => `${row.firstName} ${row.lastName}`;
   const value = row => sort === 'activeMinutes' ? row.usage.activeMinutes : sort === 'workoutMinutes' ? row.workouts.timerMinutes
@@ -103,9 +153,13 @@ function report(payload, uid) {
       timerMinutes: total(group, row => row.workouts.timerMinutes), estimatedMinutes: total(group, row => row.workouts.estimatedMinutes), timerRecords: total(group, row => row.workouts.timerRecords), estimatedRecords: total(group, row => row.workouts.estimatedRecords) };
   });
   return { ...original, filters: { ...payload.filters }, generatedAtMillis: AS_OF,
+    usage: { ...original.usage, days: featureDays(original.usage.days) },
+    ...(payload.includeTestingAnalytics && reportMode !== 'missing-extension' ? { adminTesting: testingAnalytics(population, request) } : {}),
     players: rows.slice(offset, offset + pageSize), pagination: { total: rows.length, pageSize, nextCursor: offset + pageSize < rows.length ? `fixture-page-${offset + pageSize}` : null },
     ...(payload.rosterPlayerIds ? { rosterMetrics: payload.rosterPlayerIds.map(playerId => { const player = population.find(row => row.id === playerId); return player ? { playerId, status: 'included', player } : { playerId, status: 'excluded' }; }) } : {}),
     ...(payload.adminReporting && reportMode !== 'missing-extension' ? { adminReporting: { version: 1, followUp, sort, asOfMillis: AS_OF, population: population.length,
+      metricsV2: participationMetrics(population, request),
+      dailyUsage: { startDate: historyStart, endDate: request.endDate, timeZone: request.timezone, days: featureDays(history.usage.days) },
       summary: { noSignIn: population.filter(row => matchFollowUp(row, 'noSignIn')).length, noActivity: population.filter(row => matchFollowUp(row, 'noActivity')).length,
         unfinishedAssigned: population.filter(row => matchFollowUp(row, 'unfinishedAssigned')).length, noCompletion: population.filter(row => matchFollowUp(row, 'noCompletion')).length,
         signInUnknown: population.filter(row => row.adminReporting.signIn.status === 'unknown').length, usageNotCollected: population.filter(row => !row.usage.collected).length },

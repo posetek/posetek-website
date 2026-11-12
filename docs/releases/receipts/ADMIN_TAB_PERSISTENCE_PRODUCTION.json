@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "status": "published_verified",
+  "accepted": true,
+  "feature": "Admin tab persistence and current organizations",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "authorization": "Explicit user authorization to push, merge and deploy the reviewed website change; owned reversible synthetic qualification only.",
+  "deployId": "6aec430f45bc0d0841566ba7",
+  "previousDeploymentId": "6aeb76624e362b0c48f30421",
+  "candidateDigest": "a970596e53cb36134ea0eb169645b7516a57f4b3c45e3edc6ad9bc95c917d0d3",
+  "websiteSource": {
+    "persistencePullRequest": 124,
+    "persistenceSource": "9a99f0c10eb81f1b3ecfc06bf2b88ff9e4bcf233",
+    "persistenceMerge": "b876eb14d5d3f1c2a2d6c6d854e02db58a914b22",
+    "compatibilityPullRequest": 125,
+    "compatibilitySource": "019652c945d6dcba21891820899fdaff2d54b145",
+    "runtime": "6ea75c70a281a284269ef2f7b7694ba69032918f",
+    "previousRuntime": "6d105a7db40f6925304fc80df245ec0d7d8c291a",
+    "compatibilityMerge": "4cd3785addae6b15dbbe934c046a6695b326f6c1"
+  },
+  "rejectedDraft": {
+    "deployId": "6aec4034ede449aabfba4b0b",
+    "promoted": false,
+    "reason": "Real authenticated client schemaVersion equality query returned HTTP 500 INTERNAL before roster or report loading.",
+    "rootCause": "Undetermined. Operator query succeeded; inclusive numeric bounds were independently qualified without a rules/index change."
+  },
+  "queryCompatibility": {
+    "query": "schemaVersion >= 2 AND schemaVersion <= 2, followed by strict raw numeric value check",
+    "hostedSdkServerReads": {
+      "chromium": 3,
+      "webkit": 3
+    },
+    "restRepeats": 3,
+    "allReturnedRawNumericSchema2": true,
+    "ownedCurrentOrganizationsPresent": 2,
+    "ownedLegacyOrganizationExcluded": true,
+    "operatorCountsMatched": true
+  },
+  "hostedAcceptance": {
+    "passed": true,
+    "functionalAcceptance": "passed with documented WebKit connection diagnostics",
+    "realFirebaseAuth": true,
+    "serviceResponsesMocked": false,
+    "checksPerBrowser": {
+      "chromiumDesktop": 17,
+      "webkitPhone": 17
+    },
+    "freshTabRoundtripAdditionalRequests": {
+      "context": 0,
+      "roster": 0,
+      "report": 0
+    },
+    "exactUsageReportRevisitAdditionalRequests": 0,
+    "blockedAutomaticDiagnosticWrites": {
+      "chromium": 0,
+      "webkit": 5
+    },
+    "otherBlockedRequests": 0,
+    "knownWebKitFirestoreConnectionDiagnostics": 14,
+    "unexpectedApplicationExceptions": 0,
+    "limits": "Three owned synthetic players; browser phone emulation. Real directory organization metadata and branding are necessary reads. No real player profile requested."
+  },
+  "liveAcceptance": {
+    "passed": true,
+    "functionalAcceptance": "passed with documented WebKit connection diagnostics",
+    "focused": true,
+    "checksPerBrowser": {
+      "chromiumDesktop": 12,
+      "webkitPhone": 12
+    },
+    "coverage": [
+      "exact current scope and owned rows",
+      "current-only bounded directory query",
+      "fresh shared context/roster/report tab reuse",
+      "exact report revisit",
+      "explicit report Refresh",
+      "legacy deep-link rejection",
+      "signout clears report UI",
+      "real non-admin UI denial",
+      "deployed callable rejects non-admin token",
+      "deployed callable rejects unsigned request",
+      "same-admin re-login reloads authorized data"
+    ],
+    "candidateOnlyCoverage": [
+      "natural expiry",
+      "shared-context Refresh",
+      "related report variant eviction",
+      "exhaustive team and organization scope roundtrips"
+    ],
+    "blockedAutomaticDiagnosticWrites": {
+      "chromium": 0,
+      "webkit": 5
+    },
+    "otherBlockedRequests": 0,
+    "knownWebKitFirestoreConnectionDiagnostics": 18,
+    "unexpectedApplicationExceptions": 0
+  },
+  "cleanup": {
+    "passed": true,
+    "readOnlyFinalAudit": true,
+    "checkedAt": "2026-11-05T09:09:34.690888+00:00",
+    "secondsAfterLastOwnedRemoval": 77.3,
+    "secondsAfterInitialCleanup": 281.7,
+    "ownedRootsChecked": 24,
+    "boundedQueriesChecked": 21,
+    "ownedAuthAccountsRemoved": 2,
+    "seededBusinessDocumentsRemoved": 8,
+    "ownedGeneratedInvitationRecordsRemoved": 3,
+    "ownedGeneratedCodeIndexesRemoved": 3,
+    "delayedAuthDeletionTombstonesRemoved": 2,
+    "remainingCheckedDocumentsAndDescendants": 0,
+    "remainingAuthAccounts": 0,
+    "remainingInvitationCodeOrProjectionQueryMatches": 0,
+    "temporaryPasswordFieldsAbsent": true,
+    "invitationIssuanceOrEmailCallablesInvoked": false,
+    "ownedReadOnlyInvitationLookupUsed": true,
+    "scope": "Exact journaled synthetic identities, roots, descendants and generated references only. No real player record changed.",
+    "verificationNotes": "The first delayed audit found two expected Auth-deletion tombstones. Exact payloads and update-time preconditions were verified before removal. The final delayed read-only audit passed. Earlier cleanup attempts safely stopped on a concurrent already-deleted projection child and normalized email case; fresh readback and exact identity/creation-time guards resolved these."
+  },
+  "releaseScope": {
+    "websiteOnly": true,
+    "backendReleased": false,
+    "rulesReleased": false,
+    "indexesReleased": false,
+    "gatewayReleased": false,
+    "nativeReleased": false,
+    "reportOutreachRemainsHeld": true
+  },
+  "artifactFiles": 2570,
+  "providerRecords": 2571,
+  "validation": {
+    "sourcePullRequestsCiPassed": [
+      124,
+      125
+    ],
+    "sourceReviewRevisions": [
+      "9a99f0c10eb81f1b3ecfc06bf2b88ff9e4bcf233",
+      "019652c945d6dcba21891820899fdaff2d54b145"
+    ],
+    "runtimeFullSuiteRevision": "72062354b751d0f324c5399ddf8cc92aa11d93c4",
+    "runtimeFullSuite": {
+      "vitestPassed": 2137,
+      "vitestFiles": 192,
+      "functionsPassed": 1106,
+      "privateHistorySkips": 3,
+      "toolingPassed": 150,
+      "python312PolicyPassed": 40,
+      "mobileArtifactToolingPassed": 5,
+      "transportFixturesPassed": 2,
+      "actualHookSyntheticBrowserCases": 36,
+      "guestBrowserCases": 7,
+      "blockingDependencyAuditFindings": 0
+    },
+    "finalRuntimeRevision": "6ea75c70a281a284269ef2f7b7694ba69032918f",
+    "finalRuntimeFocusedTestsPassed": 79,
+    "compiledTransportFilesPassed": 122,
+    "finalRuntimeTypeScriptAndAstroBuildPassed": true,
+    "sourceQueryCompatibilityFocusedTestsPassed": 36
+  },
+  "providerConfiguration": {
+    "changedFields": [
+      "build.publish"
+    ],
+    "previous": {
+      "providerSha1": "8f76b8d41b1492810a7f60dd5ff450ec60a6fb0d",
+      "bytes": 4903
+    },
+    "candidate": {
+      "providerSha1": "b2c0f175a1d696ec70da5bf7a737afbcb3af7aa8",
+      "bytes": 4894
+    },
+    "headersExact": 11,
+    "redirectsExact": 10
+  },
+  "proofSha256": {
+    "hostedBrowser": "ee114613baeea9e7f39f48d63f1a62ca1608d739322c308582b3912df053db2e",
+    "liveBrowser": "890eb48ae374ba7e2b4e33e11ebe4851e0cea51a5345f34e0c79142d1df41897",
+    "candidateArtifactVerification": "3a54a7e53772730124e199b5d01fcd415809cfc4f6d3d703d568e3dbadfb4b50",
+    "candidateProviderConfig": "bfe1639bdff6458915cc9f11b0325e0fd62b2a64bcbc750dcc9ce2126086468a",
+    "candidateHttpVerification": "b0fde249c1ca6f98753fc991d172a3f4a7ab1e495b3487d67c880e42be0002dc",
+    "publication": "323657094b718cd27e156a8da9289bfd08b65e2be2409bc0810479051036773f",
+    "productionInventory": "f3085001739145dad4968fb19743be837a4f6102b41b84d2b7aaf5d94825c03b",
+    "productionVerification": "73e66d910be7cc1086209350ab6aec46b51a21d48ec985f107aa96bd8c95d067",
+    "runtimeReview": "29302f7a518648e9ea04ce60c8b189d585ab373bb8ff448f18c14562acdc2ef3",
+    "sourceCompatibilityReview": "f99d4bc41af383239338632883fb586299f0deef5eb3315a3fc54da60321ff94",
+    "baselineReconciliationAndOrdinaryBuild": "0b0d5e218f714ecc9e0bdc81252191bdb6cbbbe5aef7e2c353f4c2d4097e66a6",
+    "clientBrowserRangeQualification": "c27bc3f7c0193baff46cacbab886ed29931ee2ef35795c8f67b615ae2e182e3b",
+    "clientRestRangeQualification": "b332ea01231bcaac4d8f63a0304b102c05dbb31fe6e229f0528af3d70f35d2a9",
+    "predecessorComparison": "c7e2495e5d4713a5fd79bad5ed70efc7ee60ff415af7d783b768e2d47c177035",
+    "delayedCleanupReadback": "f4d9064938fb9bbf0f61237a71ffc77ef41a9f1a351524e3e3b1eb6edbc2e123",
+    "cleanupProcedure": "d6504dcceb3adc63b3020cc3eb5d0aa64277b754251f79f09d2abc82e95948ea"
+  },
+  "publishedAt": "2026-11-05T09:00:17.782Z",
+  "baseline": {
+    "deployId": "6aec430f45bc0d0841566ba7",
+    "protectedFiles": 2568,
+    "previousProtectedFiles": 2551,
+    "recoveryMappings": 37,
+    "changed": [
+      "/application.html"
+    ],
+    "newAssets": 17,
+    "artifactFiles": 2570,
+    "providerRecords": 2571,
+    "sha256": "dcd2458c037a2ee5a56ab3d395d7043a7def07bb21f55a7ee5cb2f9ffd6fc60d",
+    "ordinaryGuardedBuildPassed": true,
+    "casefoldCollisions": 0
+  },
+  "preservation": {
+    "priorArtifactFilesByteIdentical": 2552,
+    "changedPriorArtifactFiles": [
+      "/application.html"
+    ],
+    "privateReportFilesByteIdentical": 6,
+    "newHashedAssets": 17
+  },
+  "productionVerification": {
+    "passed": true,
+    "artifactFiles": 2570,
+    "providerRecords": 2571,
+    "priorProtectedFilesChecked": 2551,
+    "documentChecks": 13,
+    "newAssetChecks": 17,
+    "privacyHeaderChecks": 5
+  },
+  "candidateDigestType": "SHA-256 of the sorted artifact file manifest"
+}

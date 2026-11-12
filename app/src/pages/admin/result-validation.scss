@@ -1,0 +1,241 @@
+// Result validation: the session list, the queue and the decision panel inside
+// the rep tools. Colors come from the admin theme tokens so light and dark
+// themes both work.
+
+.pt-admin {
+  .rv-sessions .admin-field { max-width: 420px; margin-bottom: 12px; }
+
+  .rv-session-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+    button {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
+      align-items: center;
+      gap: 4px 12px;
+      text-align: left;
+      padding: 12px 14px;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-sm, 10px);
+      background: var(--surface-1);
+      color: var(--text-primary);
+      cursor: pointer;
+      &:hover, &:focus-visible { border-color: var(--accent); }
+      .material-symbols-outlined { grid-row: 1 / span 2; grid-column: 2; color: var(--text-muted); }
+    }
+  }
+  .rv-session-name { font-weight: 700; overflow-wrap: anywhere; }
+
+  .rv-filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .rv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rv-chip {
+    border: 1px solid var(--surface-border);
+    border-radius: 999px;
+    padding: 6px 12px;
+    background: var(--surface-1);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    span { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-left: 4px; }
+    &.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+  }
+  .rv-segment {
+    display: inline-flex;
+    border: 1px solid var(--surface-border);
+    border-radius: 999px;
+    overflow: hidden;
+    button {
+      border: 0;
+      padding: 6px 12px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      &.active { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--text-primary); font-weight: 700; }
+    }
+  }
+
+  .rv-table-wrap { overflow-x: auto; }
+  .rv-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--surface-border); text-align: left; white-space: nowrap; }
+    th { color: var(--text-muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover, tbody tr:focus-visible { background: color-mix(in srgb, var(--accent) 8%, transparent); outline: none; }
+    .rv-value { font-variant-numeric: tabular-nums; }
+  }
+
+  .rv-status {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 3px 9px;
+    margin-right: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--surface-border);
+    color: var(--text-muted);
+    &.validated { color: #1f8a4c; border-color: rgba(31, 138, 76, 0.45); background: rgba(31, 138, 76, 0.1); }
+    &.adjusted { color: #2b6fd6; border-color: rgba(43, 111, 214, 0.45); background: rgba(43, 111, 214, 0.1); }
+    &.rejected { color: #c43d3d; border-color: rgba(196, 61, 61, 0.45); background: rgba(196, 61, 61, 0.1); }
+    &.revised { color: #9a6a12; border-color: rgba(154, 106, 18, 0.45); background: rgba(154, 106, 18, 0.1); }
+    &.flagged { color: #8a5a00; border-color: rgba(201, 133, 0, 0.6); background: rgba(237, 161, 0, 0.14); }
+    &.phoneflag { color: #9a6a12; border-style: dashed; }
+  }
+
+  // The workbench heading: previous / position / next.
+  .rv-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    .quiet-button { margin: 0; }
+  }
+  .rv-position { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .rv-toast { margin-bottom: 12px; }
+
+  .rv-decision {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--surface-border));
+    .rv-decision-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .rv-decision-head h3 { margin: 0; }
+  }
+  .rv-results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+    div { border: 1px solid var(--surface-border); border-radius: var(--radius-sm, 10px); padding: 10px 12px; }
+    div.changed { border-color: #2b6fd6; }
+    dt { color: var(--text-muted); font-size: 12px; }
+    dd { margin: 4px 0 0; font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  }
+  .rv-flag { color: #9a6a12; }
+  .rv-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+    .quiet-button, .primary-cta { margin: 0; }
+  }
+  .rv-flag-button { color: #8a5a00; }
+  .rv-issues { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .rv-chip.small { padding: 4px 9px; font-size: 12px; }
+  .rv-rejected {
+    margin: 10px 0; padding: 10px 12px; border-radius: var(--radius-sm, 10px);
+    border: 1px solid rgba(196, 61, 61, 0.45); background: rgba(196, 61, 61, 0.08);
+    p { margin: 0 0 8px; font-size: 13px; }
+    blockquote { margin: 0 0 8px; padding-left: 10px; border-left: 3px solid rgba(196, 61, 61, 0.45); font-size: 13px; }
+    .primary-cta { margin: 0 0 6px; }
+  }
+  .link-button { border: 0; padding: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }
+
+  .rv-feet .rt-annotate-row strong { display: inline-flex; align-items: center; gap: 6px; }
+  .rv-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    &.start { background: #71d39b; }
+    &.landing { background: #ff7d7d; }
+  }
+  .rt-mode-chip.rv-foot-chip.start { background: rgba(113, 211, 155, 0.92); }
+  .rt-mode-chip.rv-foot-chip.landing { background: rgba(255, 125, 125, 0.92); }
+
+  @media (max-width: 640px) {
+    .rv-results { grid-template-columns: 1fr; }
+    .rv-nav { flex-wrap: wrap; }
+  }
+
+  // MARK: evidence panel (charts and saved files)
+  .re-charts { display: flex; flex-direction: column; gap: 10px; }
+  .re-chart {
+    margin: 0;
+    figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; font-size: 13px; }
+    svg { width: 100%; height: auto; display: block; cursor: crosshair; }
+  }
+  .re-legend {
+    display: inline-flex; flex-wrap: wrap; gap: 4px 12px; color: var(--text-muted); font-size: 12px;
+    span { display: inline-flex; align-items: center; gap: 5px; }
+    i { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+  }
+  .re-grid { stroke: var(--text-muted); stroke-opacity: 0.2; stroke-width: 1; }
+  .re-axis { fill: var(--text-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+  .re-event { stroke: var(--text-muted); stroke-opacity: 0.45; stroke-dasharray: 3 3; }
+  .re-cursor { stroke: var(--text-primary); stroke-width: 1.5; }
+  .re-hover { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 2 2; }
+  .re-dot { stroke: var(--surface-1, #fff); stroke-width: 2; }
+  .re-readout { margin: 2px 0 0; color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .re-event-chip { border-style: dashed; }
+
+  .re-scene { margin: 0 0 12px; padding-left: 18px; font-size: 13px; li { margin: 3px 0; } }
+  .re-files {
+    margin-top: 10px;
+    h4 { margin: 0 0 6px; font-size: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+    details { border-top: 1px solid var(--surface-border); padding: 6px 0; }
+    summary { cursor: pointer; font-size: 13px; }
+    pre { max-height: 320px; overflow: auto; margin: 6px 0 0; padding: 8px; font-size: 11px; background: var(--surface-2, rgba(0, 0, 0, 0.04)); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .re-file-plain { margin: 0; padding: 6px 0; border-top: 1px solid var(--surface-border); font-size: 13px; }
+  }
+
+  // MARK: age curve
+  .rv-age {
+    svg { width: 100%; height: auto; display: block; }
+    circle { cursor: default; }
+  }
+  .rv-age-band-path { fill: #2a78d6; fill-opacity: 0.12; stroke: none; }
+  .rv-age-median-path { fill: none; stroke: #184f95; stroke-width: 2.5; stroke-linejoin: round; }
+  .rv-age-benchmark { stroke: var(--text-muted); stroke-width: 1.5; stroke-dasharray: 5 3; opacity: 0.8; }
+  .rv-age-this-label { fill: #c24f1c; font-size: 11px; font-weight: 800; }
+  .rv-age-callout { fill: #ffffff; font-size: 11px; font-weight: 800; letter-spacing: 0.02em; }
+  .rv-age-input {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0 2px; font-size: 12px; color: var(--text-muted);
+    input { width: 80px; padding: 4px 6px; }
+  }
+  .rv-age-facts { margin: 4px 0 0; padding-left: 18px; font-size: 12px; color: var(--text-muted); li { margin: 2px 0; } }
+
+  // MARK: focus mode — the workbench fills the screen; video and data first.
+  .rv-workbench.focus {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px 12px;
+    overflow: hidden;
+    background: var(--admin-bg, var(--surface-0, #f3f4f1));
+    > .admin-heading { flex: none; margin: 0 0 8px; padding: 0 0 8px; h1 { font-size: 20px; } .eyebrow { margin: 0; } }
+    > .admin-banner, > .form-message { flex: none; margin: 0 0 6px; padding: 6px 10px; font-size: 12px; }
+    .rt-layout { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(360px, 420px); gap: 12px; }
+    .rt-main, .rt-side { height: 100%; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
+    // Fixed-height scrolling columns would otherwise shrink their cards (the stage card to nothing).
+    .rt-main > *, .rt-side > * { flex-shrink: 0; }
+    .rt-main { gap: 10px; }
+    // The video (or pose) is the point of focus mode: nearly the full height, playback bar just below.
+    .rt-stage { aspect-ratio: auto; height: calc(100vh - 190px); min-height: 320px; }
+    > .admin-banner { display: none; }
+    .rt-side .admin-card { margin-bottom: 10px; }
+  }
+  .rv-workbench.focus:fullscreen { width: 100vw; height: 100vh; }
+  @media (max-width: 900px) {
+    .rv-workbench.focus {
+      overflow-y: auto;
+      .rt-layout { grid-template-columns: 1fr; }
+      .rt-main, .rt-side { height: auto; overflow: visible; }
+      .rt-stage { height: 56vh; }
+      .rv-decision { position: static; }
+    }
+  }
+}

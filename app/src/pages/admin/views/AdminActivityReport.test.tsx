@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { expandedRequest } from '../../insights/lib/expandedQuery';
 import { previewInsights } from '../../insights/lib/preview';
 import type { ExpandedInsights } from '../../insights/lib/expanded';
+import type { AdminReportingMetrics } from '../lib/adminReportingMetrics';
 import type { AdminActivityReportData, AdminPlayerActivity } from '../lib/adminActivity';
 import AdminActivityReport, { TeamComparison } from './AdminActivityReport';
 import { activityDate, activityWindow, exactWorkoutLink } from '../lib/adminActivityPresentation';
@@ -15,7 +16,14 @@ const facts: AdminPlayerActivity = {
   workouts: { latest: { source: 'workoutLogs', logId: 'saved session & one', title: 'Saved passing workout', startedAtMillis: Date.parse('2026-11-03T16:00:00Z'), endedAtMillis: null, status: 'inProgress', timerMinutes: 0, estimatedMinutes: null, setsCompleted: 1 } },
   assigned: { status: 'available', weekNumber: 2, remaining: 0, notStarted: 0, noEnding: 0 },
 };
+const metric = { value: 24, previousValue: 20, status: 'available' as const, note: 'Complete reporting cohort' };
+const metrics: AdminReportingMetrics = {
+  version: 1, windows: { current: { startDate: '2026-11-02', endDate: '2026-11-03' }, previous: { startDate: '2026-10-26', endDate: '2026-10-27' } },
+  cards: { testedPlayers: metric, claimedAccounts: metric, iosDownloads: metric, repeatUsers: { value: null, previousValue: null, status: 'unavailable', note: 'Visits are not collected' }, weeklyUsers: metric, platformMinutes: { ...metric, value: 64.5 } },
+  topTrainingPlayers: [{ id: 'outside-page-d', name: 'Training leader', activeMinutes: 75 }],
+};
 const report: AdminActivityReportData = {
+  metricsV2: metrics,
   version: 1, followUp: 'all', sort: 'name', asOfMillis: Date.parse('2026-11-03T18:00:00Z'), population: 42,
   summary: { noSignIn: 8, noActivity: 3, unfinishedAssigned: 9, noCompletion: 11, signInUnknown: 2, usageNotCollected: 4 },
   // These names intentionally do not belong to the displayed player page.
@@ -31,23 +39,24 @@ const playerLink = (id: string, panel: string) => `/admin/accounts/player/${id}?
 const render = (view: 'overview' | 'workouts' | 'usage', data = fixture()) => renderToStaticMarkup(<MemoryRouter><AdminActivityReport data={data} request={{ ...request, view }} view={view} onChange={() => {}} onFirstPage={() => {}} onNextPage={() => {}} playerLink={playerLink} teamLink={(orgId, teamId) => `/admin/accounts?orgId=${orgId}&teamId=${teamId || ''}`} /></MemoryRouter>);
 
 describe('admin activity reporting presentation', () => {
-  it('uses complete server groups and rankings independently of the displayed player page', () => {
+  it('uses complete server activity rankings independently of the displayed player page', () => {
     const html = render('overview');
-    expect(html).toContain('Timer leader'); expect(html).toContain('100 min');
+    expect(html).toContain('Training leader'); expect(html).toContain('75 min');
+    expect(html).not.toContain('Timer leader');
     expect(html.indexOf('Server first')).toBeLessThan(html.indexOf('Server second'));
-    expect(html).toContain('<strong>8</strong><span>No recorded sign-in</span>');
-    expect(html).toContain('<strong>9</strong><span>Unfinished assigned workouts</span>');
-    expect(html).toContain('<strong>11</strong><span>No completed workouts</span>');
+    expect(html).toContain('Most workout activity'); expect(html).toContain('Most time on platform');
     expect(html).toContain('1–1 of 42');
-    expect(html).toContain('before name search, follow-up selection and pagination');
+    expect(html).not.toContain('Explore follow-up groups');
+    expect(html).not.toContain('Compare teams');
+    expect(html).toContain('Participation and usage summary');
   });
-  it('keeps account evidence, unavailable sign-in and collection coverage distinct', () => {
+  it('keeps unavailable account evidence and missing collection distinct in player rows', () => {
     const data = fixture();
     data.players[0].adminReporting = { ...facts, signIn: { status: 'unknown', lastSignInAtMillis: null } };
+    data.players[0].usage = { ...data.players[0].usage, collected: false };
     const html = render('overview', data);
     expect(html).toContain('Sign-in evidence unavailable');
-    expect(html).toContain('2 players have unavailable sign-in evidence');
-    expect(html).toContain('4 have no usage collection');
+    expect(html).toContain('Collection unavailable');
     expect(html).toContain('A recorded sign-in does not mean the player is online');
     expect(html).toContain('current account and workout facts, even when the reporting period is historical');
     expect(html).not.toContain('Never logged in');
@@ -65,6 +74,18 @@ describe('admin activity reporting presentation', () => {
     expect(html).toContain('No ending recorded');
     expect(html).not.toContain('Loading recent workouts');
   });
+  it('lists every recent workout for a player, with phone sessions shown as what they are and never linked to a saved log', () => {
+    const phone = { source: 'onDevice' as const, logId: null, title: '', type: 'yoga', startedAtMillis: Date.parse('2026-11-03T17:00:00Z'), endedAtMillis: Date.parse('2026-11-03T17:20:00Z'), status: 'completed', timerMinutes: 20, estimatedMinutes: null, setsCompleted: 3 };
+    const saved = { ...facts.workouts.latest!, type: 'field' };
+    const data = fixture();
+    data.players[0] = { ...data.players[0], adminReporting: { ...facts, workouts: { latest: phone, recent: [phone, saved] } } };
+    const html = render('workouts', data);
+    expect(html).toContain('<th scope="col">Latest workout</th>');
+    expect(html).toContain('<strong>Yoga · on the phone</strong>');
+    expect(html).not.toContain('workoutSource=onDevice');
+    // The expanded list is opened by a click; its content is checked through the component's own list.
+    expect(html).toContain('Show recent workouts');
+  });
   it('labels coarse last-use windows without claiming a stop or logout time', () => {
     const html = render('usage');
     expect(html).toContain('15-minute retained activity window');
@@ -72,6 +93,35 @@ describe('admin activity reporting presentation', () => {
     expect(html).toContain('not a precise logout or stopping time');
     expect(html).toContain('may precede the selected period');
     expect(html).toContain('data-label="Platforms"');
+  });
+  it('shows the feature observed in the latest interval with its window in the report timezone', () => {
+    const data = fixture();
+    data.period = { ...data.period, timeZone: 'America/New_York' };
+    data.players[0].adminReporting = { ...facts, usage: { lastActivityWindow: { ...facts.usage.lastActivityWindow!, featureEvidence: { basis: 'latestInterval', features: ['training'] } } } };
+    const html = render('usage', data);
+    expect(html).toContain('<th scope="col">Last observed feature</th>');
+    expect(html).toContain('data-label="Last observed feature"><strong>Training</strong>');
+    expect(html).toContain('Latest measured interval');
+    expect(html).toContain('Nov 2, 2026, 1:00 PM – 1:15 PM');
+    expect(html).toContain('America/New_York');
+  });
+  it('distinguishes tied intervals, unordered summary features, and absent feature evidence', () => {
+    const data = fixture();
+    const window = facts.usage.lastActivityWindow!;
+    for (const basis of ['latestInterval', 'window'] as const) {
+      data.players[0].adminReporting = { ...facts, usage: { lastActivityWindow: { ...window, featureEvidence: { basis, features: ['workout', 'video'] } } } };
+      const html = render('usage', data);
+      expect(html).toContain('<strong>Workouts, Video</strong>');
+      expect(html).toContain(basis === 'window' ? 'Window summary · order unknown' : 'Latest observations tied');
+    }
+    data.players[0].adminReporting = facts;
+    const older = render('usage', data);
+    expect(older).toContain('<strong>Feature unavailable</strong>');
+    expect(older).toContain('Nov 2, 2026, 10:00 AM – 10:15 AM');
+    data.players[0].adminReporting = { ...facts, usage: { lastActivityWindow: null } };
+    expect(render('usage', data)).toContain('No retained activity window');
+    data.players[0].usage = { ...data.players[0].usage, collected: false };
+    expect(render('usage', data)).toContain('data-label="Last observed feature"><span class="activity-missing">Not collected</span>');
   });
   it('does not turn missing usage or missing additive data into measured zero', () => {
     const data = fixture();
@@ -82,12 +132,13 @@ describe('admin activity reporting presentation', () => {
     const html = render('usage', data);
     expect(html).toContain('Detailed account activity is unavailable');
     expect(html).toContain('Activity window unavailable');
-    expect(html).toContain('<dt>Active players</dt><dd>Not collected</dd>');
+    expect(html).toContain('Updated reporting unavailable');
+    expect(html).toContain('data-label="Estimated app use"><strong>Not collected</strong>');
     expect(html).not.toContain('id="activity-workout-rank"');
     expect(html).not.toContain('role="group" aria-label="Explore follow-up groups"');
   });
   it('preserves team denominators, sign-in unknowns and duration-source coverage', () => {
-    const html = render('overview');
+    const html = renderToStaticMarkup(<MemoryRouter><TeamComparison data={fixture()} teamLink={(orgId, teamId) => `/admin/accounts?orgId=${orgId}&teamId=${teamId}`} /></MemoryRouter>);
     expect(html).toContain('Team activity in this reporting scope');
     expect(html).toContain('32/42'); expect(html).toContain('35/42');
     expect(html).toContain('32/42 · 76%'); expect(html).toContain('35/42 · 83%');
@@ -95,10 +146,27 @@ describe('admin activity reporting presentation', () => {
     expect(html).toContain('22 timer logs · 3 estimated logs');
     expect(html).toContain('teamId=harbor');
   });
-  it('offers keyboard summary drilldowns with the current scope and a focusable people heading', () => {
+  it('keeps the people heading focusable and places charts before the player table', () => {
     const html = render('overview');
-    for (const title of ['Players in this selection', 'Active players', 'Estimated app use']) expect(html).toContain(`aria-label="Show players: ${title}"`);
+    expect(html).toContain('aria-label="Sort players"');
+    expect(html).toContain('Find a player in this report');
+    const withChart = renderToStaticMarkup(<MemoryRouter><AdminActivityReport data={fixture()} request={request} view="overview" onChange={() => {}} onFirstPage={() => {}} onNextPage={() => {}} playerLink={playerLink} teamLink={() => '#team'}><section aria-label="Daily charts">Trend evidence</section></AdminActivityReport></MemoryRouter>);
+    expect(withChart.indexOf('Daily charts')).toBeLessThan(withChart.indexOf('activity-people-title'));
     expect(html).toContain('id="activity-people-title" tabindex="-1"');
+  });
+  it.each(['workouts', 'usage'] as const)('places the %s player section after every chart and measurement disclosure', view => {
+    const html = render(view);
+    expect(html.indexOf('class="activity-method"')).toBeLessThan(html.indexOf('aria-labelledby="activity-people-title"'));
+    expect(html.slice(html.indexOf('aria-label="Activity player pages"'))).not.toContain('<details');
+  });
+  it('renders retained summaries without borrowing an old player page or its sort', () => {
+    const { players, pagination, rosterMetrics, nameSearch, ...summary } = fixture();
+    const html = renderToStaticMarkup(<MemoryRouter><AdminActivityReport data={summary} request={request} view="usage" detailsPending onChange={() => {}} onFirstPage={() => {}} onNextPage={() => {}} playerLink={playerLink} teamLink={() => '#team'} /></MemoryRouter>);
+    expect(html).toContain('Participation and usage summary');
+    expect(html).toContain('Loading player details…');
+    expect(html).not.toContain('Alex Player');
+    expect(html).not.toContain('Activity player pages');
+    expect(html).not.toContain('Sort players');
   });
   it('retains coach identity when the team comparison replaces navigation cards', () => {
     const html = renderToStaticMarkup(<MemoryRouter><TeamComparison data={fixture()} teamLink={() => '/admin/accounts?teamId=harbor'} coachNames={{ 'northfield/harbor': 'Coach Taylor' }} /></MemoryRouter>);
@@ -119,5 +187,12 @@ describe('admin activity reporting presentation', () => {
     expect(activityDate(Number.NaN, 'UTC')).toBe('Not recorded');
     expect(activityDate(0, 'UTC')).toContain('Jan 1, 1970');
     expect(activityWindow(null, 'UTC')).toBe('No retained activity window');
+  });
+  it('shows both dates or timezone offsets when a window crosses midnight or a clock change', () => {
+    const range = (start: string, end: string) => activityWindow({ startMillis: Date.parse(start), endMillis: Date.parse(end) }, 'America/New_York');
+    const midnight = range('2026-11-03T04:45:00Z', '2026-11-03T05:00:00Z');
+    expect(midnight).toContain('Nov 2, 2026'); expect(midnight).toContain('Nov 3, 2026');
+    const repeatedHour = range('2026-11-01T05:45:00Z', '2026-11-01T06:00:00Z');
+    expect(repeatedHour).toMatch(/1:45 AM EDT.*1:00 AM EST/);
   });
 });

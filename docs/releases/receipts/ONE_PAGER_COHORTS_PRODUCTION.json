@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "status": "published-and-verified",
+  "productionDeploy": "6af362397a8e341ea91b5788",
+  "predecessorDeploy": "6af2da88a9afefaaac548923",
+  "publishedAtUtc": "2026-11-10T18:32:24.120Z",
+  "websiteSourcePR": 144,
+  "websiteMergeCommit": "3b6e35eff6485e8f35334370c46e55fa9bda3b13",
+  "websiteRuntimeCommit": "691db6047947210d3d94ce30cde0565a156901bb",
+  "backendSourcePR": 134,
+  "backendMergeCommit": "a4a14ba6b49198836bfd41781a41120b151daedd",
+  "sendOperatorPR": 135,
+  "sendOperatorMergeCommit": "9ea402d9af7f79e01552a5af632b092d220ad19c",
+  "websiteHostedCI": "passed",
+  "backendHostedCI": "Owner authorized skipping hosted CI for this rollout. Local and independent review gates passed.",
+  "servedFiles": 2748,
+  "preservedFiles": 2722,
+  "changed": [
+    "/application.html"
+  ],
+  "addedAssets": 25,
+  "orderedHeaders": 13,
+  "orderedRoutes": 12,
+  "protectedBaselineFiles": 2746,
+  "localRecoveryMappings": 37,
+  "functions": {
+    "recordOnePagerEngagement": {
+      "versionId": "2",
+      "sourceSha256": "65effa199ddfacbae8cf2552cd455b10c5a49f551d9447a3f01b8b8e3c9e6a59",
+      "status": "ACTIVE"
+    },
+    "getOnePagerEngagement": {
+      "versionId": "2",
+      "sourceSha256": "65effa199ddfacbae8cf2552cd455b10c5a49f551d9447a3f01b8b8e3c9e6a59",
+      "status": "ACTIVE"
+    }
+  },
+  "unrelatedFunctionsPreserved": true,
+  "trackingTTL": "ACTIVE",
+  "acceptance": {
+    "liveSignedInSelector": true,
+    "originalEligibleReports": 33,
+    "originalStartedAtUtc": "2026-11-10T02:16:44.614Z",
+    "syntheticActions": [
+      "opened",
+      "workouts",
+      "testflight"
+    ],
+    "syntheticRecordsRemaining": 0,
+    "signedOutCohortReadDenied": true,
+    "november9ReportsHeld": 13
+  }
+}

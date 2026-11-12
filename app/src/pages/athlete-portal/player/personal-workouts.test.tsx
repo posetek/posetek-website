@@ -3,8 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 vi.mock('../../../lib/firebase', () => ({ default: {}, auth: { currentUser: { uid: 'athlete-auth' } }, db: {}, cloud: {}, storage: {} }));
 import { normalizeCatalogDrill } from '../../../lib/contracts/drillV2';
 import { blockEstimatedMinutes, workoutEstimatedMinutes } from '../../../lib/contracts/expectedMinutes';
-import { addPersonalDrill, eligiblePersonalDrill, ensurePersonalSubmission, latestPersonalRevision, personalAge, personalCapabilityEnabled, personalDraft, personalDraftErrors, personalExecution, personalGenerationErrors, personalJobKey, personalLogRows, personalProgress, personalWorkoutPayload, personalWorkoutsEnabled, recomputePersonalDraft, restorePersonalJob } from './personal-workouts';
+import { addPersonalDrill, eligiblePersonalDrill, ensurePersonalSubmission, latestPersonalRevision, personalAge, personalCapabilityEnabled, personalDraft, personalDraftErrors, personalEndReason, personalExecution, personalGenerationErrors, personalJobKey, personalLogRows, personalProgress, personalSkipReason, personalWorkoutPayload, personalWorkoutsEnabled, recomputePersonalDraft, restorePersonalJob } from './personal-workouts';
 import type { PendingPersonalJob, PersonalIntake } from './personal-workouts';
+import { SKIP_REASONS, skippedLogRow } from '../lib/training';
 import PersonalWorkoutHub from './PersonalWorkoutHub';
 
 const drill = normalizeCatalogDrill('PAS-001', { schemaVersion: 2, name: 'Wall pass', domain: 'passing', status: 'published', minAge: 10, maxAge: 18, difficultyLevel: 2, equipment: ['ball', 'wall'], dose: { setsMin: 1, setsMax: 3, repsMin: 20, repsMax: 60, repUnit: 'seconds', restSecondsMin: 10, restSecondsMax: 60 } });
@@ -85,6 +86,27 @@ describe('manual personal prescriptions', () => {
   it('keeps partial skip evidence and sends only permitted log mutation fields', () => {
     const rows = personalLogRows([{ blockId: 'b1', status: 'partial', setsCompleted: 1, skipReason: 'equipment', domain: 'passing', targetSets: 3, estimatedMinutes: 4 }]);
     expect(rows).toEqual([{ blockId: 'b1', status: 'partial', setsCompleted: 1, skipReason: 'equipment' }]);
+  });
+  it('sends every skip choice on the workout screen in the words the personal workout service accepts', () => {
+    const accepted = ['pain', 'time', 'equipment', 'other'];
+    for (const { id } of SKIP_REASONS) expect(accepted).toContain(personalSkipReason(id));
+    expect(personalLogRows([skippedLogRow({ blockId: 'b1', sets: 3 }, 0, 'noSpace'), skippedLogRow({ blockId: 'b2', sets: 3 }, 1, 'tooTired')])).toEqual([
+      { blockId: 'b1', status: 'skipped', setsCompleted: 0, skipReason: 'equipment' }, { blockId: 'b2', status: 'skipped', setsCompleted: 1, skipReason: 'other' }]);
+    // Rows read back from the service are already in its words and stay unchanged.
+    for (const reason of accepted) expect(personalSkipReason(reason)).toBe(reason);
+    expect(personalSkipReason('anything else')).toBe('other'); expect(personalSkipReason(undefined)).toBeUndefined();
+  });
+  it('finishes as completed only when every prescribed exercise is fully done', () => {
+    const done = (blockId: string) => ({ blockId, status: 'done', setsCompleted: 3 });
+    expect(personalEndReason('completed', [done('a'), done('b')], 2)).toBe('completed');
+    // The screen calls a session with a deliberate skip "completed"; the service refuses that word for it.
+    expect(personalEndReason('completed', [done('a'), { blockId: 'b', status: 'skipped', setsCompleted: 0, skipReason: 'other' }], 2)).toBe('stopped');
+    expect(personalEndReason('completed', [done('a'), { blockId: 'b', status: 'partial', setsCompleted: 1 }], 2)).toBe('stopped');
+    expect(personalEndReason('completed', [done('a')], 2)).toBe('stopped');
+    expect(personalEndReason('endedEarly', [done('a'), done('b')], 2)).toBe('stopped');
+    expect(personalEndReason('stopped', [], 2)).toBe('stopped');
+    expect(personalEndReason('completed', [done('a'), { blockId: 'b', status: 'skipped', setsCompleted: 0, skipReason: 'pain' }], 2)).toBe('pain');
+    expect(personalEndReason(undefined, [done('a'), done('b')], 2)).toBeUndefined();
   });
   it('adapts personal execution without adding a fake plan to the stored log', () => {
     const log = { workoutSnapshot: addPersonalDrill(personalDraft(), drill), workoutRevision: 2, elapsedSeconds: 120 };

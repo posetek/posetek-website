@@ -1,0 +1,34 @@
+.pt-admin.admin-workspace .workspace-testing {
+  .workspace-testing-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .workspace-testing-prior { color: #ac4141; font-style: normal; }
+  .workspace-testing-select { display: flex; align-items: center; gap: .65rem; color: var(--text-muted); font-size: .85rem; }
+  .workspace-testing-select select { min-width: 160px; padding: .6rem .8rem; color: var(--text-primary); background: var(--surface-1); border: 1px solid var(--surface-border); border-radius: .5rem; }
+  .workspace-testing-chart-wrap { overflow-x: auto; }
+  .workspace-testing-chart { width: 100%; min-width: 0; display: block; overflow: visible; }
+  .workspace-testing-chart text { fill: var(--text-muted); font-size: 12px; }
+  .workspace-testing-chart .testing-grid { stroke: var(--text-muted); stroke-opacity: .25; }
+  .workspace-testing-chart circle { stroke: var(--surface-1); }
+  .workspace-testing-chart circle:focus { outline: none; stroke: var(--text-primary); stroke-width: 3; }
+  .workspace-testing-legend { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1.2rem; margin: .5rem 0 1rem; color: var(--text-muted); font-size: .8rem; }
+  .workspace-testing-legend span { display: inline-flex; align-items: center; gap: .4rem; }
+  .workspace-testing-legend i { width: .65rem; height: .65rem; border-radius: 50%; }
+  .workspace-station-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  .workspace-station { border: 1px solid var(--surface-border); border-radius: .8rem; padding: 1rem; background: var(--surface-2); }
+  .workspace-station h3 { margin: 0 0 .8rem; font-size: 1rem; }
+  .workspace-station > strong { display: block; font-size: 1.6rem; color: var(--text-primary); }
+  .workspace-station > small { display: block; color: var(--text-muted); margin: .2rem 0 1rem; }
+  .workspace-station dl { margin: 0; }
+  .workspace-station dl div { display: flex; justify-content: space-between; gap: .6rem; margin-top: .45rem; font-size: .82rem; }
+  .workspace-station dt { color: var(--text-muted); }
+  .workspace-station dd { margin: 0; text-align: right; color: var(--text-primary); }
+  .workspace-station progress { width: 100%; height: .4rem; accent-color: var(--accent); margin: .8rem 0 0; }
+  .workspace-testing-empty { padding: 2rem 1rem; text-align: center; color: var(--text-muted); background: var(--surface-2); border-radius: .6rem; }
+  @media (max-width: 760px) {
+    .workspace-testing-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .workspace-station-grid { grid-template-columns: 1fr; }
+    .workspace-testing-select { flex-wrap: wrap; }
+    .workspace-testing-chart { min-width: 620px; }
+    .workspace-testing-chart text { font-size: 16px; }
+  }
+  @media (max-width: 420px) { .workspace-testing-summary { grid-template-columns: 1fr; } }
+}

@@ -4,7 +4,7 @@ import { ageLabel, clearPlayerFilters, divisionLabel, hasPlayerFilters } from ".
 import type { ExpandedRequest } from "./lib/expandedQuery";
 
 export default function PlayerFilters({ data, request, onChange }: {
-  data: ExpandedInsights; request: ExpandedRequest; onChange: (patch: Partial<ExpandedRequest>) => void;
+  data: Pick<ExpandedInsights, "roster" | "scope">; request: ExpandedRequest; onChange: (patch: Partial<ExpandedRequest>) => void;
 }) {
   const labels = { division: divisionLabel(request.division), ageBand: ageLabel(request.ageBand), testingStatus: TESTING_LABELS[request.testingStatus], workoutStatus: WORKOUT_LABELS[request.workoutStatus], usageStatus: USAGE_LABELS[request.usageStatus], usagePlatform: ({ web: "Website only", ios: "iOS only", both: "Both at once" } as Record<string, string>)[request.usagePlatform], usageFeature: FEATURE_LABELS[request.usageFeature] || request.usageFeature, teamAssignment: request.teamAssignment === "unassigned" ? "Unassigned players" : "Assigned players" };
   const filtered = hasPlayerFilters(request);
