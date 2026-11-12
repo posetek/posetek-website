@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6af598a062c763422296510e",
+  "deploymentId": "6af626e37d3ff00c50b761d9",
   "sourceCommit": null,
-  "url": "https://6af598a062c763422296510e--posetek.netlify.app",
+  "url": "https://6af626e37d3ff00c50b761d9--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "db11e7c2a85daa3a5b23c1158cd1f07b42cd8998",
-    "size": 6670,
+    "sha": "f81eb8abc069af2e742af99116451cd8cebffd09",
+    "size": 6633,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -5794,6 +5794,11 @@
       "path": "/_astro/playersigninroot.b2vadnnk.css",
       "sha": "f402023a50bd657af09ce205936be0fec336fa19",
       "size": 36884
+    },
+    {
+      "path": "/_astro/playersigninroot.bermr_um.js",
+      "sha": "cd92209ff0b2a7ff45b30ac9fb19e8fbb0e6e3db",
+      "size": 87040
     },
     {
       "path": "/_astro/playersigninroot.bscc_yhs.js",
@@ -13701,7 +13706,7 @@
     },
     {
       "path": "/player-signin.html",
-      "sha": "16a19ca88e551ee169bebf3324dbaa6f104fb457",
+      "sha": "4efae88a5962ad91b393bbd92f819cef7c03fc85",
       "size": 6604
     },
     {
