@@ -38,7 +38,7 @@ describe("feed offline rendering", () => {
     expect(html).toContain("Taylor Brooks");
     expect(html).toContain("58.4 mph");
     expect(html).toContain('aria-label="Activity audience"');
-    expect(html).toContain('href="/athlete?view=training&amp;preview=1"');
+    expect(html).toContain('href="/athlete?view=workouts&amp;preview=1"');
     expect(html.match(/class="social-card"/g)).toHaveLength(3);
     expect(html).not.toContain("Sign out");
   });
@@ -61,11 +61,13 @@ describe("feed offline rendering", () => {
   it.each(['', '&panel=people', '&panel=settings'])('keeps shared player chrome throughout Community %s', panel => {
     const html = renderPage(`/feed.html?preview=1${panel}`);
     const navigation = html.match(/<nav class="player-bottom-nav"[\s\S]*?<\/nav>/)?.[0] || '';
-    expect(navigation.match(/<a /g)).toHaveLength(5);
-    expect(PLAYER_TABS.map(tab => tab.label)).toEqual(['Profile', 'AI Coach', 'Results', 'Workouts', 'Leaderboards']);
+    expect(navigation.match(/<a /g)).toHaveLength(4);
+    expect(PLAYER_TABS.map(tab => tab.label)).toEqual(['Home', 'Coach', 'Workouts', 'Stats']);
     for (const tab of PLAYER_TABS) expect(navigation).toContain(`>${tab.label}</span>`);
     expect(navigation).not.toContain('>Community</span>');
-    expect(navigation).not.toContain('aria-current="page"');
+    // The feed is the Home destination, as in the app.
+    expect(navigation.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(navigation).toMatch(/aria-current="page"[^>]*>.*?>Home<\/span>/);
     expect(html).toContain('aria-label="Community sections"');
     expect(html).toContain('Find people');
     expect(html).toContain('Sharing settings');
@@ -77,7 +79,7 @@ describe("feed offline rendering", () => {
   it('retains chrome while loading without enabling self-player navigation before authorization', () => {
     const html = renderPage('/feed.html?activity=activity-1&organizationId=club-1');
     const navigation = html.match(/<nav class="player-bottom-nav"[\s\S]*?<\/nav>/)?.[0] || '';
-    expect(navigation.match(/aria-disabled="true"/g)).toHaveLength(5);
+    expect(navigation.match(/aria-disabled="true"/g)).toHaveLength(4);
     expect(html).toContain('Loading your community');
   });
 
