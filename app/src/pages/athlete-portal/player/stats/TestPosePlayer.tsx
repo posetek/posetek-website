@@ -45,9 +45,23 @@ export function withVideoFacts(data: ViewerData, facts: VideoFacts | null): View
   return { ...data, playbackMetadata: meta };
 }
 
+/**
+ * A frame rate for a jump saved without one and without a video: the frames between takeoff and
+ * landing over the measured flight time. Null when the rep does not carry all three.
+ */
+export function flightFrameRate(rep: Row, meta: Record<string, any>): number | null {
+  const flight = finiteNumber(rep.flightTimeSeconds), takeoff = finiteNumber(meta.takeoffFrame ?? rep.takeoffFrame), landing = finiteNumber(meta.landingFrame ?? rep.landingFrame);
+  if (!flight || flight <= 0 || takeoff === null || landing === null || landing <= takeoff) return null;
+  const rate = (landing - takeoff) / flight;
+  return rate >= 10 && rate <= 1000 ? rate : null;
+}
+
 const loadReplay = async (drill: ReturnType<typeof drillByKey>, rep: Row, access: Access, playerId: string) => {
-  const data = await loadRepReplay(drill, rep, access, playerId, null);
-  return withVideoFacts(data, await videoFacts(data.mediaUrl));
+  const loaded = await loadRepReplay(drill, rep, access, playerId, null);
+  const data = withVideoFacts(loaded, await videoFacts(loaded.mediaUrl));
+  if (poseTimeline(data.playbackMetadata, frameCount(data)).times.length) return data;
+  const rate = flightFrameRate(rep, data.metadata);
+  return rate ? { ...data, playbackMetadata: { ...data.playbackMetadata, fps: rate } } : data;
 };
 
 type Clock = { timeline: Timeline; anchor: number };
