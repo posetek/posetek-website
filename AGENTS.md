@@ -50,6 +50,15 @@ claimed.
 copy of the site; a copy that starts from an earlier deploy silently puts the earlier
 application back. Keep `[skip netlify]` on every source and receipt merge.
 
+**The live report reader is newer than main's copy, and its source is not on main.**
+The November 12 one-pager deploys published a `render.mjs` and `report.css` with the
+`score-cards-v1` layout; `app/private-report/` still holds the files PR #140 merged.
+Never ship main's `render.mjs` or `report.css` over the live ones, and land the live
+reader's source on main before the next reader change, because the report builder's
+`--append` mode requires the committed reader to equal the live one.
+`deployment/homepage-baseline.json` on main pins `6af598a0` and records the live
+reader's hashes.
+
 ## Admin reporting fixes and one-pager time on page — November 10, 2026
 
 Deployment `6af39c12b5d6443ec57767ec` was published at `2026-11-10T22:40:04.431Z`
@@ -80,10 +89,11 @@ instructed the merge and deployment. Signed-in hosted acceptance is not claimed.
 [Release handoff](docs/releases/ADMIN_REPORTING_FIXES.md) ·
 [Production receipt](docs/releases/receipts/ADMIN_REPORTING_FIXES_PRODUCTION.json)
 
-The report project deploys the reader from its own source (draft PR #140). Its next
-production deploy overwrites `loader.mjs` and `render.mjs` unless that source merges
-main first, which would silently stop time-on-page collection. Keep `[skip netlify]`
-on every source and receipt merge.
+At the time, the report project deployed the reader from its own source (PR #140,
+since merged), and its next production deploy would have overwritten `loader.mjs` and
+`render.mjs` unless that source merged main first. The reader's current state is in
+the athlete workspace section above. Keep `[skip netlify]` on every source and receipt
+merge.
 
 ## Database-first catalog compatibility release — November 7, 2026
 
