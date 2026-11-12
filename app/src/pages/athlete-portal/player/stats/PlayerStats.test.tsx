@@ -15,7 +15,7 @@ const ctx = { ...data, notify: () => {}, allStatsReps: () => allStatsReps(data.r
 const profile = playerProfile(allStatsReps(data.reps), data.athlete, defaultDataset);
 const report = (patch: Partial<ReportState> = {}): ReportState => ({ report: { ...DEMO_REPORT, playerId: data.playerId }, limitedComparison: false, error: null, loading: false, reload: () => {}, ...patch });
 const render = (state: ReportState) => {
-  const props = { ctx, route: { view: 'stats', screen: null, page: 'tests', drill: 'shooting', session: null, rep: null }, go: () => {}, back: () => {}, active: true, preview: true,
+  const props = { ctx, route: { view: 'stats', screen: null, page: 'tests', drill: 'shooting', session: null, rep: null, fromStats: false }, go: () => {}, back: () => {}, active: true, preview: true,
     athlete: { ...data.athlete, position: 'ST' }, reps: data.reps, personal: {} as PlayerTabProps['personal'], report: state } as PlayerTabProps;
   return renderToStaticMarkup(<MemoryRouter><PlayerStats {...props} profile={profile} dataset={defaultDataset} /></MemoryRouter>);
 };
@@ -26,8 +26,8 @@ describe('Stats tab (V4 StatsView)', () => {
     const html = render(report()), text = visible(html);
     // Nolan's order (2026-11-11): the skill radar first, the one-pager's report beneath, then the next steps.
     const order = ['Stats', 'Jordan Rivera', 'Skill benchmarks', 'SKILL MAP', '5/5 recorded', '100 = the D1 reference. Reference values are provisional.',
-      'Team comparison', 'Team avg 7.20 s · 8 results', 'Strong today', 'Practice next',
-      'So what do I do with these results?', 'Ask the AI Coach', 'Build my 6-week plan', 'Start a workout now'];
+      'Click on each drill to see more', 'Team avg 7.20 s · 8 results', 'Strong today', 'Practice next',
+      'So what do I do with these results?', 'Ask the AI Coach', 'Dive deeper on my results and get help on how to improve', 'Build my 6-week plan', 'Start a workout now', 'How to use PoseTek?', 'PoseTek is your personal assistant for your sport.'];
     let at = -1;
     for (const item of order) { const next = text.indexOf(item, at + 1); expect(next, item).toBeGreaterThan(at); at = next; }
     for (const removed of ['Leaderboards', 'Your skill map', 'How the skill map is scored', 'Profile details', 'Technique analysis', 'Review AI sharing', 'Day streak',

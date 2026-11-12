@@ -50,13 +50,17 @@ export default function PlayerWorkouts({ ctx, route: current, go, back, active, 
   useEffect(() => { onGuidedChange?.(guided && !test); }, [guided, test]);
   const drill = drillByKey(route.drill), drillReps = reps[drill.key] || [];
   const testInfo = MEASURED_TESTS.find(item => item.drill === drill.key);
-  const resultsBack = route.session ? () => go('workouts', { drill: drill.key, replace: true }) : back;
+  // Opened from a Stats score card: the marker stays while moving inside the test, so Back and the
+  // "Back to my profile" button keep leading to the profile.
+  const from = route.fromStats ? 'stats' as const : undefined;
+  const resultsBack = route.session ? () => go('workouts', { drill: drill.key, from, replace: true }) : back;
   return <>
     {test && <section className="player-drills wk-test-page">
-      <PlayerHeader title={testInfo?.title || drill.label} onBack={resultsBack} />
+      <PlayerHeader title={testInfo?.title || drill.label} onBack={resultsBack} backLabel={from && !route.session ? 'Back to my profile' : 'Back'} />
+      {from && <button type="button" className="wk-back-profile" onClick={() => go('stats')}><span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>Back to my profile</button>}
       {route.session
-        ? <SessionView drill={drill} folder={route.session} selectedId={route.rep} reps={drillReps} access={ctx.access} playerId={ctx.playerId} shareToken={null} onBack={() => go('workouts', { drill: drill.key, replace: true })} onSelectRep={id => go('workouts', { drill: drill.key, session: route.session!, rep: String(id), replace: true })} />
-        : <DrillDashboard drill={drill} reps={drillReps} athlete={ctx.athlete} onOpenRep={(folder, id) => go('workouts', { drill: drill.key, session: folder, rep: String(id) })} />}
+        ? <SessionView drill={drill} folder={route.session} selectedId={route.rep} reps={drillReps} access={ctx.access} playerId={ctx.playerId} shareToken={null} onBack={() => go('workouts', { drill: drill.key, from, replace: true })} onSelectRep={id => go('workouts', { drill: drill.key, session: route.session!, rep: String(id), from, replace: true })} />
+        : <DrillDashboard drill={drill} reps={drillReps} athlete={ctx.athlete} onOpenRep={(folder, id) => go('workouts', { drill: drill.key, session: folder, rep: String(id), from })} />}
       <p className="wk-test-note"><span className="material-symbols-outlined" aria-hidden="true">photo_camera</span>Record and process new drills in the PoseTek app. Video appears here when it was saved to the cloud.</p>
       {showResultsFeedback(ctx.access, drillReps.length) && <PlayerResultsFeedbackLink />}
     </section>}

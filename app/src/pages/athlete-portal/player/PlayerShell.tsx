@@ -27,7 +27,7 @@ export function canonicalPlayerView(raw: string | null | undefined): PlayerView 
  * Parameters that select a page inside one tab. A dock tap always opens that tab's root, so a
  * personal-workout conversation opened in the hub never follows the athlete to another tab.
  */
-export const PLAYER_SUBROUTE_KEYS = ['drill', 'session', 'rep', 'screen', 'page', 'personalConversation', 'personalWorkout'] as const;
+export const PLAYER_SUBROUTE_KEYS = ['drill', 'session', 'rep', 'from', 'screen', 'page', 'personalConversation', 'personalWorkout'] as const;
 
 /**
  * A sheet covers the dock, so the only way to change page under one is the browser's Back or

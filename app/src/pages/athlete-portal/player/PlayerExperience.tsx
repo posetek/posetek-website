@@ -106,7 +106,9 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   };
   const back = () => {
     const previous = trail.current[trail.current.length - 2];
-    if (previous && previous.view === route.view) navigate(-1);
+    // A test opened from a Stats score card goes back to Stats, the page it was opened from.
+    if (previous && (previous.view === route.view || (route.fromStats && previous.view === 'stats'))) navigate(-1);
+    else if (route.fromStats) go('stats', { replace: true });
     else go(route.view, { replace: true });
   };
   useEffect(() => {

@@ -22,6 +22,8 @@ export type PlayerRoute = {
   drill: string;
   session: string | null;
   rep: string | null;
+  /** A test's results opened from a Stats score card: Back and "Back to my profile" return there. */
+  fromStats: boolean;
 };
 
 const WORKOUT_SCREENS = ['workout', 'plan', 'saved', 'history'];
@@ -48,6 +50,7 @@ export function playerRoute(search: string): PlayerRoute {
     page: view === 'workouts' && !screen && params.get('page') === 'activities' ? 'activities' : 'tests',
     drill: DRILLS.some(item => item.key === drill) ? drill! : 'shooting',
     session: params.get('session'), rep: params.get('rep'),
+    fromStats: screen === 'test' && params.get('from') === 'stats',
   };
 }
 
@@ -57,6 +60,8 @@ export type PlayerDestination = {
   drill?: string;
   session?: string;
   rep?: string;
+  /** Set on a test opened from a Stats score card, and kept while moving inside that test. */
+  from?: 'stats';
   /** Replace the current history entry, for a correction that Back should not return to. */
   replace?: boolean;
 };
@@ -70,6 +75,7 @@ export function playerSearch(search: string, view: PlayerView, to: PlayerDestina
     params.set('drill', to.drill);
     if (to.session) params.set('session', to.session);
     if (to.rep) params.set('rep', to.rep);
+    if (to.from) params.set('from', to.from);
   } else if (to.screen) params.set('screen', to.screen);
   else if (to.page === 'activities') params.set('page', 'activities');
   return params.toString();

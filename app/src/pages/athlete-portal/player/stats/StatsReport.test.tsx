@@ -31,14 +31,14 @@ function elements(node: ReactNode): ReactElement<any>[] {
 describe('Stats report (the live one-pager score-card layout)', () => {
   it('shows the team comparison cards, the two findings and the drills, in the one-pager order', () => {
     const html = render(state({ report: DEMO_REPORT })), plain = text(html);
-    const order = ['Team comparison', 'Approximate team percentiles. Further right is stronger.',
+    const order = ['Click on each drill to see more', 'Approximate team percentiles. Further right is stronger.',
       'Left-course dribble', 'Right-course dribble', 'Sprint', 'Vertical jump', 'Strong today', 'Practice next', 'Two drills to try', 'Cone maze', 'Wall pass rhythm', 'Clear, flat space. Stop if anything hurts.'];
     let at = -1;
     for (const item of order) { const next = plain.indexOf(item, at + 1); expect(next, item).toBeGreaterThan(at); at = next; }
     expect(html.match(/stats-score-card/g)).toHaveLength(4);
     expect(html.match(/left:(\d+)%/g)).toEqual(['left:15%', 'left:50%', 'left:85%', 'left:85%']);
-    expect(plain).toContain('Left-course dribble 7.62 s ≈15th percentile Team avg 7.20 s · 8 results');
-    expect(plain).toContain('Vertical jump 15.6 in ≈85th percentile Team avg 13.9 in · 8 results');
+    expect(plain).toContain('Left-course dribble chevron_right 7.62 s ≈15th percentile Team avg 7.20 s · 8 results');
+    expect(plain).toContain('Vertical jump chevron_right 15.6 in ≈85th percentile Team avg 13.9 in · 8 results');
     expect(html).toContain('aria-label="Approximately 15th team percentile"');
     expect(plain).toContain('Strong today Sprint Practice next Left-course dribble');
     // The one-pager's findings are titles only; the old sentences, tag and "why" line are gone.
@@ -62,12 +62,12 @@ describe('Stats report (the live one-pager score-card layout)', () => {
   it('a test without a usable result shows Retest or No result, no track, and still the group line', () => {
     const base = { ...DEMO_REPORT.metrics[2], average: '2.20 s', count: 14, estimatedCount: 0 };
     const retest = render(state({ report: { ...DEMO_REPORT, metrics: [{ ...base, status: 'retest' }] } }));
-    expect(text(retest)).toContain('Sprint Retest No percentile Team avg 2.20 s · 14 results');
+    expect(text(retest)).toContain('Sprint chevron_right Retest No percentile Team avg 2.20 s · 14 results');
     expect(retest).not.toContain('stats-track');
     const missing = text(render(state({ report: { ...DEMO_REPORT, metrics: [{ ...base, status: 'unavailable', result: null, count: null }] } })));
-    expect(missing).toContain('Sprint No result No percentile');
+    expect(missing).toContain('Sprint chevron_right No result No percentile');
     const estimate = text(render(state({ report: { ...DEMO_REPORT, metrics: [{ ...base, status: 'estimate' }] } })));
-    expect(estimate).toContain('Sprint 2.07 s ≈85th percentile Estimate Team avg');
+    expect(estimate).toContain('Sprint chevron_right 2.07 s ≈85th percentile Estimate Team avg');
   });
   it('a personal report has no comparison: its cards carry the value and the recorded date', () => {
     const report: AthleteTestReport = { kind: 'individual', playerId: 'p1', testDateMillis: Date.UTC(2026, 9, 20, 12), teamName: null, metrics: [
@@ -75,10 +75,10 @@ describe('Stats report (the live one-pager score-card layout)', () => {
       { id: 'broadJump', label: 'Broad jump', status: 'measured', result: '2.13 m', percentile: null, band: null, count: null, estimatedCount: null, average: null, recordedAtMillis: Date.UTC(2026, 9, 12, 12) },
     ] };
     const html = render(state({ report })), plain = text(html);
-    expect(plain).toContain('Your results Your latest available personal results. Team percentiles need comparable results from the same completed event.');
+    expect(plain).toContain('Click on each drill to see more Your latest available personal results. Team percentiles need comparable results from the same completed event.');
     expect(html).not.toContain('stats-track'); expect(plain).not.toMatch(/≈\d+/); expect(plain).not.toContain('No percentile');
-    expect(plain).toContain('Vertical jump 16.0 in Oct 20, 2026');
-    expect(plain).toContain('Broad jump 7.0 ft Oct 12, 2026');
+    expect(plain).toContain('Vertical jump chevron_right 16.0 in Oct 20, 2026');
+    expect(plain).toContain('Broad jump chevron_right 7.0 ft Oct 12, 2026');
     expect(plain).not.toContain('Strong today');
     expect(plain).toContain('Practice next Vertical jump');
   });
@@ -112,6 +112,6 @@ describe('Stats report (the live one-pager score-card layout)', () => {
     retry!.props.onClick();
     expect(reload).toHaveBeenCalledTimes(1);
     expect(text(render(state({})))).toBe('Your results will appear after your first assessment.');
-    expect(render(state({}))).not.toContain('Team comparison');
+    expect(render(state({}))).not.toContain('Click on each drill');
   });
 });

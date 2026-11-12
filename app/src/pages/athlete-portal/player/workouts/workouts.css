@@ -271,6 +271,9 @@
 
   /* A measured test's results page */
   .wk-test-page { display: grid; gap: 14px; }
+  /* Shown on a test opened from a Stats score card: one tap back to the profile. */
+  .wk-back-profile { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px 0 12px; border: 1px solid #7cff1866; border-radius: 999px; background: #7cff181f; color: var(--v4-accent); font-size: 15px; font-weight: 600; }
+  .wk-back-profile .material-symbols-outlined { font-size: 20px; }
   .wk-test-note { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 16px; background: var(--v4-card); border: 1px solid var(--v4-border); color: var(--wk-muted); font-size: 13px; }
   .wk-test-note .material-symbols-outlined { color: var(--v4-accent); font-size: 18px; }
 

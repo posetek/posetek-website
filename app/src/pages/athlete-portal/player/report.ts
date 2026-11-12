@@ -121,7 +121,8 @@ function parseMetric(value: unknown): ReportMetric {
   const status = STATUSES.find(item => item === value.status) ?? malformed();
   const band = value.band === undefined || value.band === null ? null : BANDS.find(item => item === value.band) ?? malformed();
   return {
-    id: text(value.id), label: text(value.label), status, band,
+    // The web names the change-of-direction test "Shuttle run" (Nolan, 2026-11-11); the endpoint sends "Direction change".
+    id: text(value.id), label: text(value.id) === 'changeOfDirection' ? 'Shuttle run' : text(value.label), status, band,
     result: optionalText(value.result), percentile: optionalInteger(value.percentile),
     count: optionalInteger(value.count), estimatedCount: optionalInteger(value.estimatedCount),
     average: optionalText(value.average), recordedAtMillis: optionalNumber(value.recordedAtMillis),

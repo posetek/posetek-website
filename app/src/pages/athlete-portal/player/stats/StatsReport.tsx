@@ -10,6 +10,8 @@ type Props = {
   practice: PracticeView;
   /** Tests pin the zone; the page uses the viewer's, as the app uses the phone's. */
   timeZone?: string;
+  /** Opens one test's existing results page (its sessions and reps). */
+  onOpenTest?: (metric: ReportMetric) => void;
 };
 
 export function reportCaption(kind: 'event' | 'individual', limitedComparison: boolean): string {
@@ -33,28 +35,29 @@ export function teamAverageText(count: number, average: string | null): string {
  * the three-band track with the athlete's marker, the approximate percentile and the team average.
  * A personal (non-event) report has no comparison, so its cards carry the recorded date instead.
  */
-function ScoreCard({ metric, event, timeZone }: { metric: ReportMetric; event: boolean; timeZone?: string }) {
+function ScoreCard({ metric, event, timeZone, onOpen }: { metric: ReportMetric; event: boolean; timeZone?: string; onOpen?: (metric: ReportMetric) => void }) {
   const rank = comparisonPercentile(metric), value = valueText(metric), estimated = metric.estimatedCount ?? 0;
-  return <article className="stats-score-card" data-metric={metric.id}>
-    <h3>{metric.label}</h3>
-    <p className={`stats-score-value${value ? '' : ' muted'}`}>{value ?? (metric.status === 'retest' ? 'Retest' : 'No result')}</p>
+  // A button, so the whole card opens the test's results page; its content is phrasing-only for that reason.
+  return <button type="button" className="stats-score-card" data-metric={metric.id} onClick={() => onOpen?.(metric)}>
+    <span className="stats-score-label">{metric.label}<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></span>
+    <span className={`stats-score-value${value ? '' : ' muted'}`}>{value ?? (metric.status === 'retest' ? 'Retest' : 'No result')}</span>
     {event && (rank !== null
       ? <>
-        <div className="stats-track" aria-hidden="true"><i /><i /><i /><b style={{ left: `${rank}%` }} /></div>
-        <p className="stats-score-rank" aria-label={`Approximately ${ordinal(rank)} team percentile`}>≈{ordinal(rank)} percentile</p>
+        <span className="stats-track" aria-hidden="true"><i /><i /><i /><b style={{ left: `${rank}%` }} /></span>
+        <span className="stats-score-rank" aria-label={`Approximately ${ordinal(rank)} team percentile`}>≈{ordinal(rank)} percentile</span>
       </>
-      : <p className="stats-score-rank muted">No percentile</p>)}
-    {metric.status === 'estimate' && value && <p className="stats-caption">Estimate</p>}
-    {event && metric.count !== null && <p className="stats-caption">{teamAverageText(metric.count, averageText(metric))}{estimated > 0 ? ` (${estimated} estimated)` : ''}</p>}
-    {!event && metric.recordedAtMillis !== null && <p className="stats-caption">{reportDate(metric.recordedAtMillis, timeZone)}</p>}
-  </article>;
+      : <span className="stats-score-rank muted">No percentile</span>)}
+    {metric.status === 'estimate' && value && <span className="stats-caption">Estimate</span>}
+    {event && metric.count !== null && <span className="stats-caption">{teamAverageText(metric.count, averageText(metric))}{estimated > 0 ? ` (${estimated} estimated)` : ''}</span>}
+    {!event && metric.recordedAtMillis !== null && <span className="stats-caption">{reportDate(metric.recordedAtMillis, timeZone)}</span>}
+  </button>;
 }
 
 /**
  * The testing report in the live one-pager's order: the score cards, "Strong today" and
  * "Practice next", then the drills from the saved plan. It sits under the skill radar on Stats.
  */
-export default function StatsReport({ report: state, practice, timeZone }: Props) {
+export default function StatsReport({ report: state, practice, timeZone, onOpenTest }: Props) {
   const report = state.report;
   if (!report) return <section className="stats-report" aria-label="Your results">
     <div className="v4-card stats-report-empty">
@@ -67,11 +70,11 @@ export default function StatsReport({ report: state, practice, timeZone }: Props
   const next = found && found.id !== strong?.id ? found : null, samples = practice.samples;
   return <section className="stats-report" aria-label="Your results">
     <div className="stats-report-heading">
-      <h2 className="stats-section-title">{event ? 'Team comparison' : 'Your results'}</h2>
+      <h2 className="stats-section-title">Click on each drill to see more</h2>
       <p className="stats-caption">{reportCaption(report.kind, state.limitedComparison)}</p>
     </div>
     {report.metrics.length
-      ? <div className="stats-score-grid">{report.metrics.map(metric => <ScoreCard key={metric.id} metric={metric} event={event} timeZone={timeZone} />)}</div>
+      ? <div className="stats-score-grid">{report.metrics.map(metric => <ScoreCard key={metric.id} metric={metric} event={event} timeZone={timeZone} onOpen={onOpenTest} />)}</div>
       : <p className="stats-secondary">No recorded test measurements are available yet.</p>}
     {(strong || next) && <div className="stats-findings">
       {strong && <div><h3>Strong today</h3><p>{strong.label}</p></div>}
