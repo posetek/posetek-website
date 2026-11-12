@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { auth, db } from '../../../lib/firebase';
 import { dateText } from '../lib/mobile';
 import { MultilineText } from '../views/shared';
@@ -29,6 +30,11 @@ type Props = { playerId: string; preview: boolean; capability?: string; context?
   variant?: 'tab' | 'embedded';
   /** The recorded kicks and replay link behind the Coach tab's Technique analysis page. */
   technique?: { reps: Row[]; onReplay: (rep: Row) => void };
+  /**
+   * Embedded chat only: shown inside the conversation, directly under the last reply (the proposed
+   * workout with its Save buttons), so it reads as part of the answer and scrolls with it.
+   */
+  afterMessages?: ReactNode;
 };
 
 type Sheet = '' | 'history' | 'memory' | 'sharing' | 'voice';
@@ -43,7 +49,7 @@ const conversationDate = (value: Row | undefined) => {
   return date instanceof Date ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date) : '';
 };
 
-export default function CoachChat({ playerId, preview, capability = 'pose_chat', context, initialText = '', onDraft, onHandoff, personalStore, athlete, active = true, variant, technique }: Props) {
+export default function CoachChat({ playerId, preview, capability = 'pose_chat', context, initialText = '', onDraft, onHandoff, personalStore, athlete, active = true, variant, technique, afterMessages }: Props) {
   const config = useCoachConfig(preview);
   const [draft, setDraft] = useState(initialText), [messages, setMessages] = useState<Row[]>([]);
   const [answer, setAnswer] = useState(''), [sending, setSending] = useState(false), [error, setError] = useState('');
@@ -63,7 +69,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const [transcriptError, setTranscriptError] = useState('');
   const controller = useRef<AbortController | null>(null), conversation = useRef<string | null>(null);
   const historyLoadingRef = useRef(false);
-  const turn = useRef(0), messageRoot = useRef<HTMLDivElement>(null);
+  const turn = useRef(0), messageRoot = useRef<HTMLDivElement>(null), afterPanel = useRef<HTMLDivElement>(null);
   const runnerCount = useRef(0), runnerIntroPlayed = useRef(false), section = useRef<HTMLElement>(null);
   const sharingRetry = useRef<{ allowed: boolean; resend: boolean; memory: boolean }>({ allowed: false, resend: false, memory: false });
   const composerInput = useRef<HTMLTextAreaElement>(null);
@@ -94,13 +100,21 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
     });
   }, [playerId, preview, capability, tab]);
   useEffect(() => () => { turn.current++; controller.current?.abort(); }, []);
+  const hasAfter = !!afterMessages;
   useEffect(() => {
-    if (!tab) { messageRoot.current?.scrollTo({ top: messageRoot.current.scrollHeight }); return; }
+    if (!tab) {
+      const root = messageRoot.current, panel = afterPanel.current;
+      // With a proposal under the reply, show where it begins and the end of the reply above it,
+      // not its far end; otherwise follow the conversation to the bottom.
+      if (root && panel) root.scrollTop += panel.getBoundingClientRect().top - root.getBoundingClientRect().top - 72;
+      else root?.scrollTo({ top: root.scrollHeight });
+      return;
+    }
     // The page is the Coach tab's scroll view; a hidden tab never moves it.
     if (active && (messages.length || answer)) window.scrollTo({ top: document.documentElement.scrollHeight });
     // Only a transcript change scrolls; returning to the tab keeps the athlete's place.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, answer]);
+  }, [messages, answer, hasAfter]);
   useEffect(() => {
     if (!tab || typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -278,6 +292,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       {!messages.length && !historyLoading && <div className="player-chat-welcome"><span className="material-symbols-outlined" aria-hidden="true">auto_awesome</span><h2>{capability === 'workout_chat' ? context?.workoutRef?.kind === 'new' ? 'Make a session that fits today.' : 'What would you like to change?' : capability === 'coaching_chat' ? 'Get clear on this drill.' : 'What do you want to work on?'}</h2><p>{capability === 'workout_chat' ? 'Describe your time, equipment, or focus. Review the proposal before saving it.' : 'Ask about your progress, your next session, or a drill.'}</p><div className="player-suggestions">{coachPrompts(capability, context?.workoutRef).map(s => <button type="button" key={s} onClick={() => setDraft(s)}>{s}<span aria-hidden="true">↗</span></button>)}</div><small>Choose a suggestion to edit it before sending.</small></div>}
       {messages.map((m, i) => <article key={m.id || i} className={`chat-message ${m.role === 'user' ? 'user' : 'assistant'}`}><MultilineText text={m.content || ''} />{onHandoff && m.role === 'assistant' && validHandoff(m.workoutRequest, playerId) && (m.workoutRequest.destination === 'personal_workout' && personalStore && athlete ? <CoachPersonalWorkout playerId={playerId} athlete={athlete} preview={preview} store={personalStore} config={config} request={{ ...m.workoutRequest, ...(conversation.current && m.id ? { originConversationId: conversation.current, originMessageId: m.id } : {}) }} reference={m.personalWorkoutProposal} active={active && !sending && !error && i === messages.length - 1} onReview={onHandoff} /> : !sending && !error && i === messages.length - 1 && <button className="primary-cta" onClick={() => onHandoff(m.workoutRequest)}>Continue in Training</button>)}</article>)}
       {answer && <article className="chat-message assistant">{error && <small>Interrupted reply · check history for the saved version</small>}<MultilineText text={answer} /></article>}
+      {afterMessages && !sending && <div ref={afterPanel}>{afterMessages}</div>}
       {sending && <p role="status">{status || 'Your coach is thinking…'}</p>}
       {historyLoading && <p role="status">Loading your conversation…</p>}
     </div>
