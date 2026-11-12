@@ -25,7 +25,7 @@ describe('Stats tab (V4 StatsView)', () => {
   it('shows the sections in the app order and nothing from the old profile screen', () => {
     const html = render(report()), text = visible(html);
     // Nolan's order (2026-11-11): the skill radar first, the one-pager's report beneath, then the next steps.
-    const order = ['Stats', 'Jordan Rivera', 'Skill benchmarks', 'SKILL MAP', '5/5 recorded', '100 = the D1 reference. Reference values are provisional.',
+    const order = ['Stats', 'Jordan Rivera', 'Skill benchmarks', 'SKILL MAP', '5/5 recorded',
       'Click on each drill to see more', 'Team avg 7.20 s · 8 results', 'Strong today', 'Practice next',
       'So what do I do with these results?', 'Ask the AI Coach', 'Dive deeper on my results and get help on how to improve', 'Build my 6-week plan', 'Start a workout now', 'How to use PoseTek?', 'PoseTek is your personal assistant for your sport.'];
     let at = -1;

@@ -111,7 +111,6 @@ export default function SkillBenchmarks({ profile, estimates = [] }: { profile: 
         })}
       </div>
     </div>
-    <p className="stats-caption">100 = the D1 reference. Reference values are provisional.</p>
     {estimates.filter(entry => estimated[entry.axis] !== undefined).map(entry => <ProvisionalEstimateNote key={entry.id} estimate={entry} score={estimated[entry.axis]} />)}
   </section>;
 }

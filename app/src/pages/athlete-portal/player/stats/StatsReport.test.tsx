@@ -31,7 +31,7 @@ function elements(node: ReactNode): ReactElement<any>[] {
 describe('Stats report (the live one-pager score-card layout)', () => {
   it('shows the team comparison cards, the two findings and the drills, in the one-pager order', () => {
     const html = render(state({ report: DEMO_REPORT })), plain = text(html);
-    const order = ['Click on each drill to see more', 'Approximate team percentiles. Further right is stronger.',
+    const order = ['Click on each drill to see more',
       'Left-course dribble', 'Right-course dribble', 'Sprint', 'Vertical jump', 'Strong today', 'Practice next', 'Two drills to try', 'Cone maze', 'Wall pass rhythm', 'Clear, flat space. Stop if anything hurts.'];
     let at = -1;
     for (const item of order) { const next = plain.indexOf(item, at + 1); expect(next, item).toBeGreaterThan(at); at = next; }
@@ -84,7 +84,7 @@ describe('Stats report (the live one-pager score-card layout)', () => {
   });
   it('limited comparison changes the personal caption only, and an empty report says so', () => {
     expect(reportCaption('individual', true)).toBe('Showing recent personal results. The testing history is too large to compare reliably.');
-    expect(reportCaption('event', true)).toBe('Approximate team percentiles. Further right is stronger.');
+    expect(reportCaption('event', true)).toBeNull();
     const plain = text(render(state({ report: { ...DEMO_REPORT, kind: 'individual' as const, metrics: [] }, limitedComparison: true })));
     expect(plain).toContain('Showing recent personal results. The testing history is too large to compare reliably.');
     expect(plain).toContain('No recorded test measurements are available yet.');

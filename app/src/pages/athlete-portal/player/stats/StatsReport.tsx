@@ -19,9 +19,10 @@ type Props = {
   detail?: ReactNode;
 };
 
-export function reportCaption(kind: 'event' | 'individual', limitedComparison: boolean): string {
+/** The line under the heading. A team testing day has none (Nolan, 2026-11-11); a personal report says why it has no percentiles. */
+export function reportCaption(kind: 'event' | 'individual', limitedComparison: boolean): string | null {
   return kind === 'event'
-    ? 'Approximate team percentiles. Further right is stronger.'
+    ? null
     : limitedComparison
       ? 'Showing recent personal results. The testing history is too large to compare reliably.'
       : 'Your latest available personal results. Team percentiles need comparable results from the same completed event.';
@@ -76,7 +77,7 @@ export default function StatsReport({ report: state, practice, timeZone, onOpenT
   return <section className="stats-report" aria-label="Your results">
     <div className="stats-report-heading">
       <h2 className="stats-section-title">Click on each drill to see more</h2>
-      <p className="stats-caption">{reportCaption(report.kind, state.limitedComparison)}</p>
+      {reportCaption(report.kind, state.limitedComparison) && <p className="stats-caption">{reportCaption(report.kind, state.limitedComparison)}</p>}
     </div>
     {report.metrics.length
       ? <div className="stats-score-grid">{report.metrics.map(metric => <ScoreCard key={metric.id} metric={metric} event={event} timeZone={timeZone} selected={metric.id === selectedId} onOpen={onOpenTest} />)}</div>
