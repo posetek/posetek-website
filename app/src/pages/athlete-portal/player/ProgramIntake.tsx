@@ -7,6 +7,7 @@ import type { Access } from '../lib/loaders';
 import AISharingControl from './AISharingControl';
 import { capabilityEnabled, useCoachConfig } from './gateway';
 import { personalAge } from './personal-workouts';
+import { reportStatsJourneyOutcome } from './stats/use-stats-journey';
 import type { Row } from './execution';
 
 /**
@@ -125,6 +126,9 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
     try {
       const created = await requestPlan(playerId, answers, athlete, statsProfile);
       if (!created) { setBusy(false); return; }
+      // The Stats page journey's "asked for a plan": the plan request now exists. A refused one
+      // (AI sharing, permission, validation) throws or returns nothing above.
+      reportStatsJourneyOutcome('plan', playerId);
       try { localStorage.setItem(key, created); } catch { /* the listener still works */ }
       setStatus(''); setJobId(created);
     } catch (e: any) {

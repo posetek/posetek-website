@@ -16,12 +16,15 @@ import { prefetchClubComparison } from './club-comparison';
 import { METRIC_TESTS } from './test-comparison';
 import { warmStatsReplays } from './test-replay';
 import { reportDate } from './stats-format';
+import type { StatsJourneyHandle } from './use-stats-journey';
 import './stats.css';
 
 type Props = PlayerTabProps & {
   profile: ReturnType<typeof playerProfile>; dataset: Row; timeZone?: string;
   /** "Start a workout now": the workspace opens Workouts with its workout builder up. */
   onStartWorkout?: () => void;
+  /** The Stats page journey: the next steps coming into view and a step pressed. */
+  journey?: Pick<StatsJourneyHandle, 'nextRef' | 'clicked'>;
 };
 
 /**
@@ -44,7 +47,7 @@ const NEXT_STEPS = [
  * Deliberately not shown here: the body scan, the streak/session/favorite tiles, and (Nolan,
  * 2026-11-12) the two drills from the plan and the lifetime training totals.
  */
-export default function PlayerStats({ ctx, go, profile, athlete, report, reps, preview, timeZone, onStartWorkout }: Props) {
+export default function PlayerStats({ ctx, go, profile, athlete, report, reps, preview, timeZone, onStartWorkout, journey }: Props) {
   const [picked, setPicked] = useState<string | null>(null);
   // Until a card is chosen the player shows the first test that has a result.
   const metrics = report.report?.metrics.filter(metric => METRIC_TESTS[metric.id]) ?? [];
@@ -80,10 +83,10 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
       detail={selected && report.report && !preview ? <><TestPosePlayer key={selected.id} metric={selected} report={report.report} reps={reps} athlete={athlete}
         access={ctx.access} playerId={ctx.playerId} onAllAttempts={() => go('workouts', { drill: METRIC_TESTS[selected.id].drill, from: 'stats' })} />
         <ClubComparison metric={selected} access={ctx.access} playerId={ctx.playerId} athlete={athlete} reps={reps} /></> : null} />
-    <section className="stats-next" aria-labelledby="stats-next-title">
+    <section className="stats-next" aria-labelledby="stats-next-title" ref={journey?.nextRef}>
       <h2 id="stats-next-title" className="stats-section-title">So what do I do with these results?</h2>
       <div className="stats-next-grid">
-        {NEXT_STEPS.map(step => <button key={step.key} type="button" className="stats-next-card" data-next={step.key} onClick={open[step.key]}>
+        {NEXT_STEPS.map(step => <button key={step.key} type="button" className="stats-next-card" data-next={step.key} onClick={() => { journey?.clicked(step.key); open[step.key](); }}>
           <span className="material-symbols-outlined" aria-hidden="true">{step.icon}</span>
           <strong>{step.title}</strong><small>{step.detail}</small>
           <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
