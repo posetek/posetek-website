@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "status": "published-and-verified",
+  "websiteSourcePR": 163,
+  "websiteSourceCommit": "df199da172a29f85e5c83cd32dddd244631449c5",
+  "websiteArtifactSourceCommit": "c657e986a168bb9cea8af24e6553a68b7b007951",
+  "websiteMergeCommit": "6b98e8ee4177ae452f1194b55ab198b51f6a8d7f",
+  "websiteHostedCI": "passed",
+  "priorReaderSourcePR": 156,
+  "predecessorDeploy": "6af79c520773faff9757e7b5",
+  "ctaDeploy": "6af79f09135dedce08c6d49b",
+  "ctaPublishedAtUtc": "2026-11-13T23:44:28.676Z",
+  "productionDeploy": "6af7a11a540bd32db5763959",
+  "productionPublishedAtUtc": "2026-11-13T23:46:46.014Z",
+  "ctaRelease": {
+    "replaced": [
+      {
+        "path": "/report/render.mjs",
+        "sha1": "53be8fe3b9da7da0a1ef8836619b77f562e7c26e",
+        "size": 51714
+      },
+      {
+        "path": "/report/loader.mjs",
+        "sha1": "ad1e4edc6e3c1b1424d87d9e91381d57ef78dc56",
+        "size": 5228
+      },
+      {
+        "path": "/player-signin.html",
+        "sha1": "5a98276f8fee56dd79d34e361f412e2fb18fabaf",
+        "size": 6604
+      }
+    ],
+    "addedHashedAssets": [
+      {
+        "path": "/_astro/PlayerSignInRoot.4Zdzd9lh.js",
+        "sha1": "50bc9bcc0c2a68d19984cf955f337f3dcc098bf5",
+        "size": 87679
+      }
+    ],
+    "preservedServedFiles": 2861,
+    "preservedEncryptedReports": 78,
+    "newEncryptedReports": 0,
+    "verifiedRoutes": 12
+  },
+  "reportRelease": {
+    "servedFiles": 2881,
+    "providerRecords": 2882,
+    "preservedServedFiles": 2865,
+    "preservedEncryptedReports": 78,
+    "newEncryptedReports": 16,
+    "changedServedFiles": 0,
+    "productionBrowserReadback": [
+      {
+        "browser": "Chromium",
+        "exactReports": 16,
+        "cardsChecked": 96,
+        "eventsIntercepted": 16
+      },
+      {
+        "browser": "WebKit",
+        "exactReports": 16,
+        "cardsChecked": 96,
+        "eventsIntercepted": 16
+      }
+    ]
+  },
+  "preservation": {
+    "inventorySha256": "4b1d08acf2b04fe4f09a059463af18c37da85f181cea4d1134168bb33116f89e",
+    "protectedFiles": 2879,
+    "localRecoveryMappings": 37,
+    "orderedHeaders": 13,
+    "orderedRedirects": 12,
+    "effectiveRoutingSha256": "37522d7d754df83332d77a6e14705c6e4ee094ae7e4127f5f4fc1c2979053f73",
+    "identicalFunctionBindings": true
+  },
+  "verification": {
+    "cta": "Chromium and WebKit verified two synthetic report variants, the exact Stats PDF link, a browser-local restored player identity, wrong account and staff denial, and the selected Stats tab in the serving athlete application's preview.",
+    "authentication": "The local authenticated emulator exercised exact-player sign-in, Stats, mismatch handling, legacy Training, and player-code signup.",
+    "reports": "Chromium and WebKit opened each published encrypted report, checked the exact Stats and PDF bindings, and intercepted engagement requests locally.",
+    "limits": "Hosted authentication used isolated synthetic identity responses. No hosted athlete account was created, claimed, or mutated during verification. Outreach is recorded separately."
+  }
+}
