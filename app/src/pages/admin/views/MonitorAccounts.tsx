@@ -139,7 +139,7 @@ export function DirectoryPlayersTable({ players, roster, state, choose, metrics,
       const age = resolvePlayerAge(player.raw), team = roster?.context?.teams.find(entry => entry.id === player.teamId);
       return <tr key={player.id}>
         <td data-label="Player"><Link id={`admin-player-${player.id}`} className="directory-player-name" to={adminPlayerPath(player.id, "results", state)}><strong>{player.name}</strong></Link>
-          <span className="directory-player-email">{player.email || "No email on file"}</span>{player.registered ? <span className="directory-account-status">Account claimed</span> : <SignupStatus playerId={player.id} playerName={player.name} reloadKey={player} />}
+          <span className="directory-player-email">{player.email || "No email on file"}</span>{player.registered ? <><span className="directory-account-status">Account claimed</span><SignupStatus playerId={player.id} playerName={player.name} registered showClaimed={false} reloadKey={player} /></> : <SignupStatus playerId={player.id} playerName={player.name} reloadKey={player} />}
         </td>
         <td data-label="Team">{team?.name || (player.teamId ? roster?.context ? "Team unavailable" : "Assigned team" : "Unassigned")}</td><td data-label="Age">{age.age === null ? "Not recorded" : `${age.age} years`}</td>
         {metrics && <WorkspaceMetricCells {...metrics} legacy={metrics.legacy || !hasClubIdentity(player)} metric={byId.get(player.id)} />}

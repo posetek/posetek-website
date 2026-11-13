@@ -1,0 +1,11 @@
+// Parent links inside the shared signup control: one full-width line under the player actions,
+// using the host's own button and text styles.
+.admin-parent-links { flex-basis: 100%; grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; }
+.admin-parent-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; flex-basis: 100%; }
+.admin-parent-label { font-size: 12px; font-weight: 600; opacity: .8; }
+.admin-parent, .admin-parent-confirm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; font-size: 13px; }
+.admin-parent-status { font-size: 13px; font-weight: 600; }
+.admin-parent-siblings { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; flex-basis: 100%; margin: 0; padding: 8px 10px; border: 1px solid currentColor; border-color: rgba(127, 127, 127, .4); border-radius: 8px; }
+.admin-parent-siblings legend { font-size: 12px; padding: 0 4px; }
+.admin-parent-siblings label { display: inline-flex; flex-direction: row; align-items: center; gap: 6px; font-size: 13px; }
+.admin-parent-siblings input { width: 18px; height: 18px; min-height: 18px; margin: 0; }
