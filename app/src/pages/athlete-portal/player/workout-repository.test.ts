@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const fake = vi.hoisted(() => ({ docs: new Map<string, any>(), writes: [] as any[], rejectCommit: false, submit: vi.fn(), wait: vi.fn() }));
+const fake = vi.hoisted(() => ({ docs: new Map<string, any>(), reads: [] as string[], writes: [] as any[], rejectCommit: false, submit: vi.fn(), wait: vi.fn() }));
 vi.mock('../lib/loaders', () => ({ submitLlmJob: fake.submit, waitForJob: fake.wait }));
 vi.mock('../../../lib/firebase', () => {
   const ref = (path: string): any => ({ path, id: path.split('/').at(-1), collection: (key: string) => ref(`${path}/${key}`), doc: (key: string) => ref(`${path}/${key}`), get: async () => ({ id: path.split('/').at(-1), exists: fake.docs.has(path), data: () => fake.docs.get(path) }) });
@@ -13,6 +13,7 @@ vi.mock('../../../lib/firebase', () => {
         const result = await action({
           get: async (r: any) => {
             if (staged.length) throw new Error('Reads must precede writes');
+            fake.reads.push(r.path);
             return { id: r.id, exists: fake.docs.has(r.path), data: () => fake.docs.get(r.path) };
           },
           set: (r: any, data: any) => staged.push({ path: r.path, data, kind: 'set' }),
@@ -33,7 +34,7 @@ const workout = { workoutId: 'w', revision: 1, blocks: [block] };
 const plan = { id: 'plan', schemaVersion: 3, status: 'active', weeks: [{ weekNumber: 1, workouts: [workout] }] };
 const reviewed = executable(plan, workout, 1);
 beforeEach(() => {
-  fake.docs.clear(); fake.writes.length = 0; fake.rejectCommit = false;
+  fake.docs.clear(); fake.reads.length = 0; fake.writes.length = 0; fake.rejectCommit = false;
   fake.submit.mockReset(); fake.wait.mockReset(); fake.submit.mockResolvedValue({ id: 'start-job' });
   fake.wait.mockResolvedValue({ result: { ready: true, planRevision: 1, workoutRevision: 1, scheduleRevision: 7 } });
   fake.docs.set('players/player-doc/trainingPlans/plan', plan);
@@ -86,6 +87,42 @@ describe('acknowledged player workout transactions', () => {
     await expect(mutatePlayerWorkout('player-doc', 'plan_w', () => ({ blocks: [] }))).rejects.toThrow('no longer active');
     fake.docs.delete('players/player-doc/workoutLogs/plan_w'); fake.rejectCommit = true;
     await expect(startPlayerWorkout('player-doc', reviewed)).rejects.toThrow('permission-denied');
+    expect(fake.writes).toEqual([]);
+  });
+});
+
+describe('a workout built with no plan', () => {
+  const now = Date.now(), iso = (offset: number) => new Date(now + offset).toISOString();
+  const saved = { ...workout, workoutId: 'draft_d', schemaVersion: 2, playerId: 'player-doc', planId: 'standalone', weekNumber: 1, source: 'adhoc', status: 'ready',
+    standalone: { startDate: '2026-11-09', timezone: 'UTC', intake: { equipment: ['ball'] } }, windowStart: iso(-86400000), windowEnd: iso(86400000) };
+  const standalone = executable({ id: 'standalone' }, saved, 1, 'adhoc');
+  beforeEach(() => {
+    fake.docs.delete('players/player-doc/trainingPlans/plan');
+    fake.docs.set('players/player-doc/plannedWorkouts/draft_d', saved);
+  });
+  it('starts from its saved document alone and writes the same log and schedule increment', async () => {
+    const log = await startPlayerWorkout('player-doc', standalone);
+    expect(fake.reads.some(path => path.includes('/trainingPlans/'))).toBe(false);
+    expect(log).toMatchObject({ schemaVersion: 2, planId: 'standalone', source: 'adhoc', workoutId: 'draft_d', workoutRevision: 1, timerStartedHere: true });
+    expect(fake.writes.map(w => w.path)).toEqual(['players/player-doc/workoutLogs/draft_d', 'players/player-doc/workoutSchedule/current']);
+    expect(fake.writes[1].data.revision).toBe(8);
+  });
+  it('refuses another athlete’s, a superseded, an expired or a changed workout without writing', async () => {
+    for (const stale of [{ ...saved, playerId: 'other' }, { ...saved, status: 'superseded' }, { ...saved, windowEnd: iso(-1000) }]) {
+      fake.docs.set('players/player-doc/plannedWorkouts/draft_d', stale);
+      await expect(startPlayerWorkout('player-doc', standalone)).rejects.toThrow('no longer ready');
+    }
+    fake.docs.set('players/player-doc/plannedWorkouts/draft_d', { ...saved, revision: 2 });
+    await expect(startPlayerWorkout('player-doc', standalone)).rejects.toThrow('changed');
+    fake.docs.delete('players/player-doc/plannedWorkouts/draft_d');
+    await expect(startPlayerWorkout('player-doc', standalone)).rejects.toThrow('no longer ready');
+    expect(fake.writes).toEqual([]);
+  });
+  it('resumes its open log after its window, with no plan', async () => {
+    const open = initialLog(standalone, 100);
+    fake.docs.set('players/player-doc/workoutLogs/draft_d', open);
+    fake.docs.set('players/player-doc/plannedWorkouts/draft_d', { ...saved, windowEnd: iso(-1000) });
+    expect(await startPlayerWorkout('player-doc', standalone)).toEqual({ ...open, timerStartedHere: false });
     expect(fake.writes).toEqual([]);
   });
 });
