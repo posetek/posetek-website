@@ -23,7 +23,8 @@ try {
       const usage = tabs.getByRole('tab', { name: 'Usage', exact: true });
       const tracking = tabs.getByRole('tab', { name: 'One-pager tracking', exact: true });
       await usage.waitFor();
-      assert.deepEqual((await tabs.getByRole('tab').allTextContents()).slice(-2), ['Usage', 'One-pager tracking']);
+      // Journey is last, after One-pager tracking.
+      assert.deepEqual((await tabs.getByRole('tab').allTextContents()).slice(-3), ['Usage', 'One-pager tracking', 'Journey']);
       await usage.focus();
       await page.keyboard.press('ArrowRight');
       assert(await tracking.evaluate(node => node === document.activeElement));

@@ -63,6 +63,16 @@ describe("admin directory presentation", () => {
     expect(report).not.toContain('id="admin-player-athlete"');
     for (const label of ["People", "Overview", "Testing", "Workouts", "Usage"]) expect(list).toContain(label);
   });
+  it("puts Journey last for every selected organization and team, and never at the all-organizations level", () => {
+    const tabs = (html: string) => [...html.matchAll(/role="tab"[^>]*>([^<]+)</g)].map(match => match[1]);
+    const render = (scope: Parameters<typeof PlayerReporting>[0]["scope"], patch: Partial<AdminDirectoryState> = {}) => renderToStaticMarkup(<MemoryRouter><PlayerReporting state={{ ...state, ...patch }} choose={() => {}} scope={scope} scopeLabel="Club" accountRows={[player]} enabled showPeople toolbar={null} /></MemoryRouter>);
+    expect(tabs(render({ kind: "team", organizationId: "club", teamId: "team" }))).toEqual(["People", "Overview", "Testing", "Workouts", "Usage", "Journey"]);
+    expect(tabs(render({ kind: "organization", organizationId: "club" }, { teamId: undefined, directoryLevel: "people" }))).toEqual(["People", "Overview", "Testing", "Workouts", "Usage", "One-pager tracking", "Journey"]);
+    expect(tabs(render({ kind: "global" }, { orgId: undefined, teamId: undefined }))).not.toContain("Journey");
+    // A Journey link outside an organization opens the list instead.
+    expect(render({ kind: "global" }, { orgId: undefined, teamId: undefined, directoryPane: "journey" })).toContain('id="workspace-report-panel-list" role="tabpanel"');
+    expect(render({ kind: "team", organizationId: "club", teamId: "team" }, { directoryPane: "journey" })).toContain("Stats page journey");
+  });
   it("keeps one keyboard entry point across list and reporting tabs", () => {
     const html = renderToStaticMarkup(<DirectoryWorkspaceTabs active="list" listLabel="Teams" onChange={() => {}} />);
     expect(html.match(/role="tab"/g)).toHaveLength(5);

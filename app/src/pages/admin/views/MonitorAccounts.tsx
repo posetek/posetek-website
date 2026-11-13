@@ -26,6 +26,7 @@ import DirectoryNavigator, { TeamDirectory } from "./DirectoryNavigator";
 import { DirectoryFilters, DirectoryPlayerFilters, DirectoryWorkspaceTabs } from "./DirectoryWorkspaceControls";
 import AdminActivityReport from "./AdminActivityReport";
 import OnePagerTracking from "./OnePagerTracking";
+import StatsJourney from "./StatsJourney";
 import AdminTabs from "./AdminTabs";
 import "./admin-directory.scss";
 import "./admin-directory-lightning.scss";
@@ -185,12 +186,16 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
   const view = state.reportView || "overview", requestedPane = directoryWorkspacePaneOf(state);
   const onePagerOrganization = scope?.kind === "organization" && supportsOnePagerTracking(state) ? scope.organizationId : undefined;
   const showOnePagers = Boolean(onePagerOrganization);
-  const pane = !showOnePagers && requestedPane === "one-pagers" ? "list" : requestedPane;
+  // The Stats page journey: every selected organization, all of it or the selected team.
+  const journeyOrganization = scope?.kind === "organization" || scope?.kind === "team" ? scope.organizationId : undefined;
+  const showJourney = Boolean(journeyOrganization);
+  const pane = (!showOnePagers && requestedPane === "one-pagers") || (!showJourney && requestedPane === "journey") ? "list" : requestedPane;
   const onePagers = pane === "one-pagers";
+  const journey = pane === "journey";
   const activityView = pane === "report" && view !== "testing";
   const visible = directoryPage(accountRows || [], state.page).rows;
   const playerIds = pane === "report" || !showPeople || attention ? undefined : supportedWorkspacePlayerIds(visible, scope, canonicalOrganizationIds);
-  const metrics = useWorkspaceMetrics({ retain: true, scope, search: workspaceReportSearch(state), playerIds, enabled, readEnabled: directoryReady && !onePagers,
+  const metrics = useWorkspaceMetrics({ retain: true, scope, search: workspaceReportSearch(state), playerIds, enabled, readEnabled: directoryReady && !onePagers && !journey,
     adminReporting: !legacy && (pane === "report" || !showPeople && Boolean(state.orgId)),
     includeLastFeatureEvidence: !legacy && pane === "report" && view === "usage",
     includeTestingAnalytics: !legacy && pane === "report" && view === "testing" });
@@ -210,7 +215,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
     if (filterChanged && patch.view) focusReview.current = true;
     choose(next);
   };
-  const queueKey = !onePagers && showPeople && attention && scope?.kind === "global" && report ? JSON.stringify(report.players.slice(0, 20).map(player => ({ id: player.id, organizationId: player.organizationId, teamId: player.teamId }))) : "[]";
+  const queueKey = !onePagers && !journey && showPeople && attention && scope?.kind === "global" && report ? JSON.stringify(report.players.slice(0, 20).map(player => ({ id: player.id, organizationId: player.organizationId, teamId: player.teamId }))) : "[]";
   const queueLoader = useCallback(async () => {
     const expected = JSON.parse(queueKey) as Pick<ExpandedPlayer, "id" | "organizationId" | "teamId">[];
     const profiles = await Promise.all(expected.map(player => loadPlayer(player.id)));
@@ -225,7 +230,8 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
   }) || [];
   const metricRows: WorkspacePlayerMetric[] = attention ? report?.players.map(player => ({ playerId: player.id, status: "included", player })) || [] : report?.rosterMetrics || [];
   const metricState = { ...metrics, legacy };
-  const activeView = onePagers ? "one-pagers" : pane === "report" ? view : "list";
+  const activeView = journey ? "journey" : onePagers ? "one-pagers" : pane === "report" ? view : "list";
+  const journeyTeams = (roster?.context?.teams || []).filter(team => team.organizationId === journeyOrganization).map(team => ({ id: team.id, name: team.name }));
   const firstPage = () => choose({ reportCursor: undefined, reportPage: undefined });
   const nextPage = () => { if (report?.pagination.nextCursor) choose({ reportCursor: report.pagination.nextCursor, reportPage: request.page + 1 }); };
   useEffect(() => {
@@ -247,10 +253,12 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
       </DirectoryFilters>;
   return <>
     <WorkspaceScopeHeader {...metricState} data={displayReport} accountCount={accountCount} accountScopeIsSubset={state.directoryLookup === "unassigned"} scopeLabel={scopeLabel} request={request} breadcrumb={scopeControl}>
-      <DirectoryWorkspaceTabs active={activeView} onePagers={showOnePagers} listLabel={showPeople ? "People" : state.orgId ? "Teams" : "Organizations"} onChange={selected => choose({ reportCursor: undefined, reportPage: undefined, reportAdminSort: undefined, reportAdminFollowUp: undefined,
-        ...(selected === "list" || selected === "one-pagers" ? { directoryPane: selected } : { directoryPane: "report" as const, reportView: selected, reportMode: "directory" as const }) })} />
+      <DirectoryWorkspaceTabs active={activeView} onePagers={showOnePagers} journey={showJourney} listLabel={showPeople ? "People" : state.orgId ? "Teams" : "Organizations"} onChange={selected => choose({ reportCursor: undefined, reportPage: undefined, reportAdminSort: undefined, reportAdminFollowUp: undefined,
+        ...(selected === "list" || selected === "one-pagers" || selected === "journey" ? { directoryPane: selected } : { directoryPane: "report" as const, reportView: selected, reportMode: "directory" as const }) })} />
     </WorkspaceScopeHeader>
-    {onePagers && onePagerOrganization ? <OnePagerTracking organizationId={onePagerOrganization} cohortId={state.onePagerCohort} onCohortChange={onePagerCohort => choose({ onePagerCohort })} /> : <>
+    {journey && journeyOrganization ? <StatsJourney organizationId={journeyOrganization} teamId={scope?.kind === "team" ? scope.teamId : undefined} unassigned={state.directoryLookup === "unassigned"}
+      teams={journeyTeams} roster={(roster?.players || []).map(player => ({ id: player.id, teamId: player.teamId || null }))} />
+    : onePagers && onePagerOrganization ? <OnePagerTracking organizationId={onePagerOrganization} cohortId={state.onePagerCohort} onCohortChange={onePagerCohort => choose({ onePagerCohort })} /> : <>
     <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : null}</div>
       {filters}
       {pane === "report" && !legacy && <button type="button" className="quiet-button" disabled={metrics.loading || metrics.refreshing} onClick={() => { metrics.refresh(); refreshQueue(); }}>Refresh reporting</button>}
@@ -297,7 +305,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
       </>}
     </section>}
     </>}
-    {["list", "overview", "testing", "workouts", "usage", ...(showOnePagers ? ["one-pagers"] : [])].filter(id => id !== activeView).map(id => <section key={id} id={`workspace-report-panel-${id}`} role="tabpanel" aria-labelledby={`workspace-report-tab-${id}`} hidden />)}
+    {["list", "overview", "testing", "workouts", "usage", ...(showOnePagers ? ["one-pagers"] : []), ...(showJourney ? ["journey"] : [])].filter(id => id !== activeView).map(id => <section key={id} id={`workspace-report-panel-${id}`} role="tabpanel" aria-labelledby={`workspace-report-tab-${id}`} hidden />)}
   </>;
 }
 

@@ -8,7 +8,7 @@ export const DIRECTORY_TABS = ["players", "staff", "teams", "settings"] as const
 export type DirectoryTab = typeof DIRECTORY_TABS[number];
 export type DirectoryLevel = "organizations" | "teams" | "people";
 export type PlayerPanel = "results" | "workouts" | "profile" | "ai-incidents";
-export type DirectoryPane = "list" | "report" | "one-pagers";
+export type DirectoryPane = "list" | "report" | "one-pagers" | "journey";
 export type WorkspaceReportView = "overview" | "testing" | "workouts" | "usage";
 export interface WorkspaceReportState {
   reportAdminFollowUp?: AdminActivityFollowUp; reportAdminSort?: AdminActivitySort;
@@ -28,6 +28,10 @@ export interface AdminDirectoryState extends WorkspaceReportState {
 }
 export function supportsOnePagerTracking(state: Partial<AdminDirectoryState>): boolean {
   return Boolean(state.orgId) && !state.teamId && state.directoryLookup !== "unassigned" && state.directoryTab === "players" && state.directoryLevel === "people";
+}
+/** The Stats page journey: every selected organization, all teams or one, never all organizations. */
+export function supportsStatsJourney(state: Partial<AdminDirectoryState>): boolean {
+  return Boolean(state.orgId) && state.directoryTab === "players";
 }
 const validCohortId = (id: string | null | undefined): id is string => typeof id === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(id);
 const queryOf = (search: string | URLSearchParams) => typeof search === "string" ? new URLSearchParams(search) : search;
@@ -62,12 +66,13 @@ export function parseAdminDirectoryState(search: string | URLSearchParams): Admi
   const directoryLevel = level === "organizations" || level === "teams" || level === "people" ? level : undefined;
   const context = accountContext(query), unassigned = !context.teamId && query.get("directoryLookup") === "unassigned";
   const onePagers = pane === "one-pagers" && supportsOnePagerTracking({ ...context, directoryTab, directoryLevel, directoryLookup: unassigned ? "unassigned" : undefined });
+  const journey = pane === "journey" && supportsStatsJourney({ ...context, directoryTab });
   const cohortId = query.get("onePagerCohort");
   return { ...context, ...reportState(query), directoryTab,
     search: (query.get("search") || "").slice(0, 120), page: Math.min(1000, Math.max(0, Math.floor(Number(query.get("page")) || 0))),
     ...(validatedAdminReturn(query.get("returnTo")) ? { returnTo: validatedAdminReturn(query.get("returnTo")) } : {}),
     ...(query.get("preview") === "1" ? { preview: true } : {}),
-    ...(pane === "list" || pane === "report" || onePagers ? { directoryPane: pane } : {}),
+    ...(pane === "list" || pane === "report" || onePagers || journey ? { directoryPane: pane } : {}),
     ...(onePagers && validCohortId(cohortId) ? { onePagerCohort: cohortId } : {}),
     ...(directoryLevel ? { directoryLevel } : {}),
     ...(query.get("directoryLookup") === "all" || unassigned ? { directoryLookup: query.get("directoryLookup") as "all" | "unassigned" } : {}),
@@ -103,6 +108,7 @@ export function directoryLevelOf(state: Partial<AdminDirectoryState>): Directory
 /** Explicit old report links still open their report; fresh browsing leads with the list. */
 export function directoryWorkspacePaneOf(state: Partial<AdminDirectoryState>): DirectoryPane {
   if (state.directoryPane === "one-pagers") return supportsOnePagerTracking(state) ? "one-pagers" : "list";
+  if (state.directoryPane === "journey") return supportsStatsJourney(state) ? "journey" : "list";
   return state.directoryPane || (state.reportView && state.reportMode !== "attention" ? "report" : "list");
 }
 
@@ -157,7 +163,7 @@ export function legacyAdminWorkspacePath(search: string): string {
     else if (legacy.has(field)) query.set(field, legacy.get(field)!);
   }
   if (legacy.get("preview") === "1") query.set("preview", "1");
-  if (["list", "report", "one-pagers"].includes(legacy.get("directoryPane") || "")) query.set("directoryPane", legacy.get("directoryPane")!);
+  if (["list", "report", "one-pagers", "journey"].includes(legacy.get("directoryPane") || "")) query.set("directoryPane", legacy.get("directoryPane")!);
   const cohortId = legacy.get("onePagerCohort");
   if (validCohortId(cohortId)) query.set("onePagerCohort", cohortId);
   if (["organizations", "teams", "people"].includes(legacy.get("directoryLevel") || "")) query.set("directoryLevel", legacy.get("directoryLevel")!);
