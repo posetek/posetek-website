@@ -40,10 +40,23 @@ for (const [engineName, engine] of [['chromium', chromium], ['webkit', webkit]])
           await panel.locator('.admin-activity-report[aria-busy="false"]').waitFor();
           assert.equal(await panel.getByRole('heading', { name: 'People to follow up with', exact: true }).count(), 0);
           if (view === 'Overview' || view === 'Usage') {
-            assert.equal(await panel.locator('.activity-summary-six .activity-stat').count(), 6);
-            const repeat = panel.locator('.activity-summary-six .activity-stat').filter({ has: page.getByText('Repeat users', { exact: true }) });
-            assert.equal(await repeat.locator('.activity-stat-value').innerText(), '14');
-            assert.equal(await repeat.locator('.activity-stat-note').innerText(), 'Active on 2+ days in the shown week');
+            const cards = panel.locator('.activity-summary-six .activity-stat');
+            assert.equal(await cards.count(), 6);
+            for (const [title, value, arrow, label, color, note] of [
+              ['Repeat users', '14', '↑ 2', 'Increase 2', 'rgb(38, 115, 78)', 'Active on 2+ days in the shown week'],
+              ['Weekly users', '21', '↓ 3', 'Decrease 3', 'rgb(172, 65, 65)', 'Partial coverage · Distinct players active in the shown week'],
+            ]) {
+              const card = cards.filter({ has: page.getByText(title, { exact: true }) });
+              const current = card.locator('.activity-stat-value');
+              const delta = card.locator('.activity-stat-delta');
+              assert.equal(await current.innerText(), value);
+              assert.equal(await delta.innerText(), arrow);
+              assert.equal(await delta.getAttribute('aria-label'), label);
+              assert.equal(await current.evaluate(element => getComputedStyle(element).color), color);
+              assert.equal(await delta.evaluate(element => getComputedStyle(element).color), color);
+              assert.equal(await card.locator('.activity-stat-note').innerText(), note);
+              assert.ok(await card.getByText('Week to date', { exact: true }).isVisible());
+            }
           }
           if (view === 'Overview') assert.equal(await panel.getByRole('heading', { name: 'Compare teams', exact: true }).count(), 0);
           if (view === 'Workouts') {

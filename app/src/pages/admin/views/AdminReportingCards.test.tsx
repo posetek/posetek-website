@@ -36,17 +36,17 @@ describe('participation and usage cards', () => {
     expect(html).toContain('same weekdays last week');
     expect(html).toContain('not an App Store installation count');
   });
-  it('shows the whole previous week and no change arrow for a part week', () => {
+  it('compares displayed weekly values and labels a part week as week to date', () => {
     const metrics = fixture();
     metrics.windows = { current: { startDate: '2026-11-09', endDate: '2026-11-09' }, previous: { startDate: '2026-11-02', endDate: '2026-11-08' },
       cumulative: { endDate: '2026-11-09', previousEndDate: '2026-11-08' } };
     metrics.cards.weeklyUsers = value(2, 40); metrics.cards.repeatUsers = value(0, 12); metrics.cards.platformMinutes = value(1250.5, 1248.7);
     const html = render(metrics);
-    for (const [title, previous] of [['Weekly users', '40'], ['Repeat users', '12']]) {
+    for (const [title, current, previous, decrease] of [['Weekly users', '2', '40', '38'], ['Repeat users', '0', '12', '12']]) {
       expect(card(html, title)).toContain(`Last week <strong>${previous}</strong>`);
       expect(card(html, title)).toContain('Week to date');
-      expect(card(html, title)).not.toContain('activity-stat-delta');
-      expect(card(html, title)).toContain('is-neutral">');
+      expect(card(html, title)).toContain(`activity-stat-value is-down">${current}`);
+      expect(card(html, title)).toContain(`activity-stat-delta is-down" aria-label="Decrease ${decrease}">↓ ${decrease}`);
     }
     // Cumulative cards compare with the total at the end of last week and keep their arrow:
     // the difference is what the report week has added.
@@ -58,7 +58,8 @@ describe('participation and usage cards', () => {
     expect(card(html, 'Time on platform')).not.toContain('Week to date');
     expect(card(html, 'Time on platform')).toContain('Total estimated website + iOS use to date');
     expect(html).toContain('Report week: 2026-11-09–2026-11-09, a part week. Last week: 2026-11-02–2026-11-08, the whole Monday–Sunday week before it.');
-    expect(html).toContain('Repeat users and weekly users use these two weeks; a part week is shown as week to date, without a change arrow.');
+    expect(html).toContain('Repeat users and weekly users use these two weeks. A part week is shown as week to date.');
+    expect(html).toContain('Arrows compare the displayed totals, including figures labeled Partial coverage or Week to date.');
     expect(html).toContain('Players tested, accounts claimed, observed iOS users and time on platform are cumulative, compared with the total through 2026-11-08');
     expect(html).not.toContain('same weekdays last week');
   });
@@ -71,15 +72,16 @@ describe('participation and usage cards', () => {
     expect(html).toContain('Report week: 2026-11-02–2026-11-08. Last week: 2026-10-26–2026-11-01');
     expect(html).toContain('cumulative through each cutoff');
   });
-  it('keeps a part week honest when coverage is partial or a value is missing', () => {
+  it('keeps both coverage and week-to-date labels visible and omits a delta when a value is missing', () => {
     const metrics = fixture();
     metrics.windows = { current: { startDate: '2026-10-19', endDate: '2026-10-21' }, previous: { startDate: '2026-10-12', endDate: '2026-10-18' } };
     metrics.cards.weeklyUsers = value(2, 40, 'partial'); metrics.cards.repeatUsers = value(null, 12);
     const html = render(metrics);
     expect(card(html, 'Weekly users')).toContain('Week to date'); expect(card(html, 'Weekly users')).toContain('Partial coverage');
-    expect(card(html, 'Weekly users')).not.toContain('activity-stat-delta');
+    expect(card(html, 'Weekly users')).toContain('activity-stat-delta is-down" aria-label="Decrease 38">↓ 38');
     // No current value: nothing to label as a week to date.
     expect(card(html, 'Repeat users')).not.toContain('Week to date'); expect(card(html, 'Repeat users')).toContain('Last week <strong>12</strong>');
+    expect(card(html, 'Repeat users')).not.toContain('activity-stat-delta');
     // A report ending on a past Wednesday is a part week, never "in progress".
     expect(html).toContain('Report week: 2026-10-19–2026-10-21, a part week.'); expect(html).not.toMatch(/in progress|so far/);
   });
@@ -97,16 +99,28 @@ describe('participation and usage cards', () => {
     expect(card(html, 'Repeat users')).toContain('Usage collection unavailable.');
     expect(card(html, 'Repeat users')).not.toContain('activity-stat-delta');
   });
-  it('makes partial coverage visible and does not compare snapshots with incomplete coverage', () => {
+  it('compares two displayed figures with partial coverage', () => {
     const metrics = fixture();
     metrics.cards.iosDownloads = value(12, 10, 'partial', 'Only retained iOS activity is available.');
     const report = render(metrics), html = card(report, 'iOS downloads');
-    expect(html).toContain('is-neutral">12');
+    expect(html).toContain('activity-stat-value is-up">12');
     expect(html).toContain('Partial coverage · Players with recorded iOS use');
     expect(html).not.toContain('Only retained iOS activity is available.');
     expect(report).toContain('title="Only retained iOS activity is available."');
     expect(report).toContain('<strong>iOS downloads:</strong> Only retained iOS activity is available.');
-    expect(html).not.toContain('activity-stat-delta');
+    expect(html).toContain('activity-stat-delta is-up" aria-label="Increase 2">↑ 2');
+  });
+  it.each([
+    [1000.04, 999.98, '1,000 min', '1,000 min', 'neutral', 'No change 0 min', '– 0 min'],
+    [1000.04, 1000.05, '1,000 min', '1,000.1 min', 'down', 'Decrease 0.1 min', '↓ 0.1 min'],
+    [1000.05, 1000.04, '1,000.1 min', '1,000 min', 'up', 'Increase 0.1 min', '↑ 0.1 min'],
+  ])('compares minutes at the displayed precision (%s versus %s)', (current, previous, currentText, previousText, direction, label, delta) => {
+    const metrics = fixture();
+    metrics.cards.platformMinutes = value(current, previous);
+    const html = card(render(metrics), 'Time on platform');
+    expect(html).toContain(`activity-stat-value is-${direction}">${currentText}`);
+    expect(html).toContain(`Last week <strong>${previousText}</strong>`);
+    expect(html).toContain(`activity-stat-delta is-${direction}" aria-label="${label}">${delta}`);
   });
   it('treats unavailable or invalid measurements as missing rather than positive or zero evidence', () => {
     const metrics = fixture();

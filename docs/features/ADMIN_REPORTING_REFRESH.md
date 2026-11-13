@@ -25,8 +25,10 @@ Overview and Usage share six compact cards: players with at least four different
 recorded drills, claimed accounts, observed iOS users under the requested iOS
 downloads label, repeat users active on at least two distinct days in the shown
 week, weekly distinct users, and estimated platform time.
-Prior values are shown beneath current values. Known increases/decreases use
-color and directional text; partial coverage never produces a confident trend.
+Prior values appear beneath current values. The cards use green up arrows for
+higher displayed values, red down arrows for lower values, and neutral dashes
+for ties. Partial coverage and Week to date labels identify the figures being
+compared. A comparison requires both figures.
 The repeated scope breadcrumb, Current selection label, date/coverage lines,
 follow-up panels and Overview team-comparison table are removed. The scope title,
 Browse navigation, reporting controls and Teams tab remain.
