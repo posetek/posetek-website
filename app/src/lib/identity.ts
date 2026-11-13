@@ -32,6 +32,45 @@ export function ownsPlayer(doc: IdentityDoc | null | undefined, uid: string | nu
   return doc.id === uid || OWNER_FIELDS.some(field => data[field] === uid);
 }
 
+/**
+ * A linked parent: the uid is listed in the player's server-written `guardianUIDs`. Never an owner
+ * check, so owner-only paths (redemption, the `authenticationUID` backfill, deletion identity) keep
+ * using `ownsPlayer`.
+ */
+export function guardsPlayer(doc: IdentityDoc | null | undefined, uid: string | null | undefined): boolean {
+  if (!uid || !doc || !doc.exists) return false;
+  const list = (doc.data() || {}).guardianUIDs;
+  return Array.isArray(list) && list.includes(uid);
+}
+
+/** Owner or linked parent: the login acts as this athlete. */
+export function actsAsPlayer(doc: IdentityDoc | null | undefined, uid: string | null | undefined): boolean {
+  return ownsPlayer(doc, uid) || guardsPlayer(doc, uid);
+}
+
+const PLAYER_ID = /^[A-Za-z0-9_-]{1,128}$/;
+export const GUARDIAN_PLAYER_LIMIT = 10;
+export interface GuardianRecord { playerIds: string[] }
+
+/** The ids a `guardians/{uid}` document lists, deduplicated, well-formed and capped at the contract's 10. */
+export function guardianPlayerIds(data: Record<string, any> | undefined): string[] {
+  const ids = Array.isArray(data?.playerIds) ? data!.playerIds : [];
+  return [...new Set(ids.filter((id: unknown): id is string => typeof id === "string" && PLAYER_ID.test(id)))].slice(0, GUARDIAN_PLAYER_LIMIT);
+}
+
+/**
+ * The caller's own `guardians/{uid}`. A missing document or a denied read (the rules that allow it
+ * may not be published yet) means "not a parent", so every other account resolves as before.
+ */
+export async function findGuardian(db: IdentityDb, uid: string | null | undefined): Promise<GuardianRecord | null> {
+  if (!uid) return null;
+  const doc = await ownDocument(db, "guardians", uid);
+  if (!doc || !doc.exists) return null;
+  const data = doc.data() || {};
+  if (typeof data.userUID === "string" && data.userUID !== uid) return null;
+  return { playerIds: guardianPlayerIds(data) };
+}
+
 async function ownDocument(db: IdentityDb, collection: string, uid: string): Promise<IdentityDoc | null> {
   try {
     return await db.collection(collection).doc(uid).get();

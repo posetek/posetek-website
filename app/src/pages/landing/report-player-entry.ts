@@ -19,19 +19,27 @@ export function reportTrainingPath(playerId: string): string {
 
 // Ignores generic returnTo completely for report entry. Only the authenticated,
 // server-resolved player matching the requested child can continue.
-export function reportPlayerDestination(entry: ReportPlayerEntry, role: AccountRole | null, playerId: string | null): string | null {
+// A parent passes only for a child its own guardians record lists.
+export function reportPlayerDestination(entry: ReportPlayerEntry, role: AccountRole | null, playerId: string | null, playerIds: readonly string[] = []): string | null {
   if (!entry.present) return null;
   if (!entry.playerId) throw new ReportPlayerEntryError("Reopen the original report link to continue.");
-  if (role !== "player" || playerId !== entry.playerId) throw new ReportPlayerEntryError(reportPlayerAccountError);
+  const allowed = role === "player" ? playerId === entry.playerId : role === "parent" && playerIds.includes(entry.playerId);
+  if (!allowed) throw new ReportPlayerEntryError(reportPlayerAccountError);
   return reportTrainingPath(entry.playerId);
 }
 
+const reportMismatch = "Your account was created, but it does not match this report. Keep your login and contact PoseTek before continuing.";
 export function reportSignupDestination(entry: ReportPlayerEntry, redeemedPlayerId: string): string | null {
   if (!entry.present) return null;
-  if (!entry.playerId || redeemedPlayerId !== entry.playerId) {
-    throw new ReportPlayerEntryError("Your account was created, but it does not match this report. Keep your login and contact PoseTek before continuing.");
-  }
+  if (!entry.playerId || redeemedPlayerId !== entry.playerId) throw new ReportPlayerEntryError(reportMismatch);
   return reportTrainingPath(redeemedPlayerId);
+}
+
+/** A parent link redeemed from a report continues only when the report's child is now linked. */
+export function reportParentSignupDestination(entry: ReportPlayerEntry, linkedPlayerIds: readonly string[]): string | null {
+  if (!entry.present) return null;
+  if (!entry.playerId || !linkedPlayerIds.includes(entry.playerId)) throw new ReportPlayerEntryError(reportMismatch);
+  return reportTrainingPath(entry.playerId);
 }
 
 /** Initial restored sessions can enter only after canonical exact-player resolution. */
@@ -44,5 +52,7 @@ export async function initialReportPlayerDestination(
   if (!entry.present || !user || !isCurrent()) return null;
   const access = await load(user, isCurrent);
   if (!isCurrent()) return null;
-  return reportPlayerDestination(entry, access.kind === "active" ? access.role : null, access.kind === "active" ? access.playerId || null : null);
+  return access.kind === "active"
+    ? reportPlayerDestination(entry, access.role, access.playerId || null, access.playerIds || [])
+    : reportPlayerDestination(entry, null, null);
 }
