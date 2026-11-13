@@ -109,7 +109,7 @@ function testingAnalytics(population, request) {
 function participationMetrics(population, request) {
   const shift = (date, days) => new Date(Date.parse(`${date}T12:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
   const startDate = shift(request.endDate, -((new Date(`${request.endDate}T12:00:00Z`).getUTCDay() + 6) % 7));
-  const metric = (value, previousValue, note) => ({ value, previousValue, status: 'available', note });
+  const metric = (value, previousValue, note, status = 'available') => ({ value, previousValue, status, note });
   const count = population.length;
   return { version: 1, windows: { current: { startDate, endDate: request.endDate }, previous: { startDate: shift(startDate, -7), endDate: shift(startDate, -1) },
       cumulative: { endDate: request.endDate, previousEndDate: shift(request.endDate, -7) } },
@@ -118,7 +118,7 @@ function participationMetrics(population, request) {
       claimedAccounts: metric(Math.floor(count * .7), Math.floor(count * .6), 'Claimed through each cutoff.'),
       iosDownloads: metric(Math.floor(count * .6), Math.floor(count * .55), 'Players with positive retained iOS activity; not App Store installations.'),
       repeatUsers: metric(Math.floor(count * .3), Math.floor(count * .25), 'Players active on two or more distinct local days in the report week to date and in the whole previous week; same-day visits count once.'),
-      weeklyUsers: metric(Math.floor(count * .45), Math.floor(count * .5), 'Distinct active players in the report week to date and in the whole previous week.'),
+      weeklyUsers: metric(Math.floor(count * .45), Math.floor(count * .5), 'Distinct active players in the report week to date and in the whole previous week.', 'partial'),
       platformMinutes: metric(count * 3.7, count * 3.2, 'Simultaneous website and iOS time counted once.') } };
 }
 const featureDays = days => days.map((day, index) => ({ ...day, featureMinutes: day.activeMinutes === null ? null : { workout: day.activeMinutes * (index % 7 > 4 ? .5 : .2), training: day.activeMinutes * .15, video: day.activeMinutes * .15, results: day.activeMinutes * .1, overview: day.activeMinutes * (index % 7 > 4 ? .05 : .35), other: day.activeMinutes * .05 } }));

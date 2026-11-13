@@ -33,6 +33,17 @@ example draft requires exact artifact review and hosted acceptance before the us
 
 # PoseTek website project context
 
+## Admin comparison indicators — November 12, 2026
+
+Deployment `6af6ab89e3e24351f3908e28` colors declines red in the organization
+Overview and Usage cards. Arrows compare displayed totals, including cards
+labeled Partial coverage or Week to date. Time on platform uses the deployed
+reporting service's weekly figures. Signed-in checks verified both tabs.
+
+The deployment replaced the application entry and added seven hashed assets.
+All 2,851 other prior files, including 78 encrypted report files, matched the
+previous release. [Production receipt](docs/releases/receipts/ADMIN_WEEKLY_TREND_INDICATORS_PRODUCTION.json)
+
 ## Player Stats landing — November 12, 2026
 
 Deployment `6af626e37d3ff00c50b761d9` explicitly opens Stats for the player
@@ -46,16 +57,14 @@ mappings. [Production receipt](docs/releases/receipts/PLAYER_STATS_LANDING_PRODU
 
 ## Private report score cards — November 12, 2026
 
-The live reader selects score cards when a decrypted report has
-`visualLayout: 'score-cards-v1'`, `resultsFirst: true`, and no pathway charts.
-The cards show each result, available team comparison and practice details,
-followed by signup, iPhone/iPad install and the existing PDF download.
-Other reports use their existing layout.
+The live reader supports both score-card layouts for results-first reports.
+The v2 reader adds selectable test details, team median gaps and developmental
+curves. The v1 score cards and earlier report layouts retain their behavior.
 
-The serving v1 reader hashes are recorded in `deployment/homepage-baseline.json`.
-The v2 source draft adds selectable test details and developmental curves through
-a two-file pinned reader transition. Family report inputs, encrypted files, PDF
-files and access links are kept outside source control.
+The serving v2 reader hashes are recorded in `deployment/homepage-baseline.json`.
+This source reconciliation records those reader files as served and retains the
+pinned two-file transition used to install them. Family report inputs, encrypted
+files, PDF files and access links are kept outside source control.
 
 
 ## Admin reporting fixes and one-pager time on page — November 10, 2026
