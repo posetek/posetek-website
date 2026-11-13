@@ -1,7 +1,8 @@
 export const USAGE_FEATURES = ['overview', 'results', 'training', 'workout', 'video', 'feed', 'planner', 'other'] as const;
 export type UsageFeature = typeof USAGE_FEATURES[number];
 export type UsageInterval = { startedAtMillis: number; endedAtMillis: number; feature: UsageFeature };
-export type UsageBatch = { schemaVersion: 1; sessionId: string; sequence: number; platform: 'web'; build: string; intervals: UsageInterval[] };
+/** `playerId` only in a parent session: the child whose profile the time was spent in (plan §4.6). */
+export type UsageBatch = { schemaVersion: 1; sessionId: string; sequence: number; platform: 'web'; build: string; intervals: UsageInterval[]; playerId?: string };
 export const IDLE_MS = 120000;
 export const OFFLINE_MS = 72 * 3600000;
 
@@ -44,9 +45,16 @@ export function appendInterval(rows: UsageInterval[], row: UsageInterval): Usage
   }
   return [...rows, row];
 }
-export function validSavedBatch(batch: unknown, now: number): batch is UsageBatch {
+/**
+ * A player's batches never carry a player (the server resolves the owner). Only a parent session's
+ * queue (`withPlayer`) holds batches, and every one of them names the child.
+ */
+export function validSavedBatch(batch: unknown, now: number, withPlayer = false): batch is UsageBatch {
   const b = batch as UsageBatch;
-  return !!b && Object.keys(b).sort().join(',') === 'build,intervals,platform,schemaVersion,sequence,sessionId'
+  const keys = !!b && typeof b === 'object' && Object.keys(b).sort().join(',');
+  return !!b && (withPlayer
+      ? keys === 'build,intervals,platform,playerId,schemaVersion,sequence,sessionId' && typeof b.playerId === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(b.playerId)
+      : keys === 'build,intervals,platform,schemaVersion,sequence,sessionId')
     && b.schemaVersion === 1 && b.platform === 'web' && typeof b.sessionId === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(b.sessionId)
     && Number.isSafeInteger(b.sequence) && b.sequence >= 0 && typeof b.build === 'string' && /^[A-Za-z0-9._+()-]{1,64}$/.test(b.build)
     && Array.isArray(b.intervals) && b.intervals.length > 0 && b.intervals.length <= 60 && b.intervals.every(r => r && Object.keys(r).sort().join(',') === 'endedAtMillis,feature,startedAtMillis' && USAGE_FEATURES.includes(r.feature)

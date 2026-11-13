@@ -11,6 +11,7 @@ import { canAccessClubPlayer } from "../../../lib/organization";
 import { refreshAdminIdentity } from "../../admin/lib/identity";
 import firebase, { auth, cloud, db, storage } from "../../../lib/firebase";
 import { captureIssue } from "../../../lib/user-issues";
+import { actingPlayerScope } from "../../../lib/acting-player";
 import { findCoach as findCoachByUid, findGuardian, findPlayer, guardsPlayer, ownsPlayer } from "../../../lib/identity";
 import type { Drill } from "./drills";
 import { DRILLS } from "./drills";
@@ -292,8 +293,9 @@ export async function loadTeamStandings(playerId: string): Promise<Record<string
   return boardsFromPlayers(players);
 }
 
-export async function loadAthleteStandings(): Promise<Record<string, { id: string; name: string; value: number }[]>> {
-  const result = await cloud.httpsCallable("getTeamLeaderboard")({});
+/** `playerId` only for a parent viewing that child; an owner's request stays `{}`. */
+export async function loadAthleteStandings(playerId?: string | null): Promise<Record<string, { id: string; name: string; value: number }[]>> {
+  const result = await cloud.httpsCallable("getTeamLeaderboard")(actingPlayerScope(auth.currentUser?.uid, playerId));
   const team: any = (result && result.data) || {};
   const players = (team.athletes || []).map((athlete: any) => ({
     id: athlete.id,

@@ -50,7 +50,7 @@ export default function PlayerHome({ ctx, preview, active, athlete, report, pers
     <PlayerHeader title="Home" />
     {!preview && <ConfigProbe key={configAttempt} preview={false} onConfig={setConfig} />}
     <div className="home-stack">
-      <WeekRecap key={`${ctx.playerId}:${auth.currentUser?.uid ?? ''}`} access={ctx.access} playerName={playerName} playerId={ctx.playerId} active={active}
+      <WeekRecap key={`${ctx.playerId}:${auth.currentUser?.uid ?? ''}`} access={ctx.access} guardian={ctx.guardian === true} playerName={playerName} playerId={ctx.playerId} active={active}
         preview={preview} previewState={recapPreview} feedUnavailable={feedUnavailable(enabled, phase)} report={report} includePersonal={personal?.enabled === true} />
       <div className="home-section-heading">
         <h2>Organization activity</h2>

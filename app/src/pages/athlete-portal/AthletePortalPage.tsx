@@ -14,6 +14,7 @@ import { allStatsReps, avatarInitials, fullName } from "./lib/metrics";
 import { VIEW_LABELS } from "./lib/mobile";
 import type { Access, PortalData } from "./lib/loaders";
 import { GuardianChoiceRequired, loadAuthenticated, loadShared } from "./lib/loaders";
+import { enterActingPlayer } from "../../lib/acting-player";
 import { athleteRosterNavigation } from "./lib/navigation";
 import { previewData } from "./lib/preview";
 import DrillDashboard from "./views/DrillDashboard";
@@ -66,6 +67,7 @@ export default function AthletePortalPage() {
   const [reps, setReps] = useState<Record<string, any[]>>(() => Object.fromEntries(DRILLS.map(d => [d.key, []])));
   const [provisionalEstimates, setProvisionalEstimates] = useState<ProvisionalEstimate[]>([]);
   const [guardianPlayerIds, setGuardianPlayerIds] = useState<string[] | null>(null);
+  const leaveActingPlayer = useRef<(() => void) | undefined>(undefined);
   const [view, setView] = useState("home");
   const [viewEpoch, setViewEpoch] = useState(0);
   const [drill, setDrill] = useState("shooting");
@@ -132,6 +134,10 @@ export default function AthletePortalPage() {
     setReps(data.reps);
     setProvisionalEstimates(data.access === "shared" ? [] : data.provisionalEstimates || []);
     setGuardianPlayerIds(data.guardian ? data.guardianPlayerIds || [] : null);
+    // Registered before the child's view mounts, so its first calls already name the child.
+    leaveActingPlayer.current?.(); leaveActingPlayer.current = undefined;
+    const uid = auth.currentUser?.uid;
+    if (data.guardian && uid && data.playerId) leaveActingPlayer.current = enterActingPlayer(uid, data.playerId);
     setView(nextView);
     setDrill(nextDrill);
     setSession(null);
@@ -173,9 +179,11 @@ export default function AthletePortalPage() {
           fail(error);
         });
     });
+    const acting = leaveActingPlayer;
     return () => {
       cancelled = true;
       unsubscribe();
+      acting.current?.(); acting.current = undefined;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { UsageBatch, UsageFeature } from './clock';
+import { validSavedBatch } from './clock';
 import { STORE_PREFIX, UsageDelivery, UsageQueue, removeOtherActorQueues } from './queue';
 import type { UsageLocks, UsageStorage } from './queue';
 import { createUsageSession } from './session';
@@ -197,6 +198,44 @@ describe('browser lifecycle with injected storage, locks and callable', () => {
     env.emit('posetek:usage-workout', { detail: { active: true } }); await env.advance(30000);
     expect(q.head()?.intervals).toEqual([{ startedAtMillis: NOW, endedAtMillis: NOW + 3000, feature: 'workout' }]);
     running.close();
+  });
+  it('counts a parent only in a child view, names the child on each batch and never mixes two children', async () => {
+    const storage = new MemoryStorage(), env = new FakeBrowser(); env.connected = false;
+    let acting: string | null = null;
+    const q = new UsageQueue('athlete', 'parent', storage, undefined, env.wall, true); queues.push(q);
+    const running = createUsageSession({ uid: 'athlete', sessionId: '00000000-0000-4000-8000-000000000003', build: 'web-test', queue: q, environment: env,
+      invoke: async () => ({ accepted: true }), actingPlayer: () => acting });
+    await running.start();
+    await env.advance(10000); acting = 'child-a'; await env.advance(10000);
+    acting = 'child-b'; await env.advance(10000); acting = null; await env.advance(10000);
+    running.close(); await settle();
+    const saved = JSON.parse(storage.getItem(q.key)!).batches as UsageBatch[];
+    const total = (player: string) => saved.filter(b => b.playerId === player).flatMap(b => b.intervals).reduce((sum, r) => sum + r.endedAtMillis - r.startedAtMillis, 0);
+    expect(saved.every(b => b.playerId === 'child-a' || b.playerId === 'child-b')).toBe(true);
+    // One-second sampling: each child's view gets its ten seconds within one sample.
+    expect(Math.abs(total('child-a') - 10000)).toBeLessThanOrEqual(1000);
+    expect(Math.abs(total('child-b') - 10000)).toBeLessThanOrEqual(1000);
+    expect(total('child-a') + total('child-b')).toBeLessThanOrEqual(21000);
+    // A parent batch survives the saved-queue check, so a reopened tab still delivers it.
+    const fresh = new UsageQueue('athlete', 'parent-reopened', storage, undefined, env.wall, true); queues.push(fresh); await fresh.start();
+    expect(fresh.size).toBe(saved.length);
+    // A player's queue never adopts a batch that names a player.
+    const owner = queue(storage, undefined, 'owner-reopened', 'athlete', env.wall); await owner.start();
+    expect(owner.size).toBe(0);
+  });
+  it('keeps a player session byte-for-byte: no playerId on its batches', async () => {
+    const storage = new MemoryStorage(), env = new FakeBrowser(); env.connected = false;
+    const q = queue(storage, undefined, 'owner', 'athlete', env.wall), running = session(env, q, async () => ({ accepted: true }));
+    await running.start(); await env.advance(5000); running.close(); await settle();
+    expect(Object.keys(q.head()!).sort()).toEqual(['build', 'intervals', 'platform', 'schemaVersion', 'sequence', 'sessionId']);
+  });
+  it('accepts a named child only in a parent queue, and always requires it there', () => {
+    expect(validSavedBatch({ ...batch(), playerId: 'child-a' }, NOW, true)).toBe(true);
+    expect(validSavedBatch({ ...batch(), playerId: 'child-a' }, NOW)).toBe(false);
+    expect(validSavedBatch(batch(), NOW, true)).toBe(false);
+    expect(validSavedBatch({ ...batch(), playerId: 'a/b' }, NOW, true)).toBe(false);
+    expect(validSavedBatch({ ...batch(), playerId: 7 }, NOW, true)).toBe(false);
+    expect(validSavedBatch({ ...batch(), playerId: 'child-a', other: 'x' }, NOW, true)).toBe(false);
   });
   it('resumes an idle page only on trusted interaction, not synthetic events', async () => {
     const storage = new MemoryStorage(), env = new FakeBrowser(); env.connected = false;

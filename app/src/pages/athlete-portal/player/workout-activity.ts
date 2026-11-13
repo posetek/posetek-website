@@ -6,6 +6,8 @@ export type WorkoutActivityRequest = {
   source: WorkoutActivitySource; logId: string; sessionId: string; sequence: number;
   eventId: string; type: WorkoutActivityType; occurredAtMillis: number;
   ownerEpoch?: number; blockId?: string;
+  /** Only from a parent session: the child the workout belongs to (Parent accounts plan §11.3). */
+  playerId?: string;
 };
 export type WorkoutActivityResponse = { accepted: boolean; ownerEpoch?: number; serverTimeMillis?: number; reason?: string };
 export type WorkoutActivityState = {
@@ -41,6 +43,8 @@ export function createWorkoutActivity(options: {
   read: () => WorkoutActivityState;
   send: (request: WorkoutActivityRequest) => Promise<WorkoutActivityResponse>;
   online?: () => boolean; now?: () => number; newSessionId?: () => string;
+  /** `{ playerId }` while a parent acts for this child, else `{}`; owners send what they send today. */
+  scope?: () => { playerId?: string };
 }) {
   const now = options.now || Date.now;
   const online = options.online || (() => true);
@@ -70,7 +74,7 @@ export function createWorkoutActivity(options: {
     const next = sequence++;
     return { source: options.source, logId: options.logId, sessionId, sequence: next,
       eventId: `${sessionId}:${next}`, type, occurredAtMillis,
-      ...(epoch !== undefined ? { ownerEpoch: epoch } : {}), ...(blockId ? { blockId } : {}) };
+      ...(epoch !== undefined ? { ownerEpoch: epoch } : {}), ...(blockId ? { blockId } : {}), ...(options.scope?.() || {}) };
   };
   const expireClaim = () => {
     if (!claim || fresh(claim)) return false;

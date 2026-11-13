@@ -21,21 +21,33 @@ export interface UsageEnvironment {
 export function createUsageSession(options: {
   uid: string; sessionId: string; build: string; queue: UsageQueue; environment: UsageEnvironment;
   invoke(batch: UsageBatch): Promise<{ accepted?: boolean; reason?: string }>;
+  /**
+   * A parent session: the child whose view is open, or null. Only time in a child's view counts,
+   * and each batch names that child. Absent for a player, whose batches stay unchanged.
+   */
+  actingPlayer?: () => string | null;
 }) {
-  const { uid, sessionId, build, queue, environment: env, invoke } = options;
+  const { uid, sessionId, build, queue, environment: env, invoke, actingPlayer } = options;
   const clock = new EngagementClock(env.mono(), env.wall());
-  let pending: UsageInterval[] = [], sequence = 0, closed = false;
+  let pending: UsageInterval[] = [], pendingPlayer: string | null = null, sequence = 0, closed = false;
   const stops: (() => void)[] = [];
   const delivery = new UsageDelivery(uid, queue, env.currentUid, env.online, env.wall, invoke, () => { pending = []; });
-  const eligible = () => !closed && delivery.active && env.currentUid() === uid;
+  const live = () => !closed && delivery.active && env.currentUid() === uid;
+  // Counting additionally needs, for a parent, a child's view open.
+  const eligible = () => live() && (!actingPlayer || actingPlayer() !== null);
   const enqueue = () => {
-    if (!eligible() || !pending.length) return;
-    queue.append({ schemaVersion: 1, sessionId, sequence: sequence++, platform: 'web', build, intervals: pending });
+    if (!live() || !pending.length) return;
+    if (actingPlayer && !pendingPlayer) { pending = []; return; }
+    queue.append({ schemaVersion: 1, sessionId, sequence: sequence++, platform: 'web', build, intervals: pending,
+      ...(actingPlayer ? { playerId: pendingPlayer! } : {}) });
     pending = [];
   };
   const sample = () => {
     const wall = env.wall(), rows = clock.sample(env.mono(), wall);
     if (eligible() && wall >= delivery.disabledUntil) {
+      // One batch never mixes two children.
+      const player = actingPlayer ? actingPlayer() : null;
+      if (actingPlayer && player !== pendingPlayer) { enqueue(); pendingPlayer = player; }
       for (const row of rows) {
         pending = appendInterval(pending, row);
         if (pending.length >= 60) enqueue();
@@ -47,7 +59,7 @@ export function createUsageSession(options: {
   return {
     async start() {
       await queue.start();
-      if (!eligible()) { queue.close(); return; }
+      if (!live()) { queue.close(); return; }
       // Recovery latency is not engagement time.
       sample(); clock.configure(env.visible(), env.feature());
       for (const name of ['pointerdown', 'keydown', 'touchstart', 'scroll']) stops.push(env.on(name, event => {
@@ -67,7 +79,7 @@ export function createUsageSession(options: {
       }));
       stops.push(env.every(30000, () => { enqueue(); send(); }));
       stops.push(env.every(60000, () => {
-        if (eligible() && env.wall() >= delivery.disabledUntil) void queue.recover().then(send);
+        if (live() && env.wall() >= delivery.disabledUntil) void queue.recover().then(send);
       }));
       send();
     },

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { auth, cloud } from '../../../lib/firebase';
+import { actingPlayerScope } from '../../../lib/acting-player';
 import { blockDoseLine } from '../../../lib/contracts/drillV2';
 import { blockLogRow, skippedLogRow, SKIP_REASONS, endReasonFor, domainExposures } from '../lib/training';
 import { domainLabel } from '../../../lib/contracts/types';
@@ -79,6 +80,7 @@ export default function PlayerWorkout({ workout, store, playerId, preview: sampl
           running: !activityState.current.painStopped && !activityState.current.summary && !activityState.current.chat
             && reconcileClock(clockRef.current, Date.now()).runningSince !== null,
           blockId: blocks[indexRef.current]?.blockId }),
+        scope: () => actingPlayerScope(owner.uid, owner.playerId),
         send: async request => (await cloud.httpsCallable('recordWorkoutActivity')(request)).data as WorkoutActivityResponse,
       });
       // A restored paused timer waits for explicit Resume. Rendering it or
