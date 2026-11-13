@@ -1,5 +1,5 @@
 import firebase, { db } from '../../../lib/firebase';
-import { freshWorkout, initialLog, resumeWorkout } from './execution';
+import { freshStandaloneWorkout, freshWorkout, initialLog, isStandalone, resumeWorkout } from './execution';
 import type { Row } from './execution';
 import { submitLlmJob, waitForJob } from '../lib/loaders';
 
@@ -33,13 +33,16 @@ export async function startPlayerWorkout(playerId: string, reviewed: Row): Promi
   return db.runTransaction(async tx => {
     const old = await tx.get(logRef);
     if (old.exists && !needsTrainingStartCheck(old.data()?.workoutSnapshot || reviewed)) { resumeWorkout(reviewed, { ...old.data(), id: old.id }); return { ...old.data(), timerStartedHere: false }; }
-    const plan = await tx.get(player.collection('trainingPlans').doc(reviewed.planId));
+    // A standalone workout has no training plan: its saved document is the whole prescription.
+    const standalone = isStandalone(reviewed);
+    const plan = standalone ? null : await tx.get(player.collection('trainingPlans').doc(reviewed.planId));
     const schedule = await tx.get(scheduleRef);
-    const adhoc = reviewed.source === 'adhoc' ? await tx.get(player.collection('plannedWorkouts').doc(reviewed.workoutId)) : null;
+    const adhoc = reviewed.source === 'adhoc' || standalone ? await tx.get(player.collection('plannedWorkouts').doc(reviewed.workoutId)) : null;
     const revision = schedule.data()?.revision;
     if (!Number.isInteger(revision)) throw new Error('Training is not ready to start. Refresh and try again.');
-    const ready = freshWorkout({ ...plan.data(), id: plan.id }, reviewed, adhoc ? { ...adhoc.data(), id: adhoc.id } : undefined);
-    if (needsTrainingStartCheck(ready) && (!approval || approval.planRevision !== (plan.data()?.planRevision || 1) || approval.workoutRevision !== ready.workoutRevision || approval.scheduleRevision !== revision)) throw new Error('Training clearance or schedule changed. Review the session and try starting again.');
+    const saved = adhoc?.exists ? { ...adhoc.data(), id: adhoc.id } : undefined;
+    const ready = plan ? freshWorkout({ ...plan.data(), id: plan.id }, reviewed, saved) : freshStandaloneWorkout(playerId, reviewed, saved);
+    if (needsTrainingStartCheck(ready) && (!approval || !plan || approval.planRevision !== (plan.data()?.planRevision || 1) || approval.workoutRevision !== ready.workoutRevision || approval.scheduleRevision !== revision)) throw new Error('Training clearance or schedule changed. Review the session and try starting again.');
     if (old.exists) { resumeWorkout(ready, { ...old.data(), id: old.id }); return { ...old.data(), timerStartedHere: false }; }
     const value = initialLog(ready, firebase.firestore.Timestamp.now());
     tx.set(logRef, value);

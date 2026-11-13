@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILD_REFUSED, ENERGY_CHOICES, MINUTE_STOPS, WORKOUT_PLACES, buildWorkoutStep, canBuildWorkout, createReady, createTarget, defaultMinutes, openingRequest, runMode } from './create-workout';
+import { BUILD_REFUSED, ENERGY_CHOICES, MINUTE_STOPS, WORKOUT_PLACES, browserTimezone, canBuildWorkout, createReady, createTarget, defaultMinutes, equipmentToday, openingRequest, runMode, workoutScope } from './create-workout';
 import type { CreateAnswers } from './create-workout';
 
 const answers = (change: Partial<CreateAnswers> = {}): CreateAnswers => ({ place: 'field', goal: true, minutes: 45, energy: 'normal', ...change });
@@ -70,8 +70,30 @@ describe('who builds and who runs', () => {
     expect(runMode('preview')).toBe('preview');
     for (const access of ['coach', 'manager', 'shared'] as const) expect(runMode(access)).toBe('blocked');
   });
-  it('sets up a plan first when there is no active V3 plan', () => {
-    expect(buildWorkoutStep(true)).toBe('card');
-    expect(buildWorkoutStep(false)).toBe('plan');
+  it('needs no plan: workouts belong to the active V3 plan, else to the standalone namespace', () => {
+    expect(workoutScope({ id: 'plan-1', schemaVersion: 3, status: 'active' })).toBe('plan-1');
+    expect(workoutScope(null)).toBe('standalone');
+  });
+});
+
+describe('a workout built with no plan', () => {
+  it('opens the same `new` chat on the standalone namespace with the timezone and today’s equipment', () => {
+    expect(createTarget(null, answers({ minutes: 30, energy: 'low' }), 'America/Los_Angeles')).toEqual({
+      kind: 'new', planId: 'standalone', timeAvailableMinutes: 30, energy: 'low', timezone: 'America/Los_Angeles', equipmentToday: ['ball', 'goal'] });
+    expect(Object.keys(createTarget(null, answers(), 'UTC'))).toEqual(['kind', 'planId', 'timeAvailableMinutes', 'energy', 'timezone', 'equipmentToday']);
+  });
+  it('keeps the plan-backed target byte for byte', () => {
+    expect(JSON.stringify(createTarget('plan-1', answers(), 'America/Los_Angeles'))).toBe('{"kind":"new","planId":"plan-1","timeAvailableMinutes":45,"energy":"normal"}');
+  });
+  it('maps where the athlete trains to catalog equipment tokens', () => {
+    expect(equipmentToday({ place: 'field', goal: true })).toEqual(['ball', 'goal']);
+    expect(equipmentToday({ place: 'field', goal: false })).toEqual(['ball']);
+    expect(equipmentToday({ place: 'gym', goal: null })).toEqual(['bench', 'dumbbells', 'resistanceBand']);
+    expect(equipmentToday({ place: 'home', goal: null })).toEqual([]);
+  });
+  it('sends the browser’s IANA zone', () => {
+    const zone = browserTimezone();
+    expect(typeof zone).toBe('string');
+    expect(() => new Intl.DateTimeFormat('en-US', { timeZone: zone })).not.toThrow();
   });
 });

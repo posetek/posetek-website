@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 vi.mock('../../../lib/firebase', () => ({ default: {}, auth: { currentUser: { uid: 'auth-player' } }, db: {}, cloud: {}, storage: {} }));
 import type { Row } from './execution';
-import { executable, freshWorkout, initialLog, patchBlock, resumeWorkout } from './execution';
+import { executable, executionPlan, freshStandaloneWorkout, freshWorkout, initialLog, patchBlock, resumeWorkout, standaloneWorkoutIsReady } from './execution';
 import { newClock, elapsed, pauseClock, resumeClock, restSeconds, reconcileClock, interactClock, IDLE_MS } from './clock';
 import { playerProfile, intakeSnapshot, comparisons, profileCell } from './scoring';
 import { playerStandings } from './PlayerLeaderboards';
@@ -41,6 +41,21 @@ describe('mobile execution contract', () => {
     const w = executable(p, a, 1, 'adhoc');
     expect(freshWorkout(p, w, a, new Date('2026-09-10T12:00:00Z')).id).toBe('adhoc');
     expect(() => freshWorkout(p, w, a, new Date('2026-09-20T12:00:00Z'))).toThrow('no longer ready');
+  });
+  it('runs a workout built with no plan under the standalone namespace, by its own window', () => {
+    const saved = { ...plan().weeks[0].workouts[0], id: 'draft_1', workoutId: 'draft_1', weekNumber: 1, planId: 'standalone', playerId: 'player-doc', source: 'adhoc', status: 'ready',
+      standalone: { startDate: '2026-11-09', timezone: 'America/Los_Angeles', intake: { equipment: ['ball'] } }, windowStart: '2026-11-09T00:00:00-08:00', windowEnd: '2026-11-16T00:00:00-08:00' };
+    expect(executionPlan(null, saved)).toEqual({ id: 'standalone' });
+    expect(() => executionPlan(null, { planId: 'p' })).toThrow('training plan');
+    const w = executable(executionPlan(null, saved), saved, 1, 'adhoc'), inside = new Date('2026-11-12T18:00:00Z');
+    expect([w.id, w.planId, w.source, w.workoutId]).toEqual(['draft_1', 'standalone', 'adhoc', 'draft_1']);
+    expect(initialLog(w, 0)).toMatchObject({ schemaVersion: 2, planId: 'standalone', source: 'adhoc', workoutId: 'draft_1', workoutRevision: 1 });
+    expect(freshStandaloneWorkout('player-doc', w, saved, inside).id).toBe('draft_1');
+    expect(standaloneWorkoutIsReady(saved, 'player-doc', inside)).toBe(true);
+    for (const stale of [{ ...saved, playerId: 'other' }, { ...saved, status: 'superseded' }, { ...saved, source: 'plan' }, { ...saved, standalone: undefined }, { ...saved, windowEnd: 'soon' }])
+      expect(() => freshStandaloneWorkout('player-doc', w, stale, inside)).toThrow('no longer ready');
+    expect(() => freshStandaloneWorkout('player-doc', w, saved, new Date('2026-11-16T08:00:00Z'))).toThrow('no longer ready');
+    expect(() => freshStandaloneWorkout('player-doc', w, { ...saved, revision: 2 }, inside)).toThrow('changed');
   });
   it('splices only the intended block and undo removes all evidence', () => {
     const w = workout(), old = { ...initialLog(w, 0), blocks: [{ blockId: 'b1', status: 'done' }, { blockId: 'b2', status: 'partial' }] };

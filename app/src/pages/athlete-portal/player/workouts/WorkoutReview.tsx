@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import TrainingLoadInstructions from '../../../../components/TrainingLoadInstructions';
 import { orderedBlocks } from '../../../../lib/contracts/planV3';
+import { isStandalone } from '../execution';
 import type { Row } from '../execution';
 import { Eyebrow, InfoNote, doseLine } from './MyWorkoutPlan';
 
@@ -15,7 +16,7 @@ export default function WorkoutReview({ workout, log, start, onAdjust, adjustLab
   const ended = !!log?.endedAt, inProgress = !!log && !ended;
   return <div className="wk-review">
     <div className="wk-review-head">
-      <div className="wk-card-head"><Eyebrow>{`Week ${workout.weekNumber} · ${blocks.length} drills · ~${snapshot.estimatedMinutes ?? workout.estimatedMinutes ?? 0} min`}</Eyebrow>
+      <div className="wk-card-head"><Eyebrow>{`${isStandalone(workout) ? '' : `Week ${workout.weekNumber} · `}${blocks.length} drills · ~${snapshot.estimatedMinutes ?? workout.estimatedMinutes ?? 0} min`}</Eyebrow>
         <button type="button" className="wk-icon-button" aria-label="View full workout" onClick={onFull}><span className="material-symbols-outlined" aria-hidden="true">open_in_full</span></button></div>
       <h2>{snapshot.title || 'Your workout'}</h2>
       {(workout.intro || snapshot.intent) && <p className="wk-muted">{workout.intro || snapshot.intent}</p>}
