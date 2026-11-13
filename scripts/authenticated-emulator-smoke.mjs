@@ -170,6 +170,12 @@ async function runInside() {
       await page.locator('#password').fill(secret);
       await page.locator('#loginSubmit').click();
     };
+    // A cold Astro dev optimizer can reload after the first browser imports.
+    // Warm up on ordinary sign-in before opening a fragment that must be scrubbed.
+    const warmup = await context.newPage();
+    await warmup.goto(origin + '/signin');
+    await warmup.locator('#loginForm').waitFor();
+    await warmup.close();
     await openSignIn('#playerCode=' + code);
     await page.locator('#playerCodeSubmit').waitFor({ state: 'visible' });
     assert.ok(await page.locator('#playerCode').inputValue() === code, 'prefill the invitation field');
