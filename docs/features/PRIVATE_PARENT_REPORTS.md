@@ -191,6 +191,42 @@ that collide under the provider's normalized, case-insensitive paths are rejecte
 before the preservation build. Empty batches, plaintext/key files and reader drift
 are rejected. Do not reuse an obsolete predecessor inventory.
 
+For the score-card layout, set `visualLayout` to `score-cards-v1` in a private
+v1 payload that uses `resultsFirst: true` and has no pathway charts. Seal it with
+`node scripts/seal-parent-report.mjs <private-input.json> <private-output-dir>`.
+Copy only the encrypted `.bin` into the binary-only directory passed to
+`--sealed-dir`. Keep the input and the sealer's `link-private.json` in the
+restricted batch ledger outside the repository. No reader transition is needed
+when the serving reader matches the checked-in files.
+
+Run `node --test scripts/build-private-parent-report.test.mjs` to verify local
+append with synthetic sealed payloads. Run
+`node --test scripts/private-parent-report.browser.mjs` with Chromium and WebKit
+installed to verify score-card rendering, signup and PDF download on loopback.
+
+### Stats comparisons in score-card reports
+
+The v2 presentation uses `visualLayout: 'score-cards-v2'` with results first
+and an empty exercises array. Each metric carries its Stats key and status.
+The optional comparison holds the athlete’s value, the median result and the
+qualified teammate count in the card’s display units. Use the middle result of
+the other athletes’ best qualified same-event attempts, taking the lower middle
+on even counts. Include it only when five or more other athletes qualify.
+
+Each optional curve contains the club cohort label, measure label, unit and
+aggregate age samples with the average and standard deviation. A separately
+verified athlete marker can appear with its age group and exact group mean.
+The curve uses the club measure from Stats, which may differ from the score
+on the card. The preparation pipeline seals only the selected athlete’s results
+and the aggregates. Keep source rep records in the restricted batch ledger.
+
+Run `node scripts/preview-private-score-comparison.mjs` and open the printed
+loopback URL to review a synthetic report with all six cards. The browser
+suite uses the same synthetic fixture. The first eventual v2 candidate uses
+`--append --update-score-comparisons` with a fresh serving capture. The flag
+pins the serving v1 and reviewed v2 bytes of the renderer and stylesheet.
+Later v2 batches use plain append once the serving reader matches the source.
+
 The preceding browser-only source (`6b2f4dd`, PR #120) supports a label-only
 transition from the initial unsent-preview label to “Private player report” using
 `--append --update-entry-label`. That command requires the matching, unchanged

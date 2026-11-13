@@ -284,6 +284,72 @@ function makeDevelopment(report) {
   return section;
 }
 
+const COMPARISON_LAYOUT = 'score-cards-v2';
+const STATS_METRICS = {
+  dribbleLeft: { unit: 's', curveUnit: 'm/s', digits: 2, more: 'slower', less: 'faster' },
+  dribbleRight: { unit: 's', curveUnit: 'm/s', digits: 2, more: 'slower', less: 'faster' },
+  sprint: { unit: 's', curveUnit: 'mph', digits: 2, more: 'slower', less: 'faster' },
+  changeOfDirection: { unit: 's', curveUnit: 'm/s', digits: 2, more: 'slower', less: 'faster' },
+  jump: { unit: 'in', curveUnit: 'in', digits: 1, more: 'higher', less: 'lower' },
+  broadJump: { unit: 'ft', curveUnit: 'ft', digits: 1, more: 'farther', less: 'shorter' },
+};
+
+function onlyKeys(value, keys) {
+  return value && typeof value === 'object' && !Array.isArray(value) &&
+    Object.keys(value).every(key => keys.includes(key));
+}
+
+function validateScoreComparisons(report) {
+  if (report.resultsFirst !== true || report.layout !== undefined || report.development !== undefined ||
+      report.pathwayCharts !== undefined || report.exercises.length || !report.metrics.length ||
+      (report.reportKind !== undefined && !['event', 'individual'].includes(report.reportKind))) {
+    throw new Error('Invalid Stats comparison layout');
+  }
+  const keys = new Set();
+  for (const metric of report.metrics) {
+    const spec = Object.hasOwn(STATS_METRICS, metric.key) ? STATS_METRICS[metric.key] : null;
+    if (!spec || keys.has(metric.key) ||
+        !['measured', 'estimate', 'retest', 'unavailable'].includes(metric.status)) throw new Error('Invalid Stats metric');
+    keys.add(metric.key);
+    if (metric.estimatedCount !== undefined && (!Number.isInteger(metric.estimatedCount) ||
+        metric.estimatedCount < 0 || metric.estimatedCount > (metric.count ?? 0))) throw new Error('Invalid estimated count');
+    const hasResult = metric.status === 'measured' || metric.status === 'estimate';
+    if (hasResult !== (metric.result !== null) || (!hasResult && metric.percentile !== null)) {
+      throw new Error('Invalid Stats result status');
+    }
+    const comparison = metric.comparison;
+    if (comparison !== undefined && (report.reportKind === 'individual' || !hasResult || !onlyKeys(comparison, ['value', 'median', 'count']) ||
+        !measured(comparison.value) || comparison.value <= 0 || !measured(comparison.median) || comparison.median <= 0 ||
+        !Number.isInteger(comparison.count) || comparison.count < 5)) throw new Error('Invalid team comparison');
+
+    const curve = metric.curve;
+    if (curve === undefined) continue;
+    if (!onlyKeys(curve, ['label', 'unit', 'cohort', 'through', 'points', 'own']) || curve.unit !== spec.curveUnit) {
+      throw new Error('Invalid developmental curve');
+    }
+    string(curve.label, 'curve label', 90);
+    string(curve.cohort, 'curve cohort', 140);
+    if (curve.through != null && (typeof curve.through !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(curve.through))) {
+      throw new Error('Invalid curve source date');
+    }
+    const points = array(curve.points, 'curve points', 121);
+    let lastAge = 0;
+    if (points.length < 2) throw new Error('Invalid curve points');
+    for (const point of points) {
+      if (!onlyKeys(point, ['age', 'mean', 'sd']) || !Number.isFinite(point.age) || point.age < 4 ||
+          point.age > 25 || point.age <= lastAge || !measured(point.mean) || point.mean <= 0 || !measured(point.sd)) {
+        throw new Error('Invalid curve point');
+      }
+      lastAge = point.age;
+    }
+    if (curve.own !== undefined && (!onlyKeys(curve.own, ['age', 'value', 'average']) || !Number.isInteger(curve.own.age) ||
+        curve.own.age < 5 || curve.own.age > 24 || !measured(curve.own.value) || curve.own.value <= 0 ||
+        (curve.own.average !== undefined && (!measured(curve.own.average) || curve.own.average <= 0)))) {
+      throw new Error('Invalid developmental placement');
+    }
+  }
+}
+
 function validate(report) {
   if (!report || typeof report !== 'object' || report.version !== 1) throw new Error('Invalid report');
   for (const field of ['name', 'firstName', 'team', 'coach', 'testDate', 'focusTitle', 'focusText', 'playerId']) {
@@ -316,6 +382,7 @@ function validate(report) {
   if (focused && (!report.development || report.resultsFirst !== true)) throw new Error('Focused report requires saved-plan findings');
   validateDevelopment(report.development, report.exercises, focused);
   if (focused) validateFocusedMetrics(report.metrics);
+  if (report.visualLayout === COMPARISON_LAYOUT) validateScoreComparisons(report);
   if (report.development && (report.pathwayCharts || report.resultsFirst !== true)) throw new Error('Development requires results-first classic layout');
   if (report.pathwayCoverage !== undefined) {
     if (!report.pathwayCharts || !report.pathwayCoverage || typeof report.pathwayCoverage.broaderComparisonsPending !== 'boolean') throw new Error('Invalid pathway coverage');
@@ -384,6 +451,193 @@ function makeMetric(metric, focused = false) {
   return row;
 }
 
+function makeVisualMetric(metric, selectable = false) {
+  const card = element(selectable ? 'button' : 'article', 'pt-score-card');
+  if (selectable) {
+    card.type = 'button';
+    card.setAttribute('aria-controls', 'pt-score-detail');
+  }
+  const label = element(selectable ? 'span' : 'h3', selectable ? 'pt-score-label' : '', metric.label);
+  const status = metric.status === 'retest' ? 'Retest needed' : 'No result';
+  const result = element(selectable ? 'span' : 'p', metric.result ? 'pt-score-value' : 'pt-score-value pt-score-unavailable',
+    metric.result || (selectable ? status : 'Retest'));
+  card.append(label, result);
+
+  const block = selectable ? 'span' : 'p';
+  const comparison = element(selectable ? 'span' : 'div', 'pt-score-comparison');
+  if (metric.percentile !== null) {
+    const track = element(selectable ? 'span' : 'div', 'pt-track');
+    track.setAttribute('aria-hidden', 'true');
+    track.append(element('span'), element('span'), element('span'));
+    const marker = element('i', 'pt-marker');
+    marker.style.left = `${metric.percentile}%`;
+    track.append(marker);
+    comparison.append(track, element(block, 'pt-score-rank', `≈${ordinal(metric.percentile)} percentile`));
+  } else {
+    comparison.append(element(block, 'pt-score-rank pt-score-muted', 'No percentile'));
+  }
+  const count = metric.count ?? 0;
+  if (count >= 5 && metric.average) {
+    const estimated = selectable && metric.estimatedCount ? ` (${metric.estimatedCount} estimated)` : '';
+    comparison.append(element(block, 'pt-score-average', `Team avg ${metric.average} · ${count} results${estimated}`));
+  } else {
+    const caption = count ? `Team avg unavailable · ${count} results` : 'Team avg unavailable';
+    comparison.append(element(block, 'pt-score-average', caption));
+  }
+  card.append(comparison);
+  if (metric.note) card.append(element(block, 'pt-score-note', metric.note));
+  if (selectable && metric.status === 'estimate') card.append(element('span', 'pt-score-note', 'Estimate'));
+  return card;
+}
+
+function makeVisualFindings(report) {
+  const section = element('section', 'pt-development pt-score-findings');
+  for (const [key, title] of [['strengths', 'Strong today'], ['priorities', 'Practice next']]) {
+    const items = report.development[key];
+    if (!items.length) continue;
+    const block = element('div', 'pt-score-finding');
+    block.append(element('h2', '', title));
+    const list = element('ul');
+    for (const item of items) list.append(element('li', '', item.title));
+    block.append(list);
+    section.append(block);
+  }
+  return section;
+}
+
+function makeTeamMedian(metric) {
+  const section = element('div', 'pt-median');
+  const comparison = metric.comparison;
+  if (!comparison) {
+    const message = metric.result ? 'Team median unavailable for this test.' : 'No qualified result for this test.';
+    section.append(element('p', 'pt-score-caption', message));
+    return section;
+  }
+
+  const { unit, digits, more, less } = STATS_METRICS[metric.key];
+  const { value, median, count } = comparison;
+  const shownValue = value.toFixed(digits), shownMedian = median.toFixed(digits);
+  const delta = Number((Number(shownValue) - Number(shownMedian)).toFixed(digits));
+  const gap = delta === 0 ? 'Level with the team median'
+    : `${Math.abs(delta).toFixed(digits)} ${unit} ${delta > 0 ? more : less} than the team median`;
+  section.append(element('p', 'pt-median-gap', gap));
+  const rows = element('dl', 'pt-median-values');
+  const max = Math.max(value, median);
+  for (const [label, shown, raw, marker] of [
+    ['You', shownValue, value, 'you'],
+    ['Team median', shownMedian, median, 'team'],
+  ]) {
+    const row = element('div', 'pt-median-row');
+    const readout = element('dd');
+    readout.append(element('strong', '', `${shown} ${unit}`));
+    const track = element('span', 'pt-median-track');
+    track.setAttribute('aria-hidden', 'true');
+    const fill = element('span', `pt-median-fill pt-median-${marker}`);
+    fill.style.width = `${(100 * raw / max).toFixed(2)}%`;
+    track.append(fill);
+    readout.append(track);
+    row.append(element('dt', '', label), readout);
+    rows.append(row);
+  }
+  section.append(rows, element('p', 'pt-score-caption', `${count} comparable teammates · same session`));
+  return section;
+}
+
+function makeClubCurve(metric) {
+  const section = element('section', 'pt-club-curve');
+  section.append(element('h4', '', 'Developmental curve'));
+  const curve = metric.curve;
+  if (!curve) {
+    section.append(element('p', 'pt-score-caption', 'Club comparison unavailable for this test.'));
+    return section;
+  }
+  const { points, own, unit } = curve;
+  const firstAge = points[0].age, lastAge = points.at(-1).age;
+  const digits = unit === 'm/s' ? 2 : 1;
+  const readout = value => `${value.toFixed(digits)} ${unit}`;
+  const minAge = Math.min(firstAge, own?.age ?? firstAge) - 0.28;
+  const maxAge = Math.max(lastAge, own?.age ?? lastAge) + 0.28;
+  const lower = point => Math.max(0, point.mean - point.sd);
+  const upper = point => point.mean + point.sd;
+  const lowest = Math.min(...points.map(lower), own?.value ?? Infinity);
+  const highest = Math.max(...points.map(upper), own?.value ?? 0);
+  const span = Math.max(highest - lowest, 0.25);
+  const floor = Math.max(0, lowest - span * 0.13), ceiling = highest + span * 0.13;
+  const x = age => 42 + (age - minAge) / (maxAge - minAge) * 306;
+  const y = value => 122 - (value - floor) / (ceiling - floor) * 104;
+  const pair = (age, value) => `${x(age).toFixed(2)},${y(value).toFixed(2)}`;
+  const svg = svgElement('svg', { viewBox: '0 0 376 157', role: 'img', 'aria-label':
+    `${metric.label}. Club average and spread by age group in ${unit}.${own ? ` Your best: ${readout(own.value)}, U${own.age}.` : ''}` });
+  const ySteps = [floor, (floor + ceiling) / 2, ceiling];
+  for (const value of ySteps) {
+    const cy = y(value);
+    svg.append(svgElement('line', { x1: 42, x2: 348, y1: cy, y2: cy, class: 'pt-club-gridline' }),
+      svgElement('text', { x: 35, y: cy + 4, 'text-anchor': 'end' }, numberLabel(value)));
+  }
+  const band = [...points.map(point => pair(point.age, upper(point))),
+    ...points.slice().reverse().map(point => pair(point.age, lower(point)))].join(' ');
+  svg.append(svgElement('polygon', { points: band, class: 'pt-club-spread' }),
+    svgElement('polyline', { points: points.map(point => pair(point.age, point.mean)).join(' '), class: 'pt-club-average' }));
+  const ticks = new Set();
+  for (let age = Math.ceil(firstAge); age <= lastAge; age++) {
+    if (lastAge - firstAge <= 7 || (age - Math.ceil(firstAge)) % 2 === 0) ticks.add(age);
+  }
+  if (own) ticks.add(own.age);
+  for (const age of [...ticks].sort((a, b) => a - b)) {
+    svg.append(svgElement('text', { x: x(age), y: 144, 'text-anchor': 'middle' }, `U${age}`));
+  }
+  if (own) {
+    svg.append(svgElement('circle', { cx: x(own.age), cy: y(own.value), r: 5, class: 'pt-club-own' }));
+  }
+  const legend = element('p', 'pt-club-legend');
+  legend.append(element('span', 'pt-legend-average', 'Club average'), element('span', 'pt-legend-spread', 'Spread'));
+  if (own) legend.append(element('span', 'pt-legend-own', `Your best · ${readout(own.value)}`));
+  const source = curve.through ? `${curve.cohort} · Through ${curve.through}` : curve.cohort;
+  section.append(element('p', 'pt-score-caption', `${curve.label} (${unit}) · ${source}`), svg, legend);
+  if (own?.average !== undefined) {
+    section.append(element('p', 'pt-score-caption', `U${own.age} average · ${readout(own.average)}`));
+  } else if (!own) {
+    section.append(element('p', 'pt-score-caption', 'Your placement is unavailable for this comparison.'));
+  }
+  return section;
+}
+
+function makeInteractiveScores(metrics, grid) {
+  const panel = element('section', 'pt-score-detail');
+  panel.id = 'pt-score-detail';
+  panel.setAttribute('aria-labelledby', 'pt-score-detail-title');
+  const title = element('h3', '', '');
+  title.id = 'pt-score-detail-title';
+  title.setAttribute('aria-live', 'polite');
+  const details = element('div');
+  panel.append(title, details);
+  const cards = metrics.map(metric => makeVisualMetric(metric, true));
+  const select = index => {
+    const metric = metrics[index];
+    for (const [i, card] of cards.entries()) card.setAttribute('aria-pressed', String(i === index));
+    title.textContent = metric.label;
+    details.replaceChildren(makeTeamMedian(metric), makeClubCurve(metric));
+  };
+  for (const [index, card] of cards.entries()) card.addEventListener('click', () => select(index));
+  grid.append(...cards);
+  select(Math.max(0, metrics.findIndex(metric => metric.result !== null)));
+  return panel;
+}
+
+function makeStatsFindings(metrics) {
+  const measured = metrics.filter(metric => metric.status === 'measured' && metric.percentile !== null);
+  const strong = measured.filter(metric => metric.band === 'strong').sort((a, b) => b.percentile - a.percentile)[0];
+  const practice = measured.filter(metric => metric.band === 'practice').sort((a, b) => a.percentile - b.percentile)[0];
+  const section = element('section', 'pt-development pt-score-findings');
+  for (const [title, metric] of [['Strong today', strong], ['Practice next', practice]]) {
+    if (!metric) continue;
+    const item = element('div', 'pt-score-finding pt-stats-finding');
+    item.append(element('h2', '', title), element('p', '', metric.label));
+    section.append(item);
+  }
+  return section;
+}
+
 function makeDetails(report) {
   const details = element('details', 'pt-details');
   details.append(element('summary', '', 'How to read this + team averages'));
@@ -433,7 +687,7 @@ function workoutAnchor(text, href, className = 'pt-recovery-link', onActivate) {
   return link;
 }
 
-function makeWorkoutEntry(report, record) {
+function makeWorkoutEntry(report, record, visual = false) {
   const links = workoutLinks(report.playerId);
   const entry = element('div', 'pt-workout-entry');
   if (!links) {
@@ -445,6 +699,21 @@ function makeWorkoutEntry(report, record) {
     const workout = workoutAnchor(`Open ${report.firstName}’s workouts`, playerSignupLink(report.playerSignupUrl, report.playerId), 'pt-primary', record && (() => record('workouts')));
     // Keep the report open while signup starts. WebKit can cancel the event
     // during same-tab navigation even when the request has keepalive enabled.
+    if (visual) {
+      workout.textContent = 'Sign up for workouts';
+      if (record) workout.target = '_blank';
+      const signIn = `/signin?reportPlayer=${encodeURIComponent(report.playerId)}`;
+      entry.append(
+        workout,
+        workoutAnchor('Get PoseTek on iPhone or iPad', links.install, 'pt-install-button', record && (() => record('testflight'))),
+        element('p', 'pt-cta-note', 'Create your player login first, then use it in the app.'),
+      );
+      const recovery = element('div', 'pt-recovery-links');
+      recovery.append(workoutAnchor('Sign in', signIn));
+      if (platform !== 'android') recovery.append(workoutAnchor('Open PoseTek', links.native));
+      entry.append(recovery);
+      return entry;
+    }
     const guidance = element('p', 'pt-cta-note', `First, create ${report.firstName}’s player login with the filled-in code, or sign in if it’s already set up.${record ? ' Opens in a new tab.' : ''}`);
     if (record) {
       workout.target = '_blank';
@@ -511,18 +780,26 @@ function makeInstallSteps(links, record) {
 }
 
 /** Render only an already-decrypted report. Report strings are always plain text. */
-export function renderReport(report, record) {
+export function renderReport(report, record, {visual = ['score-cards-v1', COMPARISON_LAYOUT].includes(report?.visualLayout)} = {}) {
   clearReport();
   const pdf = validate(report);
   const mount = document.getElementById('report-root');
   if (!mount) throw new Error('Missing report mount');
   const focused = report.layout === 'focused-v1';
+  visual = visual && report.resultsFirst === true && !report.pathwayCharts;
+  const interactive = visual && report.visualLayout === COMPARISON_LAYOUT;
   const phone = element('article', focused ? 'pt-phone pt-focused' : 'pt-phone');
+  if (visual) phone.classList.add('pt-visual');
+  if (interactive) phone.classList.add('pt-visual-v2');
   const header = element('header', 'pt-top');
   header.append(element('div', 'pt-brand', 'POSETEK'));
-  header.append(element('h1', '', `${report.firstName}’s ${report.pathwayCharts ? 'testing' : 'team'} snapshot`));
+  const title = visual ? `${report.firstName}’s test results` : `${report.firstName}’s ${report.pathwayCharts ? 'testing' : 'team'} snapshot`;
+  header.append(element('h1', '', title));
   header.append(element('p', '', `${report.name} · ${report.team}`));
-  header.append(element('p', '', `Coach ${report.coach} · Tested ${report.testDate}`));
+  const dateLine = interactive && report.reportKind === 'individual'
+    ? `Results through ${report.testDate}`
+    : `Coach ${report.coach} · Tested ${report.testDate}`;
+  header.append(element('p', '', dateLine));
   if (report.reviewNotice) header.append(element('p', 'pt-coverage', report.reviewNotice));
   if (report.pathwayCoverage) header.append(element('p', 'pt-coverage', report.pathwayCoverage.note));
   const main = element('main', 'pt-body');
@@ -533,7 +810,7 @@ export function renderReport(report, record) {
   }
 
   const actions = element('div', 'pt-actions');
-  actions.append(makeWorkoutEntry(report, record));
+  actions.append(makeWorkoutEntry(report, record, visual));
   const downloadRow = element('div', 'pt-download-row');
   const download = element('button', 'pt-quiet-button', 'Download PDF');
   download.type = 'button';
@@ -552,6 +829,16 @@ export function renderReport(report, record) {
 
   if (report.pathwayCharts) {
     main.append(makePathways(report), makeCorrectedResults(report));
+  } else if (visual) {
+    const scores = element('section', 'pt-score-section');
+    const sectionLabel = interactive && report.reportKind === 'individual' ? 'Test results' : 'Team comparison';
+    scores.append(element('h2', '', sectionLabel),
+      element('p', 'pt-score-intro', interactive ? 'Tap a test to see how you compare.' : 'Approximate team percentiles. Further right is stronger.'));
+    const grid = element('div', 'pt-score-grid');
+    scores.append(grid);
+    if (interactive) scores.append(makeInteractiveScores(report.metrics, grid));
+    else for (const metric of report.metrics) grid.append(makeVisualMetric(metric));
+    main.append(scores);
   } else {
   const sectionTitle = element('div', 'pt-section-title');
   const personal = element('span', 'pt-you');
@@ -571,13 +858,30 @@ export function renderReport(report, record) {
     row.append(element('strong', '', summary.label), element('span', '', summary.text));
     meaning.append(row);
   }
-  if (!focused && report.summary.length) main.append(meaning);
-  if (report.development) main.append(makeDevelopment(report));
-  if (!focused && !report.pathwayCharts) main.append(makeDetails(report));
+  if (!focused && !visual && report.summary.length) main.append(meaning);
+  if (interactive) {
+    const findings = makeStatsFindings(report.metrics);
+    if (findings.childElementCount) main.append(findings);
+  } else if (report.development) main.append(visual ? makeVisualFindings(report) : makeDevelopment(report));
+  if (!focused && !visual && !report.pathwayCharts) main.append(makeDetails(report));
   if (report.exercises.length) {
     const practice = element('section');
-    practice.append(element('h2', 'pt-practice-title', report.development ? 'Two drills from your plan' : 'A little practice to get started'));
+    practice.append(element('h2', 'pt-practice-title', visual ? 'Two drills to try' :
+      report.development ? 'Two drills from your plan' : 'A little practice to get started'));
     for (const exercise of report.exercises) {
+      if (visual) {
+        const drill = element('details', 'pt-drill pt-score-drill');
+        const summary = element('summary');
+        summary.append(element('strong', '', exercise.title), element('span', 'pt-dose', exercise.dose));
+        drill.append(summary, element('p', '', exercise.instruction));
+        if (report.development) {
+          drill.append(element('p', 'pt-equipment', `Equipment: ${exercise.equipment}`));
+          drill.dataset.drillId = exercise.drillId;
+          drill.dataset.workoutId = exercise.workoutId;
+        }
+        practice.append(drill);
+        continue;
+      }
       const drill = element('article', 'pt-drill');
       const top = element('div', 'pt-drill-top');
       top.append(element('h3', '', exercise.title), element('span', 'pt-drill-tag', exercise.tag));
