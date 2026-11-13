@@ -9,6 +9,8 @@ import { feedUnavailable, remoteFeedEnabled, useHomeFeed } from './home-feed';
 import { FeedList, LoadingRow, LoadingState, StateCard } from './HomeFeed';
 import { PREVIEW_CONTEXT, previewActivities, previewFeedPhase } from './preview-feed';
 import WeekRecap from './WeekRecap';
+import { PlatformTimeFigure } from './PlatformTimeFigure';
+import { usePlatformTime } from './use-platform-time';
 import type { RecapPreview } from './WeekRecap';
 import './home.css';
 
@@ -45,6 +47,8 @@ export default function PlayerHome({ ctx, preview, active, athlete, report, pers
   const organizationName = feed.context?.organizationName;
   const recapPreview = (mode?.startsWith('week-') ? mode.slice(5) : undefined) as RecapPreview;
   const phase = feed.phase;
+  // Parents only: the child's total time on PoseTek.
+  const platformTime = usePlatformTime(ctx.playerId, ctx.guardian === true && !preview);
 
   return <>
     <PlayerHeader title="Home" />
@@ -52,6 +56,7 @@ export default function PlayerHome({ ctx, preview, active, athlete, report, pers
     <div className="home-stack">
       <WeekRecap key={`${ctx.playerId}:${auth.currentUser?.uid ?? ''}`} access={ctx.access} guardian={ctx.guardian === true} playerName={playerName} playerId={ctx.playerId} active={active}
         preview={preview} previewState={recapPreview} feedUnavailable={feedUnavailable(enabled, phase)} report={report} includePersonal={personal?.enabled === true} />
+      <PlatformTimeFigure time={platformTime} />
       <div className="home-section-heading">
         <h2>Organization activity</h2>
         {organizationName && <p>{organizationName}</p>}
