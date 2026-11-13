@@ -1,15 +1,27 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 const f = vi.hoisted(() => ({ save: vi.fn(), callable: vi.fn() }));
 vi.mock('../../../lib/firebase', () => ({ cloud: { httpsCallable: f.callable } }));
-import { normalizedPlayerPhone, savePlayerPhone } from './playerPhone';
+import { normalizedPlayerPhone, savePlayerPhone, savePlayerPhones, type PhoneEdit } from './playerPhone';
 beforeEach(() => { vi.resetAllMocks(); f.callable.mockReturnValue(f.save); });
 it('normalizes US parent numbers and rejects incomplete or foreign numbers', () => {
   expect(normalizedPlayerPhone('+1 (707) 555-0123')).toBe('(707)-555-0123');
   for (const value of ['', '123', '1209585783', '7075550123 ext 2', '+44 2079460123']) expect(normalizedPlayerPhone(value)).toBeNull();
 });
+it('sends both owners in one request and verifies each value including a cleared number', async () => {
+  const updates: PhoneEdit[] = [
+    { field: 'parent', phone: '(707)-555-0123', expectedPhone: null },
+    { field: 'player', phone: null, expectedPhone: '(707)-555-0124' },
+  ];
+  const bases = { parent: 'Entered by administrator', player: null };
+  f.save.mockResolvedValue({ data: { playerId: 'athlete', phones: { parent: '(707)-555-0123', player: null }, bases } });
+  await expect(savePlayerPhones('athlete', updates)).resolves.toEqual(bases);
+  expect(f.save).toHaveBeenCalledExactlyOnceWith({ playerId: 'athlete', updates });
+  f.save.mockResolvedValue({ data: { playerId: 'athlete', phones: { parent: '(707)-555-0123' } } });
+  await expect(savePlayerPhones('athlete', updates)).rejects.toThrow('verified');
+});
 it('sends the exact prior contact for concurrency protection and verifies the saved identity', async () => {
   f.save.mockResolvedValue({ data: { playerId: 'athlete', phone: '(707)-555-0123' } });
-  await expect(savePlayerPhone('athlete', '7075550123', '(925)-555-0123')).resolves.toBe('(707)-555-0123');
+  await expect(savePlayerPhones('athlete', [{ field: 'primary', phone: '(707)-555-0123', expectedPhone: '(925)-555-0123' }])).resolves.toEqual({});
   expect(f.callable).toHaveBeenCalledWith('updateAdminPlayerPhone');
   expect(f.save).toHaveBeenCalledWith({ playerId: 'athlete', phone: '(707)-555-0123', expectedPhone: '(925)-555-0123' });
 });
