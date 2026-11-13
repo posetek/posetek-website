@@ -10,9 +10,13 @@ export function readPlayerInvitationLink(href: string): { invitation: PlayerInvi
   const present = values.length > 0 && ["/signin", "/kickai.html"].includes(url.pathname);
   if (!present) return { invitation: { present: false, code: "" }, cleanUrl: url.href };
   const normalized = values.map(value => value.trim());
-  const code = normalized.every(value => value === normalized[0]) && /^[A-Za-z0-9-]{6,64}$/.test(normalized[0]) ? normalized[0] : "";
+  // A link that also carries a parent code is malformed: it fills in neither code.
+  const mixed = url.searchParams.has("parentCode") || fragment.has("parentCode");
+  const code = !mixed && normalized.every(value => value === normalized[0]) && /^[A-Za-z0-9-]{6,64}$/.test(normalized[0]) ? normalized[0] : "";
   url.searchParams.delete("playerCode");
   fragment.delete("playerCode");
+  url.searchParams.delete("parentCode");
+  fragment.delete("parentCode");
   url.hash = fragment.toString();
   return { invitation: { present, code }, cleanUrl: url.href };
 }

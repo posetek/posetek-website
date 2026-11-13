@@ -61,6 +61,16 @@ export function redeemPlayerSignupCode(code: string): Promise<any> {
   return cloud.httpsCallable("redeemPlayerSignupCode")(redeemPlayerSignupCodePayload(code));
 }
 
+/** Preflight for a parent code: `{ valid }` only, never a child's name (Parent accounts plan §11.3). */
+export async function validateGuardianInvitation(code: string): Promise<boolean> {
+  return (await cloud.httpsCallable("validateGuardianInvitation")({ code })).data?.valid === true;
+}
+
+/** Links every child on a parent invitation to the signed-in login; serves sign-up and Add player. */
+export function redeemGuardianInvitation(code: string): Promise<any> {
+  return cloud.httpsCallable("redeemGuardianInvitation")({ code });
+}
+
 /** Adds the caller to an organization by fresh code as a player or coach. */
 export function joinOrganization(
   code: string,
