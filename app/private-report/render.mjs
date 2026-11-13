@@ -311,6 +311,8 @@ function validateScoreComparisons(report) {
     if (!spec || keys.has(metric.key) ||
         !['measured', 'estimate', 'retest', 'unavailable'].includes(metric.status)) throw new Error('Invalid Stats metric');
     keys.add(metric.key);
+    if (metric.estimatedCount !== undefined && (!Number.isInteger(metric.estimatedCount) ||
+        metric.estimatedCount < 0 || metric.estimatedCount > (metric.count ?? 0))) throw new Error('Invalid estimated count');
     const hasResult = metric.status === 'measured' || metric.status === 'estimate';
     if (hasResult !== (metric.result !== null) || (!hasResult && metric.percentile !== null)) {
       throw new Error('Invalid Stats result status');
@@ -476,7 +478,8 @@ function makeVisualMetric(metric, selectable = false) {
   }
   const count = metric.count ?? 0;
   if (count >= 5 && metric.average) {
-    comparison.append(element(block, 'pt-score-average', `Team avg ${metric.average} · ${count} results`));
+    const estimated = selectable && metric.estimatedCount ? ` (${metric.estimatedCount} estimated)` : '';
+    comparison.append(element(block, 'pt-score-average', `Team avg ${metric.average} · ${count} results${estimated}`));
   } else {
     const caption = count ? `Team avg unavailable · ${count} results` : 'Team avg unavailable';
     comparison.append(element(block, 'pt-score-average', caption));
