@@ -115,6 +115,8 @@ export default function LandingPage() {
       capturePlayerInvitationLink(window);
       if (reportPlayerSignupError(readReportPlayerEntry(window.location.search))) {
         forgetPlayerInvitationLink();
+        setInvitationLink(initialPlayerInvitationLink());
+        setPlayerCode(""); setSignupOpen(false); setInvitationCheck(null);
         return;
       }
       const next = initialPlayerInvitationLink();
@@ -751,7 +753,7 @@ export default function LandingPage() {
       </main>
 
       {/* Signup Modal */}
-      <div className={`modal-overlay${signupOpen ? " active" : ""}`} id="signupModal" data-clarity-mask="true">
+      {!signupEntryError && <div className={`modal-overlay${signupOpen ? " active" : ""}`} id="signupModal" data-clarity-mask="true">
         <div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="signup-title" tabIndex={-1} ref={signupDialogRef}>
           <div className="modal-content-wrapper">
             <div className="modal-header">
@@ -1152,7 +1154,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Forgot Password Modal */}
       <div className={`modal-overlay${forgotOpen ? " active" : ""}`} id="forgotPasswordModal">

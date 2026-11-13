@@ -214,6 +214,7 @@ async function runInside() {
     await openSignIn(statsLink + '&reportView=stats');
     await page.getByRole('alert').filter({ hasText: 'Reopen the original report link to continue.' }).waitFor();
     assert.equal(await page.locator('#loginForm').count(), 0);
+    assert.equal(await page.locator('#signupModal, .signup-prompt').count(), 0);
 
     await openSignIn();
     await page.getByRole('button', { name: 'Use a different account' }).click();
@@ -222,8 +223,7 @@ async function runInside() {
     await page.getByRole('heading', { name: 'Sign in to open Stats' }).waitFor();
     await page.getByText("Sign in with this player's existing login to open their Stats.", { exact: true }).waitFor();
     await page.locator('#loginForm').waitFor();
-    assert.equal(await page.locator('#getStartedBtn').count(), 0);
-    assert.equal(await page.locator('#signupModal.active').count(), 0);
+    assert.equal(await page.locator('#signupModal, .signup-prompt').count(), 0);
     assert.equal(new URL(page.url()).hash, '');
     await signIn();
     await expectTab('Stats', athletePath('stats'));
