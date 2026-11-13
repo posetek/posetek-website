@@ -23,6 +23,17 @@
   .account-age .player-profile-age > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .account-age .player-profile-age span { display: flex; flex-direction: column; }
   .account-age .player-profile-age fieldset { margin: 12px 0 0; }
+  /* Parent session: Add player and the per-child and own-account delete pages. */
+  .account-form { display: grid; gap: 14px; margin: 0 0 24px; }
+  .account-form label { display: grid; gap: 6px; font-size: 15px; color: var(--v4-secondary); }
+  .account-form input { min-height: 48px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--v4-border); background: var(--v4-card); color: #fff; font: inherit; font-size: 17px; }
+  .account-form button { min-height: 48px; border: 0; border-radius: 14px; background: var(--v4-accent); color: #04130e; font-size: 17px; font-weight: 600; }
+  .account-form button:disabled { opacity: .5; }
+  .account-form .account-delete-submit { background: #ff453a; color: #fff; }
+  .account-form p { margin: 0; color: var(--v4-secondary); line-height: 1.45; }
+  .account-form [role="alert"] { color: #ff8a80; }
+  .account-form code { overflow-wrap: anywhere; user-select: all; color: #fff; }
+  .account-delete { color: #ff6b5f; }
   .account-sheet .ai-sharing-control { margin: 0; }
   .account-sheet .ai-sharing-control a { color: var(--v4-accent); }
 }

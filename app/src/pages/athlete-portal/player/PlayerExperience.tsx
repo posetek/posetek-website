@@ -21,6 +21,9 @@ import PlayerWorkouts from './workouts/PlayerWorkouts';
 import { BUILD_WORKOUT } from './workouts/navigation';
 import PlayerStats from './stats/PlayerStats';
 import AccountSettings from './account/AccountSettings';
+import AddPlayerSheet from './account/AddPlayerSheet';
+import { guardianMenu } from './guardian-session';
+import { familyDestination, FAMILY_PATH } from '../../landing/account-entry';
 import { useAthleteTestReport } from './report';
 import './player.css';
 import { claimBrowserFeedbackInvitation } from './feedback-invitation';
@@ -38,6 +41,14 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const [provisionalEstimates, setProvisionalEstimates] = useState(ctx.provisionalEstimates || []);
   const [visited, setVisited] = useState(new Set<PlayerView>([route.view])), [request, setRequest] = useState<Row | null>(null), [refreshError, setRefreshError] = useState('');
   const [feedbackInvitation, setFeedbackInvitation] = useState(false), [accountSettings, setAccountSettings] = useState(false), [guided, setGuided] = useState(false);
+  const [addingPlayer, setAddingPlayer] = useState(false);
+  // A parent session: Switch player with more than one child, and Add player.
+  const parentMenu = guardianMenu(ctx);
+  const leaveForFamily = (playerIds: readonly string[]) => {
+    const next = familyDestination(playerIds);
+    if (next === FAMILY_PATH) navigate(FAMILY_PATH);
+    else if (!playerIds.includes(ctx.playerId || '')) window.location.assign(next);
+  };
   const [feedbackOwner] = useState(() => ({ uid: auth.currentUser?.uid, playerId: ctx.playerId }));
   // My workout plan opened from Stats is the Workouts tab's own page shown over Stats, as in the
   // app, so one instance owns every workout in progress.
@@ -127,16 +138,20 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
     if (navigationType === 'POP') window.scrollTo({ top: scrollPositions.current.get(location.key) ?? 0 });
   }, [location.key, navigationType, route.view]);
   // A sheet over the workspace pauses the tab under it, as the app's `isActive` does.
-  const tab = (view: PlayerView): PlayerTabProps => ({ ctx: playerCtx, route, go, back, active: route.view === view && !accountSettings, preview, athlete, reps, personal, report });
+  const sheetOpen = accountSettings || addingPlayer;
+  const tab = (view: PlayerView): PlayerTabProps => ({ ctx: playerCtx, route, go, back, active: route.view === view && !sheetOpen, preview, athlete, reps, personal, report });
   return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} initials={playerInitials(athlete?.name)} onNavigate={view => go(view as PlayerView)} hideDock={guided && workoutsShown}
-    onAccountSettings={() => setAccountSettings(true)} onReturnHome={() => go('home')} onSignOut={preview ? undefined : () => { void auth.signOut(); }}>
+    onAccountSettings={() => setAccountSettings(true)} onReturnHome={() => go('home')} onSignOut={preview ? undefined : () => { void auth.signOut(); }}
+    onSwitchPlayer={parentMenu.canSwitch ? () => navigate(FAMILY_PATH) : undefined}
+    onAddPlayer={parentMenu.canAdd ? () => setAddingPlayer(true) : undefined}>
       {preview && <p className="player-preview-note">Local preview · sample data · no account changes</p>}
       {refreshError && <p className="player-error" role="status">Could not refresh your latest results: {refreshError}</p>}
       {visited.has('home') && <div hidden={route.view !== 'home'}><PlayerHome {...tab('home')} /></div>}
-      {visited.has('coach') && <div hidden={route.view !== 'coach'}><PlayerHeader title="Coach" /><CoachChat playerId={ctx.playerId!} preview={preview} personalStore={personal} athlete={athlete} active={route.view === 'coach' && !accountSettings}
+      {visited.has('coach') && <div hidden={route.view !== 'coach'}><PlayerHeader title="Coach" /><CoachChat playerId={ctx.playerId!} preview={preview} personalStore={personal} athlete={athlete} active={route.view === 'coach' && !sheetOpen}
         technique={{ reps: all, onReplay: rep => go('workouts', { drill: 'shooting', session: rep.sessionFolder || `session${rep.sessionNumber}`, rep: rep.id }) }} onHandoff={r => { setRequest(r); if (r.conversationId) navigate({ pathname: location.pathname, search: personalDraftLink(location.search, r.conversationId) }); else go('workouts'); }} /></div>}
-      {(visited.has('workouts') || statsPlan) && <div hidden={!workoutsShown}><PlayerWorkouts {...tab('workouts')} active={workoutsShown && !accountSettings} statsProfile={intakeSnapshot(profile)} request={route.view === 'workouts' ? request : null} onAcknowledge={() => setRequest(null)} onCompleted={completedWorkout} feedbackInvitation={feedbackInvitation} onDismissFeedback={() => setFeedbackInvitation(false)} onGuidedChange={setGuided} /></div>}
+      {(visited.has('workouts') || statsPlan) && <div hidden={!workoutsShown}><PlayerWorkouts {...tab('workouts')} active={workoutsShown && !sheetOpen} statsProfile={intakeSnapshot(profile)} request={route.view === 'workouts' ? request : null} onAcknowledge={() => setRequest(null)} onCompleted={completedWorkout} feedbackInvitation={feedbackInvitation} onDismissFeedback={() => setFeedbackInvitation(false)} onGuidedChange={setGuided} /></div>}
       {visited.has('stats') && <div hidden={route.view !== 'stats' || statsPlan}><PlayerStats {...tab('stats')} active={route.view === 'stats' && !statsPlan} profile={profile} dataset={dataset} onStartWorkout={startWorkout} /></div>}
       {accountSettings && <AccountSettings ctx={playerCtx} onClose={() => setAccountSettings(false)} />}
+      {addingPlayer && <AddPlayerSheet onClose={() => setAddingPlayer(false)} onAdded={playerIds => { setAddingPlayer(false); leaveForFamily(playerIds); }} />}
   </PlayerShell>;
 }

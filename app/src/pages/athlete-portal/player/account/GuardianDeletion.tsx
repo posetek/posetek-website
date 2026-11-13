@@ -1,0 +1,54 @@
+import { useId, useState } from 'react';
+import firebase, { auth, cloud } from '../../../../lib/firebase';
+import { accountError, authErrorCode } from '../../../landing/account-entry';
+import { DELETE_CONFIRMATION, deletionDetail, randomReceiptToken, requestGuardianDeletion } from './account-deletion';
+import type { DeletionTarget } from './account-deletion';
+
+const AUTH_ERRORS = ['invalid-credential', 'wrong-password', 'user-not-found', 'too-many-requests', 'network-request-failed', 'user-mismatch', 'requires-recent-login'];
+
+/** One delete page: the typed confirmation the deletion callable requires, behind a fresh sign-in. */
+export default function GuardianDeletion({ target }: { target: DeletionTarget }) {
+  const ids = { password: useId(), typed: useId() };
+  const [actorUid] = useState(() => auth.currentUser?.uid || '');
+  const user = auth.currentUser;
+  const needsPassword = Boolean(user?.providerData?.some(provider => provider?.providerId === 'password'));
+  const [password, setPassword] = useState(''), [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const [accepted, setAccepted] = useState<{ receiptToken: string; deletingCaller: boolean } | null>(null);
+  async function submit() {
+    if (busy) return;
+    setBusy(true); setError('');
+    try {
+      setAccepted(await requestGuardianDeletion({ actorUid, target, typed, password }, {
+        currentUid: () => auth.currentUser?.uid || null,
+        reauthenticate: async secret => {
+          const current = auth.currentUser;
+          if (!current) throw new Error('Sign in again to confirm.');
+          if (needsPassword) {
+            if (!current.email) throw new Error('Sign in again to confirm.');
+            await current.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(current.email, secret));
+            await current.getIdToken(true);
+          }
+        },
+        newToken: () => randomReceiptToken(),
+        send: async payload => (await cloud.httpsCallable('requestAccountDeletion')(payload)).data || {},
+      }));
+    } catch (failure: any) {
+      setError(AUTH_ERRORS.includes(authErrorCode(failure)) ? accountError(failure) : failure?.message || 'Deletion could not be requested. Please try again.');
+    } finally {
+      setBusy(false); setPassword('');
+    }
+  }
+  if (accepted) return <div className="account-form" role="status">
+    <p>Deletion requested. It can take up to 30 days.</p>
+    <p>Receipt: <code>{accepted.receiptToken}</code></p>
+    {target.kind === 'self' && <button type="button" onClick={() => { void auth.signOut(); }}>Sign out</button>}
+  </div>;
+  return <form className="account-form" data-clarity-mask="true" onSubmit={event => { event.preventDefault(); void submit(); }}>
+    <p>{deletionDetail(target)}</p>
+    {needsPassword && <label htmlFor={ids.password}>Your password<input id={ids.password} type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} /></label>}
+    <label htmlFor={ids.typed}>Type {DELETE_CONFIRMATION} to confirm<input id={ids.typed} autoComplete="off" autoCapitalize="characters" spellCheck={false} required value={typed} onChange={event => setTyped(event.target.value)} /></label>
+    {error && <p role="alert">{error}</p>}
+    <button type="submit" className="account-delete-submit" disabled={busy || typed.trim() !== DELETE_CONFIRMATION || (needsPassword && !password)}>{busy ? 'Requesting…' : 'Delete'}</button>
+  </form>;
+}

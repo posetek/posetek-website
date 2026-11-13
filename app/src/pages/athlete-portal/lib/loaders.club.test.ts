@@ -10,7 +10,8 @@ vi.mock("../../../lib/firebase", () => ({
   cloud: { httpsCallable: (name: string) => (data: unknown) => mocks.call(name, data) },
   storage: { ref: () => ({ listAll: async () => ({ prefixes: [], items: [] }) }) },
 }));
-vi.mock("../../../lib/identity", () => ({ findCoach: mocks.coach, findPlayer: mocks.player, ownsPlayer: mocks.own }));
+// No viewer here is a linked parent (loaders.guardian.test.ts covers parents).
+vi.mock("../../../lib/identity", () => ({ findCoach: mocks.coach, findPlayer: mocks.player, ownsPlayer: mocks.own, guardsPlayer: () => false, findGuardian: async () => null }));
 vi.mock("../../../lib/organization-data", () => ({ loadClubMembership: mocks.membership }));
 vi.mock("../../admin/lib/identity", () => ({ refreshAdminIdentity: mocks.admin }));
 import { loadAuthenticated, loadTeamStandings } from "./loaders";

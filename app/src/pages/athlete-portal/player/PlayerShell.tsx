@@ -63,11 +63,22 @@ export function playerTabPath(view: string, search = '', pathname = '/athlete') 
   return `${fromCommunity ? '/athlete' : pathname}?${params}`;
 }
 
-type PlayerChrome = { initials?: string; onSignOut?: () => void; onAccountSettings?: () => void; onReturnHome?: () => void };
+/** `onSwitchPlayer` and `onAddPlayer` are given only in a parent session (Parent accounts plan §4.5). */
+type PlayerChrome = { initials?: string; onSignOut?: () => void; onAccountSettings?: () => void; onReturnHome?: () => void; onSwitchPlayer?: () => void; onAddPlayer?: () => void };
 const PlayerChromeContext = createContext<PlayerChrome>({});
 
+/** The account menu's rows, in order; a row appears only when its action is given. */
+export function accountMenuItems(chrome: PlayerChrome): { label: string; icon: string; action: () => void }[] {
+  const rows: [string, string, (() => void) | undefined][] = [
+    ['Account settings', 'account_circle', chrome.onAccountSettings], ['Return to home', 'home', chrome.onReturnHome],
+    ['Switch player', 'group', chrome.onSwitchPlayer], ['Add player', 'person_add', chrome.onAddPlayer], ['Sign out', 'logout', chrome.onSignOut],
+  ];
+  return rows.filter((row): row is [string, string, () => void] => Boolean(row[2])).map(([label, icon, action]) => ({ label, icon, action }));
+}
+
 function AccountMenu() {
-  const { initials, onSignOut, onAccountSettings, onReturnHome } = useContext(PlayerChromeContext);
+  const chrome = useContext(PlayerChromeContext);
+  const { initials, onSignOut, onAccountSettings, onReturnHome } = chrome;
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -86,9 +97,7 @@ function AccountMenu() {
       {initials || <span className="material-symbols-outlined" aria-hidden="true">person</span>}
     </button>
     {open && <div className="v4-account-menu" role="menu">
-      {onAccountSettings && <button type="button" role="menuitem" onClick={choose(onAccountSettings)}><span className="material-symbols-outlined" aria-hidden="true">account_circle</span>Account settings</button>}
-      {onReturnHome && <button type="button" role="menuitem" onClick={choose(onReturnHome)}><span className="material-symbols-outlined" aria-hidden="true">home</span>Return to home</button>}
-      {onSignOut && <button type="button" role="menuitem" onClick={choose(onSignOut)}><span className="material-symbols-outlined" aria-hidden="true">logout</span>Sign out</button>}
+      {accountMenuItems(chrome).map(item => <button key={item.label} type="button" role="menuitem" onClick={choose(item.action)}><span className="material-symbols-outlined" aria-hidden="true">{item.icon}</span>{item.label}</button>)}
     </div>}
   </div>;
 }
@@ -148,7 +157,7 @@ function SignOutConfirmation({ onSignOut, onCancel }: { onSignOut: () => void; o
   </div>;
 }
 
-export default function PlayerShell({ activeView, children, title, search = '', pathname = '/athlete', onNavigate, onSignOut, onAccountSettings, onReturnHome, initials, navigationDisabled = false, hideDock = false, className = '', mainClassName = '' }: PlayerShellProps) {
+export default function PlayerShell({ activeView, children, title, search = '', pathname = '/athlete', onNavigate, onSignOut, onAccountSettings, onReturnHome, onSwitchPlayer, onAddPlayer, initials, navigationDisabled = false, hideDock = false, className = '', mainClassName = '' }: PlayerShellProps) {
   const active = canonicalPlayerView(activeView);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const askToSignOut = onSignOut ? () => setConfirmingSignOut(true) : undefined;
@@ -158,7 +167,7 @@ export default function PlayerShell({ activeView, children, title, search = '', 
       event.preventDefault(); onNavigate(view);
     }
   };
-  return <PlayerChromeContext.Provider value={{ initials, onSignOut: askToSignOut, onAccountSettings, onReturnHome }}>
+  return <PlayerChromeContext.Provider value={{ initials, onSignOut: askToSignOut, onAccountSettings, onReturnHome, onSwitchPlayer, onAddPlayer }}>
     <div className={`pt-pose pt-player${className ? ` ${className}` : ''}`}>
       <main className={`player-main${mainClassName ? ` ${mainClassName}` : ''}`}>
         {title && <PlayerHeader title={title} />}
