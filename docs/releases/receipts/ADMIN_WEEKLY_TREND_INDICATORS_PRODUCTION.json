@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "status": "published-and-verified",
+  "productionDeploy": "6af6ab89e3e24351f3908e28",
+  "predecessorDeploy": "6af65c69c02ccc0ea2735e14",
+  "publishedAtUtc": "2026-11-13T06:18:40.604Z",
+  "websiteSourcePR": 159,
+  "websiteSourceCommit": "9148ab533d1320fc5fc0e07f57bc3699130e8de1",
+  "websiteMergeCommit": "a75098ed77bd6615b2338d3db9d64ba67542a598",
+  "websiteRuntimeBase": "0f23d6f273fb9b59adfd41add5db6b77f6dbf559",
+  "websiteRuntimeCommit": "d4468539de23c1c4a252ed44b0fe063c0e0d8d1c",
+  "websiteHostedCI": "passed",
+  "servedFiles": 2859,
+  "preservedFiles": 2851,
+  "addedHashedAssets": 7,
+  "orderedHeaders": 13,
+  "orderedRedirects": 12,
+  "providerRecords": 2860,
+  "replaced": [
+    {
+      "path": "/application.html",
+      "sha": "bcf3fb328ef3acc0b10c0938ace8cccbe5e8a779",
+      "size": 16040
+    }
+  ],
+  "removedFiles": 0,
+  "preservedEncryptedReports": 78,
+  "artifactManifestSha256": "6878560ae0606f0df5d7f0b5485be6565212d6d6f5a629648ec0f5e932d3737e",
+  "protectedBaselineFiles": 2857,
+  "localRecoveryMappings": 37,
+  "verification": {
+    "syntheticChromiumAndWebKit": "16 checks at 390 and 1440 pixels on the release runtime.",
+    "candidateExactHttpFiles": 94,
+    "productionExactHttpFiles": 94,
+    "candidateAndProductionRoutes": 8,
+    "productionSignedIn": "Overview and Usage in Vacaville showed red decreases, green increases, and a neutral tie.",
+    "metricContract": "The deployed getClubInsightsV2 version 14 supplies weekly Time on platform. The runtime retains that card's existing label and comparison windows."
+  }
+}
