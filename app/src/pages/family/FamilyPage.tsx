@@ -33,13 +33,14 @@ export default function FamilyPage() {
   }, [navigate]);
   useEffect(() => {
     document.title = "Players | PoseTek";
+    const requests = generation;
     const stop = auth.onAuthStateChanged(user => {
-      ++generation.current;
+      ++requests.current;
       setChildren(null); setError(""); setAdding(false);
       if (!user) { navigate(`/signin?returnTo=${encodeURIComponent("/family")}`, { replace: true }); return; }
       void show(user.uid);
     });
-    return () => { ++generation.current; stop(); };
+    return () => { ++requests.current; stop(); };
   }, [navigate, show]);
   const uid = auth.currentUser?.uid;
   return <div className="pt-pose portal-body pt-club family-page">

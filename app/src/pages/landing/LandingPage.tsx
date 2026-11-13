@@ -16,7 +16,7 @@ import { findCoach, findGuardian, findPlayer } from "../../lib/identity";
 import { useThemeColor } from "../../lib/use-theme-color";
 import { refreshAdminIdentity, upsertAdminProfile } from "../admin/lib/identity";
 import { capturePlayerInvitationLink, createInvitedPlayer, forgetPlayerInvitationLink, initialPlayerInvitationLink, readPlayerInvitationLink, unavailablePlayerInvitation } from "./player-invitation-link";
-import { addParentInvitation, captureParentInvitationLink, createInvitedParent, forgetParentInvitationLink, guardianErrorReason, guardianRedeemMessage, initialParentInvitationLink, parentLinkAction, readParentInvitationLink, unavailableParentInvitation } from "./parent-invitation-link";
+import { addParentInvitation, captureParentInvitationLink, createInvitedParent, forgetParentInvitationLink, guardianErrorReason, guardianRedeemMessage, initialParentInvitationLink, parentCodeFromInput, parentLinkAction, readParentInvitationLink, unavailableParentInvitation } from "./parent-invitation-link";
 import type { ParentLinkAction } from "./parent-invitation-link";
 import { readReportPlayerEntry, reportPlayerDestination, reportSignupDestination, reportParentSignupDestination, initialReportPlayerDestination, ReportPlayerEntryError } from "./report-player-entry";
 import { accountDestination, accountError, familyDestination, signInProfileWrite } from "./account-entry";
@@ -678,7 +678,7 @@ export default function LandingPage() {
     setParentAddLoading(true); setParentCodeError("");
     try {
       if (reportEntry.present && !reportEntry.playerId) throw new Error("Reopen the original report link to continue.");
-      const playerIds = await addParentInvitation(parentCode.trim(), { currentUid: () => (isCurrent() ? user.uid : null), redeem: redeemGuardianInvitation });
+      const playerIds = await addParentInvitation(parentCodeFromInput(parentCode), { currentUid: () => (isCurrent() ? user.uid : null), redeem: redeemGuardianInvitation });
       if (!isCurrent()) return;
       const destination = parentDestination(playerIds);
       forgetParentInvitationLink();
@@ -1042,10 +1042,13 @@ export default function LandingPage() {
               </p>}
               {signedIn && !parentFormOwned ? <div className="parent-signed-in">
                 {parentAction === "checking" || parentAction === null ? <p className="login-support" role="status">Checking your account…</p>
-                  : parentAction.kind === "add" ? <button type="button" className="submit-btn" id="parentAddSubmit" disabled={parentAddLoading || !parentCode.trim()} onClick={() => void handleAddToAccount()}>
+                  : parentAction.kind === "add" ? <>{!parentLink.code && <div className="form-group">
+                    <label htmlFor="parentAddCode">Parent code</label>
+                    <input type="text" id="parentAddCode" name="parent-code" placeholder="Enter parent code" autoComplete="off" spellCheck={false} value={parentCode} data-clarity-mask="true" onChange={(e) => { setParentCode(e.target.value); setParentCodeError(""); }} />
+                  </div>}<button type="button" className="submit-btn" id="parentAddSubmit" disabled={parentAddLoading || !parentCode.trim()} onClick={() => void handleAddToAccount()}>
                     <span style={{ opacity: parentAddLoading ? 0.5 : 1 }}>Add to my account</span>
                     <span className="spinner" style={{ display: parentAddLoading ? "block" : "none" }}></span>
-                  </button>
+                  </button></>
                   : <>
                     <p className="login-support" role="status">{parentAction.message}</p>
                     <button type="button" className="secondary-action" disabled={switchLoading} onClick={() => void handleSwitchAccount()}>Use a different account</button>
