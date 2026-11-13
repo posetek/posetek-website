@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "status": "published-and-verified",
+  "productionDeploy": "6af79c520773faff9757e7b5",
+  "publishedAtUtc": "2026-11-13T23:28:45.883Z",
+  "predecessorDeploy": "6af6ab89e3e24351f3908e28",
+  "websiteSourcePR": 106,
+  "websiteSourceCommit": "61bb904167e03d86579dce7d11b7e88dfe5b4841",
+  "websiteMergeCommit": "246dfe3ecb0fbf54fae2c7075f933bbeb482f15b",
+  "websiteRuntimeBase": "d4468539de23c1c4a252ed44b0fe063c0e0d8d1c",
+  "websiteRuntimeCommit": "20574aa496b0d9a6c7a5e14cb0efe8a82db9b75e",
+  "websitePRCI": "https://github.com/posetek/posetek-website/actions/runs/43519738260/attempts/2",
+  "servedFiles": 2864,
+  "preservedFiles": 2858,
+  "addedHashedAssets": 5,
+  "orderedHeaders": 13,
+  "orderedRedirects": 12,
+  "providerRecords": 2865,
+  "replaced": [
+    {
+      "path": "/application.html",
+      "sha": "9b8c9e169cc8769974332adf3abc5cf66a6f004d",
+      "size": 16041
+    }
+  ],
+  "removedFiles": 0,
+  "preservedEncryptedReports": 78,
+  "artifactManifestSha256": "520303240e231664c8e6aea6fc7a5231b5a5436c99ef88ad4018347a21c98382",
+  "protectedBaselineFiles": 2862,
+  "localRecoveryMappings": 37,
+  "backend": {
+    "sourcePR": 62,
+    "mergeCommit": "6470b39d1f10b0ef8741a90063b4b9713d5b9715",
+    "endpoint": "updateAdminPlayerPhone",
+    "previousVersion": "1",
+    "candidateSha256": "a40d92871216cc91d33f6d37fbe41081e862b7d2b9d5b270c7c1611eb51c1484",
+    "configurationUnchanged": true,
+    "iamUnchanged": true,
+    "unrelatedFunctionsUnchanged": 151,
+    "version": "2",
+    "hostedCI": "blocked-billing",
+    "hostedRun": "https://github.com/posetek/posetek-backend/actions/runs/43519723875",
+    "releaseInstruction": "You can pass the CI pipeline and just deploy these changes please",
+    "releaseInstructionInterpretation": "Proceed with the scoped deploy after local qualification despite the known Backend hosted billing block."
+  },
+  "verification": {
+    "contactEditorSyntheticBrowsers": [
+      "Chromium",
+      "WebKit"
+    ],
+    "focusedWebsiteTests": 16,
+    "exactBackendArchiveTests": 18,
+    "localBackendFunctionsAndToolingPassed": 1641,
+    "localBackendFunctionsAndToolingSkipped": 4,
+    "localBackendPolicyTests": 125,
+    "candidateAndProductionExactHttpFiles": 92,
+    "candidateAndProductionRoutes": 8,
+    "liveCallableUnauthenticated": "rejected",
+    "liveAuthenticatedSave": "not exercised",
+    "productionPlayerWrites": 0,
+    "localBaselineTests": 16,
+    "ordinaryPreservationBuild": "passed"
+  },
+  "websiteMainCI": "https://github.com/posetek/posetek-website/actions/runs/43526975661"
+}
