@@ -2,6 +2,8 @@
 // minutes and energy, then the workout chat (`workout_chat`) on a `new` target, saved by an
 // `apply_workout_draft` job. Pure, so each rule is pinned by a test.
 import type { Access } from '../../lib/loaders';
+import { STANDALONE_SCOPE } from '../execution';
+import type { Row } from '../execution';
 
 export type WorkoutPlace = 'field' | 'gym' | 'home';
 export type Energy = 'low' | 'normal' | 'high';
@@ -36,10 +38,27 @@ export function createReady(answers: CreateAnswers): boolean {
 
 /**
  * The workout chat's target, exactly the app's `WorkoutChatTarget.new` fields. Like the app's
- * On-field build it carries no `workoutType`.
+ * On-field build it carries no `workoutType`. With no active plan (`planId` null) it is the
+ * standalone build: the `standalone` namespace plus the athlete's IANA timezone and today's equipment.
  */
-export function createTarget(planId: string, answers: CreateAnswers) {
-  return { kind: 'new' as const, planId, timeAvailableMinutes: answers.minutes, energy: answers.energy || 'normal' };
+export function createTarget(planId: string | null, answers: CreateAnswers, timezone = browserTimezone()) {
+  const target = { kind: 'new' as const, planId: planId ?? STANDALONE_SCOPE, timeAvailableMinutes: answers.minutes, energy: answers.energy || 'normal' };
+  return planId === null ? { ...target, timezone, equipmentToday: equipmentToday(answers) } : target;
+}
+
+/**
+ * Where the athlete trains, as catalog equipment tokens (`program_profile.EQUIPMENT`): a field means
+ * a ball, and the goal when there is one; a gym the card's weights, bands and bench; home none.
+ */
+export function equipmentToday(answers: Pick<CreateAnswers, 'place' | 'goal'>): string[] {
+  if (answers.place === 'gym') return ['bench', 'dumbbells', 'resistanceBand'];
+  if (answers.place === 'home') return [];
+  return answers.goal ? ['ball', 'goal'] : ['ball'];
+}
+
+/** The browser's IANA zone, as the app sends `TimeZone.current.identifier`; the gateway's default otherwise. */
+export function browserTimezone(): string {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
 }
 
 /**
@@ -72,5 +91,8 @@ export function runMode(access: Access): RunMode {
 }
 export const RUN_REFUSED = 'Athlete starts this workout';
 
-/** Build Workout opens the card on an active V3 plan; with none the plan is set up first (`.planSetup`). */
-export const buildWorkoutStep = (hasActiveV3Plan: boolean): 'card' | 'plan' => hasActiveV3Plan ? 'card' : 'plan';
+/**
+ * Build Workout always opens the card. Its workouts belong to the active V3 plan, or with none (or
+ * only an earlier-format plan) to the standalone namespace, as the app's `TrainingWorkoutCreationIntent`.
+ */
+export const workoutScope = (activeV3Plan: Row | null): string => activeV3Plan?.id ?? STANDALONE_SCOPE;
