@@ -22,7 +22,7 @@ switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.m
 Check Netlify's currently published deploy before assembling a whole-site
 artifact. Capture that deploy's inventory and preserve the files and routing
 outside the approved change. The
-[latest recorded release](docs/releases/receipts/ADMIN_WEEKLY_TREND_INDICATORS_PRODUCTION.json)
+[latest recorded release](docs/releases/receipts/ADMIN_PHONE_ROLES_PRODUCTION.json)
 pins the protected baseline and the application runtime. One-pager releases
 also use the current published deploy to carry forward the app and sign-in
 entry. Keep `[skip netlify]` on every source and receipt merge.

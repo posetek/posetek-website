@@ -1,12 +1,12 @@
 {
-  "deploymentId": "6af6ab89e3e24351f3908e28",
-  "sourceCommit": null,
-  "url": "https://6af6ab89e3e24351f3908e28--posetek.netlify.app",
+  "deploymentId": "6af79c520773faff9757e7b5",
+  "sourceCommit": "20574aa496b0d9a6c7a5e14cb0efe8a82db9b75e",
+  "url": "https://6af79c520773faff9757e7b5--posetek.netlify.app",
   "applicationPath": "/application.html",
   "platformConfig": {
     "path": "/netlify.toml",
-    "sha": "e32ae51e24055500ce0cf39debb3bfabe9f494ea",
-    "size": 6629,
+    "sha": "0422b45399925c04c5d9196cddf485036e912cb0",
+    "size": 6635,
     "note": "Protected Netlify CLI-generated metadata. Effective redirects and headers must be verified before release; this is not a served application asset."
   },
   "files": [
@@ -806,6 +806,11 @@
       "size": 14711
     },
     {
+      "path": "/_astro/adminpage.cc1y5f7s.js",
+      "sha": "d5931649626cffa9c8a5959ed86b3c37f55d5da1",
+      "size": 14749
+    },
+    {
       "path": "/_astro/adminpage.cfad3l--.js",
       "sha": "8894b8cf172df92d15f34b4b6a01142e9aa45889",
       "size": 13782
@@ -1449,6 +1454,11 @@
       "path": "/_astro/applicationroot.bnxv7uss.js",
       "sha": "610870a5573329f148f422317c3915022644f8e3",
       "size": 18138
+    },
+    {
+      "path": "/_astro/applicationroot.bpmwdrad.js",
+      "sha": "bfd522e883b4a9f645be2e5dfd0bbf799748fdda",
+      "size": 15852
     },
     {
       "path": "/_astro/applicationroot.bpol-yg7.js",
@@ -5546,6 +5556,11 @@
       "size": 36726
     },
     {
+      "path": "/_astro/playerdetail.c1d63rpn.js",
+      "sha": "54f696743f6b3cef237982bf892e224c39166938",
+      "size": 39371
+    },
+    {
       "path": "/_astro/playerdetail.c2mlikwl.js",
       "sha": "f72ba500226f75600d85338cde36d67e9b469e6f",
       "size": 38856
@@ -5624,6 +5639,11 @@
       "path": "/_astro/playerdetail.dh04tqh-.css",
       "sha": "8a9f6154fa27b452f4940c6d079d781e0c076c3c",
       "size": 9046
+    },
+    {
+      "path": "/_astro/playerdetail.dkncfcz4.css",
+      "sha": "296aad256747964618b3b842b960fd9636250852",
+      "size": 5380
     },
     {
       "path": "/_astro/playerdetail.dlwcvne7.css",
@@ -6876,6 +6896,11 @@
       "size": 10814
     },
     {
+      "path": "/_astro/supportpage.cymgis8e.js",
+      "sha": "49b2c7c44a105f44d0d03ed96bf979f9da5f7000",
+      "size": 10814
+    },
+    {
       "path": "/_astro/supportpage.cyyjiuwe.js",
       "sha": "a869de0c4815e65fa4825f59d63626e7282b29cd",
       "size": 10814
@@ -7822,8 +7847,8 @@
     },
     {
       "path": "/application.html",
-      "sha": "bcf3fb328ef3acc0b10c0938ace8cccbe5e8a779",
-      "size": 16040
+      "sha": "9b8c9e169cc8769974332adf3abc5cf66a6f004d",
+      "size": 16041
     },
     {
       "path": "/assets/accesslinkcard-bwk4cx6k.css",

@@ -33,6 +33,18 @@ example draft requires exact artifact review and hosted acceptance before the us
 
 # PoseTek website project context
 
+## Admin player and guardian phones — November 13, 2026
+
+Admin → Player → Profile now shows separate editable player and parent or
+guardian phone numbers. The existing primary phone stays editable. The Backend
+callable validates and saves edited fields in one transaction.
+
+Netlify deploy `6af79c520773faff9757e7b5` replaced the application entry and
+added five hashed assets. The other 2,858 served files, including all 78 encrypted
+reports, match the previous deploy. Backend `updateAdminPlayerPhone` version 2
+was verified before publication. [Production receipt](docs/releases/receipts/ADMIN_PHONE_ROLES_PRODUCTION.json)
+
+
 ## Admin comparison indicators — November 12, 2026
 
 Deployment `6af6ab89e3e24351f3908e28` colors declines red in the organization
