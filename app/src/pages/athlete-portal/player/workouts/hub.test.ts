@@ -84,6 +84,18 @@ describe('resume, saved workouts and the plan card', () => {
     expect(entries.find(e => e.id === 'personal:pw')?.unavailableReason).toBe('Completed · create an edited copy to practice again.');
     expect(savedDetailLine({ blocks: [{}], estimatedMinutes: 20 }, true)).toBe('1 drill · ~20 min · In progress');
   });
+  it('lists and resumes standalone workouts with no plan, by their own window', () => {
+    const window = { planId: 'standalone', source: 'adhoc', weekNumber: 1, standalone: {}, windowStart: '2026-11-09T00:00:00-08:00', windowEnd: '2026-11-16T00:00:00-08:00' };
+    const rows = [{ ...window, id: 'today', generatedAt: 2, title: 'Today', blocks: [{ blockId: 'b' }] },
+      { ...window, id: 'lastWeek', generatedAt: 1, windowStart: '2026-11-02T00:00:00-08:00', windowEnd: '2026-11-09T00:00:00-08:00' }];
+    expect(savedWorkouts(rows, {}, null, now).map(w => w.id)).toEqual(['today']);
+    expect(savedWorkouts(rows, { lastWeek: { id: 'lastWeek' } }, null, now).map(w => w.id)).toEqual(['today', 'lastWeek']);
+    const entries = savedEntries(rows, {}, [], {}, null, now);
+    expect(entries.map(e => [e.id, e.unavailableReason])).toEqual([['cloud:today', null], ['cloud:lastWeek', 'From an earlier training week. Create a new workout.']]);
+    expect(findResume(null, [{ id: 'today', planId: 'standalone', source: 'adhoc', startedAt: 1 }], savedWorkouts(rows, {}, null, now))?.kind).toBe('adhoc');
+    // With an active plan a standalone row keeps its own window.
+    expect(savedEntries(rows.slice(0, 1), {}, [], {}, plan(), now)[0].unavailableReason).toBeNull();
+  });
   it('summarizes the plan on the hub: this week’s theme, its sessions and the next workout', () => {
     // Monday of week 1 in the plan's timezone.
     const now = new Date('2026-11-09T20:00:00Z');
