@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { buildPrivateParentReport } from './build-private-parent-report.mjs';
 import { sealReport } from './seal-parent-report.mjs';
+import { scoreComparisonFixture } from './fixtures/private-parent-score-comparison.mjs';
 import { decryptReport, parseReportFragment } from '../app/private-report/crypto.mjs';
 
 const sha = bytes => createHash('sha1').update(bytes).digest('hex');
@@ -151,12 +152,8 @@ test('explicit append preserves the current reader and old reports and adds seal
   const existing = await addExistingReports(f);
   const sealedDirectory = join(f.root, '.netlify/sealed');
   const payloads = ['One', 'Two'].map(firstName => ({
-    version: 1, name: 'Synthetic Athlete ' + firstName, firstName,
-    playerId: 'syntheticPlayer' + firstName, team: 'Example Team', coach: 'Example Coach',
-    testDate: 'Nov 10, 2026', focusTitle: 'Your results', focusText: 'Synthetic fixture.',
-    resultsFirst: true, visualLayout: 'score-cards-v1',
-    metrics: [{label: 'Dribble', result: '7.10 s', percentile: 50, band: 'middle', average: '7.20 s', count: 12}],
-    summary: [], exercises: [], methodNotes: [],
+    ...scoreComparisonFixture,
+    name: 'Synthetic Athlete ' + firstName, firstName, playerId: 'syntheticPlayer' + firstName,
   }));
   const reports = payloads.map(payload => sealReport(payload));
   for (const report of reports) await put(sealedDirectory, report.id + '.bin', report.envelope);
@@ -176,6 +173,20 @@ test('explicit append preserves the current reader and old reports and adds seal
     assert.deepEqual(await decryptReport(bytes, id, key), payloads[index]);
   }
   await assert.rejects(readFile(join(f.root, 'production-dist/report/raw.json')), { code: 'ENOENT' });
+});
+
+test('score comparison transition requires exact reviewed predecessor assets and explicit append', async t => {
+  const f = await fixture(t);
+  await addExistingReports(f);
+  const sealedDirectory = join(f.root, '.netlify/sealed');
+  const report = sealReport(scoreComparisonFixture);
+  await put(sealedDirectory, report.id + '.bin', report.envelope);
+  await assert.rejects(f.run({ sealedDirectory, updateScoreComparisons: true }), /requires explicit append mode/);
+  await assert.rejects(f.run({ sealedDirectory, append: true, updateScoreComparisons: true, updatePathwayCharts: true }),
+    /Choose only one pinned reader transition/);
+  await assert.rejects(f.run({ sealedDirectory, append: true, updateScoreComparisons: true }),
+    /Reader transition must match the pinned original and reviewed replacement/);
+  await assert.rejects(readFile(join(f.evidenceDirectory, 'guard-ran')), { code: 'ENOENT' });
 });
 
 test('append rejects prior encrypted ID collisions including provider case folding before the guard', async t => {

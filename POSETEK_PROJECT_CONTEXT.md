@@ -52,11 +52,10 @@ The cards show each result, available team comparison and practice details,
 followed by signup, iPhone/iPad install and the existing PDF download.
 Other reports use their existing layout.
 
-The reader source in `app/private-report/` matches the protected reader hashes
-in `deployment/homepage-baseline.json` for deployment `6af598a062c763422296510e`.
-The append builder checks that the reader matches the serving baseline.
-Family report inputs, encrypted files, PDF files and access links are kept
-outside source control.
+The serving v1 reader hashes are recorded in `deployment/homepage-baseline.json`.
+The v2 source draft adds selectable test details and developmental curves through
+a two-file pinned reader transition. Family report inputs, encrypted files, PDF
+files and access links are kept outside source control.
 
 
 ## Admin reporting fixes and one-pager time on page — November 10, 2026

@@ -8,6 +8,7 @@ import { createHash, createHmac } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { chromium, webkit } from '../app/node_modules/playwright/index.mjs';
 import { sealReport } from './seal-parent-report.mjs';
+import { scoreComparisonFixture } from './fixtures/private-parent-score-comparison.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const sample={version:1,name:'Sample Athlete',firstName:'Sample',team:'Example Team',coach:'Example Coach',testDate:'Oct 29, 2026',focusTitle:'This week: ball control',focusText:'Small touches through turns.',playerId:'syntheticPlayer123',metrics:[{label:'Dribble',result:'7.10 s',percentile:50,band:'middle',average:'7.20 s',count:12},{label:'Broad jump',result:null,percentile:null,band:'retest',average:'1.10 m',count:10,note:'Another recording is needed.'}],summary:[{label:'Team middle',text:'Dribble'}],exercises:[{title:'Figure-8 dribble',tag:'Example',dose:'3 × 20 sec · rest 60 sec',instruction:'Walk the ball through turns.'}],methodNotes:['Further right means a more favorable result.'],pdfBase64:Buffer.from('%PDF-1.4\n% Synthetic acceptance fixture\n%%EOF').toString('base64')};
 const a=sealReport(sample), b=sealReport({...sample,name:'Second Athlete',firstName:'Second',playerId:'secondSynthetic123'});
@@ -25,7 +26,11 @@ const scoreCards=sealReport({
   {...sample.metrics[1],average:null,count:0},
  ],
 });
-const reports=new Map([a,b,malicious,resultsFirst,tracked,scoreCards].map(x=>[x.id,x.envelope]));
+const scoreComparison=sealReport(scoreComparisonFixture);
+const invalidComparison=sealReport({...scoreComparisonFixture,metrics:[
+ {...scoreComparisonFixture.metrics[0],comparison:{value:2.52,median:2.76,count:4}}, ...scoreComparisonFixture.metrics.slice(1),
+]});
+const reports=new Map([a,b,malicious,resultsFirst,tracked,scoreCards,scoreComparison,invalidComparison].map(x=>[x.id,x.envelope]));
 const headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"};
 const requests=[], events=[];
 let corrupt=false, trackingUnavailable=false;
@@ -229,6 +234,58 @@ try {
    await scores.getByRole('heading',{name:'Where Sample stands'}).waitFor();
    assert.equal(await scores.locator('.pt-score-card').count(),0,'Unmarked results keep the original layout');
    results.at(-1).scoreCards='ranked and unavailable values, sparse comparisons, practice, exact signup and PDF, and legacy fallback';
+   const touchContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,acceptDownloads:true});
+   await touchContext.route(url=>url.origin!==origin,route=>route.abort());
+   try {
+    const compare=await touchContext.newPage();
+    const comparisonErrors=[];
+    compare.on('pageerror',error=>comparisonErrors.push(error.message));
+    await compare.goto(origin+'/report/#'+scoreComparison.fragment);
+    const card=(label)=>compare.getByRole('button',{name:new RegExp('^'+label)});
+    const panel=compare.locator('#pt-score-detail');
+    await panel.getByRole('heading',{name:'Sprint',exact:true}).waitFor();
+    assert.equal(await card('Sprint').getAttribute('aria-pressed'),'true');
+    await panel.getByText('0.24 s faster than the team median',{exact:true}).waitFor();
+    await panel.getByText('U11 average · 10.8 mph',{exact:true}).waitFor();
+    assert.equal(await panel.locator('.pt-club-own').count(),1);
+    assert.equal(await panel.locator('.pt-club-average').count(),1);
+    assert.equal(await panel.locator('.pt-club-spread').count(),1);
+    await compare.getByRole('heading',{name:'Strong today'}).waitFor();
+    await compare.getByRole('heading',{name:'Practice next'}).waitFor();
+    assert.equal(await compare.getByRole('heading',{name:'Two drills to try'}).count(),0);
+    await card('Vertical jump').tap();
+    await panel.getByText('1.2 in lower than the team median',{exact:true}).waitFor();
+    assert.equal(await panel.locator('.pt-club-own').count(),0);
+    assert.equal(await card('Sprint').getAttribute('aria-pressed'),'false');
+    await card('Left-course dribble').press('Enter');
+    await panel.getByText('Level with the team median',{exact:true}).waitFor();
+    await card('Shuttle run').click();
+    await panel.getByText('0.27 s slower than the team median',{exact:true}).waitFor();
+    await card('Right-course dribble').click();
+    await panel.getByText('No qualified result for this test.',{exact:true}).waitFor();
+    await card('Broad jump').click();
+    await panel.getByText('Team median unavailable for this test.',{exact:true}).waitFor();
+    assert.equal(await panel.count(),1);
+    for(const colorScheme of ['light','dark'])for(const width of [320,390,768]){
+     await compare.emulateMedia({colorScheme});
+     await compare.setViewportSize({width,height:844});
+     await card('Sprint').click();
+     assert(await compare.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Stats comparison overflow');
+    }
+    assert.equal(await compare.getByRole('link',{name:'Sign up for workouts'}).getAttribute('href'),
+     '/signin?reportPlayer=syntheticPlayer123#playerCode=FIXTURE-CODE');
+    const [downloadV2]=await Promise.all([
+     compare.waitForEvent('download'),compare.getByRole('button',{name:'Download PDF'}).click(),
+    ]);
+    assert.deepEqual(await readFile(await downloadV2.path()),Buffer.from(scoreComparisonFixture.pdfBase64,'base64'));
+    await compare.evaluate(fragment=>{location.hash=fragment;},invalidComparison.fragment);
+    await compare.locator('#report-status').filter({hasText:'could not be opened'}).waitFor();
+    assert.equal(await panel.count(),0);
+    assert.deepEqual(comparisonErrors,[]);
+    results.at(-1).statsComparisons='all six cards, touch and keyboard, signed gap, sparse data, matching units and club placement';
+   } finally {
+    await touchContext.close();
+   }
    await context.close();
   }finally{await browser.close();}
  }

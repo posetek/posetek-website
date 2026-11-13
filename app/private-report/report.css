@@ -245,3 +245,68 @@ button:focus-visible, a:focus-visible, summary:focus-visible {
   .pt-score-grid { gap: 6px; }
   .pt-score-card h3 { font-size: 11px; }
 }
+
+/* One selected result controls the comparison and developmental curve below. */
+.pt-visual-v2 .pt-score-card {
+  min-width: 0;
+  color: var(--pt-ink);
+  font: inherit;
+  text-align: start;
+}
+.pt-visual-v2 .pt-score-card[aria-pressed="true"] {
+  border-color: light-dark(#237554, #94e566);
+  box-shadow: inset 0 0 0 1px light-dark(#237554, #94e566);
+}
+.pt-visual-v2 .pt-score-label {
+  min-height: 2.6em;
+  font-size: 12px;
+  line-height: 1.3;
+  font-weight: 650;
+}
+.pt-visual-v2 .pt-score-rank,
+.pt-visual-v2 .pt-score-average,
+.pt-visual-v2 .pt-score-note { display: block; }
+.pt-score-detail {
+  margin: 12px 0 16px;
+  padding: clamp(12px, 4vw, 18px);
+  border: 1px solid var(--pt-line);
+  border-radius: 14px;
+  background: var(--pt-panel);
+}
+.pt-score-detail h3, .pt-club-curve h4 { margin: 0; font-size: 16px; line-height: 1.25; }
+.pt-score-caption { color: var(--pt-muted); font-size: 12px; margin: 5px 0 0; }
+.pt-median-gap {
+  margin: 7px 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+.pt-median-values { display: grid; gap: 6px; margin: 8px 0; }
+.pt-median-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: center; gap: 8px; }
+.pt-median-row dt { color: var(--pt-muted); font-size: 12px; }
+.pt-median-row dd { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; }
+.pt-median-row strong { min-width: 65px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.pt-median-track { flex: 1; min-width: 18px; height: 6px; border-radius: 4px; background: var(--pt-line); }
+.pt-median-fill { display: block; height: 100%; border-radius: inherit; }
+.pt-median-you { background: light-dark(#258450, #97e86b); }
+.pt-median-team { background: light-dark(#71867a, #a7bbaf); }
+.pt-club-curve { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--pt-line); }
+.pt-club-curve svg { display: block; width: 100%; max-height: 200px; margin-top: 7px; overflow: visible; }
+.pt-club-curve svg text { fill: var(--pt-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pt-club-gridline { stroke: var(--pt-line); }
+.pt-club-spread { fill: light-dark(#dceee5, #264e39); }
+.pt-club-average { fill: none; stroke: light-dark(#237554, #a1d5af); stroke-width: 2.5; stroke-linejoin: round; }
+.pt-club-own { fill: #a0ee69; stroke: #16432b; stroke-width: 2; }
+.pt-club-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 1px 0 0; font-size: 11px; }
+.pt-club-legend span { display: flex; gap: 5px; align-items: center; }
+.pt-club-legend span::before { content: ''; width: 9px; height: 9px; border-radius: 2px; }
+.pt-legend-average::before { background: light-dark(#237554, #a1d5af); }
+.pt-legend-spread::before { background: light-dark(#dceee5, #264e39); }
+.pt-club-legend .pt-legend-own::before { background: #a0ee69; border: 1px solid #16432b; border-radius: 50%; }
+.pt-score-findings:has(.pt-stats-finding) { gap: 8px; margin: 0 0 16px; }
+.pt-stats-finding {
+  padding: 10px;
+  border: 1px solid var(--pt-line);
+  border-radius: 10px;
+  background: var(--pt-panel);
+}
+.pt-stats-finding p { margin: 4px 0 0; font-weight: 650; font-size: 13px; }
