@@ -104,4 +104,11 @@ describe('Workouts pieces', () => {
     const ended = renderToStaticMarkup(<WorkoutReview workout={workout} log={{ endedAt: 1, endReason: 'completed', blocks: [] }} start={<button>Start workout</button>} onCreateAnother={() => {}} onDrill={() => {}} onFull={() => {}} />);
     expect(ended).toContain('Workout completed. Nice work.'); expect(ended).toContain('Create another workout'); expect(ended).not.toContain('Start workout');
   });
+  it('a workout built with no plan names no plan week, in review or History', () => {
+    const workout = { planId: 'standalone', source: 'adhoc', weekNumber: 1, title: 'Today', estimatedMinutes: 20, blocks: [{ blockId: 'b1', order: 1, name: 'Ladder', estimatedMinutes: 10, sets: 2, reps: 30, repUnit: 'seconds' }] };
+    const review = renderToStaticMarkup(<WorkoutReview workout={workout} log={null} start={<button>Start workout</button>} onAdjust={() => {}} onDrill={() => {}} onFull={() => {}} />);
+    expect(review).toContain('1 drills · ~20 min'); expect(review).not.toContain('Week 1');
+    const history = renderToStaticMarkup(<HistoryList logs={[{ ...workout, id: 'draft_1', startedAt: new Date(2026, 10, 12), blocks: [] }]} sessions={[]} planId="p" loading={false} error="" />);
+    expect(history).toContain('<strong>Workout</strong>'); expect(history).not.toContain('week 1'); expect(history).not.toContain('From an earlier plan.');
+  });
 });
