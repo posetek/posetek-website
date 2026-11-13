@@ -154,10 +154,28 @@ for (const [engine, driver] of [['chromium', chromium], ['webkit', webkit]]) {
       await view(page, 'Overview');
       assert.equal(await reportCount(page), initial.getClubInsightsV2 + 2);
       await directory(page, 'Staff');
-      await page.clock.setSystemTime((await page.evaluate(() => Date.now())) + 60_001);
+      await page.clock.setSystemTime((await page.evaluate(() => Date.now())) + 300_001);
       await directory(page, 'Players');
       const after = await counts(page); assert.equal(after.context, initial.context + 1); assert.equal(after.roster, initial.roster + 1); assert.equal(after.getClubInsightsV2, initial.getClubInsightsV2 + 3);
       await watch(page); for (const name of ['Staff', 'Players']) await directory(page, name); await noFlashes(page); assert.deepEqual(await counts(page), after);
+    });
+
+    await check(browser, engine, width, 'leaving the accounts page and returning reuses the report for five minutes', async page => {
+      const advance = async ms => page.clock.setSystemTime((await page.evaluate(() => Date.now())) + ms);
+      const focus = async () => { await page.evaluate(() => window.dispatchEvent(new Event('focus'))); await frames(page); };
+      await page.goto(origin + base); await ready(page);
+      const reports = await reportCount(page), stamp = await page.getByText(/^Report checked /).innerText();
+      await page.evaluate(path => window.__adminPersistence.navigate(path), '/admin/drills');
+      await page.waitForFunction(() => location.pathname === '/admin/drills' && !document.querySelector('[id^="directory-tab-"]'));
+      await advance(120_000);
+      await navigate(page, base);
+      assert.equal(await reportCount(page), reports, 'Returning within five minutes does not rebuild the report.');
+      assert.equal(await page.getByText(/^Report checked /).innerText(), stamp, 'Reuse preserves original observation time.');
+      await advance(120_000); await focus();
+      assert.equal(await reportCount(page), reports, 'Refocusing inside five minutes does not rebuild the report.');
+      await advance(60_001); await focus();
+      await page.waitForFunction(count => window.__adminActivity.requests.filter(row => row.kind === 'getClubInsightsV2').length > count, reports);
+      await ready(page);
     });
 
     await check(browser, engine, width, 'roster expires with its oldest shared context', async page => {
@@ -291,7 +309,7 @@ for (const [engine, driver] of [['chromium', chromium], ['webkit', webkit]]) {
       await page.goto(origin + base); await ready(page); await view(page, 'Workouts');
       const values = await summaryVisible(page, 'Workouts');
       await view(page, 'Testing');
-      await page.clock.setSystemTime((await page.evaluate(() => Date.now())) + 60_001);
+      await page.clock.setSystemTime((await page.evaluate(() => Date.now())) + 300_001);
       await holdView(page, 'Workouts');
       assert.deepEqual(await summaryVisible(page, 'Workouts'), values, 'Expired detail does not erase the last observed same-cohort totals.');
       await noPlayerDetails(page);
@@ -303,7 +321,7 @@ for (const [engine, driver] of [['chromium', chromium], ['webkit', webkit]]) {
       await page.goto(origin + base); await ready(page);
       const values = await summaryVisible(page, 'Overview');
       await directory(page, 'Staff');
-      await page.clock.setSystemTime((await page.evaluate(() => Date.now())) + 60_001);
+      await page.clock.setSystemTime((await page.evaluate(() => Date.now())) + 300_001);
       await page.evaluate(() => { window.__adminPersistence.holdNextDirectory('context'); window.__adminActivity.holdNextReport(); });
       await page.getByRole('tab', { name: 'Players', exact: true }).click();
       await page.waitForFunction(() => window.__adminPersistence.pending.length === 1);

@@ -42,6 +42,12 @@ describe('read-only evidence refresh', () => {
     now = 120_000; clock.attempted(); expect(clock.check(true, false)).toBe(false);
     now = 180_000; expect(clock.check(true, false)).toBe(true); expect(refresh).toHaveBeenCalledTimes(2);
   });
+  it('paces a longer-lived report from when that report was observed, not from when it was shown', () => {
+    let now = 100_000; const refresh = vi.fn(), clock = createForegroundRefresh(() => now, refresh, 300_000);
+    clock.attempted(0);
+    now = 299_999; expect(clock.check(true, false)).toBe(false); expect(refresh).not.toHaveBeenCalled();
+    now = 300_000; expect(clock.check(true, false)).toBe(true); expect(refresh).toHaveBeenCalledTimes(1);
+  });
 });
 describe('workout duration precision', () => {
   it.each([[725, '12.1 min'], [568, '9.5 min'], [497, '8.3 min'], [0, '0 min'], [3666, '61.1 min']])('matches notification rounding for %s seconds', (seconds, expected) => {

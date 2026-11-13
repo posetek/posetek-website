@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { loadPlayer, PLAYER_INDEX_LIMIT, resolvePlayerAge } from "../lib/accounts";
@@ -20,6 +20,7 @@ import { clearPlayerFilters, hasPlayerFilters } from "../../insights/lib/expande
 import type { ExpandedRequest } from "../../insights/lib/expandedQuery";
 import type { ExpandedPlayer, InsightScope } from "../../insights/lib/expanded";
 import { setWorkspaceMetricsScope, useWorkspaceMetrics } from "../lib/workspaceMetrics";
+import { useDebouncedValue } from "../lib/useDebouncedValue";
 import { WorkspaceAttention, WorkspaceMetricCells, WorkspaceReportControls, WorkspaceReportDetails, WorkspaceScopeHeader } from "./WorkspaceReporting";
 import type { WorkspaceMetricState, WorkspacePlayerMetric } from "./WorkspaceReporting";
 import DirectoryNavigator, { TeamDirectory } from "./DirectoryNavigator";
@@ -43,7 +44,8 @@ export default function MonitorAccounts({ source = directorySource }: { source?:
   useEffect(() => {
     setWorkspaceMetricsScope(state.orgId ? state.teamId ? { kind: "team", organizationId: state.orgId, teamId: state.teamId } : { kind: "organization", organizationId: state.orgId } : { kind: "global" });
   }, [state.orgId, state.teamId, session]);
-  useEffect(() => () => { setWorkspaceMetricsScope(null); session.clearAll(false); }, [session]);
+  // Reports stay retained across leaving this page; their TTL, Auth and scope changes still expire them.
+  useEffect(() => () => { session.clearAll(false); }, [session]);
   const choose = (patch: Partial<AdminDirectoryState>, replace = false) => {
     const target = adminDirectoryPath({ ...state, ...patch });
     setQuery(new URLSearchParams(target.split("?")[1] || ""), { replace });
@@ -142,7 +144,7 @@ export function DirectoryPlayersTable({ players, roster, state, choose, metrics,
           <span className="directory-player-email">{player.email || "No email on file"}</span>{player.registered ? <span className="directory-account-status">Account claimed</span> : <SignupStatus playerId={player.id} playerName={player.name} reloadKey={player} />}
         </td>
         <td data-label="Team">{team?.name || (player.teamId ? roster?.context ? "Team unavailable" : "Assigned team" : "Unassigned")}</td><td data-label="Age">{age.age === null ? "Not recorded" : `${age.age} years`}</td>
-        {metrics && <WorkspaceMetricCells {...metrics} legacy={metrics.legacy || !hasClubIdentity(player)} metric={byId.get(player.id)} />}
+        {metrics && <WorkspaceMetricCells {...metrics} loading={metrics.loading || Boolean(metrics.settling && !byId.has(player.id))} legacy={metrics.legacy || !hasClubIdentity(player)} metric={byId.get(player.id)} />}
         <td data-label="Open"><details className="directory-row-menu" name="directory-row-actions" onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}><summary aria-label={`Open actions for ${player.name}`}>Open<span aria-hidden="true">⌄</span></summary><div className="directory-row-actions"><Link id={`admin-player-${player.id}-workouts`} className="quiet-button small" to={adminPlayerPath(player.id, "workouts", state)} aria-label={`Workouts for ${player.name}`}>Workouts</Link><Link id={`admin-player-${player.id}-profile`} className="quiet-button small" to={adminPlayerPath(player.id, "profile", state)} aria-label={`Profile for ${player.name}`}>Profile</Link></div></details></td>
       </tr>;
     })}</tbody></table> : <p className="admin-empty">{state.search ? "No players match this search." : "No players in this selection yet."}</p>}
@@ -177,6 +179,20 @@ function PlayerLookup({ source, state, choose, navigateScope, canonicalOrganizat
   />;
 }
 
+const REPORT_ROSTER_DEBOUNCE_MS = 400;
+
+/** The queue search is a server report input, so it is sent only once typing pauses. */
+function ReportQueueSearch({ value, onSearch }: { value: string; onSearch: (value: string) => void }) {
+  const [draft, setDraft] = useState(value);
+  const sent = useRef(value), latest = useRef(onSearch);
+  useEffect(() => { latest.current = onSearch; }, [onSearch]);
+  // Only an outside change (history, clearing filters) replaces what is being typed.
+  useEffect(() => { if (value !== sent.current) { sent.current = value; setDraft(value); } }, [value]);
+  const { value: settled } = useDebouncedValue(draft, REPORT_ROSTER_DEBOUNCE_MS, "");
+  useEffect(() => { if (settled !== sent.current) { sent.current = settled; latest.current(settled); } }, [settled]);
+  return <input type="search" value={draft} placeholder="Player name" onChange={event => setDraft(event.target.value)} />;
+}
+
 /** One reporting reader and one roster per scope; history never substitutes for current account ownership. */
 export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds, accountRows, roster, accountCount, enabled, directoryReady = true, legacy = false, scopeLabel, scopeControl, toolbar, beforeRoster, afterRoster, afterGraphs, showPeople }: {
   state: AdminDirectoryState; choose: ChooseDirectory; scope: InsightScope | null; canonicalOrganizationIds?: string[]; accountRows?: PlayerRow[]; roster?: DirectoryRoster; accountCount?: number; enabled: boolean; directoryReady?: boolean; legacy?: boolean; scopeLabel: string; scopeControl?: ReactNode; toolbar: ReactNode; beforeRoster?: ReactNode; afterRoster?: ReactNode; afterGraphs?: ReactNode | ((metrics: WorkspaceMetricState) => ReactNode); showPeople: boolean;
@@ -189,8 +205,13 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
   const onePagers = pane === "one-pagers";
   const activityView = pane === "report" && view !== "testing";
   const visible = directoryPage(accountRows || [], state.page).rows;
-  const playerIds = pane === "report" || !showPeople || attention ? undefined : supportedWorkspacePlayerIds(visible, scope, canonicalOrganizationIds);
-  const metrics = useWorkspaceMetrics({ retain: true, scope, search: workspaceReportSearch(state), playerIds, enabled, readEnabled: directoryReady && !onePagers,
+  const visibleIds = pane === "report" || !showPeople || attention ? undefined : supportedWorkspacePlayerIds(visible, scope, canonicalOrganizationIds);
+  const reportSearch = workspaceReportSearch(state);
+  // The list filters instantly; only the ids sent to the server wait for typing to pause.
+  // Any change of scope, page, pane, mode or report inputs applies immediately.
+  const { value: playerIds, pending: settling } = useDebouncedValue(visibleIds, REPORT_ROSTER_DEBOUNCE_MS,
+    JSON.stringify([scope, state.page, reportSearch, enabled, showPeople, attention, pane]));
+  const metrics = useWorkspaceMetrics({ retain: true, scope, search: reportSearch, playerIds, enabled, readEnabled: directoryReady && !onePagers,
     adminReporting: !legacy && (pane === "report" || !showPeople && Boolean(state.orgId)),
     includeLastFeatureEvidence: !legacy && pane === "report" && view === "usage",
     includeTestingAnalytics: !legacy && pane === "report" && view === "testing" });
@@ -224,7 +245,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
     return profile && hasClubIdentity(profile) && (profile.organizationId || "") === (expected.organizationId || "") && (profile.teamId || null) === (expected.teamId || null) ? [profile] : [];
   }) || [];
   const metricRows: WorkspacePlayerMetric[] = attention ? report?.players.map(player => ({ playerId: player.id, status: "included", player })) || [] : report?.rosterMetrics || [];
-  const metricState = { ...metrics, legacy };
+  const metricState = { ...metrics, legacy, settling };
   const activeView = onePagers ? "one-pagers" : pane === "report" ? view : "list";
   const firstPage = () => choose({ reportCursor: undefined, reportPage: undefined });
   const nextPage = () => { if (report?.pagination.nextCursor) choose({ reportCursor: report.pagination.nextCursor, reportPage: request.page + 1 }); };
@@ -280,7 +301,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
     {pane === "list" && directoryReady && <section id="workspace-report-panel-list" role="tabpanel" aria-labelledby="workspace-report-tab-list">
       {typeof afterGraphs === "function" ? afterGraphs(metricState) : afterGraphs}
       {showPeople && <>
-      {attention && <><h3 id="workspace-review-heading" tabIndex={-1} className="workspace-roster-heading">{view[0].toUpperCase() + view.slice(1)} player review</h3><div className="workspace-queue-toolbar"><label className="directory-search"><span>Find in reporting queue · names only</span><input type="search" value={state.reportSearch || ""} placeholder="Player name" onChange={event => update({ rosterSearch: event.target.value })} /></label><button className="quiet-button" onClick={() => choose({ ...withWorkspaceReport(state, { ...clearPlayerFilters(), rosterSearch: "", cursor: "", page: 0 }), reportMode: "directory", directoryPane: "list" })}>Back to account roster</button></div>{report && <p className="directory-result-count">{report.pagination.total} matching {report.pagination.total === 1 ? "player" : "players"} in this reporting queue{request.rosterSearch ? " · name search applied" : ""}</p>}</>}
+      {attention && <><h3 id="workspace-review-heading" tabIndex={-1} className="workspace-roster-heading">{view[0].toUpperCase() + view.slice(1)} player review</h3><div className="workspace-queue-toolbar"><label className="directory-search"><span>Find in reporting queue · names only</span><ReportQueueSearch value={state.reportSearch || ""} onSearch={rosterSearch => update({ rosterSearch })} /></label><button className="quiet-button" onClick={() => choose({ ...withWorkspaceReport(state, { ...clearPlayerFilters(), rosterSearch: "", cursor: "", page: 0 }), reportMode: "directory", directoryPane: "list" })}>Back to account roster</button></div>{report && <p className="directory-result-count">{report.pagination.total} matching {report.pagination.total === 1 ? "player" : "players"} in this reporting queue{request.rosterSearch ? " · name search applied" : ""}</p>}</>}
       {beforeRoster}
       <div id="workspace-roster" tabIndex={-1} role="region" aria-label="Player roster">
         {!attention && accountRows !== undefined && <><p className="directory-result-count">{accountRows.length} {accountRows.length === 1 ? "player" : "players"}{state.search && " matching your name or email search"}</p><DirectoryPlayersTable players={accountRows} roster={roster} state={state} choose={choose} metrics={metricState} metricRows={metricRows} /></>}

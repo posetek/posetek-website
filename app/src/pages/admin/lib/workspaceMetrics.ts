@@ -6,7 +6,7 @@ import type { ReadOnlyReport } from '../../../lib/useReadOnlyReport';
 import { retryableReportError } from '../../insights/lib/completeReport';
 import { useForegroundReport } from '../../../lib/foreground-report';
 import type { ExpandedInsights, InsightScope } from "../../insights/lib/expanded";
-import { createWorkspaceMetricsTransport, workspaceMetricsPayload, workspacePayloadKey } from "./workspaceMetricsData";
+import { createWorkspaceMetricsTransport, WORKSPACE_REPORT_TTL_MS, workspaceMetricsPayload, workspacePayloadKey } from "./workspaceMetricsData";
 import type { WorkspaceReportPayload } from "./workspaceMetricsData";
 import { failDirectorySession } from "./directoryRetention";
 
@@ -26,7 +26,7 @@ function observeWorkspaceSession() {
 }
 /** Called by the directory owner, including on Staff/Settings scope transitions. */
 export function setWorkspaceMetricsScope(scope: InsightScope | null) { transport.observeScope(scope); }
-export interface WorkspaceMetricsInput { scope: InsightScope | null; search: string; playerIds?: string[]; enabled?: boolean; refreshKey?: number; foreground?: boolean; adminReporting?: boolean; includeLastFeatureEvidence?: boolean; includeTestingAnalytics?: boolean; validate?: (data: ExpandedInsights) => void; retain?: boolean; readEnabled?: boolean }
+export interface WorkspaceMetricsInput { scope: InsightScope | null; search: string; playerIds?: string[]; lookupOnly?: boolean; enabled?: boolean; refreshKey?: number; foreground?: boolean; adminReporting?: boolean; includeLastFeatureEvidence?: boolean; includeTestingAnalytics?: boolean; validate?: (data: ExpandedInsights) => void; retain?: boolean; readEnabled?: boolean }
 const empty = (): ReadOnlyReport<ExpandedInsights> => ({ kind: 'loading', data: null, refreshing: true, stale: false, message: '', checkedAt: null });
 const ready = (data: ExpandedInsights, checkedAt: number): ReadOnlyReport<ExpandedInsights> => ({ kind: 'ready', data, refreshing: false, stale: false, message: '', checkedAt });
 
@@ -76,8 +76,8 @@ function useRetainedWorkspaceReport(payload: WorkspaceReportPayload | null, revi
   return cached ? ready(cached.data, cached.checkedAt) : empty();
 }
 
-export function useWorkspaceMetrics({ scope, search, playerIds, enabled = true, refreshKey = 0, foreground = true, adminReporting = false, includeLastFeatureEvidence = false, includeTestingAnalytics = false, validate, retain = false, readEnabled = true }: WorkspaceMetricsInput) {
-  const key = workspacePayloadKey(enabled && scope ? workspaceMetricsPayload(search, scope, playerIds, new Date(), adminReporting, includeLastFeatureEvidence, includeTestingAnalytics) : null);
+export function useWorkspaceMetrics({ scope, search, playerIds, lookupOnly = false, enabled = true, refreshKey = 0, foreground = true, adminReporting = false, includeLastFeatureEvidence = false, includeTestingAnalytics = false, validate, retain = false, readEnabled = true }: WorkspaceMetricsInput) {
+  const key = workspacePayloadKey(enabled && scope ? workspaceMetricsPayload(search, scope, playerIds, new Date(), adminReporting, includeLastFeatureEvidence, includeTestingAnalytics, lookupOnly) : null);
   const payload = useMemo(() => key ? JSON.parse(key) as WorkspaceReportPayload : null, [key]);
   const retained = retain && !validate;
   const [revision, setRevision] = useState(0);
@@ -93,7 +93,7 @@ export function useWorkspaceMetrics({ scope, search, playerIds, enabled = true, 
   const summary = retained && payload ? transport.peekSummary(auth.currentUser?.uid || null, payload) : null;
   const refreshing = Boolean(payload && readEnabled && outcome.refreshing);
   const loading = refreshing && !outcome.data;
-  useForegroundReport({ key, refresh, busy: refreshing, enabled: Boolean(payload && foreground && readEnabled) });
+  useForegroundReport({ key, refresh, busy: refreshing, enabled: Boolean(payload && foreground && readEnabled), ...(retained ? { refreshMs: WORKSPACE_REPORT_TTL_MS, observedAt: outcome.checkedAt } : {}) });
   return {
     data: payload && readEnabled ? outcome.data : null,
     summaryData: summary?.data || null, summaryCheckedAt: summary?.checkedAt ?? null,

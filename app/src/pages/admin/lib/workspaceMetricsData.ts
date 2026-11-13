@@ -8,18 +8,18 @@ import { adminActivitySelection } from "./adminActivity";
 import type { AdminActivityReportData, AdminActivityRequest, AdminPlayerWorkout } from "./adminActivity";
 
 export type WorkspaceReportPayload = ReturnType<typeof reportPayload> & {
-  rosterPlayerIds?: string[]; adminReporting?: AdminActivityRequest; includeLastFeatureEvidence?: true; includeTestingAnalytics?: true;
+  rosterPlayerIds?: string[]; rosterLookupOnly?: true; adminReporting?: AdminActivityRequest; includeLastFeatureEvidence?: true; includeTestingAnalytics?: true;
 };
 export type WorkspaceReportReader = (payload: WorkspaceReportPayload) => Promise<ExpandedInsights>;
 const invalid = (message: string) => Object.assign(new Error(message), { code: "failed-precondition" });
 
-export function workspaceMetricsPayload(search: string, scope: InsightScope, playerIds?: string[], now = new Date(), adminReporting = false, includeLastFeatureEvidence = false, includeTestingAnalytics = false): WorkspaceReportPayload {
+export function workspaceMetricsPayload(search: string, scope: InsightScope, playerIds?: string[], now = new Date(), adminReporting = false, includeLastFeatureEvidence = false, includeTestingAnalytics = false, lookupOnly = false): WorkspaceReportPayload {
   const request = expandedRequest(search, now);
   const ids = playerIds?.length ? [...playerIds].sort() : undefined;
   if (ids && (ids.length > 20 || new Set(ids).size !== ids.length || ids.some(id => typeof id !== "string" || !id || id.includes("/")))) {
     throw invalid("The visible players changed. Refresh the roster before loading metrics.");
   }
-  return { ...reportPayload(request, scope, request.cursor), pageSize: 20, ...(ids ? { rosterPlayerIds: ids } : {}),
+  return { ...reportPayload(request, scope, request.cursor), pageSize: 20, ...(ids ? { rosterPlayerIds: ids } : {}), ...(ids && lookupOnly ? { rosterLookupOnly: true as const } : {}),
     ...(adminReporting ? { adminReporting: adminActivitySelection(request.view, request.adminFollowUp, request.adminSort) } : {}),
     ...(adminReporting && includeTestingAnalytics && request.view === "testing" ? { includeTestingAnalytics: true } : {}),
     ...(adminReporting && includeLastFeatureEvidence && request.view === "usage" ? { includeLastFeatureEvidence: true } : {}) };
@@ -106,7 +106,7 @@ export function assertAdminActivity(data: ExpandedInsights, payload: WorkspaceRe
   }
 }
 
-export const WORKSPACE_REPORT_TTL_MS = 60_000;
+export const WORKSPACE_REPORT_TTL_MS = 5 * 60_000;
 export const WORKSPACE_REPORT_MAX_ENTRIES = 5;
 export const WORKSPACE_REPORT_MAX_BYTES = 2 * 1024 * 1024;
 export interface WorkspaceReportObservation { data: ExpandedInsights; checkedAt: number }
