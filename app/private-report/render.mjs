@@ -301,7 +301,8 @@ function onlyKeys(value, keys) {
 
 function validateScoreComparisons(report) {
   if (report.resultsFirst !== true || report.layout !== undefined || report.development !== undefined ||
-      report.pathwayCharts !== undefined || report.exercises.length || !report.metrics.length) {
+      report.pathwayCharts !== undefined || report.exercises.length || !report.metrics.length ||
+      (report.reportKind !== undefined && !['event', 'individual'].includes(report.reportKind))) {
     throw new Error('Invalid Stats comparison layout');
   }
   const keys = new Set();
@@ -315,7 +316,7 @@ function validateScoreComparisons(report) {
       throw new Error('Invalid Stats result status');
     }
     const comparison = metric.comparison;
-    if (comparison !== undefined && (!hasResult || !onlyKeys(comparison, ['value', 'median', 'count']) ||
+    if (comparison !== undefined && (report.reportKind === 'individual' || !hasResult || !onlyKeys(comparison, ['value', 'median', 'count']) ||
         !measured(comparison.value) || comparison.value <= 0 || !measured(comparison.median) || comparison.median <= 0 ||
         !Number.isInteger(comparison.count) || comparison.count < 5)) throw new Error('Invalid team comparison');
 
@@ -563,7 +564,7 @@ function makeClubCurve(metric) {
   const y = value => 122 - (value - floor) / (ceiling - floor) * 104;
   const pair = (age, value) => `${x(age).toFixed(2)},${y(value).toFixed(2)}`;
   const svg = svgElement('svg', { viewBox: '0 0 376 157', role: 'img', 'aria-label':
-    `${metric.label}. Club average and spread by age group in ${unit}.${own ? ` You: ${readout(own.value)}, U${own.age}.` : ''}` });
+    `${metric.label}. Club average and spread by age group in ${unit}.${own ? ` Your best: ${readout(own.value)}, U${own.age}.` : ''}` });
   const ySteps = [floor, (floor + ceiling) / 2, ceiling];
   for (const value of ySteps) {
     const cy = y(value);
@@ -587,7 +588,7 @@ function makeClubCurve(metric) {
   }
   const legend = element('p', 'pt-club-legend');
   legend.append(element('span', 'pt-legend-average', 'Club average'), element('span', 'pt-legend-spread', 'Spread'));
-  if (own) legend.append(element('span', 'pt-legend-own', `You · ${readout(own.value)}`));
+  if (own) legend.append(element('span', 'pt-legend-own', `Your best · ${readout(own.value)}`));
   const source = curve.through ? `${curve.cohort} · Through ${curve.through}` : curve.cohort;
   section.append(element('p', 'pt-score-caption', `${curve.label} (${unit}) · ${source}`), svg, legend);
   if (own?.average !== undefined) {
@@ -792,7 +793,10 @@ export function renderReport(report, record, {visual = ['score-cards-v1', COMPAR
   const title = visual ? `${report.firstName}’s test results` : `${report.firstName}’s ${report.pathwayCharts ? 'testing' : 'team'} snapshot`;
   header.append(element('h1', '', title));
   header.append(element('p', '', `${report.name} · ${report.team}`));
-  header.append(element('p', '', `Coach ${report.coach} · Tested ${report.testDate}`));
+  const dateLine = interactive && report.reportKind === 'individual'
+    ? `Results through ${report.testDate}`
+    : `Coach ${report.coach} · Tested ${report.testDate}`;
+  header.append(element('p', '', dateLine));
   if (report.reviewNotice) header.append(element('p', 'pt-coverage', report.reviewNotice));
   if (report.pathwayCoverage) header.append(element('p', 'pt-coverage', report.pathwayCoverage.note));
   const main = element('main', 'pt-body');
@@ -824,7 +828,8 @@ export function renderReport(report, record, {visual = ['score-cards-v1', COMPAR
     main.append(makePathways(report), makeCorrectedResults(report));
   } else if (visual) {
     const scores = element('section', 'pt-score-section');
-    scores.append(element('h2', '', 'Team comparison'),
+    const sectionLabel = interactive && report.reportKind === 'individual' ? 'Test results' : 'Team comparison';
+    scores.append(element('h2', '', sectionLabel),
       element('p', 'pt-score-intro', interactive ? 'Tap a test to see how you compare.' : 'Approximate team percentiles. Further right is stronger.'));
     const grid = element('div', 'pt-score-grid');
     scores.append(grid);

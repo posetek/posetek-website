@@ -6,3 +6,6 @@ app/public/brand/*.svg text eol=lf
 # Raw copied contracts have frozen byte digests shared with the mobile repository.
 app/src/pages/admin/lib/__fixtures__/device-performance-v1/** text eol=lf
 functions/contracts/device-performance-v1/** text eol=lf
+
+# The synthetic report preview contains PDF bytes.
+scripts/fixtures/private-parent-score-comparison.pdf binary

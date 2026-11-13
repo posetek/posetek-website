@@ -40,7 +40,7 @@ const PATHWAY_CHART_UPDATE = {
 const SCORE_COMPARISON_UPDATE = {
   'render.mjs': {
     before: { sha: '86c58ad9d2d668872548d39399fb8041faa5f134', size: 38722 },
-    after: { sha: 'd22efbd932066edd73d437b708b8e5a790889745', size: 50080 },
+    after: { sha: '80cc4d65b1b9efb0584c29c9cda7caf5f580012f', size: 50465 },
   },
   'report.css': {
     before: { sha: '2ac57f2f9e42208b5b9f7efe84c7b1181509bd0c', size: 14870 },

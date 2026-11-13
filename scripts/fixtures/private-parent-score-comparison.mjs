@@ -1,4 +1,5 @@
 // Synthetic report for the local preview and browser acceptance.
+import { readFileSync } from 'node:fs';
 const result = (key, label, value, median, percentile, band, curve) => ({
   key, label, status: 'measured', result: value, percentile, band, average: value, count: 8,
   ...(median ? { comparison: median } : {}),
@@ -29,5 +30,5 @@ export const scoreComparisonFixture = {
     { ...result('broadJump', 'Broad jump', '5.1 ft', null, null, 'unranked'), count: 4, average: null },
   ],
   summary: [], exercises: [], methodNotes: [],
-  pdfBase64: Buffer.from('%PDF-1.4\n% Synthetic preview fixture\n%%EOF').toString('base64'),
+  pdfBase64: readFileSync(new URL('./private-parent-score-comparison.pdf', import.meta.url)).toString('base64'),
 };
