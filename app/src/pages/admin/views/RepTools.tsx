@@ -21,10 +21,30 @@ import AdminModal from "./AdminModal";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { drillByKey } from "../../athlete-portal/lib/drills";
 import { fullName, repNumber, sessionNumber } from "../../athlete-portal/lib/metrics";
-import { loadPlayer } from "../lib/accounts";
 import type { PlayerRow } from "../lib/accounts";
-import { loadRep, loadRepArtifacts, loadRepRevisions, pushRepRevision, restoreRepRevision } from "../lib/repToolsData";
 import type { RepArtifactBundle, RepRevisionRow } from "../lib/repToolsData";
+import { LIVE_REP_TOOLS_SOURCE } from "../lib/repToolsSource";
+import type { RepToolsSource } from "../lib/repToolsSource";
+import {
+  PRIMARY_METRIC,
+  broadJumpDistance,
+  broadJumpScale,
+  feetMoved,
+  initialBroadJumpFeet,
+  metersToFeetText,
+  parsePointSeries,
+  phoneBroadJumpFeet,
+  primaryMetricValue,
+  primaryResultText,
+  processingFlagged,
+  validationRevision,
+  validationStatus,
+  FLAG_ISSUES,
+  noteBody,
+  withAnnotationHistory,
+  BROAD_JUMP_MAX_DISTANCE_METERS,
+} from "../lib/resultValidation";
+import type { BroadJumpFeet, ValidationDecision } from "../lib/resultValidation";
 import {
   KICK_FIT_WINDOW_FRAMES,
   SHUTTLE_FRAME_KEYS,
@@ -52,14 +72,24 @@ import {
   resolveKickScale,
   revisionPreviewFields,
   shuttleFramesFrom,
+  sizeFromMetadata,
   stringFieldValues,
   toolSpecFor,
   trackToSignedMeters,
 } from "../lib/repTools";
 import type { FrameRange, Mark, Point, ShuttleFrames, StartingSide } from "../lib/repTools";
 import JumpTechniqueEditor from "./JumpTechniqueEditor";
+import JumpReviewPanel from "./JumpReviewPanel";
+import { SavedEvidence, SeriesCharts } from "./RepEvidence";
+import AgeCurve from "./AgeCurve";
+import type { AgeCurveData } from "./AgeCurve";
+import { frameSeriesGroups, sceneEvidence } from "../lib/repEvidence";
+import { drillEvidence } from "../lib/drillEvidence";
+import { drawDrillEvidence } from "./drawDrillEvidence";
 import { resultsPath } from "../lib/results";
 import { ADMIN_RETURN_STATE } from '../lib/useAdminNavigation';
+import { drawTrackingFrame, parseTracking } from '../../../lib/replay-tracking';
+import "../result-validation.scss";
 
 type AnnotationTarget = "com" | "ball";
 type ComSource = "annotated" | "pose" | "none";
@@ -84,10 +114,39 @@ const SKELETON: [number, number][] = [
   [23, 25], [25, 27], [27, 29], [29, 31], [24, 26], [26, 28], [28, 30], [30, 32],
 ];
 
-export default function RepTools() {
-  const { playerId = "", drillKey = "", repId = "" } = useParams();
+/** Set when the rep tools run inside the result-validation queue. */
+export interface RepValidationContext {
+  eventName: string;
+  position: string;
+  back: string;
+  onPrevious: (() => void) | null;
+  onNext: (() => void) | null;
+  onSaved: (rep: any, decision: ValidationDecision) => void;
+  /** The rep changed without a new decision (a decision was undone); update the queue, stay on the rep. */
+  onUpdated?: (rep: any) => void;
+  /** Focus mode: the workbench fills the screen; toggled with F or the button. */
+  focus?: boolean;
+  onToggleFocus?: () => void;
+  /** The session's athletes by age, the athlete's age and the published benchmark bands. */
+  ageCurve?: AgeCurveData & { age: { age: number; exact: boolean } | null };
+}
+
+export interface RepToolsProps {
+  playerId?: string;
+  drillKey?: string;
+  repId?: string;
+  validation?: RepValidationContext;
+  source?: RepToolsSource;
+}
+
+export default function RepTools({ playerId: playerProp, drillKey: drillProp, repId: repProp, validation, source = LIVE_REP_TOOLS_SOURCE }: RepToolsProps = {}) {
+  const params = useParams();
+  const playerId = playerProp ?? params.playerId ?? "";
+  const drillKey = drillProp ?? params.drillKey ?? "";
+  const repId = repProp ?? params.repId ?? "";
   const [search] = useSearchParams();
   const drill = drillByKey(drillKey);
+  const tool = validation ? "Result validation" : "Rep tools";
   const spec = toolSpecFor(drill.key);
 
   const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -96,17 +155,17 @@ export default function RepTools() {
   const [savedRevision, setSavedRevision] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = "Rep tools | PoseTek admin";
+    document.title = `${tool} | PoseTek admin`;
     let live = true;
     setLoaded(null);
     setLoadError(null);
     (async () => {
-      const rep = await loadRep(playerId, repId);
+      const rep = await source.loadRep(playerId, repId);
       if (!rep) throw new Error("That rep could not be found.");
       const [player, artifacts, revisions] = await Promise.all([
-        loadPlayer(playerId).catch(() => null),
-        loadRepArtifacts(drill, rep, playerId),
-        loadRepRevisions(playerId, repId).then(rows => ({ rows, error: false })).catch(() => ({ rows: [] as RepRevisionRow[], error: true })),
+        source.loadPlayer(playerId).catch(() => null),
+        source.loadRepArtifacts(drill, rep, playerId),
+        source.loadRepRevisions(playerId, repId).then(rows => ({ rows, error: false })).catch(() => ({ rows: [] as RepRevisionRow[], error: true })),
       ]);
       if (live) setLoaded({ player, rep, artifacts, revisions: revisions.rows, revisionError: revisions.error });
     })().catch(error => { if (live) setLoadError(error?.message || "The rep could not be loaded."); });
@@ -114,13 +173,13 @@ export default function RepTools() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerId, repId, drill.key, generation]);
 
-  const back = resultsPath(playerId, drill.key) + (search.size ? `?${search}` : '');
+  const back = validation?.back ?? resultsPath(playerId, drill.key) + (search.size ? `?${search}` : '');
   const sessionParam = search.get("session");
 
   if (loadError) {
     return (
       <>
-        <Heading back={back} title="Rep tools" subtitle={drill.label} />
+        <Heading back={back} tool={tool} title={tool} subtitle={drill.label} />
         <p className="form-message" role="alert">{loadError}</p>
       </>
     );
@@ -128,7 +187,7 @@ export default function RepTools() {
   if (!loaded) {
     return (
       <>
-        <Heading back={back} title="Rep tools" subtitle={drill.label} />
+        <Heading back={back} tool={tool} title={tool} subtitle={drill.label} />
         <div className="portal-loading"><span className="spinner" /><p>Loading the rep and its files…</p></div>
       </>
     );
@@ -137,7 +196,7 @@ export default function RepTools() {
   const athleteName = loaded.player?.name ?? fullName(loaded.artifacts?.metadata ?? {});
   return (
     <>
-    {savedRevision && <p className="admin-banner good" role="status">Saved revision {savedRevision}. The correction has been reloaded.</p>}
+    {savedRevision && !validation && <p className="admin-banner good" role="status">Saved revision {savedRevision}. The correction has been reloaded.</p>}
     <RepToolsLoaded
       key={`${repId}:${generation}`}
       drillLabel={drill.label}
@@ -146,22 +205,24 @@ export default function RepTools() {
       repId={repId}
       athleteName={athleteName}
       loaded={loaded}
-      back={sessionParam ? `${back}?session=${encodeURIComponent(sessionParam)}` : back}
+      back={sessionParam && !validation ? `${back}?session=${encodeURIComponent(sessionParam)}` : back}
       spec={spec}
+      validation={validation}
+      source={source}
       onReload={(id) => { setSavedRevision(id ?? null); setGeneration(current => current + 1); }}
     />
     </>
   );
 }
 
-function Heading({ back, title, subtitle, actions }: { back: string; title: string; subtitle: string; actions?: React.ReactNode }) {
+function Heading({ back, tool = "Rep tools", title, subtitle, actions }: { back: string; tool?: string; title: string; subtitle: string; actions?: React.ReactNode }) {
   return (
     <section className="admin-heading">
-      <Link className="icon-button" state={ADMIN_RETURN_STATE} to={back} aria-label="Back to the results">
+      <Link className="icon-button" state={ADMIN_RETURN_STATE} to={back} aria-label={tool === "Rep tools" ? "Back to the results" : "Back to the queue"}>
         <span className="material-symbols-outlined">arrow_back</span>
       </Link>
       <div>
-        <p className="eyebrow">Rep tools · {subtitle}</p>
+        <p className="eyebrow">{tool} · {subtitle}</p>
         <h1>{title}</h1>
       </div>
       {actions && <div className="admin-heading-actions">{actions}</div>}
@@ -180,10 +241,14 @@ interface ToolProps {
   loaded: Loaded;
   back: string;
   spec: ReturnType<typeof toolSpecFor>;
+  validation?: RepValidationContext;
+  source: RepToolsSource;
   onReload: (revisionId?: string) => void;
 }
 
-function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, loaded, back, spec, onReload }: ToolProps) {
+type FootTarget = "start" | "landing";
+
+function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, loaded, back, spec, validation, source, onReload }: ToolProps) {
   const { rep, artifacts, revisions } = loaded;
   const metadata = useMemo(() => artifacts.metadata ?? {}, [artifacts.metadata]);
   const rederive = Boolean(spec?.rederive);
@@ -201,16 +266,28 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
 
   const poseTrack = useMemo(() => hipTrackFromPose(artifacts.pose), [artifacts.pose]);
   const poseFrames: any[] = useMemo(() => (Array.isArray(artifacts.pose) ? artifacts.pose : Array.isArray(artifacts.pose?.frames) ? artifacts.pose.frames : []), [artifacts.pose]);
+  const tracking = useMemo(() => parseTracking(artifacts.tracking, metadata), [artifacts.tracking, metadata]);
+  const hasTracking = Boolean(tracking?.frames.some(row => row.person || row.com || row.ball));
+  const hasPose = metadata.poseComputed !== false && poseFrames.some(row => Array.isArray(row) && row.length >= 33);
+  const hasVisualEvidence = Boolean(artifacts.mediaUrl || hasPose || hasTracking);
+  // Everything else the phone saved: markers, ground and gate geometry, per-frame series, every file.
+  const evidenceJson = useMemo(() => artifacts.json ?? {}, [artifacts.json]);
+  const scene = useMemo(() => sceneEvidence({ metadata, arucoCorners: artifacts.arucoCorners, json: evidenceJson }), [metadata, artifacts.arucoCorners, evidenceJson]);
+  const hasScene = scene.markers.length > 0 || scene.lines.length > 0 || scene.points.length > 0;
+  const [showScene, setShowScene] = useState(true);
   const timing = useMemo(
-    () => resolveClipTiming({ metadata, reprocessContext: artifacts.reprocessContext, poseFrameCount: poseFrames.length, videoDuration }),
-    [metadata, artifacts.reprocessContext, poseFrames.length, videoDuration],
+    () => resolveClipTiming({ metadata, reprocessContext: artifacts.reprocessContext, poseFrameCount: poseFrames.length, videoDuration, trackingFrameCount: tracking?.frames.length, trackingFPS: tracking?.fps }),
+    [metadata, artifacts.reprocessContext, poseFrames.length, videoDuration, tracking],
   );
   const { fps, totalFrames } = timing;
   const lastFrame = Math.max(0, totalFrames - 1);
+  const timingMissing = timing.fpsSource === "default";
+  const canPlay = Boolean(artifacts.mediaUrl || (hasVisualEvidence && timing.fpsSource !== "default" && lastFrame > 0));
 
   const [frame, setFrameState] = useState(0);
   const frameRef = useRef(0);
   const seekTo = useCallback((next: number, seekVideo = true) => {
+    setPlaying(false);
     const clamped = Math.max(0, Math.min(lastFrame, Math.round(next)));
     frameRef.current = clamped;
     setFrameState(clamped);
@@ -220,6 +297,24 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       video.currentTime = Math.min(video.duration, (clamped + 0.5) / fps);
     }
   }, [fps, lastFrame]);
+
+  // Tracking and pose frames have no HTML video clock. Advance their original
+  // frame indices at the recorded rate; never fill missing detections.
+  useEffect(() => {
+    if (artifacts.mediaUrl || !playing || !canPlay) return;
+    const initialFrame = frameRef.current;
+    const started = performance.now();
+    let handle = 0;
+    const tick = (now: number) => {
+      const next = Math.min(lastFrame, initialFrame + Math.floor((now - started) * fps * rate / 1000));
+      frameRef.current = next;
+      setFrameState(next);
+      if (next >= lastFrame) setPlaying(false);
+      else handle = requestAnimationFrame(tick);
+    };
+    handle = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(handle);
+  }, [artifacts.mediaUrl, playing, canPlay, lastFrame, fps, rate]);
 
   // Video events: keep the frame counter on the presented frame.
   useEffect(() => {
@@ -261,8 +356,16 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
   }, [fps, lastFrame, artifacts.mediaUrl]);
 
   function togglePlay() {
+    if (!canPlay) return;
     const video = videoRef.current;
-    if (!video) return;
+    if (!video) {
+      if (frameRef.current >= lastFrame) {
+        frameRef.current = 0;
+        setFrameState(0);
+      }
+      setPlaying(current => !current);
+      return;
+    }
     if (video.paused) { video.playbackRate = rate; void video.play(); } else video.pause();
   }
 
@@ -299,9 +402,11 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
   const [run, setRun] = useState<AnnotationRun | null>(null);
   const [showPose, setShowPose] = useState(true);
   const [showTracks, setShowTracks] = useState(true);
+  const [showRecordedTracking, setShowRecordedTracking] = useState(true);
   const [sideOverride, setSideOverride] = useState<StartingSide | "auto">("auto");
   const initialMeasurements = useRef({ frames, numbers, comMarks, ballMarks, comSource, ballSource, sideOverride, window: kickWindow });
   const measurementsEdited = measurementInputsChanged(initialMeasurements.current, { frames, numbers, comMarks, ballMarks, comSource, ballSource, sideOverride, window: kickWindow });
+  const measurementTimingBlocked = timingMissing && measurementsEdited && Boolean(spec?.derive);
 
   // The annotation range: the drill's default (start → end frames, or
   // contact − 10 → contact + 60 for a kick) until the admin edits it.
@@ -330,10 +435,50 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
   const comMeters = useMemo(() => (gateUsable && comTrack && side ? trackToSignedMeters(comTrack, gate, side) : null), [gateUsable, comTrack, gate, side]);
   const ballMeters = useMemo(() => (gateUsable && ballTrack && side ? trackToSignedMeters(ballTrack, gate, side) : null), [gateUsable, ballTrack, gate, side]);
 
+  // MARK: what the drill's processing measured (paths, anchors, gates, ball, events)
+  const measured = useMemo(() => drillEvidence({ drillKey, json: evidenceJson, metadata, rep, pose: artifacts.pose, tracking: artifacts.tracking, frames, fps: timingMissing ? null : fps }),
+    [drillKey, evidenceJson, metadata, rep, artifacts.pose, artifacts.tracking, frames, timingMissing, fps]);
+  const seriesGroups = useMemo(() => [...measured.series, ...frameSeriesGroups(evidenceJson, measured.seriesHandled)], [measured, evidenceJson]);
+  const [showMeasured, setShowMeasured] = useState(true);
+  const groundLine = scene.lines.find(line => line.kind === "ground") ?? null;
+
+  // MARK: broad jump — the start and landing foot the distance is measured between
+  const isBroadJump = drillKey === "broadJump";
+  const phoneFeet = useMemo(() => phoneBroadJumpFeet(artifacts.broadJump, metadata), [artifacts.broadJump, metadata]);
+  const initialFeet = useMemo(() => initialBroadJumpFeet(artifacts.adminAnnotations, phoneFeet), [artifacts.adminAnnotations, phoneFeet]);
+  const [feet, setFeet] = useState<BroadJumpFeet>(initialFeet);
+  const [placingFoot, setPlacingFoot] = useState<FootTarget | null>(null);
+  const footScale = broadJumpScale(metadata);
+  const footDistance = broadJumpDistance(feet, footScale);
+  const feetEdited = isBroadJump && feetMoved(feet, initialFeet);
+  const feetDifferFromPhone = isBroadJump && feetMoved(feet, phoneFeet);
+  const footTrack = useMemo(() => parsePointSeries(artifacts.broadJump?.footCenters), [artifacts.broadJump]);
+  const canPlaceFeet = isBroadJump && hasVisualEvidence && !videoError;
+
+  function placeFoot(which: FootTarget, point: Point) {
+    const next: BroadJumpFeet = { ...feet, [which]: { frame: frameRef.current, x: point.x, y: point.y } };
+    setFeet(next);
+    const distance = broadJumpDistance(next, footScale);
+    if (distance !== null) setNumbers(current => ({ ...current, broadJumpDistance: String(Number(distance.toFixed(4))) }));
+  }
+
+  function undoFeet() {
+    setFeet(initialFeet);
+    setPlacingFoot(null);
+    setNumbers(current => ({ ...current, broadJumpDistance: initialMeasurements.current.numbers.broadJumpDistance ?? "" }));
+  }
+
+  function usePhoneFeet() {
+    setFeet(phoneFeet);
+    setPlacingFoot(null);
+    const distance = broadJumpDistance(phoneFeet, footScale);
+    if (distance !== null) setNumbers(current => ({ ...current, broadJumpDistance: String(Number(distance.toFixed(4))) }));
+  }
+
   // MARK: the re-derived rep
   const original = useMemo(() => ({ ...metadata, ...rep }), [metadata, rep]);
   const derivation = useMemo(() => {
-    if (!rederive) return null;
+    if (!rederive || timingMissing) return null;
     const shuttle: ShuttleFrames = {
       startFrame: frames.startFrame ?? null,
       apexFrame: frames.apexFrame ?? null,
@@ -342,16 +487,16 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       endFrame: frames.endFrame ?? null,
     };
     return deriveShuttleMetrics({ frames: shuttle, fps, original, comMeters, ballMeters, dribbling });
-  }, [rederive, frames, fps, original, comMeters, ballMeters, dribbling]);
+  }, [rederive, timingMissing, frames, fps, original, comMeters, ballMeters, dribbling]);
 
   // A kick: velocity and launch angle from a straight-line fit through the
   // annotated ball centers after contact, scaled by the marker (the phone's
   // KickProcessingMath.trackBallTrajectory).
   const kickScale = useMemo(() => resolveKickScale(metadata, videoSize?.width ?? null), [metadata, videoSize]);
   const contactFrame = frames.contact_frame ?? null;
-  const kick = useMemo(() => (spec?.derive === "kick"
+  const kick = useMemo(() => (spec?.derive === "kick" && !timingMissing
     ? deriveKickMetrics({ ballTrack, contactFrame, fps, windowFrames: kickWindow, scale: kickScale, original })
-    : null), [spec, ballTrack, contactFrame, fps, kickWindow, kickScale, original]);
+    : null), [spec, timingMissing, ballTrack, contactFrame, fps, kickWindow, kickScale, original]);
 
   const after = useMemo(() => revisionPreviewFields({ spec, original, frames, numbers, strings, derivation, kick, side, measurementsEdited }),
     [spec, original, frames, numbers, strings, derivation, kick, side, measurementsEdited]);
@@ -380,10 +525,8 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
 
   const resultsValid = derivation ? derivation.metrics.totalTime !== null : kick?.fit ? kick.fit.resultsValid : null;
 
-  async function push() {
-    setPushing(true);
-    setPushError(null);
-    try {
+  /** The fields, rewritten artifacts and annotation file a save writes: shared by "Push changes" and the validation decisions. */
+  function assembleRevision() {
       const fields: Record<string, number | string | null | undefined> = {};
       for (const row of diff) {
         if (row.changed) fields[row.key] = row.after;
@@ -396,14 +539,14 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       }
       // A kick with a ball fit: the fitted velocity and angle are written, and
       // the two ball artifacts the phone's viewer reads are rebuilt from the track.
-      let artifacts: Record<string, any> | null = null;
+      let rewrite: Record<string, any> | null = null;
       if (kick && !labelOnlyChange) {
         for (const key of kick.derived) fields[key] = kick.metrics[key];
         fields.contact_frame = contactFrame;
         fields.transition_frame = frames.transition_frame ?? null;
         if (kick.fit?.direction) fields.direction = kick.fit.direction;
         if (kick.fit && ballTrack && contactFrame !== null) {
-          artifacts = kickArtifacts({
+          rewrite = kickArtifacts({
             ballTrack,
             contactFrame,
             transitionFrame: frames.transition_frame ?? null,
@@ -414,13 +557,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
           });
         }
       }
-      const metadataExtras: Record<string, any> = {};
-      if (clearFlags && resultsValid !== null && !labelOnlyChange) {
-        if (derivation) metadataExtras.failedSteps = resultsValid ? [] : ["cod.metrics"];
-        metadataExtras.processingStatus = resultsValid ? "complete" : "partial";
-        metadataExtras.resultsValid = resultsValid;
-      }
-      const annotations = {
+      const annotations: Record<string, any> = {
         schemaVersion: 1,
         tool: "posetek-web-admin-rep-tools",
         fps,
@@ -443,8 +580,37 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
         frames: { ...frames },
         derivationNotes: derivation?.notes ?? kick?.notes ?? [],
       };
-      const payload = buildRevisionPayload({ playerId, repId, drill: drillKey, fields, metadataExtras, annotations: labelOnlyChange ? null : annotations, artifacts: labelOnlyChange ? null : artifacts, note });
-      const result = await pushRepRevision(payload);
+      if (isBroadJump) {
+        annotations.broadJump = {
+          startFoot: feet.start,
+          landingFoot: feet.landing,
+          phoneStartFoot: phoneFeet.start,
+          phoneLandingFoot: phoneFeet.landing,
+          source: feetDifferFromPhone ? "admin" : "phone",
+          metersPerUnit: footScale,
+          scaleSource: footScale === null ? null : "metadata.m_to_normalized_units",
+          distanceMeters: footDistance,
+          groundY: num(metadata?.ground_loc_y),
+        };
+      }
+      return { fields, rewrite, annotations };
+  }
+
+  async function push() {
+    if (measurementTimingBlocked) return;
+    setPushing(true);
+    setPushError(null);
+    try {
+      const { fields, rewrite, annotations } = assembleRevision();
+      const metadataExtras: Record<string, any> = {};
+      if (clearFlags && resultsValid !== null && !labelOnlyChange) {
+        if (derivation) metadataExtras.failedSteps = resultsValid ? [] : ["cod.metrics"];
+        metadataExtras.processingStatus = resultsValid ? "complete" : "partial";
+        metadataExtras.resultsValid = resultsValid;
+      }
+      const annotationFile = labelOnlyChange ? null : withAnnotationHistory(annotations, artifacts.adminAnnotations);
+      const payload = buildRevisionPayload({ playerId, repId, drill: drillKey, fields, metadataExtras, annotations: annotationFile, artifacts: labelOnlyChange ? null : rewrite, note });
+      const result = await source.pushRepRevision(payload);
       setPushed(result.revisionId);
       setConfirming(false);
       onReload(result.revisionId);
@@ -459,7 +625,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
     setRestoring(revisionId);
     setPushError(null);
     try {
-      await restoreRepRevision(playerId, repId, revisionId);
+      await source.restoreRepRevision(playerId, repId, revisionId);
       setRestoreArmed(null);
       onReload();
     } catch (error: any) {
@@ -469,8 +635,89 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
     }
   }
 
+  // MARK: validation decisions
+  const recordedPrimary = primaryMetricValue(drillKey, original);
+  const afterPrimary = primaryMetricValue(drillKey, after);
+  const status = validationStatus(rep);
+  const flagged = processingFlagged(rep) || processingFlagged(metadata);
+  const adjusting = changedCount > 0 || measurementsEdited || feetEdited;
+  const [saving, setSaving] = useState<ValidationDecision | "undo" | null>(null);
+  const [flagIssues, setFlagIssues] = useState<string[]>([]);
+  const toggleIssue = (key: string) => setFlagIssues(current => (current.includes(key) ? current.filter(item => item !== key) : [...current, key]));
+
+  async function saveValidation(decision: ValidationDecision, noteOverride?: string) {
+    if ((saving && saving !== "undo") || run) return;
+    if (decision === "adjusted" && measurementTimingBlocked) return;
+    setPushError(null);
+    const assembled = assembleRevision();
+    const changedFields = Object.fromEntries(Object.entries(assembled.fields).filter(([, value]) => value !== undefined)) as Record<string, number | string | null>;
+    const issueLabels = decision === "flagged" ? FLAG_ISSUES.filter(issue => flagIssues.includes(issue.key)).map(issue => issue.label) : [];
+    const plan = validationRevision({ drillKey, decision, original, after, changedFields: decision === "adjusted" ? changedFields : {}, note: noteOverride ?? note, issues: issueLabels });
+    if ("error" in plan) { setPushError(plan.error); return; }
+    setSaving(decision);
+    try {
+      const key = PRIMARY_METRIC[drillKey]?.key ?? null;
+      const annotations = withAnnotationHistory({
+        ...assembled.annotations,
+        tool: "posetek-web-admin-result-validation",
+        validation: {
+          schemaVersion: 1,
+          decision,
+          primaryMetric: key,
+          recordedValue: recordedPrimary,
+          validatedValue: decision === "flagged" || !key ? null : plan.fields[key] ?? null,
+          issues: decision === "flagged" ? flagIssues : [],
+          note: (noteOverride ?? note).trim(),
+          reviewerNoteVersion: 1,
+          previousState: status.state,
+          processingFlagged: flagged,
+          testingEventId: typeof rep?.testingEventId === "string" ? rep.testingEventId : null,
+          decidedAtMillis: Date.now(),
+        },
+      }, artifacts.adminAnnotations);
+      const payload = buildRevisionPayload({
+        playerId, repId, drill: drillKey, fields: plan.fields, metadataExtras: plan.metadataExtras, annotations,
+        artifacts: decision === "adjusted" && !labelOnlyChange ? assembled.rewrite : null, note: plan.note,
+      });
+      const result = await source.pushRepRevision(payload);
+      validation?.onSaved(result.rep, decision);
+      onReload(result.revisionId);
+    } catch (error: any) {
+      setPushError(error?.message || "The decision could not be saved.");
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  /**
+   * Undo the current decision through the restore callable (the rep returns to
+   * exactly what it was before it). A rejection can be turned into a flag in
+   * the same step, keeping the reviewer's note.
+   */
+  async function undoDecision(thenFlag: boolean) {
+    const revisionId = rep?.adminRevision?.revisionId;
+    if (!revisionId || saving || run) return;
+    setSaving("undo");
+    setPushError(null);
+    try {
+      const restored = await source.restoreRepRevision(playerId, repId, revisionId);
+      if (thenFlag) {
+        const words = noteBody(status.note);
+        await saveValidation("flagged", [words, note.trim()].filter(Boolean).join(" · "));
+        return;
+      }
+      validation?.onUpdated?.(restored?.rep ?? null);
+      onReload();
+    } catch (error: any) {
+      setPushError(error?.message || "The decision could not be undone.");
+    } finally {
+      setSaving(current => (current === "undo" ? null : current));
+    }
+  }
+
   // MARK: annotation run
   function startRun(target: AnnotationTarget) {
+    if (!artifacts.mediaUrl || videoError) return;
     const queue = annotationFrames(Math.max(0, rangeStart), Math.min(lastFrame, rangeEnd), stride);
     if (!queue.length) return;
     const existing = target === "com" ? comMarks : ballMarks;
@@ -501,6 +748,13 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
   }
 
   function onStageClick(event: React.MouseEvent<HTMLDivElement>) {
+    if (placingFoot) {
+      const point = pointFromEvent(event, stageRef.current, videoSize ?? sizeFromMetadata(metadata));
+      if (!point) return;
+      placeFoot(placingFoot, point);
+      setPlacingFoot(null);
+      return;
+    }
     if (!run) return;
     const point = pointFromEvent(event, stageRef.current, videoSize ?? sizeFromMetadata(metadata));
     if (!point) return;
@@ -515,15 +769,20 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
-      if (event.key === "ArrowRight") { event.preventDefault(); seekTo(frameRef.current + (event.shiftKey ? stride * 3 : 1)); }
-      else if (event.key === "ArrowLeft") { event.preventDefault(); seekTo(frameRef.current - (event.shiftKey ? stride * 3 : 1)); }
+      if (event.key === "ArrowRight" && hasVisualEvidence) { event.preventDefault(); seekTo(frameRef.current + (event.shiftKey ? stride * 3 : 1)); }
+      else if (event.key === "ArrowLeft" && hasVisualEvidence) { event.preventDefault(); seekTo(frameRef.current - (event.shiftKey ? stride * 3 : 1)); }
       else if (event.key === " ") { event.preventDefault(); togglePlay(); }
       else if (event.key === "Backspace" && run) { event.preventDefault(); undoRun(run); }
+      else if (event.key === "Escape" && placingFoot) { event.preventDefault(); setPlacingFoot(null); }
+      else if (event.key === "Escape" && validation?.focus && !run && !document.fullscreenElement) { event.preventDefault(); validation.onToggleFocus?.(); }
+      else if (event.key === "]" && validation?.onNext && !saving) { event.preventDefault(); validation.onNext(); }
+      else if (event.key === "[" && validation?.onPrevious && !saving) { event.preventDefault(); validation.onPrevious(); }
+      else if ((event.key === "f" || event.key === "F") && !event.metaKey && !event.ctrlKey && validation?.onToggleFocus) { event.preventDefault(); validation.onToggleFocus(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seekTo, stride, run, rate]);
+  }, [seekTo, stride, run, rate, canPlay, hasVisualEvidence, placingFoot, validation, saving]);
 
   // MARK: drawing
   useEffect(() => {
@@ -556,9 +815,100 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
         ctx.restore();
       }
 
+      // Scene: every ArUco marker (corner outline, its ground edge, id and role),
+      // the ground line and the gate points the phone measured with. Calibration
+      // photo markers are dashed; they came from a different image.
+      if (showScene && hasScene) {
+        ctx.save();
+        ctx.font = "700 11px Inter, system-ui, sans-serif";
+        for (const line of scene.lines) {
+          // Extend the segment across the frame.
+          const dx = line.b.x - line.a.x;
+          const slope = Math.abs(dx) > 1e-6 ? (line.b.y - line.a.y) / dx : 0;
+          const from = map({ x: 0, y: line.a.y - slope * line.a.x });
+          const to = map({ x: 1, y: line.a.y + slope * (1 - line.a.x) });
+          ctx.setLineDash([10, 6]);
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+          ctx.textAlign = "right";
+          ctx.fillText(line.label, to.x - 6, to.y - 6);
+        }
+        for (const marker of scene.markers) {
+          const calibration = marker.source === "session.calibration";
+          const color = calibration ? "rgba(160, 220, 255, 0.9)" : "rgba(255, 201, 105, 0.95)";
+          const corners = marker.corners.map(map);
+          if (corners.length >= 4) {
+            ctx.setLineDash(calibration ? [4, 4] : []);
+            ctx.fillStyle = calibration ? "rgba(160, 220, 255, 0.10)" : "rgba(255, 201, 105, 0.18)";
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            corners.forEach((p, index) => (index ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+            // OpenCV order TL, TR, BR, BL: BR→BL is the edge on the ground.
+            ctx.setLineDash([]);
+            ctx.strokeStyle = calibration ? "rgba(160, 220, 255, 0.9)" : "#ff9f43";
+            ctx.lineWidth = 3.5;
+            ctx.beginPath(); ctx.moveTo(corners[2].x, corners[2].y); ctx.lineTo(corners[3].x, corners[3].y); ctx.stroke();
+            corners.forEach((p, index) => {
+              ctx.fillStyle = index === 0 ? "#ffffff" : color;
+              ctx.beginPath(); ctx.arc(p.x, p.y, index === 0 ? 3.5 : 2.5, 0, Math.PI * 2); ctx.fill();
+            });
+          }
+          const center = marker.center ? map(marker.center) : null;
+          if (center) {
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.arc(center.x, center.y, 2.5, 0, Math.PI * 2); ctx.fill();
+            const top = corners.length ? Math.min(...corners.map(p => p.y)) : center.y;
+            const label = `${calibration ? "calib " : ""}ID ${marker.id ?? "?"}${marker.role ? ` · ${marker.role}` : ""}`;
+            const textWidth = ctx.measureText(label).width + 10;
+            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+            ctx.fillRect(center.x - textWidth / 2, top - 22, textWidth, 16);
+            ctx.fillStyle = color;
+            ctx.textAlign = "center";
+            ctx.fillText(label, center.x, top - 10);
+          }
+        }
+        // Two markers: how far apart they measure vs. the distance processing used.
+        if (scene.separation) {
+          const { a, b, measuredMeters, configuredMeters, configuredSource, difference } = scene.separation;
+          const pa = map(a), pb = map(b);
+          const off = difference !== null && Math.abs(difference) > 0.05;
+          ctx.setLineDash([2, 5]);
+          ctx.strokeStyle = off ? "#ffb020" : "rgba(255, 255, 255, 0.85)";
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
+          ctx.setLineDash([]);
+          const ft = (m: number) => `${(m * 3.28084).toFixed(1)} ft`;
+          const text = `markers measure ${measuredMeters.toFixed(2)} m (${ft(measuredMeters)})${configuredMeters !== null ? ` · used ${configuredMeters.toFixed(2)} m${configuredSource ? ` (${configuredSource})` : ""} · ${difference! >= 0 ? "+" : ""}${(difference! * 100).toFixed(1)}%` : " · no configured distance saved"}`;
+          ctx.font = "800 12px Inter, system-ui, sans-serif";
+          const width = ctx.measureText(text).width + 16;
+          const cx = (pa.x + pb.x) / 2, cy = Math.max(content.y + 48, Math.min(pa.y, pb.y) - 40);
+          ctx.fillStyle = off ? "rgba(90, 55, 0, 0.88)" : "rgba(0, 0, 0, 0.75)";
+          ctx.fillRect(cx - width / 2, cy - 14, width, 22);
+          ctx.fillStyle = off ? "#ffd27a" : "#ffffff";
+          ctx.textAlign = "center";
+          ctx.fillText(text, cx, cy + 2);
+          ctx.font = "700 11px Inter, system-ui, sans-serif";
+        }
+        for (const gatePoint of scene.points) {
+          const p = map(gatePoint.point);
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, Math.PI * 2); ctx.moveTo(p.x - 11, p.y); ctx.lineTo(p.x + 11, p.y); ctx.moveTo(p.x, p.y - 11); ctx.lineTo(p.x, p.y + 11); ctx.stroke();
+          ctx.fillStyle = "#ffffff";
+          ctx.textAlign = "left";
+          ctx.fillText(gatePoint.label, p.x + 10, p.y + 16);
+        }
+        ctx.restore();
+      }
+
       // Pose skeleton, faint.
       const pose = poseFrames[frame];
-      if (showPose && Array.isArray(pose) && pose.length >= 33) {
+      if (showPose && hasPose && Array.isArray(pose) && pose.length >= 33) {
         const at = (index: number): Point | null => {
           const row = pose[index];
           if (!Array.isArray(row) || num(row[0]) === null || num(row[1]) === null) return null;
@@ -580,6 +930,28 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
           ctx.fillStyle = "rgba(183, 243, 74, 0.7)";
           ctx.beginPath(); ctx.arc(h.x, h.y, 4, 0, Math.PI * 2); ctx.fill();
         }
+      }
+
+      // Saved detector output is display-only: viewing it must not silently
+      // replace reviewed annotations, derive distances, or qualify a result.
+      if (showRecordedTracking && hasTracking && tracking) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(content.x, content.y, content.w, content.h);
+        ctx.clip();
+        ctx.translate(content.x, content.y);
+        drawTrackingFrame(ctx, tracking, frame, content.w, content.h);
+        ctx.restore();
+      }
+
+      // Measured evidence is drawn over a recording only; a metadata-only rep keeps an empty stage.
+      if (showMeasured && hasVisualEvidence) {
+        const groundAt = (x: number) => {
+          if (!groundLine) return null;
+          const dx = groundLine.b.x - groundLine.a.x;
+          return Math.abs(dx) < 1e-6 ? groundLine.a.y : groundLine.a.y + ((x - groundLine.a.x) * (groundLine.b.y - groundLine.a.y)) / dx;
+        };
+        drawDrillEvidence(ctx, map, content, frame, measured, groundAt);
       }
 
       // Tracks: the interpolated path so far, and the marks.
@@ -613,8 +985,88 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       drawTrack(comSource === "none" ? null : comTrack, comSource === "annotated" ? comMarks : [], "#4bd7e8", 4);
       drawTrack(ballSource === "none" ? null : ballTrack, ballSource === "annotated" ? ballMarks : [], "#ff8a5c", 3);
 
+      // Broad jump: the ground line, the foot and torso paths so far, the
+      // phone's measured feet (faint, once moved) and the feet being validated.
+      if (isBroadJump) {
+        const path = (track: (Point | null)[], color: string, radius: number) => {
+          if (!track.length) return;
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          let started = false;
+          for (let f = 0; f <= Math.min(frame, track.length - 1); f++) {
+            const p = track[f];
+            if (!p) { started = false; continue; }
+            const m = map(p);
+            if (!started) { ctx.moveTo(m.x, m.y); started = true; } else ctx.lineTo(m.x, m.y);
+          }
+          ctx.stroke();
+          const current = track[frame];
+          if (current) {
+            const m = map(current);
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.arc(m.x, m.y, radius, 0, Math.PI * 2); ctx.fill();
+          }
+        };
+        if (showTracks) path(footTrack, "#ffad5c", 3.5);
+        const footLine = (mark: { x: number; y: number } | null, color: string, label: string, faint: boolean) => {
+          if (!mark) return;
+          const p = map(mark);
+          ctx.save();
+          ctx.globalAlpha = faint ? 0.5 : 1;
+          ctx.setLineDash(faint ? [3, 5] : [7, 5]);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = faint ? 1.5 : 2;
+          ctx.beginPath(); ctx.moveTo(p.x, content.y); ctx.lineTo(p.x, content.y + content.h); ctx.stroke();
+          ctx.setLineDash([]);
+          if (!faint) {
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.stroke();
+          }
+          ctx.font = "700 11px Inter, system-ui, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillStyle = color;
+          ctx.fillText(label, p.x, faint ? content.y + 16 : Math.max(content.y + 30, p.y - 14));
+          ctx.restore();
+        };
+        if (feetDifferFromPhone) {
+          footLine(phoneFeet.start, "#d5ddd8", "phone start", true);
+          footLine(phoneFeet.landing, "#d5ddd8", "phone landing", true);
+        }
+        footLine(feet.start, "#71d39b", "Start", false);
+        footLine(feet.landing, "#ff7d7d", "Landing", false);
+        if (feet.start && feet.landing) {
+          const a = map(feet.start), b = map(feet.landing);
+          const y = Math.min(content.y + content.h - 12, Math.max(a.y, b.y) + 26);
+          ctx.save();
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(a.x, y); ctx.lineTo(b.x, y);
+          ctx.moveTo(a.x, y - 6); ctx.lineTo(a.x, y + 6);
+          ctx.moveTo(b.x, y - 6); ctx.lineTo(b.x, y + 6);
+          ctx.stroke();
+          const text = footDistance === null ? "no marker scale" : `${metersToFeetText(footDistance)} · ${footDistance.toFixed(2)} m`;
+          ctx.font = "700 12px Inter, system-ui, sans-serif";
+          const width = ctx.measureText(text).width + 16;
+          const cx = (a.x + b.x) / 2;
+          ctx.fillStyle = "rgba(0, 0, 0, 0.74)";
+          ctx.fillRect(cx - width / 2, y - 30, width, 22);
+          ctx.fillStyle = "#ffffff";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(text, cx, y - 19);
+          ctx.restore();
+        }
+      }
+
       // Crosshair hint while annotating.
-      if (run) {
+      if (placingFoot) {
+        ctx.strokeStyle = placingFoot === "start" ? "rgba(113, 211, 155, 0.95)" : "rgba(255, 125, 125, 0.95)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(content.x + 1, content.y + 1, content.w - 2, content.h - 2);
+      } else if (run) {
         ctx.strokeStyle = run.target === "com" ? "rgba(75, 215, 232, 0.9)" : "rgba(255, 138, 92, 0.9)";
         ctx.lineWidth = 2;
         ctx.strokeRect(content.x + 1, content.y + 1, content.w - 2, content.h - 2);
@@ -624,7 +1076,8 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
     const observer = new ResizeObserver(draw);
     observer.observe(stage);
     return () => observer.disconnect();
-  }, [frame, videoSize, metadata, gate, gateUsable, poseFrames, poseTrack, showPose, showTracks, comTrack, ballTrack, comMarks, ballMarks, comSource, ballSource, run]);
+  }, [frame, videoSize, metadata, gate, gateUsable, poseFrames, poseTrack, hasPose, tracking, hasTracking, showRecordedTracking, showPose, showTracks, comTrack, ballTrack, comMarks, ballMarks, comSource, ballSource, run,
+    isBroadJump, feet, phoneFeet, feetDifferFromPhone, footTrack, footDistance, placingFoot, scene, hasScene, showScene, measured, showMeasured, hasVisualEvidence, groundLine]);
 
   // MARK: derive buttons (shuttle)
   function deriveFromTrack(what: "apex" | "end" | "phases") {
@@ -647,17 +1100,35 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
   const sessionLabel = `Session ${sessionNumber(rep)} · Rep ${repNumber(rep)}`;
   const runMarks = run ? (run.target === "com" ? comMarks : ballMarks) : [];
   const runDone = run ? run.queue.filter(f => runMarks.some(mark => mark.frame === f)).length : 0;
+  const trackedFrame = tracking?.frames[frame];
+  const emptyTrackingFrame = hasTracking && !(trackedFrame?.person || trackedFrame?.com || trackedFrame?.ball);
 
   return (
     <>
       <Heading
         back={back}
+        tool={validation ? "Result validation" : "Rep tools"}
         title={`${athleteName} · ${sessionLabel}`}
-        subtitle={drillLabel}
-        actions={<>{drillKey === "shooting" && <Link className="quiet-button" to={`/admin/analysis?player=${encodeURIComponent(playerId)}&rep=${encodeURIComponent(repId)}`}><span className="material-symbols-outlined">edit_note</span>Technique review</Link>}<Link className="quiet-button" to={`/athlete?player=${encodeURIComponent(playerId)}`}><span className="material-symbols-outlined">open_in_new</span>Their portal</Link></>}
+        subtitle={validation ? `${validation.eventName} · ${drillLabel}` : drillLabel}
+        actions={validation ? (
+          <div className="rv-nav" aria-label="Queue">
+            <button className="quiet-button" type="button" disabled={!validation.onPrevious || Boolean(saving)} onClick={() => validation.onPrevious?.()} title="Previous rep ( [ )">
+              <span className="material-symbols-outlined">chevron_left</span>Previous
+            </button>
+            <span className="rv-position">{validation.position}</span>
+            <button className="quiet-button" type="button" disabled={!validation.onNext || Boolean(saving)} onClick={() => validation.onNext?.()} title="Next rep ( ] )">
+              Next<span className="material-symbols-outlined">chevron_right</span>
+            </button>
+            {validation.onToggleFocus && (
+              <button className="quiet-button" type="button" onClick={() => validation.onToggleFocus?.()} title={validation.focus ? "Exit focus mode (F or Esc)" : "Focus mode: fill the screen (F)"} aria-pressed={Boolean(validation.focus)}>
+                <span className="material-symbols-outlined">{validation.focus ? "close_fullscreen" : "open_in_full"}</span>{validation.focus ? "Exit focus" : "Focus"}
+              </button>
+            )}
+          </div>
+        ) : <>{drillKey === "shooting" && <Link className="quiet-button" to={`/admin/analysis?player=${encodeURIComponent(playerId)}&rep=${encodeURIComponent(repId)}`}><span className="material-symbols-outlined">edit_note</span>Technique review</Link>}<Link className="quiet-button" to={`/athlete?player=${encodeURIComponent(playerId)}`}><span className="material-symbols-outlined">open_in_new</span>Their portal</Link></>}
       />
 
-      {pushed && (
+      {pushed && !validation && (
         <div className="admin-banner good">
           <span className="material-symbols-outlined">check_circle</span>
           <p>Pushed as revision {pushed}. The rep document and its metadata.json now carry the corrected values; the previous version is listed below and can be restored.</p>
@@ -666,9 +1137,14 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
       {!artifacts.mediaUrl && (
         <div className="admin-banner warn">
           <span className="material-symbols-outlined">videocam_off</span>
-          <p>No video was saved to the cloud for this rep, so there is nothing to scrub or annotate. Event frames and values can still be edited against the pose data below.</p>
+          <p>{drillKey === "jump" ? "The standard replay is unavailable. Jump review below checks for an exact retained source recording."
+            : hasTracking ? "Saved tracking is available. Original video is unavailable; review the recorded positions below. Point annotations require original video."
+            : hasPose ? `Saved pose frames are available. Original video is unavailable; review the poses below. ${isBroadJump ? "The start and landing foot can still be placed on the pose; tracking" : "Point"} annotations require original video.`
+              : "No video, pose, or tracking data is available for this rep. Frame numbers come from metadata; they do not represent loaded images. Recorded values can still be edited directly."}</p>
         </div>
       )}
+      {(artifacts.trackingLoadError || (artifacts.tracking && !tracking)) && <p className="admin-banner warn" role="alert">Saved tracking could not be loaded. Reload this rep to retry.</p>}
+      {timingMissing && <p className="admin-banner warn">Frame timing is unavailable. Inspect frames manually; timing-based corrections require the recorded frame rate.</p>}
       {videoError && <div className="admin-banner warn"><span className="material-symbols-outlined">error</span><p>{videoError}</p></div>}
       {rederive && !gateUsable && (
         <div className="admin-banner warn">
@@ -683,42 +1159,50 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
         </div>
       ) : null}
 
+      {drillKey === "jump" && <JumpReviewPanel playerId={playerId} repId={repId} athleteName={athleteName} onSaved={onReload} />}
+
       <div className="rt-layout">
         <div className="rt-main">
           <section className="pose-card rt-card">
             <div
-              className={`pose-stage rt-stage${run ? " annotating" : ""}`}
+              className={`pose-stage rt-stage${run || placingFoot ? " annotating" : ""}`}
               ref={stageRef}
               onClick={onStageClick}
-              role={run ? "button" : undefined}
-              aria-label={run ? `Mark the ${run.target === "com" ? "athlete's center of mass" : "ball's center"} on frame ${frame}` : undefined}
+              role={run || placingFoot ? "button" : undefined}
+              aria-label={placingFoot ? `Place the ${placingFoot === "start" ? "start" : "landing"} foot on frame ${frame}` : run ? `Mark the ${run.target === "com" ? "athlete's center of mass" : "ball's center"} on frame ${frame}` : undefined}
             >
               {artifacts.mediaUrl && <video ref={videoRef} src={artifacts.mediaUrl} playsInline preload="auto" muted />}
               <canvas ref={canvasRef} />
               <span className="viewer-badge">{drillLabel.toUpperCase()}</span>
               <span className="rt-frame-chip">
-                frame {frame} / {lastFrame} · {(frame / fps).toFixed(3)} s · {fps.toFixed(2)} fps ({timing.fpsSource})
+                frame {frame} / {lastFrame} · {timing.fpsSource === "default" ? "Frame timing unavailable" : `${(frame / fps).toFixed(3)} s · ${fps.toFixed(2)} fps (${timing.fpsSource})`}
               </span>
+              {placingFoot && (
+                <span className={`rt-mode-chip rv-foot-chip ${placingFoot}`}>
+                  {placingFoot === "start" ? "Click where the start foot is planted (toe line)" : "Click where the landing foot hits the ground (heel line)"} · Esc cancels
+                </span>
+              )}
               {run && (
                 <span className="rt-mode-chip">
                   {run.target === "com" ? "Click the athlete's center of mass" : "Click the center of the ball"} · {runDone} of {run.queue.length}
                 </span>
               )}
-              {!artifacts.mediaUrl && !poseFrames.length && <p className="viewer-empty">No video or pose data is available for this rep.</p>}
+              {!hasVisualEvidence && <p className="viewer-empty">No video, pose, or tracking data is available for this rep.</p>}
+              {!artifacts.mediaUrl && !hasPose && showRecordedTracking && emptyTrackingFrame && <p className="viewer-empty">No tracked detection at this frame.</p>}
             </div>
             <div className="playback-bar rt-playback">
               <div className="rt-transport">
-                <button className="quiet-button small" type="button" onClick={() => seekTo(0)} aria-label="First frame"><span className="material-symbols-outlined">first_page</span></button>
-                <button className="quiet-button small" type="button" onClick={() => seekTo(frame - 10)} aria-label="Back 10 frames">−10</button>
-                <button className="quiet-button small" type="button" onClick={() => seekTo(frame - 1)} aria-label="Back one frame"><span className="material-symbols-outlined">chevron_left</span></button>
-                <button className="play-button" type="button" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"} disabled={!artifacts.mediaUrl}>
+                <button className="quiet-button small" type="button" disabled={!hasVisualEvidence} onClick={() => seekTo(0)} aria-label="First frame"><span className="material-symbols-outlined">first_page</span></button>
+                <button className="quiet-button small" type="button" disabled={!hasVisualEvidence} onClick={() => seekTo(frame - 10)} aria-label="Back 10 frames">−10</button>
+                <button className="quiet-button small" type="button" disabled={!hasVisualEvidence} onClick={() => seekTo(frame - 1)} aria-label="Back one frame"><span className="material-symbols-outlined">chevron_left</span></button>
+                <button className="play-button" type="button" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"} disabled={!canPlay}>
                   <span className="material-symbols-outlined">{playing ? "pause" : "play_arrow"}</span>
                 </button>
-                <button className="quiet-button small" type="button" onClick={() => seekTo(frame + 1)} aria-label="Forward one frame"><span className="material-symbols-outlined">chevron_right</span></button>
-                <button className="quiet-button small" type="button" onClick={() => seekTo(frame + 10)} aria-label="Forward 10 frames">+10</button>
-                <button className="quiet-button small" type="button" onClick={() => seekTo(lastFrame)} aria-label="Last frame"><span className="material-symbols-outlined">last_page</span></button>
+                <button className="quiet-button small" type="button" disabled={!hasVisualEvidence} onClick={() => seekTo(frame + 1)} aria-label="Forward one frame"><span className="material-symbols-outlined">chevron_right</span></button>
+                <button className="quiet-button small" type="button" disabled={!hasVisualEvidence} onClick={() => seekTo(frame + 10)} aria-label="Forward 10 frames">+10</button>
+                <button className="quiet-button small" type="button" disabled={!hasVisualEvidence} onClick={() => seekTo(lastFrame)} aria-label="Last frame"><span className="material-symbols-outlined">last_page</span></button>
               </div>
-              <input type="range" min={0} max={lastFrame} value={frame} onChange={event => seekTo(Number(event.target.value))} aria-label="Frame" />
+              <input type="range" min={0} max={lastFrame} value={frame} disabled={!hasVisualEvidence} onChange={event => seekTo(Number(event.target.value))} aria-label="Frame" />
               <button className="speed-button" type="button" onClick={() => { const rates = [0.25, 0.5, 1, 2]; const next = rates[(rates.indexOf(rate) + 1) % rates.length]; setRate(next); if (videoRef.current) videoRef.current.playbackRate = next; }}>{rate}×</button>
             </div>
           </section>
@@ -727,22 +1211,146 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
             <div className="admin-checks">
               <label><input type="checkbox" checked={showPose} onChange={event => setShowPose(event.target.checked)} />Pose skeleton</label>
               <label><input type="checkbox" checked={showTracks} onChange={event => setShowTracks(event.target.checked)} />Tracks</label>
+              {hasTracking && <label><input type="checkbox" checked={showRecordedTracking} onChange={event => setShowRecordedTracking(event.target.checked)} />Recorded tracking</label>}
+              {hasScene && <label><input type="checkbox" checked={showScene} onChange={event => setShowScene(event.target.checked)} />Markers &amp; ground</label>}
+              <label><input type="checkbox" checked={showMeasured} onChange={event => setShowMeasured(event.target.checked)} />Measured evidence</label>
             </div>
+            <p className="admin-note">Measured evidence: {[...measured.trails.map(trail => trail.label), ...measured.anchors.map(anchor => anchor.label), ...measured.gates.map(gate => gate.label), measured.kick ? "ball rest + flight" : "", measured.ballBoxes ? "ball" : ""].filter(Boolean).join(" · ") || "nothing saved for this drill"}.</p>
+            {measured.notes.map(text => <p className="admin-note rv-flag" key={text}>{text}</p>)}
+            {hasScene && <p className="admin-note">Markers: yellow outline = detected in this clip, dashed blue = from the session calibration photo; the thick edge is the side on the ground, the white corner is the marker's top-left. Dashed white = ground line; crosshairs = gate points.</p>}
+            {hasTracking && <p className="admin-note">Recorded tracking: green athlete box, white center point, orange ball box. Missing detections remain blank. Viewing this overlay does not change results or replace annotations.</p>}
             <div className="frame-markers">
+              {measured.events.map(event => (
+                <button key={event.key} className="frame-marker re-event-chip" type="button" title={`From ${event.source}`} onClick={() => seekTo(event.frame)}>
+                  {event.label} · {event.frame}
+                </button>
+              ))}
               {(spec?.frameFields ?? []).map(field => (
-                <button key={field.key} className="frame-marker" type="button" disabled={frames[field.key] === null || frames[field.key] === undefined} onClick={() => seekTo(frames[field.key] ?? 0)}>
+                <button key={field.key} className="frame-marker" type="button" disabled={!hasVisualEvidence || frames[field.key] === null || frames[field.key] === undefined} onClick={() => seekTo(frames[field.key] ?? 0)}>
                   {field.label}{frames[field.key] !== null && frames[field.key] !== undefined ? ` · ${frames[field.key]}` : ""}
                 </button>
               ))}
             </div>
             <p className="admin-note">
               ← → step one frame, shift for {stride * 3}; space plays; backspace undoes the last mark while annotating.
-              {artifacts.mediaName ? ` Video: ${artifacts.mediaName}.` : ""} Files: {artifacts.files.length ? artifacts.files.join(", ") : "none listed"}.
+              {artifacts.mediaName ? ` Video: ${artifacts.mediaName}.` : ""}
             </p>
           </section>
+
+          <SeriesCharts groups={seriesGroups} frame={frame} lastFrame={lastFrame} fps={timingMissing ? null : fps} seekTo={seekTo}
+            events={[
+              ...measured.events.map(event => ({ label: event.label, frame: event.frame })),
+              ...(spec?.frameFields ?? []).flatMap(field => (frames[field.key] === null || frames[field.key] === undefined ? [] : [{ label: field.label, frame: frames[field.key]! }])),
+            ].filter((event, index, all) => all.findIndex(other => other.frame === event.frame) === index)} />
+          <SavedEvidence scene={scene} files={artifacts.files} json={evidenceJson} sessionFiles={artifacts.sessionFiles ?? []} sessionJson={artifacts.sessionJson ?? {}}
+            folder={artifacts.folder} sessionRoot={artifacts.sessionRoot} />
         </div>
 
         <aside className="rt-side">
+          {validation && spec && (
+            <section className="admin-card rv-decision">
+              <div className="rv-decision-head">
+                <h3>Validate this result</h3>
+                <span className={`rv-status ${status.state}`}>{STATE_LABEL[status.state]}</span>
+              </div>
+              <dl className="rv-results">
+                <div><dt>Recorded</dt><dd>{primaryResultText(drillKey, recordedPrimary)}</dd></div>
+                <div className={adjusting && afterPrimary !== recordedPrimary ? "changed" : ""}>
+                  <dt>{adjusting ? "Adjusted to" : "Will be saved as"}</dt>
+                  <dd>{primaryResultText(drillKey, adjusting ? afterPrimary : recordedPrimary)}</dd>
+                </div>
+              </dl>
+              {status.state === "rejected" && (
+                <div className="rv-rejected" role="alert">
+                  <p><strong>This rep was rejected.</strong> Rejecting marked its result invalid, so it is hidden from athletes, coaches and Insights. Rejecting has been replaced by flagging, which leaves the result as it is.</p>
+                  {noteBody(status.note) && <blockquote>{noteBody(status.note)}</blockquote>}
+                  <button className="primary-cta" type="button" disabled={Boolean(saving) || Boolean(run)} onClick={() => undoDecision(true)}>
+                    <span className="material-symbols-outlined">undo</span>{saving === "undo" || saving === "flagged" ? "Restoring…" : "Undo rejection → flag for fix"}
+                  </button>
+                  <p className="admin-note">Restores the result exactly as the phone recorded it and saves your note{flagIssues.length ? " and the selected issues" : ""} as a flag. The rejection stays in the revision history.</p>
+                </div>
+              )}
+              {status.state !== "open" && status.state !== "rejected" && (
+                <p className="admin-note">
+                  {STATE_LABEL[status.state]}{status.byEmail ? ` by ${status.byEmail}` : ""}{status.atMillis ? ` · ${new Date(status.atMillis).toLocaleString()}` : ""}.{status.state === "flagged" && noteBody(status.note) ? ` “${noteBody(status.note)}”` : ""} Saving again keeps that decision in the revision history.
+                  {" "}<button className="link-button" type="button" disabled={Boolean(saving) || Boolean(run)} onClick={() => undoDecision(false)}>{saving === "undo" ? "Undoing…" : "Undo this decision"}</button>
+                </p>
+              )}
+              {flagged && <p className="admin-note rv-flag">The phone flagged this rep ({[metadata?.processingStatus, ...(Array.isArray(metadata?.failedSteps) ? metadata.failedSteps : [])].filter(Boolean).join(", ") || "results invalid"}). Validating marks the saved value as the result.</p>}
+              {isBroadJump && footDistance !== null && footDistance > BROAD_JUMP_MAX_DISTANCE_METERS && <p className="form-message" role="alert">The feet are {footDistance.toFixed(2)} m apart, over the phone's {BROAD_JUMP_MAX_DISTANCE_METERS} m limit. Check the foot positions.</p>}
+              <label className="admin-field">
+                <span>Reviewer note (saved with whichever decision you make, for later algorithm work)</span>
+                <textarea value={note} maxLength={1800} rows={3} placeholder={adjusting ? "What was wrong and what you fixed." : "What you see in this rep: what the algorithm got right or wrong, what it should do."} onChange={event => setNote(event.target.value)} />
+              </label>
+              {pushError && <p className="form-message" role="alert">{pushError}</p>}
+              <div className="rv-issues" role="group" aria-label="Issues for a flag">
+                {FLAG_ISSUES.map(issue => (
+                  <button key={issue.key} type="button" className={`rv-chip small${flagIssues.includes(issue.key) ? " active" : ""}`} aria-pressed={flagIssues.includes(issue.key)} onClick={() => toggleIssue(issue.key)}>{issue.label}</button>
+                ))}
+              </div>
+              <div className="rv-actions">
+                <button className="quiet-button rv-flag-button" type="button" disabled={Boolean(saving) || Boolean(run) || (!note.trim() && !flagIssues.length)} title={!note.trim() && !flagIssues.length ? "Describe the problem or pick an issue first" : "Record the problem; the result stays as it is"} onClick={() => saveValidation("flagged")}>
+                  <span className="material-symbols-outlined">flag</span>{saving === "flagged" ? "Flagging…" : "Flag: needs fix"}
+                </button>
+                {adjusting ? (
+                  <button className="primary-cta" type="button" disabled={Boolean(saving) || Boolean(run) || measurementTimingBlocked} onClick={() => saveValidation("adjusted")}>
+                    <span className="material-symbols-outlined">edit</span>{saving === "adjusted" ? "Saving…" : "Save adjustment"}
+                  </button>
+                ) : (
+                  <button className="primary-cta" type="button" disabled={Boolean(saving) || Boolean(run) || recordedPrimary === null} onClick={() => saveValidation("validated")}>
+                    <span className="material-symbols-outlined">check_circle</span>{saving === "validated" ? "Saving…" : "Validate as recorded"}
+                  </button>
+                )}
+              </div>
+              <p className="admin-note">
+                {adjusting ? `${changedCount} field${changedCount === 1 ? "" : "s"} change; the table below shows them. ` : ""}
+                Validate or adjust: the saved value becomes the result. Flag: the result stays exactly as it is and the problem (note + issues) is recorded for follow-up. The phone's original values, pose and files are always kept. Saving moves to the next open rep; [ and ] step through the queue.
+              </p>
+            </section>
+          )}
+
+          {validation?.ageCurve && spec && (
+            <AgeCurve drillKey={drillKey} data={validation.ageCurve} playerId={playerId} value={adjusting ? afterPrimary : recordedPrimary} age={validation.ageCurve.age} />
+          )}
+
+          {isBroadJump && (
+            <section className="admin-card rv-feet">
+              <h3>Start and landing foot</h3>
+              <p className="admin-note">
+                The distance is the horizontal gap between the two feet × the marker scale, the way the phone measures it.
+                {footScale !== null ? ` Scale: ${footScale.toFixed(3)} m per frame width (m_to_normalized_units).` : " This rep has no marker scale, so moving the feet cannot re-derive the distance; type it under Values instead."}
+              </p>
+              {(["start", "landing"] as FootTarget[]).map(which => {
+                const mark = feet[which];
+                return (
+                  <div className="rt-annotate-row" key={which}>
+                    <div>
+                      <strong><span className={`rv-dot ${which}`} />{which === "start" ? "Start foot" : "Landing foot"}</strong>
+                      <span className="admin-row-meta">
+                        <span>{mark ? `x ${mark.x.toFixed(3)}${mark.frame !== null ? ` · frame ${mark.frame}` : ""}` : "not placed"}</span>
+                        {mark && feetDifferFromPhone && phoneFeet[which] && Math.abs(phoneFeet[which]!.x - mark.x) > 1e-9 && <span>phone x {phoneFeet[which]!.x.toFixed(3)}</span>}
+                      </span>
+                    </div>
+                    <div className="admin-row-actions">
+                      {mark?.frame !== null && mark?.frame !== undefined && <button className="icon-button small" type="button" disabled={!hasVisualEvidence} onClick={() => seekTo(mark.frame ?? 0)} aria-label={`Go to the ${which} foot frame`}><span className="material-symbols-outlined">my_location</span></button>}
+                      {placingFoot === which
+                        ? <button className="primary-cta small" type="button" onClick={() => setPlacingFoot(null)}>Cancel</button>
+                        : <button className="primary-cta small" type="button" disabled={!canPlaceFeet || Boolean(run)} onClick={() => setPlacingFoot(which)}>{mark ? "Move" : "Place"}</button>}
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="admin-note">
+                Scrub to the takeoff (start) or landing frame, press Move, then click the foot on the {artifacts.mediaUrl ? "video" : "pose"}. Orange: foot track · cyan: torso · dashed white: ground.
+                {!canPlaceFeet && !hasVisualEvidence ? " No video or pose is saved for this rep, so the feet cannot be placed." : ""}
+              </p>
+              <div className="admin-row-actions">
+                {feetEdited && <button className="quiet-button small" type="button" onClick={undoFeet}>Undo foot changes</button>}
+                {feetDifferFromPhone && (phoneFeet.start || phoneFeet.landing) && <button className="quiet-button small" type="button" onClick={usePhoneFeet}>Use the phone's feet</button>}
+              </div>
+            </section>
+          )}
+
           {drillKey === "jump" && <JumpTechniqueEditor playerId={playerId} repId={repId} athleteName={athleteName}
             source={artifacts.jumpTechnique} originalHeight={num(rep.jumpHeight)} originalAngles={rep}
             revisionId={rep.adminRevision?.revisionId ?? null} currentFrame={frame} lastFrame={lastFrame} seekTo={seekTo} onSaved={onReload} />}
@@ -771,8 +1379,8 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
                       onChange={event => setFrameField(field.key, event.target.value === "" ? null : Math.max(0, Math.min(lastFrame, Math.round(Number(event.target.value)))))}
                       aria-label={`${field.label} frame`}
                     />
-                    <button className="quiet-button small" type="button" onClick={() => setFrameField(field.key, frame)}>Use current</button>
-                    <button className="icon-button small" type="button" disabled={frames[field.key] === null || frames[field.key] === undefined} onClick={() => seekTo(frames[field.key] ?? 0)} aria-label={`Go to ${field.label}`}><span className="material-symbols-outlined">my_location</span></button>
+                    <button className="quiet-button small" type="button" disabled={!hasVisualEvidence} onClick={() => setFrameField(field.key, frame)}>Use current</button>
+                    <button className="icon-button small" type="button" disabled={!hasVisualEvidence || frames[field.key] === null || frames[field.key] === undefined} onClick={() => seekTo(frames[field.key] ?? 0)} aria-label={`Go to ${field.label}`}><span className="material-symbols-outlined">my_location</span></button>
                   </div>
                 ))}
               </div>
@@ -796,6 +1404,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
           {spec && (
             <section className="admin-card">
               <h3>Annotate</h3>
+              {!artifacts.mediaUrl && <p className="admin-note">Point annotations require original video. You can review saved positions and edit event frame numbers without adding image annotations.</p>}
               <p className="admin-note">
                 Click on the video to mark the point; the tool jumps ahead {stride} frame{stride === 1 ? "" : "s"} and the skipped frames are interpolated,
                 from frame {rangeStart} to {rangeEnd}
@@ -850,7 +1459,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
                 ) : (
                   <div className="admin-row-actions">
                     {comMarks.length > 0 && <button className="quiet-button small" type="button" disabled={Boolean(run)} onClick={() => { setComMarks([]); setComSource(poseTrack.some(Boolean) ? "pose" : "none"); }}>Clear</button>}
-                    <button className="primary-cta small" type="button" disabled={Boolean(run) || !artifacts.mediaUrl} onClick={() => startRun("com")}>{comMarks.length ? "Continue" : "Start"}</button>
+                    <button className="primary-cta small" type="button" disabled={Boolean(run) || !artifacts.mediaUrl || Boolean(videoError)} onClick={() => startRun("com")}>{comMarks.length ? "Continue" : "Start"}</button>
                   </div>
                 )}
               </div>}
@@ -873,7 +1482,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
                   ) : (
                     <div className="admin-row-actions">
                       {ballMarks.length > 0 && <button className="quiet-button small" type="button" disabled={Boolean(run)} onClick={() => { setBallMarks([]); setBallSource(Array.isArray(artifacts.ballBoxes) ? "boxes" : "none"); }}>Clear</button>}
-                      <button className="primary-cta small" type="button" disabled={Boolean(run) || !artifacts.mediaUrl} onClick={() => startRun("ball")}>{ballMarks.length ? "Continue" : "Start"}</button>
+                      <button className="primary-cta small" type="button" disabled={Boolean(run) || !artifacts.mediaUrl || Boolean(videoError)} onClick={() => startRun("ball")}>{ballMarks.length ? "Continue" : "Start"}</button>
                     </div>
                   )}
                 </div>
@@ -936,7 +1545,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
             </section>
           )}
 
-          {spec && (!rederive || Boolean(spec.stringFields?.length)) && (
+          {spec && drillKey !== "jump" && (!rederive || Boolean(spec.stringFields?.length)) && (
             <section className="admin-card">
               <h3>Values</h3>
               {!rederive && !kick?.fit && spec.derive !== "kick" && <p className="admin-note">This drill is not re-derived on the web; type the corrected values directly. Units are the stored units (meters, m/s, seconds).</p>}
@@ -988,7 +1597,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
                   ))}
                 </tbody>
               </table>
-              {resultsValid !== null && !labelOnlyChange && (
+              {resultsValid !== null && !labelOnlyChange && !validation && (
                 <label className="rt-check">
                   <input type="checkbox" checked={clearFlags} onChange={event => setClearFlags(event.target.checked)} />
                   <span>
@@ -998,6 +1607,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
                   </span>
                 </label>
               )}
+              {!validation && <>
               <label className="admin-field" style={{ marginTop: 12 }}>
                 <span>Note (optional, saved with the revision)</span>
                 <textarea value={note} maxLength={2000} placeholder="What was wrong and what you fixed." onChange={event => setNote(event.target.value)} />
@@ -1005,10 +1615,11 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
               {pushError && <p className="form-message" role="alert">{pushError}</p>}
               <div className="admin-form-actions">
                 <span className="admin-note">{changedCount} field{changedCount === 1 ? "" : "s"} change.</span>
-                <button className="primary-cta" type="button" disabled={pushing || Boolean(run) || (changedCount === 0 && !comMarks.length && !ballMarks.length)} onClick={event => { event.currentTarget.focus({ preventScroll: true }); setConfirming(true); }}>
+                <button className="primary-cta" type="button" disabled={pushing || Boolean(run) || measurementTimingBlocked || (changedCount === 0 && !comMarks.length && !ballMarks.length)} onClick={event => { event.currentTarget.focus({ preventScroll: true }); setConfirming(true); }}>
                   <span className="material-symbols-outlined">publish</span>Push changes
                 </button>
               </div>
+              </>}
             </section>
           )}
 
@@ -1059,7 +1670,7 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
             {pushError && <p className="form-message" role="alert">{pushError}</p>}
             <div className="admin-dialog-actions">
               <button className="quiet-button" type="button" disabled={pushing} onClick={() => setConfirming(false)}>Not yet</button>
-              <button className="primary-cta" type="button" disabled={pushing} onClick={push}>{pushing ? "Pushing…" : "Push and overwrite"}</button>
+              <button className="primary-cta" type="button" disabled={pushing || measurementTimingBlocked} onClick={push}>{pushing ? "Pushing…" : "Push and overwrite"}</button>
             </div>
         </AdminModal>
       )}
@@ -1067,16 +1678,19 @@ function RepToolsLoaded({ drillLabel, drillKey, playerId, repId, athleteName, lo
   );
 }
 
+const STATE_LABEL: Record<string, string> = {
+  open: "Not reviewed",
+  validated: "Validated",
+  adjusted: "Adjusted",
+  rejected: "Rejected (hidden)",
+  flagged: "Needs fix",
+  revised: "Revised in rep tools",
+};
+
 // MARK: - Geometry helpers (stage ↔ normalized video coordinates)
 
 function validMark(value: any): value is Mark {
   return value && Number.isInteger(value.frame) && Number.isFinite(value.x) && Number.isFinite(value.y);
-}
-
-function sizeFromMetadata(metadata: any): { width: number; height: number } | null {
-  const width = num(metadata?.videoDisplayWidth);
-  const height = num(metadata?.videoDisplayHeight);
-  return width && height ? { width, height } : null;
 }
 
 /** The letterboxed rectangle a contain-fitted video occupies inside the stage. */

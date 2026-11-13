@@ -42,6 +42,9 @@ def validate(workflow):
     assert "node --test ci/check-static-firestore-transport.test.mjs" in [
         step.get("run") for step in jobs["build"]["steps"]
     ], "the static browser exception guard needs failure-path regressions"
+    assert "node --test scripts/marketing-link-activation.browser.mjs" in [
+        step.get("run") for step in jobs["build"]["steps"]
+    ], "public link activation needs Chromium and WebKit regression coverage"
     for name, job in jobs.items():
         assert 0 < int(job["timeout-minutes"]) <= 30
         assert job["runs-on"] in {"ubuntu-24.04", "macos-15"}, "no persistent PR runners"
@@ -61,6 +64,13 @@ def validate(workflow):
             if "run" in step:
                 assert "${{" not in step["run"], "pass event inputs via environment"
     return gate["steps"][0]["run"]
+
+
+def remove_build_command(workflow, command):
+    steps = workflow["jobs"]["build"]["steps"]
+    matches = [step for step in steps if step.get("run") == command]
+    assert len(matches) == 1, "failure-path mutation must remove its exact target"
+    steps.remove(matches[0])
 
 
 class WorkflowTests(unittest.TestCase):
@@ -88,8 +98,9 @@ class WorkflowTests(unittest.TestCase):
             lambda w: w["jobs"]["dependencies"]["steps"].pop(),
             lambda w: w["jobs"]["ci"]["needs"].remove("dependencies"),
             lambda w: w["jobs"]["server"]["steps"].pop(),
-            lambda w: w["jobs"]["build"]["steps"].pop(-3),
-            lambda w: w["jobs"]["build"]["steps"].pop(-4),
+            lambda w: remove_build_command(w, "node scripts/check-static-firestore-transport.mjs"),
+            lambda w: remove_build_command(w, "node --test ci/check-static-firestore-transport.test.mjs"),
+            lambda w: remove_build_command(w, "node --test scripts/marketing-link-activation.browser.mjs"),
             lambda w: w["jobs"]["ci"]["needs"].remove("policy"),
         ]
         for mutate in mutations:

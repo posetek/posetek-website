@@ -9,13 +9,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import firebase, { auth, cloud, db } from "../../lib/firebase";
 import { loadAccountAccess, STAFF_RECOVERY_HELP } from "../../lib/account-access";
 import { findCoach, findPlayer } from "../../lib/identity";
 import { useThemeColor } from "../../lib/use-theme-color";
 import { refreshAdminIdentity, upsertAdminProfile } from "../admin/lib/identity";
 import { capturePlayerInvitationLink, createInvitedPlayer, forgetPlayerInvitationLink, initialPlayerInvitationLink, readPlayerInvitationLink, unavailablePlayerInvitation } from "./player-invitation-link";
+import { readReportPlayerEntry, reportPlayerDestination, reportSignupDestination, initialReportPlayerDestination, ReportPlayerEntryError } from "./report-player-entry";
 import { accountDestination, accountError } from "./account-entry";
 import type { AccountRole } from "./account-entry";
 import {
@@ -23,7 +24,7 @@ import {
   coachOrgInputError,
   coachOrgStep2Copy,
   getSafeReturnToUrl,
-  playerSignupRoute,
+  playerStatsRoute,
   validateIndependentSignup,
   validateOrgSignup,
   validatePlayerCodeSignup,
@@ -42,6 +43,8 @@ import AccountRecoveryRequest from "../../components/AccountRecoveryRequest";
 export default function LandingPage() {
   useThemeColor("#04130e"); // kickai.html: <meta name="theme-color" content="#04130e">
   const navigate = useNavigate();
+  const location = useLocation();
+  const reportEntry = readReportPlayerEntry(location.search);
   const [invitationLink, setInvitationLink] = useState(() => { capturePlayerInvitationLink(window); return initialPlayerInvitationLink(); });
   const [signedIn, setSignedIn] = useState(Boolean(auth.currentUser));
   const [authReady, setAuthReady] = useState(false);
@@ -155,27 +158,53 @@ export default function LandingPage() {
     setInvitationCheck("checking");
     const timer = window.setTimeout(() => {
       cloud.httpsCallable("validatePlayerSignupInvitation")({ code: playerCode })
-        .then(result => { if (current) setInvitationCheck((result.data as { valid?: boolean })?.valid === true ? "ready" : "unavailable"); })
+        .then(result => {
+          if (!current) return;
+          const ready = (result.data as { valid?: boolean })?.valid === true;
+          setInvitationCheck(ready ? "ready" : "unavailable");
+          if (!ready && reportEntry.present) {
+            setSignupOpen(false); setLoginSuccess(unavailablePlayerInvitation); showLoginPanel();
+          }
+        })
         .catch(() => { if (current) setInvitationCheck("error"); });
     }, 350);
     return () => { current = false; window.clearTimeout(timer); };
-  }, [invitationLink.present, playerCode]);
+  }, [invitationLink.present, playerCode, reportEntry.present]);
 
   // Check auth state to update UI (legacy: a signed-out visitor carrying a safe
   // returnTo gets the login panel brought into view)
   useEffect(() => {
     loginMounted.current = true;
+    // Only the initial restored session may enter automatically. New password
+    // sign-ins and signup/redemption retain their own guarded continuations.
+    let initialObservation = true;
+    const requestedEntry = readReportPlayerEntry(window.location.search);
     const unsubscribe = auth.onAuthStateChanged((user: any) => {
+      const restoredSession = initialObservation;
+      initialObservation = false;
       const nextUid = user?.uid || null;
       if (observedUid.current !== nextUid) {
         observedUid.current = nextUid;
+        setContinueLoading(false);
         setLoginError(""); setLoginSuccess("");
       }
-      ++authEpoch.current;
+      const revision = ++authEpoch.current;
       setSignedIn(Boolean(user));
       setAuthReady(true);
       setPendingActivation(false);
       if (!user && getSafeReturnToUrl()) showLoginPanel();
+      if (restoredSession && user && requestedEntry.present) {
+        const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
+        setContinueLoading(true); setSignupOpen(false);
+        void initialReportPlayerDestination(requestedEntry, user, loadAccountAccess, isCurrent)
+          .then(destination => { if (destination && isCurrent()) navigate(destination); })
+          .catch(error => {
+            if (!isCurrent()) return;
+            setLoginError(error instanceof ReportPlayerEntryError ? error.message : accountError(error, "We could not confirm this player's account. Try Continue again, or use a different account."));
+            showLoginPanel();
+          })
+          .finally(() => { if (isCurrent()) setContinueLoading(false); });
+      }
     });
     return () => { loginMounted.current = false; ++authEpoch.current; unsubscribe(); };
   }, []);
@@ -297,6 +326,7 @@ export default function LandingPage() {
   async function openAccount(user: any, isCurrent: () => boolean, passwordSignIn: boolean) {
     const access = await loadAccountAccess(user, isCurrent);
     if (!isCurrent()) return;
+    const reportDestination = reportPlayerDestination(reportEntry, access.kind === "activation" ? null : access.role, access.kind === "activation" ? null : access.playerId || null);
     if (access.kind === "activation") {
       const returnTo = getSafeReturnToUrl();
       if (access.reason === "unlinked" && returnTo && new URL(returnTo).pathname === "/join") { redirectAfterAuth("pending"); return; }
@@ -320,7 +350,10 @@ export default function LandingPage() {
     } else if (passwordSignIn && access.role === "player" && access.playerId) {
       await db.collection("players").doc(access.playerId).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
     }
-    if (isCurrent()) redirectAfterAuth(access.role, access.playerId || null);
+    if (isCurrent()) {
+      if (reportDestination) navigate(reportDestination);
+      else redirectAfterAuth(access.role, access.playerId || null);
+    }
   }
 
   async function handleContinue() {
@@ -332,7 +365,7 @@ export default function LandingPage() {
     setLoginError(""); setLoginSuccess(""); setPendingActivation(false);
     try { await openAccount(user, isCurrent, false); }
     catch (error: any) {
-      if (isCurrent()) setLoginError(accountError(error, "We could not load your account access. Your sign-in has been kept; try again, or use your staff invitation to finish activation."));
+      if (isCurrent()) setLoginError(error instanceof ReportPlayerEntryError ? error.message : accountError(error, "We could not load your account access. Your sign-in has been kept; try again, or use your staff invitation to finish activation."));
     } finally {
       if (loginMounted.current) setContinueLoading(false);
     }
@@ -372,7 +405,7 @@ export default function LandingPage() {
 
       await openAccount(user, isCurrent, true);
     } catch (error: any) {
-      if (isCurrent()) setLoginError(accountError(error, "We could not load your account access. Your sign-in has been kept; try again, or use your staff invitation to finish activation."));
+      if (isCurrent()) setLoginError(error instanceof ReportPlayerEntryError ? error.message : accountError(error, "We could not load your account access. Your sign-in has been kept; try again, or use your staff invitation to finish activation."));
     } finally {
       if (loginMounted.current) setLoginLoading(false);
     }
@@ -436,7 +469,7 @@ export default function LandingPage() {
 
       if (userTypeVal === "player") {
         await joinOrganization(orgCodeVal, "player", firstNameVal, lastNameVal);
-        navigate(playerSignupRoute(null)); // legacy: profile.html?userType=player
+        navigate(playerStatsRoute());
       } else {
         // validateOrgSignup only lets "coach" past here, and the modal was confirmed above.
         const setup = coachSetup as CoachOrgChoice;
@@ -465,6 +498,7 @@ export default function LandingPage() {
       setPlayerCodeError("");
       setPlayerCodeSuccess("");
 
+      if (reportEntry.present && !reportEntry.playerId) throw new Error("Reopen the original report link to continue.");
       const problem = validatePlayerCodeSignup({ code, password, confirmPassword: confirmPasswordVal });
       if (problem) throw new Error(problem);
 
@@ -491,6 +525,7 @@ export default function LandingPage() {
         },
       }, pendingPlayerSignup.current);
 
+      const reportDestination = reportSignupDestination(reportEntry, playerId);
       forgetPlayerInvitationLink();
       pendingPlayerSignup.current = null;
       const signupUid = auth.currentUser?.uid;
@@ -499,7 +534,7 @@ export default function LandingPage() {
       redirectTimerRef.current = window.setTimeout(() => {
         if (auth.currentUser?.uid !== signupUid) { setPlayerCodeError("Your account was created. Sign in with that account to open your athlete profile."); return; }
         // The trusted redemption response selects the existing canonical profile.
-        navigate(invitationLink.present ? `/athlete?player=${encodeURIComponent(playerId)}` : playerSignupRoute(playerId));
+        navigate(reportDestination || playerStatsRoute(playerId));
       }, 1500);
     } catch (error: any) {
       setPlayerCodeError(accountError(error, error?.message || "Your account could not be created. Please try again."));
@@ -744,7 +779,9 @@ export default function LandingPage() {
               {invitationLink.present && <p className="login-support" role="status">
                 {invitationCheck === "checking" ? "Checking your player invitation…" : invitationCheck === "ready" ? "Your player code is filled in. Enter your email and choose a password to open your existing profile." : invitationCheck === "error" ? "We could not check your invitation. Try Create Account again when your connection is available." : unavailablePlayerInvitation}
               </p>}
-              {signedIn && !pendingPlayerSignup.current && <p className="login-support">You are already signed in. <button type="button" className="secondary-action" onClick={() => { void auth.signOut().catch(() => setPlayerCodeError("Could not sign out. Please try again.")); }}>Sign out to create another account</button></p>}
+              {signedIn && !pendingPlayerSignup.current && (reportEntry.present
+                ? <p className="login-support">Use this player's account for their workouts. <button type="button" className="secondary-action" onClick={() => { closeSignupModal(); void handleContinue(); }}>Continue with the player account</button> <button type="button" className="secondary-action" disabled={switchLoading} onClick={() => void handleSwitchAccount()}>Use a different account</button></p>
+                : <p className="login-support">You are already signed in. <button type="button" className="secondary-action" onClick={() => { void auth.signOut().catch(() => setPlayerCodeError("Could not sign out. Please try again.")); }}>Sign out to create another account</button></p>)}
               <p className="login-support"><button type="button" className="secondary-action" onClick={() => { closeSignupModal(); showLoginPanel(); }}>Already have an account? Sign in</button></p>
               <form
                 id="playerCodeForm"

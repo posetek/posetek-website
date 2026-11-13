@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const fake = vi.hoisted(() => {
   const documents = new Map<string, any>();
   const failures = new Set<string>();
+  const reads: Array<{ path: string; filters: any[] }> = [];
   const writes = vi.fn((path: string, patch: any) => { documents.set(path, { ...documents.get(path), ...patch }); });
   const serverTimestamp = vi.fn(() => new Date());
   function ref(path: string): any {
@@ -13,18 +14,19 @@ const fake = vi.hoisted(() => {
   const comparable = (value: any) => value?.path || value;
   function collection(path: string, filters: any[] = [], limit = Infinity): any {
     return { doc: (id: string) => ref(`${path}/${id}`), where: (...filter: any[]) => collection(path, [...filters, filter], limit), limit: (value: number) => collection(path, filters, value), get: async () => {
+      reads.push({ path, filters });
       if (failures.has(path)) throw new Error("Read failed");
       const keys = [...documents.keys()].filter(key => key.startsWith(path + "/") && !key.slice(path.length + 1).includes("/")
-        && filters.every(([field, operator, value]) => operator === "array-contains" ? documents.get(key)?.[field]?.includes(value) : comparable(documents.get(key)?.[field]) === comparable(value))).slice(0, limit);
+        && filters.every(([field, operator, value]) => operator === "array-contains" ? documents.get(key)?.[field]?.includes(value) : operator === ">=" ? comparable(documents.get(key)?.[field]) >= comparable(value) : operator === "<=" ? comparable(documents.get(key)?.[field]) <= comparable(value) : comparable(documents.get(key)?.[field]) === comparable(value))).slice(0, limit);
       const docs = await Promise.all(keys.map(key => ref(key).get()));
       return { docs, size: docs.length, empty: !docs.length };
     } };
   }
-  return { documents, failures, writes, serverTimestamp, db: { collection }, context: vi.fn() };
+  return { documents, failures, reads, writes, serverTimestamp, db: { collection }, context: vi.fn() };
 });
 vi.mock("../../../lib/firebase", () => ({ default: { firestore: { FieldValue: { serverTimestamp: fake.serverTimestamp } } }, auth: {}, db: fake.db }));
 vi.mock("../../../lib/organization-data", () => ({ getClubContext: fake.context }));
-import { loadClubAccountData, loadCoachAccount, loadCoachOfPlayer, loadCoachRoster, loadCoaches, loadTeamPlayers, playerRow, resolvePlayerAge, savePlayerProfile } from "./accounts";
+import { loadClubAccountData, loadCoachAccount, loadCoachOfPlayer, loadCoachRoster, loadCoaches, loadOrganizations, loadTeamPlayers, playerRow, resolvePlayerAge, savePlayerProfile } from "./accounts";
 
 const team = { id: "team", organizationId: "club", name: "Team", coachUIDs: [], playerIds: ["wrong"] };
 function seedContext() {
@@ -33,7 +35,7 @@ function seedContext() {
   fake.documents.set("organizations/club", { schemaVersion: 2 });
   return context;
 }
-beforeEach(() => { fake.documents.clear(); fake.failures.clear(); fake.context.mockReset(); fake.writes.mockClear(); fake.serverTimestamp.mockClear(); });
+beforeEach(() => { fake.documents.clear(); fake.failures.clear(); fake.reads.length = 0; fake.context.mockReset(); fake.writes.mockClear(); fake.serverTimestamp.mockClear(); });
 
 describe('admin age read alignment', () => {
   const now = new Date('2026-10-01T12:00:00Z');
@@ -60,6 +62,30 @@ describe('admin age read alignment', () => {
     expect(Object.keys(fake.writes.mock.calls[1][1]).sort()).toEqual(['age', 'ageRecordedAt', 'updatedAt']);
     expect(resolvePlayerAge(fake.documents.get('players/player'))).toMatchObject({ age: 15, stale: false, observationStatus: 'current' });
     expect(fake.documents.get('players/player')).not.toHaveProperty('birthDate');
+  });
+});
+
+describe("admin organization choices", () => {
+  it("uses one bounded point-range read and returns only raw numeric schema-version-2 organizations", async () => {
+    fake.documents.set("organizations/z", { name: "Zebra", schemaVersion: 2 });
+    fake.documents.set("organizations/a", { name: "Alpha", schemaVersion: 2 });
+    fake.documents.set("organizations/legacy", { name: "Legacy", schemaVersion: 1 });
+    fake.documents.set("organizations/unversioned", { name: "Unversioned" });
+    // The mocked range comparison includes this coercible value; the raw check must reject it.
+    fake.documents.set("organizations/string", { name: "String version", schemaVersion: "2" });
+    fake.documents.set("organizations/future", { name: "Future", schemaVersion: 3 });
+    expect((await loadOrganizations({ currentOnly: true })).map(row => row.id)).toEqual(["a", "z"]);
+    expect(fake.reads).toEqual([{ path: "organizations", filters: [["schemaVersion", ">=", 2], ["schemaVersion", "<=", 2]] }]);
+    // Other admin tools still explicitly support legacy organization workflows.
+    expect(await loadOrganizations()).toHaveLength(6);
+    expect(fake.reads).toHaveLength(2);
+    expect(fake.reads[1]).toEqual({ path: "organizations", filters: [] });
+    expect(fake.writes).not.toHaveBeenCalled();
+  });
+  it("propagates a failed bounded organization read without a fallback or empty directory", async () => {
+    fake.failures.add("organizations");
+    await expect(loadOrganizations({ currentOnly: true })).rejects.toThrow("Read failed");
+    expect(fake.reads).toHaveLength(1);
   });
 });
 

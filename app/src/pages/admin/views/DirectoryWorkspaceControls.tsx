@@ -5,10 +5,11 @@ import { AGE_BANDS, DIVISIONS, USAGE_FEATURES, ageLabel, divisionLabel } from ".
 import type { ExpandedRequest } from "../../insights/lib/expandedQuery";
 import { FEATURE_LABELS, TESTING_LABELS, WORKOUT_LABELS, USAGE_LABELS } from "../../insights/lib/expanded";
 
-type View = "list" | WorkspaceReportView;
-export function DirectoryWorkspaceTabs({ active, listLabel, onChange }: { active: View; listLabel: string; onChange(view: View): void }) {
+type View = "list" | WorkspaceReportView | "one-pagers";
+export function DirectoryWorkspaceTabs({ active, listLabel, onePagers = false, onChange }: { active: View; listLabel: string; onePagers?: boolean; onChange(view: View): void }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const views: [View, string][] = [["list", listLabel], ["overview", "Overview"], ["testing", "Testing"], ["workouts", "Workouts"], ["usage", "Usage"]];
+  if (onePagers) views.push(["one-pagers", "One-pager tracking"]);
   return <div className="workspace-report-tabs directory-workspace-tabs" role="tablist" aria-label="Directory and reporting views">{views.map(([view, label], index) => <button type="button" key={view}
     ref={node => { refs.current[index] = node; }} id={`workspace-report-tab-${view}`} role="tab" aria-selected={active === view}
     aria-controls={`workspace-report-panel-${view}`} tabIndex={active === view ? 0 : -1} onClick={() => onChange(view)} onKeyDown={event => {
@@ -42,7 +43,12 @@ export function DirectoryFilters({ children, summary }: { children: ReactNode; s
     </button>
     <dialog ref={dialog} className="directory-filter-dialog" aria-modal="true" aria-labelledby="directory-filter-title" onClose={() => opener.current?.focus({ preventScroll: true })} onKeyDown={event => {
       if (event.key !== "Tab") return;
-      const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, a[href], [tabindex="0"]')].filter(node => node.getClientRects().length);
+      const collapsed = [...event.currentTarget.querySelectorAll('details:not([open])')];
+      // Closed disclosures can still report layout rectangles. Their hidden
+      // fields reject focus, so including one would strand Tab on the summary.
+      const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, a[href], [tabindex="0"]')].filter(node => node.getClientRects().length
+        && node.checkVisibility?.() !== false && getComputedStyle(node).visibility === "visible"
+        && collapsed.every(detail => !detail.contains(node) || detail.querySelector(':scope > summary')?.contains(node)));
       if (!controls.length) return;
       const index = controls.indexOf(document.activeElement as HTMLElement);
       event.preventDefault();

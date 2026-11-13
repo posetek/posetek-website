@@ -1,0 +1,294 @@
+{
+  "schemaVersion": 1,
+  "accepted": true,
+  "status": "published_verified",
+  "checkedAt": "2026-10-22T22:01:06.970977+00:00",
+  "siteId": "b1ccf990-286c-4367-bb67-ca0d9ea2a020",
+  "deploymentId": "6ada849fa3505ca75b08ec3b",
+  "previousDeploymentId": "6ada6e5a385faad3f4cd88ed",
+  "authorization": "User explicitly requested merging the PRs and deploying both updates through the guarded workflow, then requested no further broad testing.",
+  "promotion": "Each exact accepted immutable candidate was promoted without rebuilding.",
+  "stages": [
+    {
+      "candidateId": "6ada6e5a385faad3f4cd88ed",
+      "baselineDeploymentId": "6ad92e7fec1a407bec937389",
+      "publishedAt": "2026-10-22T21:45:46.899Z",
+      "checkedAt": "2026-10-22T21:46:29.691Z",
+      "artifactFiles": 2240,
+      "artifactBytes": 170418415,
+      "providerRecords": 2241,
+      "manifestSha256": "7083cee51af616e6a6d837f05c1e0fde2ec15e7e8f57b0060741781dfac14a74",
+      "artifactDigest": "6264b3e83dd6fe5856f18a206b89850183561529f12bee1371197ed1645d96fd",
+      "providerInventorySha256": "791acf4d0c7ed4c86ed8125601ed6df80f088d2f35c7241299b077ce8472a6d8",
+      "preservedPredecessorRecords": 2154,
+      "changed": [
+        "/index.html",
+        "/coaches/index.html",
+        "/netlify.toml"
+      ],
+      "addedCount": 84,
+      "removedCount": 0,
+      "httpCount": 19,
+      "assetsCount": 58
+    },
+    {
+      "candidateId": "6ada849fa3505ca75b08ec3b",
+      "baselineDeploymentId": "6ada6e5a385faad3f4cd88ed",
+      "publishedAt": "2026-10-22T21:52:44.893Z",
+      "checkedAt": "2026-10-22T21:53:15.376Z",
+      "artifactFiles": 2270,
+      "artifactBytes": 171405454,
+      "providerRecords": 2271,
+      "manifestSha256": "dd56166026606e72400bd4acfe213b368d3b5b42e3816dd7c538a9348e32c542",
+      "artifactDigest": "597372b7ddbb702ce921731dd9e07b501a665353a2631e8f6136ea25c37eba6a",
+      "providerInventorySha256": "b5d48349e19c21a84dfd621a7d194d411a6676c3f66f9115abc672d12a4026e9",
+      "preservedPredecessorRecords": 2239,
+      "changed": [
+        "/application.html",
+        "/netlify.toml"
+      ],
+      "addedCount": 30,
+      "removedCount": 0,
+      "httpCount": 19,
+      "assetsCount": 60
+    }
+  ],
+  "sourceIntegration": [
+    {
+      "number": 97,
+      "url": "https://github.com/posetek/posetek_website/pull/97",
+      "head": "4ab4bc9105d0ee73d2f3294153655c9ab295a8c9",
+      "mergeCommit": "cf0831e8e3f88220273fa0e29b79e632d8eac127",
+      "mergedAt": "2026-10-22T21:45:42Z"
+    },
+    {
+      "number": 98,
+      "url": "https://github.com/posetek/posetek_website/pull/98",
+      "head": "f3e59ed94aba5f972c921194db66b9fa6304950d",
+      "mergeCommit": "e3934ec3521c80f13033dba4d51ebb5d14b75898",
+      "mergedAt": "2026-10-22T21:47:55Z"
+    },
+    {
+      "number": 99,
+      "url": "https://github.com/posetek/posetek_website/pull/99",
+      "head": "b948e8c3d651da88a2cd37df8aa1ab67cd1c4cf6",
+      "mergeCommit": "b5db2623762616f6f4eedef7d1ed5b6d938a251a",
+      "mergedAt": "2026-10-22T21:48:18Z"
+    }
+  ],
+  "sourceProvenance": {
+    "receipt": "docs/releases/receipts/HOMEPAGE_ADMIN_POLISH_PRODUCTION.json",
+    "homepageCompiledSource": "b66a7306d6ece6358bd22e45aa9f0371ff86aede",
+    "homepageReviewedSource": "4ab4bc9105d0ee73d2f3294153655c9ab295a8c9",
+    "applicationRuntime": "499dc81502a56d8b7b01c36e5ee780af55b87244",
+    "approvedApplicationBase": "4c1ba8ea213060fd54e572adaa1fc893c3d460c0",
+    "adminReviewedSource": "f3e59ed94aba5f972c921194db66b9fa6304950d",
+    "integratedSourceMain": "b5db2623762616f6f4eedef7d1ed5b6d938a251a",
+    "preservedIsolatedEntries": "Feedback and coach enrollment retain exact predecessor bytes. Held policy, session and Ball Striking source is excluded from the released application runtime."
+  },
+  "protectedBaselineFiles": 2268,
+  "reconciledBaselineSha256": "23d310fe7b66df905e34f2d984c3c10ea7b0045f4895ffb0d9b3fc6c834f32e8",
+  "ordinaryPreservationBuild": {
+    "passed": true,
+    "command": "node scripts/build-production.mjs",
+    "checkOnlyNotPublished": true,
+    "completedAt": "2026-10-22T21:53:43.474816+00:00",
+    "protectedFiles": 2268,
+    "baselineDeploymentId": "6ada849fa3505ca75b08ec3b",
+    "baselineSha256": "23d310fe7b66df905e34f2d984c3c10ea7b0045f4895ffb0d9b3fc6c834f32e8",
+    "logSha256": "f798075e1077fa50d30cef9c34f9ddd213ccab0f0f718488554717cfb0b254b0"
+  },
+  "validation": {
+    "sourceMainCI": {
+      "head": "b5db2623762616f6f4eedef7d1ed5b6d938a251a",
+      "url": "https://github.com/posetek/posetek_website/actions/runs/39860173875",
+      "conclusion": "success"
+    },
+    "approvedRuntimeCI": {
+      "head": "499dc81502a56d8b7b01c36e5ee780af55b87244",
+      "url": "https://github.com/posetek/posetek_website/actions/runs/39854512138",
+      "conclusion": "success"
+    },
+    "featureReviews": "Each exact latest feature head had a completed same-provider OpenAI content-only advisory review. No paid/hosted reviewer activated.",
+    "homepageCIQualification": "First attempt timed out after slow Ubuntu dependency installation; seven browser assertions passed but the job remained cancelled. Required attempt2 passed all six checks.",
+    "homepageFunctionalCandidateChecks": 54,
+    "homepageCandidateCaptures": 107,
+    "homepageTiming": {
+      "passed": 43,
+      "failed": 0,
+      "maximumInputMs": 25.3,
+      "overallMedianInputMs": 0.4,
+      "maximumFeedbackMs": 123.6,
+      "postInputTasksAtLeast100ms": 0,
+      "unsolicitedPageWheels": 0,
+      "qualification": "Global native wheel counter increased284; continuous OS focus not measured. No globally-idle or physical-phone claim. Prior failed/contaminated receipts retained.",
+      "reportSha256": "bf6e9e9df36e829c21906f6cd2a2ff99c3f76e8a33593948e7aa42c8d43fc796",
+      "auditSha256": "7cc646c4fadab5fbf9d2e382474c9e39e7bce4f4251efd98b134991b4d3c853d",
+      "evidenceSource": "release-state.json; timing receipts remain separate"
+    },
+    "homepageLiveSmoke": {
+      "browserCases": 3,
+      "captures": 9,
+      "passed": true,
+      "scope": "Desktop Chromium and touch Chromium/WebKit: menu, demo, first footer activation; public HTML matches immutable candidate.",
+      "receiptSha256": "21e265606b99f9b74c1c9234b1947988caef3bdab4d1d4d6c37f85e60731994d"
+    },
+    "adminOriginalCandidate": {
+      "functional": 106,
+      "permissions": 11,
+      "captureChecks": 16,
+      "businessRecordsUnchanged": 9,
+      "notificationOutboxes": 0,
+      "qualification": "Historical original full matrix had55 native WebKit transport diagnostics; six original Auth/context diagnostics lacked per-request correlation. Bounded follow-up and final combined/live smoke correlate all their native transport diagnostics and report zero unexpected errors; historical evidence is not retroactively relabeled.",
+      "evidenceSource": "Operator release-state aggregate; no private identifiers or authenticated records included."
+    },
+    "adminCombinedSmoke": {
+      "passedAssertions": 37,
+      "captures": 8,
+      "receiptSha256": "07d0406eb3cfd071b984880e41ea8b9da6c2cb6d2a01424c07e3e4032390da14",
+      "qualification": "Three initial cases28/28 plus bounded corrected WebKit1440 case9/9. Existing signout navigates to /signin; original runner incorrectly awaited a transient gate. All12 native transport diagnostics correlated with requestfailed events; original failure retained."
+    },
+    "adminProductionSmoke": {
+      "passedAssertions": 37,
+      "captures": 8,
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "widths": [
+        390,
+        1440
+      ],
+      "nativeTransportDiagnostics": 9,
+      "unexpectedErrors": 0,
+      "applicationBytesIdenticalToOriginalCandidate": true,
+      "applicationServedSha256": "5527c53261f6be7b84257c07e97c6a523157c7a6f3c875c12aaf15a8fd292e9d",
+      "receiptSha256": "8d1a5457bd53f8824a130e84010fcca706317aa20f3d38064a646df37952aec2"
+    },
+    "physicalPhoneTested": false,
+    "hostedWrites": "Business-save endpoints blocked in smoke. Earlier local synthetic callbacks cover successful saves/reviews. Only owned verification sign-in metadata could change; no real athlete record, invitation, notification, recovery link or model job changed.",
+    "businessAudit": {
+      "unchangedDocuments": 9,
+      "notificationOutboxes": 0,
+      "receiptSha256": "adb6207e73d410e3f688659e07b2702ab7ede887e92d00a2ab7e55e04aee417d"
+    },
+    "staticProviderQualification": "One homepage preflight returned a transient500 for a CSS asset; bounded follow-up and complete preflight matched all exact bytes. Original failure retained; internal provider cause unconfirmed."
+  },
+  "cleanup": {
+    "operation": {
+      "cleanedAt": "2026-10-22T21:54:50.342Z",
+      "authAccounts": 4,
+      "knownPaths": 31,
+      "deleteOperations": 39,
+      "credentialsRemoved": true,
+      "sharedRateCounters": "Untouched; ordinary TTL"
+    },
+    "independentReadback": {
+      "checkedAt": "2026-10-22T22:00:21.838Z",
+      "readOnly": true,
+      "independentImplementation": true,
+      "remainingAuth": 0,
+      "remainingDocuments": 0,
+      "remainingDescendants": 0,
+      "remainingProjections": 0,
+      "remainingStorage": 0,
+      "credentialsAbsent": true,
+      "passed": true
+    },
+    "cleanupReceiptSha256": "518ad7c549b49a81b85af37bc580e96ea8bd37c1123325ac50edf91ac6073872",
+    "readbackReceiptSha256": "a2988838030c97b725402031f04ff62a05cb98fe30af0296bb7c59843b3b5c8f",
+    "followup": {
+      "completedAt": "2026-10-22T21:59:32.164Z",
+      "deletedDocuments": 2,
+      "credentialsRemainAbsent": true,
+      "cause": "Unproven",
+      "receiptSha256": "f16534e64e1cb7583242f4e161a2b4f85bb2b35b75150bb27d7eeafde6bf16a1"
+    },
+    "initialFailure": {
+      "remainingRealDescendants": 2,
+      "receiptSha256": "ed564cdcc55305bb2ce3445d961db1bd0fe7e6a928402c8a40efe8e71f2c4ffb",
+      "qualification": "Independent first readback found two real owned insightSummaries descendants after initial cleanup. Only those exact documents were subsequently deleted with updateTime preconditions. Both direct GETs returned404; final delayed independent readback is reported separately. Cause remains unproven."
+    },
+    "storageVersionsReadback": {
+      "currentAndNoncurrentObjects": 0,
+      "checkedAt": "2026-10-22T22:00:30.761Z",
+      "receiptSha256": "848a2ad8463165d3a9f8b4b282bcdf1e3d13af365ec1d94d0af2d3c4db5c532d",
+      "physicalErasureClaimed": false
+    }
+  },
+  "preservedDeploymentMetadata": {
+    "available_functions": [],
+    "required_functions": [],
+    "required_edge_functions": [],
+    "edge_functions_present": null,
+    "required_server": [],
+    "server": null,
+    "function_schedules": []
+  },
+  "hostingAutomation": {
+    "branch": "main",
+    "stopBuilds": false,
+    "allowedBranches": [
+      "main"
+    ]
+  },
+  "boundaries": {
+    "backendSchemaChanged": false,
+    "persistedBusinessDataContractsChanged": false,
+    "rulesPublished": false,
+    "nativeReleased": false,
+    "catalogPublished": false,
+    "providerNullEdgeMetadata": "edge_functions_present=null is retained as unavailable metadata, not asserted as zero.",
+    "authenticationContractsChanged": false,
+    "backendReleased": false,
+    "indexesPublished": false,
+    "gatewayReleased": false
+  },
+  "rollback": {
+    "verifiedPredecessor": "6ad92e7fec1a407bec937389",
+    "artifactFiles": 2156,
+    "artifactBytes": 166883108,
+    "artifactDigest": "c05f819724a55a6af473f4c3e268215f5d2cbbb01cd852a484f3a23c885dd1c2",
+    "manifestSha256": "fa982a3c6719ec6f57c990d3518d4d2ad706a369f8789c6feb053288215bf2d9",
+    "providerInventorySha256": "abf7c9b3816d2aac42140305d435dc391815db0ee7bfbf71c350f7592357a5aa",
+    "checkedRoutes": 20,
+    "evidence": "predecessor-verification.json",
+    "executed": false,
+    "scope": "Any corrective artifact must preserve unrelated accepted surfaces and retained historical assets. No state/rules rollback is implied.",
+    "immediatePredecessorForApplicationRecovery": "6ada6e5a385faad3f4cd88ed",
+    "intermediateHomepageDigest": "6264b3e83dd6fe5856f18a206b89850183561529f12bee1371197ed1645d96fd",
+    "instruction": "Prepare and verify a corrective artifact against current production, preserving unrelated accepted surfaces and historical assets. The intermediate homepage artifact retains the approved pre-admin application. No rollback performed."
+  },
+  "observation": {
+    "observedAt": "2026-10-22T21:58:08.763Z",
+    "publishedAt": "2026-10-22T21:52:44.893Z",
+    "publishedId": "6ada849fa3505ca75b08ec3b",
+    "elapsedMs": 323874,
+    "routes": [
+      {
+        "path": "/",
+        "status": 200
+      },
+      {
+        "path": "/admin/accounts",
+        "status": 200
+      },
+      {
+        "path": "/feedback",
+        "status": 200
+      },
+      {
+        "path": "/coach-join",
+        "status": 200
+      }
+    ],
+    "automation": {
+      "branch": "main",
+      "stopBuilds": false,
+      "allowedBranches": [
+        "main"
+      ]
+    },
+    "scope": "Read-only production identity and HTTP observation; full artifact hashes and live browser checks are separate receipts."
+  }
+}

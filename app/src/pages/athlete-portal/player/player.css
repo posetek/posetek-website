@@ -1,6 +1,11 @@
 .pt-player {
-  --lime: #b7f34a; --player-muted: #a8bdb3; color: #f6faf8;
-  min-height: 100dvh; background: radial-gradient(ellipse at 85% 0%, #164c37 0, transparent 42%), #081e17;
+  /* The app's V4 theme (KickAI/V4UI.swift and its color assets). --lime and --player-muted are the
+     older names for the accent and secondary text; they now resolve to the same V4 values. */
+  --v4-accent: #7cff18; --v4-background: #041610; --v4-background-middle: #092a20; --v4-background-end: #082417;
+  --v4-navigation: #081816; --v4-secondary: #ffffffa6; --v4-card: #ffffff0f; --v4-border: #ffffff1a;
+  --v4-dock-height: 70px;
+  --lime: var(--v4-accent); --player-muted: var(--v4-secondary); color: #fff;
+  min-height: 100dvh; background: linear-gradient(135deg, var(--v4-background), var(--v4-background-middle), var(--v4-background-end)) fixed;
   font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.5;
   *, *::before, *::after { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -24,25 +29,59 @@
   details { margin: 14px 0; }
   summary { cursor: pointer; font-weight: 700; min-height: 44px; padding-block: 10px; }
   progress { width: 100%; accent-color: var(--lime); height: 8px; }
-  .portal-card { border: 1px solid #ffffff14; border-radius: 20px; padding: 20px; background: #1634298a; margin: 16px 0; box-shadow: none; overflow-wrap: anywhere; }
+  .portal-card, .v4-card { border: 1px solid var(--v4-border); border-radius: 26px; padding: 16px; background: var(--v4-card); margin: 16px 0; box-shadow: none; overflow-wrap: anywhere; }
   .eyebrow { color: var(--lime); font-size: 11px; letter-spacing: .15em; text-transform: uppercase; font-weight: 700; }
-  .primary-cta { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; background: var(--lime); color: #122614; font-weight: 750; border: 0; min-height: 52px; margin-block: 12px; text-decoration: none; }
+  .primary-cta { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; background: var(--v4-accent); color: var(--v4-background); font-size: 14px; font-weight: 600; border: 0; border-radius: 18px; min-height: 52px; margin-block: 12px; text-decoration: none; }
   .hub-secondary { width: 100%; display: block; text-align: center; margin-block: 12px; }
   .text-button { border: 0; background: transparent; padding-left: 0; color: var(--lime); }
   .muted-copy { color: var(--player-muted); font-size: 13px; }
-  .player-header { height: 68px; display: flex; align-items: center; gap: 12px; padding: 10px max(16px, env(safe-area-inset-left)); border-bottom: 1px solid #ffffff0f; background: #0b241bcc; }
-  .player-header > span { color: var(--player-muted); font-size: 12px; margin-left: auto; }
-  .player-wordmark { display: inline-flex; align-items: center; min-height: 44px; color: inherit; text-decoration: none; font-weight: 900; letter-spacing: -.06em; font-size: 24px; border: 0; padding-left: 0; background: none; }
-  .player-wordmark span { color: var(--lime); font-size: 12px; margin-left: 3px; }
-  .player-signout { font-size: 11px; padding-inline: 8px; }
-  .player-main { max-width: 720px; margin: auto; padding: 24px 16px calc(110px + env(safe-area-inset-bottom)); min-width: 0; }
+  /* V4PlayerHeader: a large title with the account control at a tab root; a compact centered
+     title with Back on a page pushed inside a tab. Both sit inside the page's own content. */
+  .v4-header { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 4px 0; margin-bottom: 8px; }
+  .v4-header h1 { flex: 1; min-width: 0; margin: 0; font-size: 34px; font-weight: 700; line-height: 1.2; letter-spacing: 0; overflow-wrap: anywhere; }
+  .v4-header-actions { display: flex; align-items: center; gap: 8px; }
+  .v4-header-compact { position: sticky; top: 0; z-index: 20; margin-inline: -16px; padding-inline: 8px; background: #041610b8; backdrop-filter: blur(20px); }
+  .v4-header-compact h1 { font-size: 17px; font-weight: 600; text-align: center; }
+  .v4-header-compact .v4-header-actions { min-width: 44px; justify-content: flex-end; }
+  .v4-back { width: 44px; min-width: 44px; padding: 0; border: 0; background: none; color: var(--v4-accent); display: grid; place-items: center; }
+  .v4-back .material-symbols-outlined { font-size: 30px; }
+  .v4-account { position: relative; }
+  .v4-account-button { width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1px solid var(--v4-border); background: var(--v4-card); color: var(--v4-accent); font-size: 14px; font-weight: 600; display: grid; place-items: center; }
+  .v4-account-menu { position: absolute; z-index: 60; top: 50px; right: 0; min-width: 210px; padding: 6px; border-radius: 16px; border: 1px solid var(--v4-border); background: #0d2a20f2; backdrop-filter: blur(20px); display: grid; gap: 2px; }
+  .v4-account-menu button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; text-align: left; border-radius: 10px; }
+  .v4-account-menu button:hover { background: var(--v4-card); }
+  .v4-account-menu .material-symbols-outlined { font-size: 20px; }
+  /* LogoutConfirmationView: a short sheet from the bottom with the destructive choice first. */
+  .v4-sheet-backdrop { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; background: #00000080; }
+  .v4-confirm { width: 100%; max-width: 452px; display: grid; justify-items: center; gap: 10px; padding: 28px 28px calc(28px + env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; border: 1px solid var(--v4-border); border-bottom: 0; background: linear-gradient(135deg, var(--v4-background), var(--v4-background-middle), var(--v4-background-end)); text-align: center; }
+  .v4-confirm-icon { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; color: var(--v4-accent); background: #7cff1824; margin-bottom: 12px; }
+  .v4-confirm h2 { margin: 0; font-size: 22px; font-weight: 800; }
+  .v4-confirm p { margin: 0 0 12px; font-size: 14px; font-weight: 500; color: var(--v4-secondary); }
+  .v4-confirm button { width: 100%; padding: 14px; border-radius: 16px; font-size: 16px; font-weight: 600; background: #ffffff14; border: 1px solid var(--v4-border); }
+  .v4-confirm .v4-confirm-destructive { background: #ff3b30d9; border-color: transparent; font-weight: 700; }
+  /* WorkoutActivityGrid and WorkoutActivityCard: two columns of cards, one column at large text sizes. */
+  .v4-activity-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .v4-activity-card { display: grid; justify-items: start; align-content: start; gap: 8px; padding: 14px; border: 0; border-radius: 18px; background: var(--v4-card); text-align: left; }
+  .v4-activity-card .material-symbols-outlined { color: var(--v4-accent); font-size: 24px; height: 24px; }
+  .v4-activity-card strong { font-size: 20px; font-weight: 700; line-height: 1.2; }
+  .v4-activity-card small { font-size: 15px; color: var(--v4-secondary); }
+  /* The Workouts rows (workspaceRow): icon, title and a chevron on a card. */
+  .v4-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; margin-top: 18px; padding: 10px 14px; border: 0; border-radius: 14px; background: var(--v4-card); font-size: 17px; font-weight: 600; text-align: left; }
+  .v4-row .material-symbols-outlined:first-child { color: var(--v4-accent); font-size: 22px; width: 22px; }
+  .v4-row .material-symbols-outlined:last-child { margin-left: auto; color: var(--v4-secondary); font-size: 18px; }
+  .player-main { max-width: 720px; margin: auto; padding: max(8px, env(safe-area-inset-top)) 16px calc(var(--v4-dock-height) + 40px + env(safe-area-inset-bottom)); min-width: 0; }
   .player-main h1, .player-main h2 { text-wrap: balance; }
   .player-main p { text-wrap: pretty; }
-  .player-bottom-nav { position: fixed; z-index: 50; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 8px max(4px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left)); background: #0a241bf5; border-top: 1px solid #ffffff20; backdrop-filter: blur(18px); }
-  .player-bottom-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 0; background: transparent; border-radius: 0; padding: 6px 0; color: #9cb6a9; font-size: 11px; letter-spacing: .01em; line-height: 1.35; min-width: 44px; min-height: 52px; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
+  /* V4PlayerDock: a floating capsule with four equal buttons; the selected one is accent-colored on an accent-tinted capsule. */
+  .player-bottom-nav { position: fixed; z-index: 50; bottom: calc(8px + env(safe-area-inset-bottom)); left: max(14px, env(safe-area-inset-left)); right: max(14px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0 2px; border-radius: 999px; border: 1px solid var(--v4-border); background: #081816d9; backdrop-filter: blur(28px) saturate(1.4); }
+  .player-bottom-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; margin: 5px 2px; padding: 5px 0; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 500; line-height: 1.2; min-width: 44px; min-height: 44px; text-decoration: none; white-space: nowrap; touch-action: manipulation; transition: background-color .2s ease-in-out, color .2s ease-in-out; }
   .player-bottom-nav [aria-disabled="true"] { opacity: .6; cursor: wait; }
-  .player-bottom-nav .material-symbols-outlined { font-size: 23px; }
-  .player-bottom-nav [aria-current="page"] { color: var(--lime); }
+  .player-bottom-nav .material-symbols-outlined { font-size: 22px; }
+  .player-bottom-nav [aria-current="page"] { color: var(--v4-accent); background: #7cff182b; font-weight: 700; }
+  .player-bottom-nav [aria-current="page"] .material-symbols-outlined { font-variation-settings: 'wght' 700; }
+  @media (prefers-reduced-transparency: reduce) { .player-bottom-nav, .v4-header-compact, .v4-account-menu { background: var(--v4-navigation); backdrop-filter: none; } }
+  /* The app hides the dock while the keyboard is up for the coach composer. */
+  &:has(.chat-composer :focus) .player-bottom-nav { display: none; }
   .player-preview-note { border: 1px dashed #ffffff44; padding: 8px 12px; font-size: 12px; border-radius: 10px; color: #c2d5ca; }
   .player-error { background: #68372d55; border: 1px solid #df947766; border-radius: 12px; padding: 14px; color: #ffd5bd; }
   .player-profile-hero { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 12px; }
@@ -128,7 +167,18 @@
   .player-drills .athlete-top-grid, .player-drills .session-layout { max-width: 100%; }
   .body-profile-grid { display: block; }
   .body-canvas-wrap { height: 330px; }
-  @media (min-width: 800px) { .player-bottom-nav { max-width: 720px; left: 50%; right: auto; width: 100%; transform: translateX(-50%); border-radius: 20px 20px 0 0; } .player-header { padding-inline: max(24px, calc((100vw - 720px) / 2)); } }
+  @media (min-width: 800px) { .player-bottom-nav { max-width: 692px; left: 50%; right: auto; width: 100%; transform: translateX(-50%); } }
+  /* On a computer the dock becomes a bar across the top, and Stats gets a wider page. */
+  @media (min-width: 1000px) {
+    --v4-dock-height: 0px;
+    .player-main { padding-top: 88px; padding-bottom: 56px; }
+    .player-main:has(> div:not([hidden]) > .stats-page) { max-width: 920px; }
+    .player-bottom-nav { top: 0; bottom: auto; left: 0; right: 0; width: auto; max-width: none; height: 64px; transform: none; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 24px; border-width: 0 0 1px; border-radius: 0; }
+    .player-bottom-nav::before { content: 'POSETEK'; position: absolute; left: 24px; top: 50%; transform: translateY(-50%); color: var(--v4-accent); font-size: 15px; font-weight: 750; letter-spacing: 1.8px; }
+    .player-bottom-nav a { flex-direction: row; gap: 8px; margin: 0; padding: 0 18px; min-height: 44px; font-size: 14px; }
+    .v4-header-compact { top: 64px; }
+  }
+  @media (max-width: 360px) { .v4-activity-card strong { font-size: 18px; } .v4-activity-card small { font-size: 13px; } .v4-header-compact { margin-inline: -12px; } }
   @media (max-width: 360px) { .player-main { padding-inline: 12px; } .portal-card { padding: 15px; } .player-profile-hero { grid-template-columns: 1.4fr 1fr; } .player-identity h1 { font-size: 22px; } .player-measurements { gap: 10px; } }
   @media (max-width: 700px) {
     .player-chat-messages { height: max(300px, calc(100dvh - 440px)); scroll-padding-bottom: 100px; }
@@ -153,6 +203,10 @@
   .player-profile-actions strong { font-size: 15px; }
   .player-profile-actions small { font-size: 12px; }
 }
+/* The site-wide "Report a problem" link sits where the dock is. The full-width bar it replaced
+   covered that link; the floating dock would show it through the glass, so it stays out of the
+   way here. A guided workout raises it above the controls (support/user-issues.scss). */
+body:has(.player-bottom-nav):not(:has(.player-guided)) .user-issue-help { display: none; }
 .ai-sharing-control { margin-block: 1rem; }
 .ai-sharing-control > button, .ai-sharing-actions button { min-height: 44px; white-space: normal; }
 .ai-sharing-control .portal-card { margin-top: .75rem; }

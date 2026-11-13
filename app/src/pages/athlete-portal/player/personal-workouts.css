@@ -108,14 +108,8 @@
 .pt-player .workout-location-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .pt-player .workout-location-options .workout-choice { display: block; padding: 18px 14px; }
 .pt-player .workout-location-options .material-symbols-outlined { display: block; margin-bottom: 14px; }
-.pt-player .workout-resource-switches { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; border-top: 1px solid #ffffff1a; padding-top: 18px; }
-.pt-player .workout-resource-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 0; background: transparent; text-align: left; color: #e4ede7; font: inherit; min-height: 58px; padding: 0; }
-.pt-player .workout-resource-switch strong { font-size: 14px; }
-.pt-player .workout-resource-switch small { display: block; font-size: 11px; color: #afc2b3; margin-top: 4px; }
-.pt-player .workout-switch-indicator { flex: 0 0 38px; width: 38px; padding: 4px; border-radius: 30px; background: #ffffff20; }
-.pt-player .workout-switch-indicator i { display: block; height: 16px; width: 16px; border-radius: 50%; background: #c5d6c7; }
-.pt-player .workout-resource-switch[aria-checked='true'] .workout-switch-indicator { background: var(--lime); }
-.pt-player .workout-resource-switch[aria-checked='true'] .workout-switch-indicator i { background: #163021; transform: translateX(14px); }
+.pt-player .workout-goal-question { border-top: 1px solid #ffffff1a; padding-top: 18px; }
+.pt-player .workout-goal-question p { margin: 0; font-size: 14px; color: #e4ede7; }
 .pt-player .workout-setup-extras { margin-top: 16px; border-top: 1px solid #ffffff1a; padding-top: 4px; }
 .pt-player .workout-resource-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
 .pt-player .workout-resource-chips button { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1px solid #ffffff26; background: #ffffff06; font: inherit; font-size: 12px; color: #d2dfd5; }
@@ -154,8 +148,6 @@
   .pt-player .workout-choice small { font-size: 10px; }
   .pt-player .workout-choice-check { position: absolute; right: 9px; top: 9px; font-size: 13px; }
   .pt-player .workout-location-options .workout-choice { padding: 15px 10px; }
-  .pt-player .workout-resource-switches { gap: 12px; }
-  .pt-player .workout-resource-switch { gap: 8px; }
   .pt-player .workout-wizard-actions .primary-cta { min-width: 0; flex: 1; }
 }
 .pt-player .workout-wizard .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

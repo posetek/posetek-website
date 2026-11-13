@@ -15,6 +15,7 @@ import { artifactFolder } from "../../athlete-portal/lib/metrics";
 import { JUMP_ARTIFACTS, type JumpSources } from "./jumpTechnique";
 import { parseArtifactJson } from "./repTools";
 import type { RevisionPayload } from "./repTools";
+import type { BroadJumpEvidence } from "./resultValidation";
 
 export interface RepArtifactBundle {
   folder: string;
@@ -22,6 +23,8 @@ export interface RepArtifactBundle {
   mediaUrl: string | null;
   mediaName: string | null;
   pose: any;
+  tracking: any;
+  trackingLoadError: boolean;
   metadata: any;
   reprocessContext: any;
   arucoCorners: any;
@@ -29,8 +32,32 @@ export interface RepArtifactBundle {
   adminAnnotations: any;
   ballBoxes: any;
   jumpTechnique: JumpSources;
+  /** foot_piecewise_fit.json, foot_centers.json and com_midpoints.json for a broad jump. */
+  broadJump: BroadJumpEvidence | null;
   /** Artifact names found directly in the rep folder. */
   files: string[];
+  /** Every JSON file read from the rep folder, by name (the ones above included). */
+  json: Record<string, any>;
+  /** JSON files read from the session root (calibration photo markers, gate taps, …), by name. */
+  sessionJson: Record<string, any>;
+  /** Every file name directly in the session root. */
+  sessionFiles: string[];
+}
+
+/** Bounds on the extra files read for the evidence panel; pose and tracking are read regardless. */
+const MAX_EXTRA_REP_FILES = 40;
+const MAX_SESSION_FILES = 20;
+
+async function readMany(folder: any, names: string[]): Promise<Record<string, any>> {
+  const entries: [string, any][] = [];
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(6, names.length) }, async () => {
+    while (next < names.length) {
+      const name = names[next++];
+      entries.push([name, await readJsonAt(folder.child(name))]);
+    }
+  }));
+  return Object.fromEntries(entries.filter(([, value]) => value !== null));
 }
 
 async function readJsonAt(ref: any): Promise<any> {
@@ -76,7 +103,7 @@ export async function loadRepArtifacts(drill: Drill, rep: any, playerId: string)
     console.warn("[rep tools] folder listing unavailable", folder, error);
   }
 
-  const [pose, metadata, reprocessContext, adminAnnotations, ballBoxes, arucoCorners, markerConfig] = await Promise.all([
+  const [pose, metadata, reprocessContext, adminAnnotations, ballBoxes, arucoCorners, markerConfig, tracking] = await Promise.all([
     readJsonAt(base.child("pose.json")),
     readJsonAt(base.child("metadata.json")),
     readJsonAt(base.child("reprocess_context.json")),
@@ -84,10 +111,36 @@ export async function loadRepArtifacts(drill: Drill, rep: any, playerId: string)
     files.includes("ball_boxes.json") ? readJsonAt(base.child("ball_boxes.json")) : Promise.resolve(null),
     readJsonAt(root.child("aruco_corners.json")),
     MARKER_CONFIG_NAMES[drill.key] ? readJsonAt(root.child(MARKER_CONFIG_NAMES[drill.key])) : Promise.resolve(null),
+    readJsonAt(base.child("tracking.json")),
   ]);
 
   const jumpTechnique = drill.key === "jump" ? Object.fromEntries(await Promise.all(JUMP_ARTIFACTS.map(async name => [name, await readJsonAt(base.child(name))]))) : {};
-  return { folder, sessionRoot, mediaUrl, mediaName, pose, metadata, reprocessContext, arucoCorners, markerConfig, adminAnnotations, ballBoxes, jumpTechnique, files };
+  const broadJump = drill.key === "broadJump"
+    ? await Promise.all(["foot_piecewise_fit.json", "foot_centers.json", "com_midpoints.json"].map(name => readJsonAt(base.child(name))))
+      .then(([fit, footCenters, comMidpoints]) => ({ fit, footCenters, comMidpoints }))
+    : null;
+
+  // Every other JSON file the phone wrote, so the reviewer sees the complete evidence.
+  const known: Record<string, any> = {
+    "pose.json": pose, "metadata.json": metadata, "reprocess_context.json": reprocessContext, "admin_annotations.json": adminAnnotations,
+    "ball_boxes.json": ballBoxes, "tracking.json": tracking, ...jumpTechnique,
+    ...(broadJump ? { "foot_piecewise_fit.json": broadJump.fit, "foot_centers.json": broadJump.footCenters, "com_midpoints.json": broadJump.comMidpoints } : {}),
+  };
+  const restNames = files.filter(name => /\.json$/i.test(name) && !Object.hasOwn(known, name)).slice(0, MAX_EXTRA_REP_FILES);
+  const json = { ...Object.fromEntries(Object.entries(known).filter(([, value]) => value !== null && value !== undefined)), ...await readMany(base, restNames) };
+
+  let sessionFiles: string[] = [];
+  try {
+    sessionFiles = (await root.listAll()).items.map(item => item.name);
+  } catch (error) {
+    console.warn("[rep tools] session listing unavailable", sessionRoot, error);
+  }
+  const markerName = MARKER_CONFIG_NAMES[drill.key];
+  const sessionKnown: Record<string, any> = { "aruco_corners.json": arucoCorners, ...(markerName ? { [markerName]: markerConfig } : {}) };
+  const sessionRest = sessionFiles.filter(name => /\.json$/i.test(name) && !Object.hasOwn(sessionKnown, name)).slice(0, MAX_SESSION_FILES);
+  const sessionJson = { ...Object.fromEntries(Object.entries(sessionKnown).filter(([, value]) => value !== null)), ...await readMany(root, sessionRest) };
+
+  return { folder, sessionRoot, mediaUrl, mediaName, pose, tracking, trackingLoadError: files.includes("tracking.json") && tracking === null, metadata, reprocessContext, arucoCorners, markerConfig, adminAnnotations, ballBoxes, jumpTechnique, broadJump, files, json, sessionJson, sessionFiles };
 }
 
 export interface RepRevisionRow {

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "release": "Athlete rest timers from zero to the prescribed default",
+  "status": "production-verified",
+  "website": "https://posetek.net",
+  "publishedAt": "2026-10-12T19:48:08.237Z",
+  "sourceCommit": "4fc717eaecf7ae71de823900aed47134821cf186",
+  "sourceBranch": "codex/drill-video-audit",
+  "pullRequest": "https://github.com/posetek/posetek_website/pull/47",
+  "deploymentId": "6acd37e9e903ac054286f910",
+  "previousDeploymentId": "6acbde38a912d2909dd0501a",
+  "artifactSha256": "000fdd48d3ce18cb83baa0e7387bfb36f9c2348c0d4c96d72d7ccfa2b64dd129",
+  "artifactFiles": 1952,
+  "providerFiles": 1953,
+  "priorRecordsPreserved": 1947,
+  "addedRuntimeFiles": 4,
+  "allowedPriorRecordChanges": [
+    "/application.html",
+    "/netlify.toml (generated provider metadata)"
+  ],
+  "marketingFeedbackIconsAndExistingAssetsExact": true,
+  "feedbackDocumentPreservedFromVerifiedLiveBaseline": true,
+  "supersededDraftPublished": false,
+  "prescription": {
+    "currentDefaultPreserved": true,
+    "selectableSeconds": "Every integer from zero through the current workout prescription",
+    "zeroMeansNoTimer": true,
+    "separateRepAndSetChoices": true,
+    "activeElapsedRecoveryPreserved": true,
+    "localRuntimeOwnerScoped": true,
+    "pausedChoicesDoNotResumeWork": true,
+    "catalogVersion": "1.0.96",
+    "catalogAndAuthoringConfigurationVerifiedUnchanged": true,
+    "DRB010Status": "draft",
+    "DRB010PrimaryDemoStatus": "pending",
+    "wholeBodyHeldDrafts": 80,
+    "mobileVerified": false
+  },
+  "verification": {
+    "frontendTestsPassed": 1946,
+    "dedicatedChoiceTestsPassed": 6,
+    "releaseGuardsPassed": 41,
+    "typeScriptPassed": true,
+    "lintPassed": true,
+    "hostedSourceCiChecksPassed": 6,
+    "hostedSourceRun": 38298462113,
+    "candidateChecksPassed": 22,
+    "productionChecksPassed": 14,
+    "responsiveWidths": [
+      360,
+      390,
+      430,
+      1440
+    ],
+    "candidateBrowserPageErrors": 0,
+    "productionBrowserPageErrors": 0,
+    "authenticatedAcceptance": "One run-owned synthetic athlete; no real account or athlete evidence",
+    "nativeDeviceAcceptanceClaimed": false
+  },
+  "cleanup": {
+    "ownedSyntheticAccountsCreated": 1,
+    "ownedSyntheticAccountsRemaining": 0,
+    "ownedRootDescendantAndScopedQueryRecordsRemaining": 0,
+    "notificationOutboxesRemaining": 0,
+    "notificationProviderAttempts": 0,
+    "delayedIndependentReadbackAt": "2026-10-12T19:54:40.976Z",
+    "temporaryCredentialFilesRemoved": true
+  },
+  "scope": {
+    "catalogPublished": false,
+    "savedRealPlansLogsOrReadinessWritten": false,
+    "backendGatewayRulesIndexesOrNativePublished": false,
+    "optionalPreferenceFields": "Browser local runtime only; no Firebase or mobile wire-schema addition"
+  },
+  "preservationBaseline": {
+    "deploymentId": "6acd37e9e903ac054286f910",
+    "protectedFiles": 1950,
+    "ordinaryBuildPassed": true
+  },
+  "handoff": "docs/releases/ATHLETE_REST_TIMERS.md",
+  "privacy": "Private browser captures, fixture IDs, credentials, snapshots and journals remain outside Git."
+}

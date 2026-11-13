@@ -1,5 +1,5 @@
 // Sanitized handoff only after live delivery and create-only import verification.
-// HISTORICAL: this wrote deployment/WHOLE_BODY_TRAINING_PRODUCTION.json from the
+// HISTORICAL: this wrote docs/releases/receipts/WHOLE_BODY_TRAINING_PRODUCTION.json from the
 // release stages in scripts/release-training-expansion.cjs, which was deleted with
 // this repository's retired gateway copy. It cannot run again; the gateway is
 // released only from python-video-processor/Services/agent-gateway (see AGENTS.md).
@@ -40,8 +40,8 @@ async function main(){
   catalog:{productionBatchId:manifest.productionBatchId,newDrafts:80,authoringRecords:80,existingRecordsPreserved:imported.receipt.existingCount,versionBefore:imported.receipt.catalogVersionBefore,versionAfter:imported.receipt.catalogVersionAfter,manifestSha256:imported.receipt.manifestSha256,idMap:'content/training-expansion/production-id-map.json',allocation:manifest.allocation,weeklyAllocation:manifest.weeklyAllocation,filmingWeeks:4,drillsPerWeek:20,requiredClipsPerDrill:3,totalRequiredClips:240,publishedByRelease:0,humanContentReviews:'pending',videosUploadedByRelease:0},
   delivery:{webPreviewEnabled:true,mobileVerified:false,expandedActivationHeld:true,nativeSourceOrRulesDeployed:false,reviewersDesignatedByRelease:0,playerClearancesWrittenByRelease:0,activePlansPreserved:rows.length,newCapabilities:{save_workout_edit:config.capabilities.save_workout_edit,validate_workout_start:config.capabilities.validate_workout_start}},
   validation:{appFullSuitePassed:1002,finalAppFocusedTestsPassed:18,callableTestsPassed:20,importVerificationTestsPassed:4,contentTestsPassed:6,releaseAndCompositionTestsPassed:23,finalGatewayFocusedTestsPassed:242,syntheticDesktopAndMobileVisualQaPassed:true,all80PassGatewayAndAuthoringSchema:true},
-  handoff:'docs/WHOLE_BODY_TRAINING.md',rollback:'Preserve imported drafts and private-collection rules. Keep mobileVerified false; coordinate prior gateway and website restoration without deleting plans/logs. Do not restore the old broad private-data fallback.',privacy:'No athlete identities, individual test values, private plan content or credentials are included.'};
- fs.writeFileSync('deployment/WHOLE_BODY_TRAINING_PRODUCTION.json',JSON.stringify(receipt,null,2)+'\n');
+  handoff:'docs/releases/WHOLE_BODY_TRAINING.md',rollback:'Preserve imported drafts and private-collection rules. Keep mobileVerified false; coordinate prior gateway and website restoration without deleting plans/logs. Do not restore the old broad private-data fallback.',privacy:'No athlete identities, individual test values, private plan content or credentials are included.'};
+ fs.writeFileSync('docs/releases/receipts/WHOLE_BODY_TRAINING_PRODUCTION.json',JSON.stringify(receipt,null,2)+'\n');
  fs.writeFileSync(`${DIR}/final-preservation.json`,JSON.stringify({activePlansPreserved:rows.length,at:receipt.verifiedAt},null,2));
  console.log(JSON.stringify({status:receipt.status,newDrafts:80,activePlansPreserved:rows.length,baselineFiles:baseline.files.length,containerTestsPassed:receipt.backend.containerTestsPassed}));
 }

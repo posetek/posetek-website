@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { EQUIPMENT } from '../../../lib/contracts/types';
 import TrainingSetup from './TrainingSetup';
-import { ACCESS_GROUPS, EQUIPMENT_LABELS, confirmedSetup, emptySetup, readRememberedSetup, rememberSetup, setupForProposal, setupFromIntake, setupErrors, setupSignature } from './training-access';
+import { ACCESS_GROUPS, EQUIPMENT_LABELS, FACILITIES, LOCATION_PRESETS, chooseLocation, confirmedSetup, emptySetup, locationSetup, readRememberedSetup, rememberSetup, setGoalAccess, setupForProposal, setupFromIntake, setupErrors, setupSignature, withRequestedEquipment } from './training-access';
 import { applyEquipmentChanges, equipmentChanges, suppliedWorkoutConditions } from './personal-conversation';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -51,9 +51,71 @@ describe('confirmed resource choices', () => {
   });
   it('keeps compact location presets and equipment exceptions available without checklists', () => {
     const html = renderToStaticMarkup(<TrainingSetup value={emptySetup()} onChange={() => {}} onConfirm={() => {}} />);
-    for (const label of ['At home', 'Gym', 'Field', 'Football', 'Goal', 'Adjust equipment', 'Use this setup']) expect(html).toContain(label);
-    expect(html).toContain('role="switch"'); expect(html).not.toContain('type="checkbox"');
+    for (const label of ['Soccer field', 'Technical and physical workout with the ball', 'Gym', 'At home', 'Adjust equipment', 'Use this setup']) expect(html).toContain(label);
+    expect(html.indexOf('Soccer field')).toBeLessThan(html.indexOf('Gym')); expect(html.indexOf('Gym')).toBeLessThan(html.indexOf('At home'));
+    expect(html).not.toContain('role="switch"'); expect(html).not.toContain('Bring your ball'); expect(html).not.toContain('A goal you can use');
+    expect(html).not.toContain('Do you have a goal?'); expect(html).not.toContain('type="checkbox"');
     expect(html).not.toContain('Add a drill');
+  });
+});
+describe('soccer field goal question', () => {
+  const field = chooseLocation('pitch', emptySetup());
+  it('lists Soccer field first and keeps the server facility key', () => {
+    expect(Object.keys(LOCATION_PRESETS)).toEqual(['pitch', 'gym', 'home']);
+    expect(LOCATION_PRESETS.pitch).toMatchObject({ label: 'Soccer field', description: 'Technical and physical workout with the ball' });
+    expect(FACILITIES.pitch).toBe('Football pitch');
+  });
+  it('assumes a ball and asks about a goal only for Soccer field', () => {
+    expect(field.equipment).toContain('ball'); expect(field.equipment).not.toContain('goal');
+    expect(renderToStaticMarkup(<TrainingSetup value={field} onChange={() => {}} />)).toContain('Do you have a goal?');
+    for (const other of [locationSetup('gym'), locationSetup('home')]) expect(renderToStaticMarkup(<TrainingSetup value={other} onChange={() => {}} />)).not.toContain('Do you have a goal?');
+  });
+  it('blocks the step until the goal is answered, then Yes adds and No removes the goal', () => {
+    expect(setupErrors(field)).toEqual(['Do you have a goal? Choose Yes or No.']);
+    expect(confirmedSetup({ ...field, confirmed: true })).toBeNull();
+    const yes = setGoalAccess(field, true), no = setGoalAccess(yes, false);
+    expect(setupErrors(yes)).toEqual([]); expect(setupErrors(no)).toEqual([]);
+    expect(confirmedSetup({ ...yes, confirmed: true })!.equipment).toEqual(['ball', 'cones', 'goal', 'markers', 'timer']);
+    expect(confirmedSetup({ ...no, confirmed: true })!.equipment).toEqual(['ball', 'cones', 'markers', 'timer']);
+    const sent = JSON.stringify(confirmedSetup({ ...yes, confirmed: true }));
+    expect(sent).not.toContain('goalAnswered'); expect(JSON.parse(sent).access.facility).toBe('pitch');
+    expect(setupSignature(yes)).not.toContain('goalAnswered');
+  });
+  it('renders the answer and asks again only when the field is newly chosen', () => {
+    const yes = setGoalAccess(field, true);
+    expect(renderToStaticMarkup(<TrainingSetup value={yes} onChange={() => {}} />)).toMatch(/aria-pressed="true"[^>]*>Yes</);
+    expect(renderToStaticMarkup(<TrainingSetup value={setGoalAccess(field, false)} onChange={() => {}} />)).toMatch(/aria-pressed="true"[^>]*>No</);
+    expect(renderToStaticMarkup(<TrainingSetup value={field} onChange={() => {}} />)).not.toContain('aria-pressed="true">Yes');
+    expect(chooseLocation('pitch', yes)).toMatchObject({ goalAnswered: true }); expect(chooseLocation('pitch', yes).equipment).toContain('goal');
+    const fromGym = chooseLocation('pitch', setGoalAccess(locationSetup('gym'), true));
+    expect(fromGym.goalAnswered).toBe(false); expect(fromGym.equipment).not.toContain('goal'); expect(fromGym.equipment).toContain('ball');
+  });
+  it('carries no ball or goal to Gym or At home', () => {
+    const yes = setGoalAccess(field, true);
+    for (const facility of ['gym', 'home'] as const) {
+      const next = chooseLocation(facility, yes);
+      expect(next.equipment).not.toContain('ball'); expect(next.equipment).not.toContain('goal');
+      expect(next).not.toHaveProperty('goalAnswered'); expect(setupErrors(next)).toEqual([]);
+    }
+  });
+  it('restores remembered field setups answered, survives old drafts, and lets typed equipment answer', () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) || null, setItem: (key: string, value: string) => storage.set(key, value) });
+    for (const hasGoal of [true, false]) {
+      rememberSetup('owner', 'player', { ...setGoalAccess(field, hasGoal), confirmed: true });
+      const restored = readRememberedSetup('owner', 'player')!;
+      expect(setupErrors(restored)).toEqual([]); expect(restored.equipment.includes('goal')).toBe(hasGoal);
+      expect(renderToStaticMarkup(<TrainingSetup value={restored} onChange={() => {}} />)).toMatch(new RegExp(`aria-pressed="true"[^>]*>${hasGoal ? 'Yes' : 'No'}<`));
+    }
+    // An old confirmed field setup (no ball, no goal answer field) still loads without asking again.
+    const old = setupFromIntake({ equipment: ['cones'], setting: 'solo', access: { schemaVersion: 1, confirmed: true, facility: 'pitch', participantCount: 1, space: {} } });
+    expect(setupErrors(old)).toEqual([]);
+    // The wizard's unconfirmed fallback copy of an unanswered field draft asks again.
+    expect(setupFromIntake({ equipment: field.equipment, setting: 'solo', access: { facility: 'pitch', participantCount: 1, space: {} } }).goalAnswered).toBe(false);
+    expect(setupForProposal(confirmedSetup({ ...setGoalAccess(field, false), confirmed: true })!, emptySetup()).goalAnswered).toBeUndefined();
+    expect(withRequestedEquipment(field, 'I have a ball but do not have a goal')).toMatchObject({ goalAnswered: true });
+    expect(withRequestedEquipment(field, 'I have a ball but do not have a goal').equipment).not.toContain('goal');
+    expect(withRequestedEquipment(field, 'I have 20 minutes')).toMatchObject({ goalAnswered: false });
   });
 });
 describe('equipment text is an unconfirmed suggestion', () => {

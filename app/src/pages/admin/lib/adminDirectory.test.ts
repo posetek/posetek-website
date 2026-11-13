@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const reads = vi.hoisted(() => ({ club: vi.fn(), coaches: vi.fn(), coachRoster: vi.fn(), context: vi.fn(), organizations: vi.fn(), lookup: vi.fn(), legacy: vi.fn() }));
-vi.mock("./accounts", () => ({ loadClubAccountData: reads.club, loadCoaches: reads.coaches, loadCoachRoster: reads.coachRoster, loadOrganizations: reads.organizations, loadPlayerIndex: reads.lookup, loadTeams: vi.fn() }));
+const reads = vi.hoisted(() => ({ profiles: vi.fn(), club: vi.fn(), coaches: vi.fn(), coachRoster: vi.fn(), context: vi.fn(), organizations: vi.fn(), lookup: vi.fn(), legacy: vi.fn() }));
+vi.mock("./accounts", () => ({ loadClubAccountData: reads.club, loadOrganizationPlayers: reads.profiles, loadCoaches: reads.coaches, loadCoachRoster: reads.coachRoster, loadOrganizations: reads.organizations, loadPlayerIndex: reads.lookup, loadTeams: vi.fn() }));
 vi.mock("../../../lib/organization-data", () => ({ getClubContext: reads.context }));
 vi.mock("./plannerScope", () => ({ legacyOrganizationPlayers: reads.legacy }));
 import { directoryCoachPath, directoryPage, directoryPlayers, directorySource, loadDirectoryContext, loadDirectoryRoster, unassignedDirectoryPlayers } from "./adminDirectory";
@@ -21,12 +21,23 @@ describe("admin directory reads", () => {
   it("opening organization choices does not eagerly fetch player or staff collections", async () => {
     reads.organizations.mockResolvedValue([club]);
     await directorySource.organizations();
+    expect(reads.organizations).toHaveBeenCalledWith({ currentOnly: true });
     expect(reads.coaches).not.toHaveBeenCalled(); expect(reads.lookup).not.toHaveBeenCalled(); expect(reads.club).not.toHaveBeenCalled();
   });
   it("management reads canonical context without the extra full-profile roster query", async () => {
     reads.context.mockResolvedValue({ role: "admin", organization: { id: "club" } });
     await loadDirectoryContext("club");
     expect(reads.context).toHaveBeenCalledWith("club"); expect(reads.club).not.toHaveBeenCalled(); expect(reads.lookup).not.toHaveBeenCalled();
+  });
+  it("accepts a canonical shared context without repeating its callable or altering roster semantics", async () => {
+    const context = { role: "admin" as const, organization: { id: "club", name: "Club", schemaVersion: 2 }, organizations: [], teams: [], staff: [], invitations: [], players: [] };
+    reads.profiles.mockResolvedValue({ players: [player("inside"), { ...player("outside"), organizationId: "other" }], truncated: true });
+    const result = await loadDirectoryRoster(club, context);
+    expect(result.context).toBe(context); expect(result.players.map(row => row.id)).toEqual(["inside"]);
+    expect(result.notices.join(" ")).toContain("2,000");
+    expect(reads.profiles).toHaveBeenCalledWith("club"); expect(reads.club).not.toHaveBeenCalled(); expect(reads.context).not.toHaveBeenCalled();
+    await expect(loadDirectoryRoster(club, { ...context, role: "coach" })).rejects.toThrow("admin access");
+    await expect(loadDirectoryRoster(club, { ...context, organization: { ...context.organization, id: "other" } })).rejects.toThrow("admin access");
   });
   it("rejects changed roles and organizations rather than retaining another scope", async () => {
     for (const context of [{ role: "manager", organization: { id: "club" } }, { role: "admin", organization: { id: "other" } }]) {

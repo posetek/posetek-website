@@ -1,22 +1,42 @@
-/* PoseTek's existing green/lime treatment; one clear timer and one primary action. */
+/* The guided workout in the app's V4 look: a glass bar with the one clear timer, accent-marked
+   progress, V4 cards, and one primary action that floats above the content. */
 .pt-player .player-guided {
-  .player-workout-bar { gap: 8px; padding-block: max(10px, env(safe-area-inset-top)) 10px; border-bottom: 1px solid #ffffff16; }
-  .player-workout-bar > button { flex-shrink: 0; }
+  .player-workout-bar { gap: 8px; margin-inline: -16px; padding: max(10px, env(safe-area-inset-top)) 16px 10px; border-bottom: 1px solid var(--v4-border);
+    background: #041610b8; backdrop-filter: blur(20px); }
+  .player-workout-bar > button { flex-shrink: 0; min-width: 44px; border-radius: 999px; border: 1px solid var(--v4-border); background: var(--v4-card); font-weight: 600; }
+  .player-workout-bar > button:first-child { color: var(--v4-accent); }
   .workout-elapsed { margin-right: auto; min-width: 0; }
   .workout-elapsed small, .workout-elapsed strong { display: block; margin: 0; }
-  .workout-elapsed strong { font-size: 24px; line-height: 1.2; letter-spacing: -.035em; }
-  .workout-elapsed small { font-size: 11px; }
-  .workout-save-line { min-height: 32px; padding-block: 8px; font-size: 12px; color: var(--player-muted); }
-  .workout-pause-note { padding: 12px 14px; border-left: 3px solid var(--lime); background: #b7f34a0a; border-radius: 0 10px 10px 0; }
-  .workout-screen-options { border-block: 1px solid #ffffff14; margin: 4px 0 20px; }
-  .workout-screen-options > summary { font-size: 13px; font-weight: 500; color: var(--player-muted); }
+  .workout-elapsed strong { font-size: 24px; font-weight: 700; line-height: 1.2; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .workout-elapsed small { font-size: 11px; color: var(--v4-secondary); }
+  .workout-save-line { min-height: 32px; padding-block: 8px; font-size: 12px; color: var(--v4-secondary); }
+  .workout-pause-note { padding: 12px 14px; border-radius: 16px; border: 1px solid #7cff1840; background: #7cff1812; }
+  .workout-screen-options { margin: 4px 0 16px; padding: 0 14px; border: 1px solid var(--v4-border); border-radius: 16px; background: var(--v4-card); }
+  .workout-screen-options > summary { font-size: 13px; font-weight: 500; color: var(--v4-secondary); }
   .workout-screen-options > label { min-height: 44px; }
-  .workout-progress-label { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--player-muted); margin-top: 20px; }
-  .player-block-strip { padding: 4px 2px 8px; }
-  .player-block-strip > button { flex-shrink: 0; min-width: 44px; }
+  .workout-progress-label { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--v4-secondary); margin-top: 16px; }
+  progress { height: 6px; border-radius: 999px; overflow: hidden; appearance: none; background: #ffffff14; }
+  progress::-webkit-progress-bar { background: #ffffff14; border-radius: 999px; }
+  progress::-webkit-progress-value { background: var(--v4-accent); border-radius: 999px; }
+  progress::-moz-progress-bar { background: var(--v4-accent); border-radius: 999px; }
+  .eyebrow { color: var(--v4-accent); font-size: 10px; letter-spacing: .09em; }
+  h2 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 6px; }
+  .player-block-strip { padding: 4px 2px 8px; gap: 8px; scrollbar-width: none; }
+  .player-block-strip > button { flex-shrink: 0; min-width: 44px; border-radius: 14px; border: 1px solid var(--v4-border); background: var(--v4-card); font-weight: 600; }
+  .player-block-strip [aria-current] { background: var(--v4-accent); color: var(--v4-background); border-color: transparent; }
+  .portal-card { border-radius: 24px; }
+  .player-sets button { border: 1px solid var(--v4-border); background: var(--v4-card); font-weight: 700; }
+  .player-sets button[aria-pressed="true"] { background: var(--v4-accent); color: var(--v4-background); border-color: transparent; }
   .player-rest > div { display: grid; }
-  .player-rest strong { font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
-  .player-workout-controls { border-top: 1px solid #ffffff20; padding-top: 10px; bottom: calc(144px + env(safe-area-inset-bottom)); margin-bottom: 56px; }
-  .player-workout-controls > button:not(.primary-cta) { padding-inline: 8px; }
+  .player-rest strong { color: var(--v4-accent); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .player-workout-controls { grid-template-columns: 52px 1fr 52px; border-top: 0; padding: 18px 0 10px; bottom: calc(144px + env(safe-area-inset-bottom)); margin-bottom: 56px;
+    background: linear-gradient(to bottom, transparent, var(--v4-background) 40%); }
+  .player-workout-controls > button:not(.primary-cta) { min-height: 52px; padding-inline: 8px; border-radius: 18px; border: 1px solid var(--v4-border); background: var(--v4-card); }
+  .player-workout-controls .primary-cta { margin: 0; }
+  .text-button { color: var(--v4-accent); }
   button:disabled { cursor: not-allowed; }
 }
+/* Without the dock (the app hides it for a running workout) the controls sit lower, still clear of
+   the raised "Report a problem" link. */
+.pt-player:not(:has(.player-bottom-nav)) .player-guided .player-workout-controls { bottom: calc(64px + env(safe-area-inset-bottom)); margin-bottom: 24px; }
+@media (max-width: 360px) { .pt-player .player-guided .player-workout-bar { margin-inline: -12px; padding-inline: 12px; } }

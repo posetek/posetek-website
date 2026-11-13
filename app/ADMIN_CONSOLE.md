@@ -387,5 +387,5 @@ Verification: `npm --prefix app test` (1036), `tsc -b`, lint (no findings in the
 `npm --prefix app run build`. **In production since 2026-09-25 01:52Z**: Netlify deploy
 `6ab5d32baaaf04518a1dda05`, released from main `74d31d3` together with the admin dashboard redesign
 (`97c25e9`). The HTTP entry checks passed on the draft and on posetek.net; the record is
-`deployment/AI_INCIDENTS_PRODUCTION.json`. No signed-in browser pass has been run.
+`docs/releases/receipts/AI_INCIDENTS_PRODUCTION.json`. No signed-in browser pass has been run.
 

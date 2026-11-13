@@ -266,4 +266,4 @@ performance/D1/testScores fields remain compatible. Historical period bounds,
 canonical artifact qualification, current roster authority and scope rechecks
 are unchanged. No persisted schema or permission change is introduced.
 
-See [coach follow-up](../COACH_FOLLOW_UP.md) for presentation and release evidence.
+See [coach follow-up](../releases/COACH_FOLLOW_UP.md) for presentation and release evidence.

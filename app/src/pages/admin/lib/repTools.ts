@@ -47,9 +47,9 @@ export const int = (value: unknown): number | null => {
 
 export interface ClipTiming {
   fps: number;
-  fpsSource: "metadata" | "reprocessContext" | "pose+duration" | "default";
+  fpsSource: "metadata" | "reprocessContext" | "tracking" | "pose+duration" | "default";
   totalFrames: number;
-  totalFramesSource: "metadata" | "pose" | "duration" | "default";
+  totalFramesSource: "metadata" | "pose" | "tracking" | "duration" | "default";
 }
 
 export function resolveClipTiming(input: {
@@ -57,6 +57,8 @@ export function resolveClipTiming(input: {
   reprocessContext: any;
   poseFrameCount: number;
   videoDuration: number | null;
+  trackingFrameCount?: number;
+  trackingFPS?: number | null;
 }): ClipTiming {
   const { metadata, reprocessContext, poseFrameCount, videoDuration } = input;
   let fps = num(metadata?.framesPerSecond);
@@ -64,6 +66,13 @@ export function resolveClipTiming(input: {
   if (fps === null || fps <= 0) {
     fps = num(reprocessContext?.capture?.clipFramesPerSecondUsed) ?? num(reprocessContext?.capture?.requestedFPS);
     fpsSource = "reprocessContext";
+  }
+  if (fps === null || fps <= 0) {
+    const trackingFPS = num(input.trackingFPS);
+    if (trackingFPS !== null && trackingFPS > 0 && trackingFPS <= 1000) {
+      fps = trackingFPS;
+      fpsSource = "tracking";
+    }
   }
   if (fps === null || fps <= 0) {
     if (poseFrameCount > 1 && videoDuration && videoDuration > 0) {
@@ -78,6 +87,7 @@ export function resolveClipTiming(input: {
   let totalFramesSource: ClipTiming["totalFramesSource"] = "metadata";
   if (totalFrames === null || totalFrames <= 0) {
     if (poseFrameCount > 0) { totalFrames = poseFrameCount; totalFramesSource = "pose"; }
+    else if (input.trackingFrameCount && input.trackingFrameCount > 0) { totalFrames = Math.min(100_000, Math.floor(input.trackingFrameCount)); totalFramesSource = "tracking"; }
     else if (videoDuration && videoDuration > 0) { totalFrames = Math.max(1, Math.round(videoDuration * fps)); totalFramesSource = "duration"; }
     else { totalFrames = 1; totalFramesSource = "default"; }
   }
@@ -85,6 +95,18 @@ export function resolveClipTiming(input: {
 }
 
 export const frameToSeconds = (frame: number, fps: number): number => frame / fps;
+
+/** Keep matching dimension pairs: sprint artifacts use frameWidth/frameHeight. */
+export function sizeFromMetadata(metadata: any): { width: number; height: number } | null {
+  for (const [widthKey, heightKey] of [
+    ["videoDisplayWidth", "videoDisplayHeight"], ["frameWidth", "frameHeight"],
+    ["videoWidth", "videoHeight"], ["imageWidth", "imageHeight"],
+  ]) {
+    const width = num(metadata?.[widthKey]), height = num(metadata?.[heightKey]);
+    if (width !== null && height !== null && width > 0 && height > 0) return { width, height };
+  }
+  return null;
+}
 
 // MARK: - The gate (pixel → meters)
 

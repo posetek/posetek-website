@@ -90,9 +90,13 @@ function ratingOrNull(value: unknown): number | null {
 
 // MARK: - Reads
 
-export async function loadOrganizations(): Promise<OrganizationRow[]> {
-  const snapshot = await db.collection("organizations").get();
+/** The deployed service returned INTERNAL for equality on this field;
+ * this equivalent point range is qualified with authenticated clients. */
+export async function loadOrganizations({ currentOnly = false }: { currentOnly?: boolean } = {}): Promise<OrganizationRow[]> {
+  const organizations = db.collection("organizations");
+  const snapshot = await (currentOnly ? organizations.where("schemaVersion", ">=", 2).where("schemaVersion", "<=", 2) : organizations).get();
   return snapshot.docs
+    .filter(doc => !currentOnly || doc.data()?.schemaVersion === 2)
     .map(doc => {
       const data: any = doc.data() || {};
       return {

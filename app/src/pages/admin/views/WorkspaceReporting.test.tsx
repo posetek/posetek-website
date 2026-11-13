@@ -11,7 +11,7 @@ vi.mock("../../insights/BreakdownChart", async importOriginal => {
     return <actual.BreakdownChart {...props} />;
   } };
 });
-import { WorkspaceAttention, WorkspaceMetricCells, WorkspaceReportDetails, WorkspaceReportTabs, WorkspaceScopeSummary, WorkspaceSummary } from "./WorkspaceReporting";
+import { WorkspaceAttention, WorkspaceMetricCells, WorkspaceReportDetails, WorkspaceReportTabs, WorkspaceScopeHeader, WorkspaceScopeSummary, WorkspaceSummary } from "./WorkspaceReporting";
 import { DirectoryPlayersTable, supportedWorkspacePlayerIds } from "./MonitorAccounts";
 import ExpandedReport from "../../insights/ExpandedReport";
 import { previewInsights } from "../../insights/lib/preview";
@@ -32,6 +32,25 @@ const renderReport = (view: "overview" | "testing" | "workouts" | "usage", onCha
 };
 
 describe("unified workspace reporting", () => {
+  it("uses the complete reporting roster for the persistent header beyond the identity lookup bound", () => {
+    const report = { ...data, roster: { ...data.roster, total: 2500 } };
+    const html = renderToStaticMarkup(<WorkspaceScopeHeader {...metricState} data={report} accountCount={2000} scopeLabel="Large club" request={request}><span>Tabs</span></WorkspaceScopeHeader>);
+    expect(html).toContain('class="workspace-scope-count">2,500 players');
+    expect(html).not.toContain('2,000 players');
+  });
+  it("labels bounded subset counts without presenting parent totals as the selected unassigned roster", () => {
+    const html = renderToStaticMarkup(<WorkspaceScopeHeader {...metricState} accountCount={2} accountScopeIsSubset scopeLabel="Unassigned" request={request}><span>Tabs</span></WorkspaceScopeHeader>);
+    expect(html).toContain('class="workspace-scope-count">2 loaded players');
+    expect(html).not.toContain(`${data.roster.total} players`);
+    expect(html).toContain('<h2>Unassigned</h2>');
+    expect(html).not.toContain('Current selection');
+  });
+  it("keeps one scope title and leaves navigation and reporting dates to their existing controls", () => {
+    const html = renderToStaticMarkup(<WorkspaceScopeHeader {...metricState} accountCount={91} scopeLabel="Northfield FC" request={request} breadcrumb={<nav>Old repeated breadcrumb</nav>}><span>Report tabs</span></WorkspaceScopeHeader>);
+    expect(html.match(/<h2>Northfield FC<\/h2>/g)).toHaveLength(1);
+    expect(html).toContain("Report tabs");
+    for (const removed of ["Current selection", "Old repeated breadcrumb", "included in reporting", request.startDate, request.endDate]) expect(html).not.toContain(removed);
+  });
   it("provides precisely four manual report tabs, with one selected focus target", () => {
     const html = renderToStaticMarkup(<WorkspaceReportTabs active="testing" onChange={() => {}} />);
     expect(html.match(/role="tab"/g)).toHaveLength(4);
@@ -131,34 +150,56 @@ describe("unified workspace reporting", () => {
     expect(html).not.toContain("Detailed overview");
     expect(html).not.toContain("insights-players-heading"); expect(html).not.toContain("Clear all filters");
   });
-  it("restores Testing totals, activity, audit, failure counts and qualified-performance tables", () => {
+  it("shows Testing totals, age results, stations, activity, audit and failure counts", () => {
     const html = renderReport("testing");
     expect(html).toContain('aria-label="testing summary"');
-    for (const label of ["Fully tested", "Partially tested", "Qualifying results", "Distinct recorded attempts", "Testing coverage", "Players qualified by exercise", "Testing activity by week", "Recording audit", "Failure reports", "Qualified performance by week", "qualified performance by week", "Players contributing", "data table marks weeks with no qualified result"]) expect(html).toContain(label);
+    for (const label of ["Fully tested", "Partially tested", "Qualifying results", "Distinct recorded attempts", "Testing coverage", "Players qualified by exercise", "Testing activity by week", "Results by age", "Results by age drill", "Station analytics", "Players tested in selected week", "Average time through stations"]) expect(html).toContain(label);
+    expect(html).not.toContain("Recording audit"); expect(html).not.toContain("Failure reports");
+    expect(html).toContain("Results by age are unavailable in this report");
+    expect(html).toContain("Station timing is unavailable in this report");
+    expect(html).not.toContain("Qualified performance by week");
     expect(html).toContain("View chart data"); expect(html).not.toContain("insights-players-heading");
   });
-  it("restores Workouts totals, independent outcomes, prescription coverage and activity tables", () => {
+  it("shows workout outcomes and weekly activity without duplicate cards or prescribed-set charts", () => {
     const html = renderReport("workouts");
-    expect(html).toContain('aria-label="workouts summary"');
-    for (const label of ["Workouts completed", "Workouts started", "Timer duration", "Estimated duration", "Player workout status", "Workout outcomes", "Work completed", "All prescribed sets recorded", "Unknown prescription", "Workout activity by week", "View chart data"]) expect(html).toContain(label);
-    expect(html).toContain("Timer duration and estimated duration have different sources");
+    for (const label of ["Player workout status", "Workout outcomes", "Workout activity by week", "Completed as logged", "View chart data", "Timer duration:", "Estimated duration:"]) expect(html).toContain(label);
+    expect(html).toContain("does not confirm every prescribed set was done");
+    expect(html).toContain("Generated workouts are not measured");
+    expect(html).not.toContain('aria-label="workouts summary"');
+    expect(html).not.toContain("Work completed"); expect(html).not.toContain("All prescribed sets recorded");
     expect(html).not.toContain("insights-players-heading"); expect(html).not.toContain("Clear all filters");
   });
-  it("restores Usage totals, coverage, platform/feature breakdowns and weekly data tables", () => {
+  it("shows usage evidence and daily categories without duplicate cards or a raw feature chart", () => {
     const html = renderReport("usage");
-    expect(html).toContain('aria-label="usage summary"');
-    for (const label of ["Active players", "Returning players", "Estimated active use", "Collection coverage", "Player engagement", "Active use by platform", "Estimated active use by week", "Estimated active use by feature", "View chart data", "Total estimated active use counts simultaneous use once"]) expect(html).toContain(label);
+    for (const label of ["Player engagement", "Active use by platform", "Estimated active use by week", "Estimated active use by day", "Estimated active use by category", "View chart data", "Total estimated active use counts simultaneous use once"]) expect(html).toContain(label);
+    expect(html).not.toContain('aria-label="usage summary"');
+    expect(html).not.toContain("Estimated active use by feature");
     expect(html).not.toContain("insights-players-heading"); expect(html).not.toContain("Clear all filters");
     const unavailable = renderReport("usage", vi.fn(), "uncollected");
     expect(unavailable).toContain("Not collected"); expect(unavailable).toContain("Earlier time cannot be reconstructed"); expect(unavailable).not.toContain("NaN");
+    expect(unavailable).not.toContain("Estimated active use by category");
   });
-  it.each(["overview", "testing", "workouts", "usage"] as const)("keeps exactly the canonical %s reporting content without a duplicate people table", view => {
-    const selection = { ...request, view }, fixture = previewInsights(selection);
-    const actual = renderToStaticMarkup(<MemoryRouter><WorkspaceReportDetails data={fixture} request={selection} onChange={() => {}} /></MemoryRouter>);
-    const canonical = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={fixture} request={selection} hidePlayerFilters hidePlayerTable onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#workspace-roster"} /></MemoryRouter>);
+  it("retains canonical Overview graphs and can suppress its replaced summary cards", () => {
+    const selection = { ...request, view: "overview" as const }, fixture = previewInsights(selection);
+    const actual = renderToStaticMarkup(<MemoryRouter><WorkspaceReportDetails data={fixture} request={selection} hideSummary onChange={() => {}} /></MemoryRouter>);
+    const canonical = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={fixture} request={selection} hideSummary hidePlayerFilters hidePlayerTable onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#workspace-roster"} /></MemoryRouter>);
     expect(actual).toContain(canonical);
-    expect(actual.match(new RegExp(`aria-label="${view} summary"`, "g"))).toHaveLength(1);
+    expect(actual).not.toContain('aria-label="overview summary"');
     expect(actual).not.toContain("insights-players-heading");
+    expect(actual).toContain("Recent participation");
+    expect(actual).toContain("Testing coverage");
+    expect(actual).toContain("Players by team");
+    expect(actual).not.toContain("Daily estimated active use");
+  });
+  it.each(["testing", "workouts", "usage"] as const)("keeps admin %s evidence separate from the unchanged coach report", view => {
+    const selection = { ...request, view }, fixture = previewInsights(selection);
+    const actual = renderReport(view);
+    const coach = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={fixture} request={selection} hidePlayerFilters hidePlayerTable onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#workspace-roster"} /></MemoryRouter>);
+    expect(actual).not.toContain("insights-players-heading");
+    expect(coach).toContain(`aria-label="${view} summary"`);
+    if (view === "testing") { expect(coach).toContain("Qualified performance by week"); expect(actual).toContain("Results by age"); }
+    if (view === "workouts") { expect(coach).toContain("Work completed"); expect(actual).not.toContain("Work completed"); }
+    if (view === "usage") { expect(coach).toContain("Estimated active use by feature"); expect(actual).not.toContain("Estimated active use by feature"); }
   });
   it("retains graph selections for organization/team scopes and current reporting filters", () => {
     const onChange = vi.fn();
@@ -176,7 +217,8 @@ describe("unified workspace reporting", () => {
     select("Players by team", `${team.organizationId}:${team.id}`); expect(onChange).toHaveBeenLastCalledWith({ orgId: team.organizationId, teamId: team.id, coachId: undefined, teamAssignment: "" });
     renderReport("workouts", onChange); select("Player workout status", "completed"); expect(onChange).toHaveBeenLastCalledWith({ workoutStatus: "completed" });
     renderReport("usage", onChange); select("Active use by platform", "both"); expect(onChange).toHaveBeenLastCalledWith({ usagePlatform: "both" });
-    select("Estimated active use by feature", "training"); expect(onChange).toHaveBeenLastCalledWith({ usageFeature: "training" });
+    // Grouped categories combine raw features; a single-feature drilldown would misrepresent them.
+    expect(chartInteractions.find(row => row.title === "Estimated active use by category")?.onSelect).toBeUndefined();
     select("Active use by platform", ""); expect(onChange).toHaveBeenLastCalledWith({ usagePlatform: "" });
   });
 });

@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import ExpandedReport from "../../insights/ExpandedReport";
+import WorkspaceTesting from "./WorkspaceTesting";
+import WorkspaceUsage from "./WorkspaceUsage";
+import WorkspaceWorkouts from "./WorkspaceWorkouts";
 import { minuteText, shortDate, TESTING_LABELS, WORKOUT_LABELS } from "../../insights/lib/expanded";
-import type { ExpandedInsights, ExpandedPlayer } from "../../insights/lib/expanded";
+import type { ExpandedInsights, ExpandedPlayer, ExpandedReportSummary } from "../../insights/lib/expanded";
 import { dateInZone, hasPlayerFilters, shiftDate, TIMEZONES } from "../../insights/lib/expandedQuery";
 import type { ExpandedRequest } from "../../insights/lib/expandedQuery";
 import type { WorkspaceReportView } from "../lib/adminNavigation";
@@ -11,9 +15,20 @@ import "./workspace-report.scss";
 
 export type WorkspacePlayerMetric = { playerId: string; status: "included"; player: ExpandedPlayer } | { playerId: string; status: "excluded" };
 export type WorkspaceReport = ExpandedInsights & { rosterMetrics?: WorkspacePlayerMetric[] };
-export interface WorkspaceMetricState { data: WorkspaceReport | null; loading: boolean; error: string; rebuilding?: boolean; legacy?: boolean }
+export interface WorkspaceMetricState { data: WorkspaceReport | null; loading: boolean; error: string; rebuilding?: boolean; legacy?: boolean; refresh?: () => void }
 export type WorkspaceSummaryProps = WorkspaceMetricState & { accountCount?: number; scopeLabel: string; request: ExpandedRequest };
 const views: [WorkspaceReportView, string][] = [["overview", "Overview"], ["testing", "Testing"], ["workouts", "Workouts"], ["usage", "Usage"]];
+
+/** Scope identity stays above the tabs; only evidence, never identity, waits for reporting. */
+export function WorkspaceScopeHeader({ data, accountCount, scopeLabel, children, accountScopeIsSubset = false }: Omit<WorkspaceSummaryProps, "data"> & { data: ExpandedReportSummary | null; breadcrumb?: ReactNode; children: ReactNode; accountScopeIsSubset?: boolean }) {
+  const completeScope = Boolean(data) && !accountScopeIsSubset;
+  const count = completeScope ? data!.roster.total : accountCount;
+  return <header className="workspace-scope-header" aria-label="Selected organization and team">
+    <div className="workspace-scope-heading"><div><h2>{scopeLabel}</h2></div>
+      {count !== undefined && <span className="workspace-scope-count">{count.toLocaleString()} {!completeScope && "loaded "}{count === 1 ? "player" : "players"}</span>}</div>
+    {children}
+  </header>;
+}
 
 /** Report views share one roster; tabs move focus before activating a reader. */
 export function WorkspaceReportTabs({ active, onChange }: { active: WorkspaceReportView; onChange(view: WorkspaceReportView): void }) {
@@ -65,12 +80,12 @@ export function WorkspaceSummary({ data, loading, error, legacy, accountCount, s
   return <section className="workspace-summary" aria-label="Roster and activity summary">
     <div className="workspace-summary-card"><span>Players</span><strong>{accountCount !== undefined ? accountCount.toLocaleString() : data ? data.roster.total.toLocaleString() : unavailable}</strong><p>{scopeLabel}{data && <><br />{data.roster.included.toLocaleString()} included in reporting{data.roster.excluded > 0 ? ` · ${data.roster.excluded} excluded` : ""}</>}</p></div>
     <div className="workspace-summary-card"><span>Testing coverage</span><strong>{unavailable || `${fullyTested.toLocaleString()}/${data!.roster.filtered.toLocaleString()}`}</strong><p>All six exercises · {request.testingWindow === "cumulative" ? `through ${request.endDate}` : period}</p></div>
-    <div className="workspace-summary-card"><span>Completed workouts</span><strong>{unavailable || data!.workouts.completed.toLocaleString()}</strong><p>Personal + assigned + extra · {period}</p></div>
+    <div className="workspace-summary-card"><span>Completed workouts</span><strong>{unavailable || data!.workouts.completed.toLocaleString()}</strong><p>Personal, assigned, extra and on the phone · {period}</p></div>
     <div className="workspace-summary-card"><span>Estimated active use</span><strong>{unavailable || minuteText(data!.usage.activeMinutes, data!.usage.collectedPlayers > 0)}</strong><p>{data ? `${data.usage.collectedPlayers}/${data.roster.filtered} players with collection` : "Measured website and app activity"}<br />{period}</p></div>
   </section>;
 }
 
-export function WorkspaceAttention({ data, onChange }: { data: ExpandedInsights; onChange(patch: Partial<ExpandedRequest>): void }) {
+export function WorkspaceAttention({ data, onChange }: { data: ExpandedReportSummary; onChange(patch: Partial<ExpandedRequest>): void }) {
   const noTests = data.testing.statuses.find(row => row.key === "noRecordedTests")?.count || 0;
   return <section className="workspace-attention" aria-label="Worth reviewing"><div><strong>{noTests.toLocaleString()}</strong><span>players with no recorded tests</span><button type="button" className="directory-text-button" disabled={!noTests} onClick={() => onChange({ view: "testing", testingStatus: "noRecordedTests", rosterSearch: "", cursor: "", page: 0 })}>Review these players</button></div><div><p>{data.testing.needsReview.toLocaleString()} reps need review · {(data.testing.unmatchedFailureReports || 0).toLocaleString()} unmatched failure reports</p><Link to="/admin/analysis">General technique review →</Link><small>The review tool uses its own selection; these counts do not open a filtered queue.</small></div></section>;
 }
@@ -85,6 +100,12 @@ export function WorkspaceMetricCells({ metric, loading, error, legacy }: Workspa
 }
 
 /** Every graph, metric card and explanation is visible without an extra disclosure. */
-export function WorkspaceReportDetails({ data, request, onChange }: { data: ExpandedInsights; request: ExpandedRequest; onChange(patch: Partial<ExpandedRequest>): void }) {
-  return <div className="workspace-report-details pt-insights"><ExpandedReport data={data} request={request} onChange={onChange} hidePlayerTable hidePlayerFilters onPrevious={() => {}} onNext={() => {}} playerLink={() => "#workspace-roster"} /></div>;
+export function WorkspaceReportDetails({ data, request, onChange, showPlayers = false, hideSummary = false, detailsPending = false, onFirstPage = () => {}, onNextPage = () => {}, playerLink = () => "#workspace-roster" }: {
+  data: ExpandedReportSummary; request: ExpandedRequest; onChange(patch: Partial<ExpandedRequest>): void;
+  showPlayers?: boolean; hideSummary?: boolean; detailsPending?: boolean; onFirstPage?: () => void; onNextPage?: () => void; playerLink?: (player: ExpandedPlayer) => string;
+}) {
+  if (request.view === "testing") return <div className="workspace-report-details pt-insights"><WorkspaceTesting data={data} request={request} onChange={onChange} detailsPending={detailsPending} /></div>;
+  if (request.view === "workouts") return <div className="workspace-report-details pt-insights"><WorkspaceWorkouts data={data} request={request} onChange={onChange} /></div>;
+  if (request.view === "usage") return <div className="workspace-report-details pt-insights"><WorkspaceUsage data={data} request={request} onChange={onChange} /></div>;
+  return <div className="workspace-report-details pt-insights"><ExpandedReport data={data} request={request} onChange={onChange} hidePlayerTable={!showPlayers} hideSummary={hideSummary} hidePlayerFilters page={request.page} previousLabel="First page" onPrevious={onFirstPage} onNext={onNextPage} playerLink={playerLink} /></div>;
 }

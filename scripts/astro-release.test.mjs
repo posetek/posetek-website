@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve, basename } from "node:path";
-import { composeAstroRelease } from "./build-astro-release.mjs";
+import { composeAstroRelease, parseAstroReleaseArgs } from "./build-astro-release.mjs";
 import { sha1, mergeAstroAssets } from "./astro-assets.mjs";
 
 async function fixture(run) {
@@ -218,4 +218,75 @@ test("marketing snapshot drift and unavailable live proof refuse before changing
     await assert.rejects(composeAstroRelease(root, snapshot), /Marketing snapshot|Live marketing|marketing snapshot|Both marketing/);
     assert.equal(await readFile(join(root, "production-dist/application.html"), "utf8"), "original app");
   });
+});
+
+async function isolatedFixture(context) {
+  const { root, put, files, baseline } = context;
+  for (const path of ["/feedback.html", "/coach-join.html"]) {
+    const bytes = await readFile(join(root, "app/astro-dist" + path), "utf8");
+    const original = bytes.replace("new.87654321.js", "existing.12345678.js");
+    files.set(path, original);
+    baseline.files.push({ path, sha: sha1(original), size: Buffer.byteLength(original) });
+    await put("production-dist" + path, original);
+  }
+  await put("deployment/homepage-baseline.json", JSON.stringify(baseline));
+}
+
+test("isolated preservation keeps exact feedback and enrollment bytes and records both final guards", async () => fixture(async context => {
+  await isolatedFixture(context);
+  const { root, put, files } = context, snapshot = await marketingFixture(root, put);
+  const receipt = await composeAstroRelease(root, { ...snapshot, preserveIsolatedEntries: true });
+  assert.equal(receipt.isolatedEntriesPreserved, true);
+  assert.equal(receipt.preservedFiles, files.size - 1, "Only the application is exempt from final baseline preservation");
+  assert.deepEqual(receipt.preservedIsolatedEntries.map(row => row.path), ["/feedback.html", "/coach-join.html"]);
+  for (const path of ["/feedback.html", "/coach-join.html"]) {
+    const original = files.get(path), entry = receipt.documents.find(row => row.path === path);
+    assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), original);
+    assert.equal(entry.sha, sha1(original)); assert.equal(entry.size, Buffer.byteLength(original));
+    assert.deepEqual(entry, receipt.preservedIsolatedEntries.find(row => row.path === path));
+  }
+  const saved = JSON.parse(await readFile(join(root, ".netlify/application-release-build.json"), "utf8"));
+  assert.deepEqual(saved.preservedIsolatedEntries, receipt.preservedIsolatedEntries);
+  assert.notEqual(await readFile(join(root, "production-dist/application.html"), "utf8"), "original app");
+}));
+
+test("isolated preservation rejects missing records, missing bytes, hash drift and size drift before changing application", async () => {
+  for (const state of ["missing-record", "missing-file", "hash", "size"]) for (const path of ["/feedback.html", "/coach-join.html"]) await fixture(async context => {
+    await isolatedFixture(context);
+    const { root, put, baseline } = context;
+    if (state === "missing-record") baseline.files = baseline.files.filter(row => row.path !== path);
+    if (state === "missing-file") await rm(join(root, "production-dist" + path));
+    if (state === "hash") await put("production-dist" + path, "tampered bytes");
+    if (state === "size") baseline.files.find(row => row.path === path).size++;
+    await put("deployment/homepage-baseline.json", JSON.stringify(baseline));
+    await assert.rejects(composeAstroRelease(root, { preserveIsolatedEntries: true }), /Both isolated entries require verified baseline records|ENOENT|Baseline not verified/);
+    assert.equal(await readFile(join(root, "production-dist/application.html"), "utf8"), "original app");
+  });
+});
+
+test("default full-site composition still rebuilds isolated entries", async () => fixture(async context => {
+  await isolatedFixture(context);
+  const receipt = await composeAstroRelease(context.root);
+  assert.equal(receipt.isolatedEntriesPreserved, undefined);
+  for (const path of ["/feedback.html", "/coach-join.html"]) {
+    assert.equal(await readFile(join(context.root, "production-dist" + path), "utf8"), await readFile(join(context.root, "app/astro-dist" + path), "utf8"));
+    assert.notEqual(receipt.documents.find(row => row.path === path).sha, sha1(context.files.get(path)));
+  }
+}));
+
+test("isolated preservation is independent of marketing preservation and cannot skip compiled-document validation", async () => fixture(async context => {
+  await isolatedFixture(context);
+  await context.put("app/astro-dist/feedback.html", "uncompiled feedback");
+  await assert.rejects(composeAstroRelease(context.root, { preserveIsolatedEntries: true }), /Uncompiled Astro document/);
+  assert.equal(await readFile(join(context.root, "production-dist/application.html"), "utf8"), "original app");
+}));
+
+test("Astro release CLI accepts both preservation flags in either order and rejects ambiguous flags", () => {
+  const expected = { marketingSnapshot: resolve("manifest.json"), preserveIsolatedEntries: true };
+  assert.deepEqual(parseAstroReleaseArgs([]), {});
+  assert.deepEqual(parseAstroReleaseArgs(["--preserve-marketing", "manifest.json"]), { marketingSnapshot: resolve("manifest.json") });
+  assert.deepEqual(parseAstroReleaseArgs(["--preserve-isolated-entries"]), { preserveIsolatedEntries: true });
+  assert.deepEqual(parseAstroReleaseArgs(["--preserve-marketing", "manifest.json", "--preserve-isolated-entries"]), expected);
+  assert.deepEqual(parseAstroReleaseArgs(["--preserve-isolated-entries", "--preserve-marketing", "manifest.json"]), expected);
+  for (const args of [["--unknown"], ["--preserve-marketing"], ["--preserve-marketing", "--preserve-isolated-entries"], ["--preserve-isolated-entries", "extra"], ["--preserve-isolated-entries", "--preserve-isolated-entries"], ["--preserve-marketing", "one", "--preserve-marketing", "two"]]) assert.throws(() => parseAstroReleaseArgs(args), /Usage:/);
 });

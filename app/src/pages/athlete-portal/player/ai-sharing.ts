@@ -15,6 +15,29 @@ export function assertAISharingEnabled(uid: string): void {
   if (off) throw aiSharingError('ai_consent_required', 'AI sharing is off on this browser. Review AI sharing before using AI.');
 }
 
+// Existing deterministic coach-memory privacy commands remain available after
+// withdrawal. This does not authorize the action: the gateway still verifies
+// athlete ownership, deletion locks, exact action fields and the revision.
+export function assertAIChatEnabled(uid: string, body: Record<string, unknown>): void {
+  const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
+  const keys = (value: Record<string, unknown>, expected: string[]) => Object.keys(value).length === expected.length && expected.every(key => Object.hasOwn(value, key));
+  const context = body.context;
+  if (body.capability === 'pose_chat' && object(context) &&
+      keys(context, ['coachWorkspaceVersion', 'memoryAction']) && context.coachWorkspaceVersion === 1 && object(context.memoryAction)) {
+    const action = context.memoryAction;
+    if (action.kind === 'list' && keys(action, ['kind'])) return;
+    if (Number.isSafeInteger(action.expectedRevision) && Number(action.expectedRevision) >= 0) {
+      if (action.kind === 'forgetAll' && keys(action, ['kind', 'expectedRevision'])) return;
+      if (action.kind === 'setEnabled' && action.enabled === false && keys(action, ['kind', 'enabled', 'expectedRevision'])) return;
+      if (action.kind === 'forget' && keys(action, ['kind', 'memoryId', 'expectedRevision']) &&
+          typeof action.memoryId === 'string' && action.memoryId.length > 0 &&
+          new TextEncoder().encode(action.memoryId).length <= 180 && !action.memoryId.includes('/') &&
+          action.memoryId !== '.' && action.memoryId !== '..') return;
+    }
+  }
+  assertAISharingEnabled(uid);
+}
+
 // Mirrors the gateway's code-only exemptions. Saved-workout execution and
 // assessment continue to work when AI sharing is off; new capabilities fail closed.
 const codeOnly = new Set(['activate_personalized_plan', 'discard_personalized_plan', 'apply_workout_draft',

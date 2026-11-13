@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "status": "published-and-verified",
+  "productionDeploy": "6af598a062c763422296510e",
+  "predecessorDeploy": "6af5027b28714c6f1147b4ec",
+  "publishedAtUtc": "2026-11-12T10:56:25.482Z",
+  "promotion": "Verified draft promoted without rebuilding (restoreSiteDeploy). The live deploy was re-read immediately before promotion and was still the predecessor.",
+  "authorization": "The founder instructed on November 12, 2026 that this work be merged and deployed, that held items stay out, and that reviewed results may be removed.",
+  "websiteSourcePRs": [148, 149, 150, 151, 152],
+  "websiteMergeCommits": {
+    "148": "737e729",
+    "149": "8ef96dc",
+    "150": "97a0764",
+    "151": "1f93ad9",
+    "152": "c523d2b"
+  },
+  "websiteRuntimeBranch": "runtime/player-workspace",
+  "websiteRuntimeCommit": "c86fb8f",
+  "websiteRuntimeBase": "cb70512",
+  "websiteRuntimeBaselineCommit": "0f23d6f",
+  "websiteRuntimeComposition": [
+    "9e01d96 reviewed results removed (founder's decision)",
+    "2453964 PR #148 app changes",
+    "3d20634 PR #149 app changes",
+    "82e4b0c baseline reconciled to live 6af5027b",
+    "8f82667 PR #150 (no \"This result changed\" message)",
+    "f8a37d4 PR #151 (plan setup offers AI sharing)",
+    "c866ac7 main's CoachChat.tsx: the coach memory envelope the gateway accepts (main 2a51913 and its memory-only context)",
+    "c86fb8f PR #152 (athlete's name in the staff week title)"
+  ],
+  "websiteHostedCI": "passed on all five source PRs",
+  "differencesFromMain": {
+    "mainCommit": "c523d2b",
+    "keptFromReleasedRuntime": [
+      "app/src/pages/athlete-portal/player/gateway.ts",
+      "app/src/pages/athlete-portal/player/ai-sharing.ts",
+      "app/src/pages/athlete-portal/views/AiCoachView.tsx",
+      "their tests, and one expectation in CoachChat.test.tsx (the released transport sends no request id)",
+      "app/src/pages/athlete-portal/views/LeaderboardsView.tsx (\"Best recorded result\" wording)"
+    ],
+    "removed": "Reviewed results in the athlete portal (the estimates and retests card and per-rep entries), on the founder's decision."
+  },
+  "heldAndNotShipped": [
+    "The repository's report reader (render.mjs, report.css); the live reader is carried forward unchanged",
+    "Privacy and support copy",
+    "Ball Striking admin",
+    "Cumulative platform time (#131)",
+    "Yoga library admin",
+    "Jump review admin routes (#109)",
+    "The shared AI chat transport (only the coach memory envelope was taken)"
+  ],
+  "servedFiles": 2845,
+  "providerRecords": 2846,
+  "preservedFiles": 2800,
+  "removedFiles": 0,
+  "changed": {
+    "/application.html": {
+      "sha256": "ef790d03b53a7e33934cc743a67f97a021153daed0971a4a2d6143b9288101ab",
+      "sha1": "92441c2cc9db15f43caf7d0a2f503e1b3363d33c",
+      "bytes": 16041
+    }
+  },
+  "addedAssets": 44,
+  "addedAssetPaths": [
+    "/_astro/adminpage.bby3dnst.js",
+    "/_astro/adminrecentworkouts.cq87f8en.js",
+    "/_astro/analysisworkspace.c7ejnxm7.js",
+    "/_astro/applicationroot.derpsa5k.js",
+    "/_astro/athleteportalpage.ctcivbo6.css",
+    "/_astro/athleteportalpage.mgfiwham.js",
+    "/_astro/athletestats.midg0let.js",
+    "/_astro/coachdetail.u9pocpm2.js",
+    "/_astro/drilldashboard.dp8bqkmy.js",
+    "/_astro/drilldetail.cfesnaya.js",
+    "/_astro/drillform.bhlc3l3i.js",
+    "/_astro/drilllibrary.ytptvtsg.js",
+    "/_astro/drillsharepage.diemz9yf.js",
+    "/_astro/feedpage.djrbrn38.js",
+    "/_astro/insightspage.dqsbmkau.js",
+    "/_astro/monitoraccounts.b6xbt9ci.js",
+    "/_astro/personalizedprograms.cr9x9nnn.js",
+    "/_astro/playerdetail.bfvwuylp.js",
+    "/_astro/playerworkouthistory.byz_nbc4.js",
+    "/_astro/poseplayback.b2uhz_-z.js",
+    "/_astro/programspage.c7rfwkzg.js",
+    "/_astro/reptools.bext3683.js",
+    "/_astro/resultvalidation.dxduot9l.js",
+    "/_astro/supportpage.ddqqecqr.js",
+    "/_astro/workouteditor.c1mg15d1.js",
+    "/_astro/workouthistory.bg5vpdfh.js",
+    "/_astro/admin-directory-lightning.cuobqcpf.js",
+    "/_astro/catalog.bjhrzk3p.js",
+    "/_astro/clock.ddcds7vv.js",
+    "/_astro/data.l5s0joxm.js",
+    "/_astro/drillv2.dxe-lxf0.js",
+    "/_astro/editor.arcdo_wk.js",
+    "/_astro/loaders.xp1wmliq.js",
+    "/_astro/model.cwnvpopa.css",
+    "/_astro/model.dcwr_rci.js",
+    "/_astro/planv3.cyf2u4wq.js",
+    "/_astro/plannerscope.dkneg81_.js",
+    "/_astro/pose-playback.dats26d1.js",
+    "/_astro/repevidence.mcc4zpmf.js",
+    "/_astro/reptools.bgigvirr.js",
+    "/_astro/reptoolsdata.dwmjjzet.js",
+    "/_astro/replay-tracking.tupe7kc-.js",
+    "/_astro/results.ck-qhjkk.js",
+    "/_astro/v4-loader.0y9lljkn.svg"
+  ],
+  "artifactManifestSha256": "1d34b9c216de512868da483128ed0f2e7be7cf13ba470e53dd4fc38e5d0841f6",
+  "orderedHeaders": 13,
+  "orderedRoutes": 12,
+  "storedConfiguration": {
+    "predecessorSha1": "58b31e8c0c415a6974f0b26b8fab0d0ff6613bf2",
+    "productionSha1": "db11e7c2a85daa3a5b23c1158cd1f07b42cd8998",
+    "onlyDifference": "build.publish"
+  },
+  "protectedBaselineFiles": 2843,
+  "localRecoveryMappings": 37,
+  "backendState": {
+    "getAthleteTestReport": "Version 2 since 2026-11-12T09:14Z (station sprint fix); recorded in posetek-backend PR #159.",
+    "clubComparisonData": "benchmarks/club-vacaville-united-soccer-club and clubTestResults written 2026-11-12 08:27Z and 08:43Z by the owner.",
+    "getAthleteRepMedia": "Version 2 (2026-09-17) when the website was published. Version 3 was deployed 2026-11-12T17:19:21Z with the one-function package of posetek-backend PR #160: it signs tracking.json for sprint, change-of-direction and dribbling attempts. getAthleteEffectiveResults was verified unchanged at version 5. Backend receipt: release/receipts/testing-results-media-20261112.json.",
+    "notDeployed": ["getAthleteTestComparison", "getClubTestComparison"]
+  },
+  "verification": {
+    "runtime": {
+      "typescript": "passed",
+      "frontendTests": "passed",
+      "lint": "passed",
+      "svelteCheck": "passed",
+      "staticFirestoreTransport": "passed",
+      "build": "passed inside the release builder"
+    },
+    "builtArtifactServedLocally": {
+      "adminWalk": "64 of 64",
+      "demoAthleteWalk": "16 of 16",
+      "coachMemory": "lists saved memories; gateway 200",
+      "planSetupWithAiSharingOff": "prompt and choice shown; no request created"
+    },
+    "draft": {
+      "inventoryMatchesArtifact": true,
+      "configurationEqualsPredecessor": true,
+      "httpChecksAgainstPredecessorPermalink": "134 of 134",
+      "signedOutRouteLoads": "28 of 28 in Chromium and WebKit",
+      "adminWalk": "64 of 64",
+      "demoAthleteWalk": "16 of 16",
+      "staffPagesAsAdmin": "12 of 12",
+      "localPathsInChangedOrAddedFiles": 0
+    },
+    "live": {
+      "publishedDeployIsTheDraft": true,
+      "applicationSha256Prefix": "ef790d03b53a",
+      "addedAssetsServedWithExactBytes": "44 of 44",
+      "reportReaderFilesUnchanged": 3,
+      "servedMarketingPagesUnchanged": 2,
+      "signedOutRouteLoads": "28 of 28 in Chromium and WebKit",
+      "demoAthlete": "walk 16 of 16; four tabs with no error; Coach memory opens",
+      "admin": "walk 64 of 64; staff pages 12 of 12"
+    },
+    "rules": "A signed-in athlete account in another club reads benchmarks/club-vacaville-united-soccer-club (200) and is refused clubTestResults (403).",
+    "readOnly": "Every signed-in check was read-only: nothing typed, sent, saved, started or generated; \"Allow AI sharing\" not pressed."
+  },
+  "notClaimed": [
+    "A real athlete's session. The athlete checks used the synthetic demo athlete, whose club has no comparison document, so the club chart has been seen only by staff accounts.",
+    "Sending a coach message, building a workout or a plan, or saving an AI sharing choice on the hosted site.",
+    "A coach or manager account.",
+    "Real-device behaviour.",
+    "The npm dependency audit and the root tooling tests on the final runtime commit."
+  ],
+  "observed": [
+    "A built site files an automatic error report (functions/internal, status 0) when a request is cut off by a reload or navigation; the earlier site did the same. The first artifact walk filed four under the admin test account before the walk held them back.",
+    "The AI gateway refuses draft origins, so Coach chat and memory cannot be exercised on a draft address.",
+    "Run in parallel, the admin walk drew three 403 responses from the draft host, each followed by a successful reload; run one lane at a time there were none."
+  ],
+  "recovery": "Compare fresh serving state, then restore 6af5027b28714c6f1147b4ec: netlify api restoreSiteDeploy --data '{\"site_id\":\"b1ccf990-286c-4367-bb67-ca0d9ea2a020\",\"deploy_id\":\"6af5027b28714c6f1147b4ec\"}'. That restores the previous application and keeps every report. A source revert alone does not republish.",
+  "followUps": [
+    "The next one-pager deploy uploads a full copy of the site; unless that copy starts from 6af598a0 it silently puts the earlier /application.html back.",
+    "getAthleteRepMedia version 3 is deployed (2026-11-12T17:19Z); a browser check of an athlete seeing a tracking replay is still open.",
+    "Drop automatic error reports for cut-off requests at the source (lib/user-issues.ts).",
+    "Club comparison data exists for one club; its builder is not in a repository and clubTestResults has no client rule.",
+    "The released and main AI transports still differ.",
+    "The account button's initials read a field player records do not carry."
+  ]
+}

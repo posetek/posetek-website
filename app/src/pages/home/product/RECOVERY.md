@@ -19,7 +19,7 @@ This section records the initial recovery. The later annotation release
 five examples reference mobile drills DRB-006, DRB-009, PAS-001, SHT-003 and SHT-004;
 the sample opens ready to Start or Customize. The initial element-tree and catalog
 equality claims below apply to the recovery checkpoint, not all subsequent edits.
-See `deployment/ANNOTATION_UPDATE_PRODUCTION.json` at the repository root for the
+See `docs/releases/receipts/ANNOTATION_UPDATE_PRODUCTION.json` at the repository root for the
 latest release and `product-demo.test.ts` / `product-ui.test.tsx` for current checks.
 
 | Published asset | Editable source |

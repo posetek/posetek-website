@@ -14,6 +14,7 @@ import { locationFromRequest } from './guided-workout';
 import type { SetupDraft } from './training-access';
 import PlayerWorkout from './PlayerWorkout';
 import AISharingControl from './AISharingControl';
+import { PlayerHeader } from './PlayerShell';
 import './personal-workouts.css';
 
 export function PersonalPrescription({ proposal, catalog = [] }: { proposal: Row; catalog?: Row[] }) {
@@ -36,9 +37,13 @@ function DrillResources({ drill }: { drill?: Row }) {
 
 type Props = { store: PersonalWorkoutStore; playerId: string; athlete: Row; config: Row | null; preview: boolean;
   source?: { workout: Row; reference?: SourceWorkout }; initialWorkout?: Row; initialCreate?: boolean; initialRequest?: string; initialHandoff?: Row; initialConversation?: boolean;
-  coachOnly?: boolean; onReview?: (proposal: Row) => void; onSelection?: (id?: string) => void; onBack: () => void; onCompleted?: () => void };
+  coachOnly?: boolean; onReview?: (proposal: Row) => void; onSelection?: (id?: string) => void; onBack: () => void; onCompleted?: () => void;
+  /** Inside a Workouts page: the page header replaces this hub's own back link and title, and Back closes it. */
+  embedded?: boolean;
+  /** Reports whether this hub's guided workout fills the screen. */
+  onGuided?: (active: boolean) => void };
 
-export default function PersonalWorkoutHub({ store, playerId, athlete, config, preview, source, initialWorkout, initialCreate = false, initialRequest = '', initialHandoff, initialConversation = false, coachOnly = false, onReview, onSelection, onBack, onCompleted }: Props) {
+export default function PersonalWorkoutHub({ store, playerId, athlete, config, preview, source, initialWorkout, initialCreate = false, initialRequest = '', initialHandoff, initialConversation = false, coachOnly = false, onReview, onSelection, onBack, onCompleted, embedded = false, onGuided }: Props) {
   const [mode, setMode] = useState<'list' | 'chat' | 'saved'>(source || initialRequest || initialCreate || initialConversation ? 'chat' : initialWorkout ? 'saved' : 'list');
   const [selected, setSelected] = useState<Row | null>(initialWorkout || null), [playing, setPlaying] = useState<Row | null>(null);
   const [editing, setEditing] = useState<Row | null>(null), [sourceRef, setSourceRef] = useState(source?.reference);
@@ -66,7 +71,8 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
   const blocked = store.saving || store.scheduleRevision === null || !!(store.pending && !store.pending.terminalFailed) || store.conversationLoading;
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
-  const fail = (e: unknown) => store.setError(e instanceof Error ? e.message : 'The request could not finish. Your last reviewed draft is preserved.');
+  useEffect(() => { onGuided?.(!!playing); }, [playing]);
+  const fail =(e: unknown) => store.setError(e instanceof Error ? e.message : 'The request could not finish. Your last reviewed draft is preserved.');
   const openSaved = (w: Row) => { setSelected(w); setMode('saved'); setSetup(setupFromIntake(w.intake)); setSetupOpen(true); setStartPain(''); setSetupNotice(''); };
   const confirmSetup = (next: SetupDraft) => { setSetup(next); setSetupOpen(false); setSetupNotice(''); confirmedRequest.current = requestText; rememberSetup(store.ownerUid, playerId, next); };
   useEffect(() => {
@@ -128,10 +134,11 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
   };
   const start = async () => { if (selected && access && startPain === 'no') try { setPlaying(await store.start(selected, { equipmentConfirmed: true, painFlag: false, currentAccess: { ...selected.intake, ...access, painFlag: false } })); } catch (e) { fail(e); } };
   const notice = <>{store.error && <p className="player-error" role="alert">{store.error}</p>}{store.saving && <p role="status">{store.status || 'Checking your workout…'}</p>}{store.pending && !store.saving && !store.pending.terminalFailed && <section className="portal-card"><p>Your request is saved. Recover its result to continue.</p><button onClick={() => void store.recover()}>Recover saved request</button></section>}</>;
-  if (playing) return <>{notice}<PlayerWorkout key={playing.id} workout={playing} store={store.adapter} playerId={playerId} preview={preview} onExit={() => { setPlaying(null); setMode('list'); }} onCompleted={onCompleted} /></>;
+  if (playing) return <>{notice}<PlayerWorkout key={playing.id} workout={playing} store={store.adapter} playerId={playerId} preview={preview} onExit={() => { setPlaying(null); if (!embedded) setMode('list'); }} onCompleted={onCompleted} /></>;
   if (!store.enabled) return <section className="portal-card"><h2>Personal workouts</h2><p>Personal workout tools are not enabled for this account yet.</p><button onClick={onBack}>Back to training</button></section>;
-  return <section className={`personal-workouts${coachOnly ? ' personal-coach-creation' : ''}`}>
-    {!coachOnly && <><button className="text-button" disabled={blocked} onClick={() => { if (mode === 'list') onBack(); else { setMode('list'); onSelection?.(); } }}>← {mode === 'list' ? 'Training' : 'Personal workouts'}</button><p className="eyebrow">Your own sessions</p><h1>{mode === 'chat' ? p ? 'Your workout conversation.' : 'Create your workout.' : mode === 'saved' ? selected?.title || 'Your workout' : 'Personal workouts'}</h1></>}{notice}
+  return <section className={`personal-workouts${coachOnly ? ' personal-coach-creation' : ''}${embedded ? ' personal-embedded' : ''}`}>
+    {embedded ? <PlayerHeader title={mode === 'chat' ? p ? 'Your workout' : 'Create your workout' : mode === 'saved' ? 'Your workout' : 'Personal workouts'} onBack={() => { if (!blocked) onBack(); }} />
+      : !coachOnly && <><button className="text-button" disabled={blocked} onClick={() => { if (mode === 'list') onBack(); else { setMode('list'); onSelection?.(); } }}>← {mode === 'list' ? 'Training' : 'Personal workouts'}</button><p className="eyebrow">Your own sessions</p><h1>{mode === 'chat' ? p ? 'Your workout conversation.' : 'Create your workout.' : mode === 'saved' ? selected?.title || 'Your workout' : 'Personal workouts'}</h1></>}{notice}
     {mode === 'list' && <><p>Tell your AI coach what you want to work on, review your session, then make it yours.</p><AISharingControl preview={preview} /><button className="primary-cta" disabled={blocked} onClick={() => begin()}>Create workout</button>
       {!!store.conversations?.length && <section className="portal-card"><h2>Workout conversations</h2><p className="muted-copy">Private drafts and earlier revisions stay here.</p>{store.conversations.map(c => <button className="player-list-button" key={c.id} disabled={blocked} onClick={() => void openConversation(c.id)}><strong>{c.title || 'Workout conversation'}</strong><small>{c.publishedWorkoutId ? 'Published workout · continue conversation' : 'Private draft · continue conversation'}</small></button>)}</section>}
       {!store.loaded ? <p role="status">Loading your workouts…</p> : !store.workouts.length ? <section className="portal-card"><h2>Your first session starts here</h2><p>Create a single workout without a multiweek plan. Review the prescription before publishing it.</p></section> : <div className="personal-workout-list">{[...store.workouts].sort((a, b) => String(b.scheduledDate).localeCompare(String(a.scheduledDate))).map(w => { const log = store.logs[w.workoutId]; return <button className="player-list-button" key={w.workoutId} disabled={blocked} onClick={() => openSaved(w)}><span className="personal-workout-meta">{log?.endedAt ? 'Finished' : log ? 'Resume' : 'Ready'} · {w.scheduledDate}</span><strong>{w.title}</strong><small>{w.estimatedMinutes} min · {w.blocks?.length || 0} drills</small></button>; })}</div>}
@@ -155,7 +162,7 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
       {log?.endedAt ? <p className="workout-pause-note">{log.endReason === 'completed' ? 'Completed' : log.endReason === 'pain' ? 'Stopped for pain' : 'Ended early'} · {Math.floor(Number(log.elapsedSeconds || 0) / 60)}:{String(Number(log.elapsedSeconds || 0) % 60).padStart(2, '0')} active. Your completed sets remain in history.</p> : <>
         {setupOpen ? <TrainingSetup value={setup} onChange={setSetup} onConfirm={confirmSetup} disabled={blocked} title={log ? 'Confirm your setup to resume' : 'Your setup for today'} /> : <section className="training-setup-summary"><div><strong>Confirmed for today</strong><p>{setupSummary(setup)}</p></div><button className="hub-secondary" disabled={blocked} onClick={() => setSetupOpen(true)}>Change setup</button></section>}
         <fieldset className="portal-card" disabled={blocked}><legend>{log ? 'Ready to resume?' : 'Before you start'}</legend><p>We’ll check this prescription against the equipment and space you confirmed. If your setup has changed, ask AI for a suitable revision below.</p><label>Any pain or restriction today?<select value={startPain} onChange={e => setStartPain(e.target.value)}><option value="">Choose an answer</option><option value="no">No</option><option value="yes">Yes — pause training</option></select></label><button className="primary-cta" disabled={!access || startPain !== 'no' || !personalCapabilityEnabled(config, 'start_personal_workout', preview)} onClick={() => void start()}>{log ? 'Resume workout' : 'Start workout'}</button></fieldset>
-        {log && <button className="hub-secondary" disabled={blocked} onClick={async () => { try { await store.adapter.finish(`personal_${selected.workoutId}`, 'stopped', log.elapsedSeconds || 0); setMode('list'); } catch (e) { fail(e); } }}>End this session and keep my progress</button>}
+        {log && <button className="hub-secondary" disabled={blocked} onClick={async () => { try { await store.adapter.finish(`personal_${selected.workoutId}`, 'stopped', log.elapsedSeconds || 0); if (embedded) onBack(); else setMode('list'); } catch (e) { fail(e); } }}>End this session and keep my progress</button>}
       </>}
       <button className="hub-secondary" disabled={blocked} onClick={() => { if (!log && selected.personalConversationId) { void openConversation(selected.personalConversationId, setup); } else begin(snapshot, !!log); }}>{log ? 'Ask AI for a personal copy' : 'Ask AI to change this workout'}</button></>; })()}
   </section>;

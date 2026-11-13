@@ -60,7 +60,7 @@ describe("four-view Insights report", () => {
     const request = { ...base, view: "workouts" as const }, data = previewInsights(request);
     data.workouts = { ...data.workouts, started: 4, completed: 1, endedEarly: 1, inProgress: 3, abandoned: 0, unknownEnding: 0, outcomeEvents: 5, timerRecords: 1, estimatedRecords: 1, unknownDuration: 3, knownPrescription: 2, unknownPrescription: 3, allPrescribedSetsCompleted: 1 };
     const html = renderToStaticMarkup(<MemoryRouter><ExpandedReport data={data} request={request} onChange={() => {}} onPrevious={() => {}} onNext={() => {}} playerLink={() => "#player"} /></MemoryRouter>);
-    expect(html).toContain("Workout outcomes"); expect(html).toContain("5 distinct workout logs");
+    expect(html).toContain("Workout outcomes"); expect(html).toContain("5 distinct workouts");
     expect(html).toContain("Completed as logged"); expect(html).toContain("1/5 logs with timers");
     expect(html).toContain("3/5 logs have unknown duration"); expect(html).toContain("2/5 logs have a known prescription");
     expect(html).toContain("different outcomes for the same player");

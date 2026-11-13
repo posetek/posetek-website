@@ -13,17 +13,25 @@ export type PlayerWorkoutStore = WorkoutStore & {
   finish: (workoutId: string, reason: string, activeSeconds?: number) => Promise<void>;
 };
 
-export function usePlayerWorkouts(playerId: string, planId: string | null, preview: boolean): PlayerWorkoutStore {
+/**
+ * `walkthrough` is an admin following a workout on an athlete (`WorkoutExecutionMode.walkthrough`):
+ * the athlete's plan and logs are read as usual, and the walkthrough's own log stays in memory.
+ */
+export function usePlayerWorkouts(playerId: string, planId: string | null, preview: boolean, walkthrough = false): PlayerWorkoutStore {
   const [logs, setLogs] = useState<Record<string, Row>>({});
   const [workouts, setWorkouts] = useState<Row[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const current = useRef(logs); current.current = logs;
+  // A walkthrough's logs, never written and never shown as the athlete's own progress.
+  const local = useRef<Record<string, Row>>({}), [, setLocalVersion] = useState(0);
+  const inMemory = preview || walkthrough;
   const busy = useRef(false);
   const epoch = useRef(0);
   useEffect(() => {
     epoch.current++;
+    local.current = {};
     setLogs({}); setWorkouts([]); setLoaded(preview); setError(null);
     if (preview || !planId) return;
     let active = true;
@@ -36,24 +44,26 @@ export function usePlayerWorkouts(playerId: string, planId: string | null, previ
       if (active) setWorkouts(s.docs.map(d => ({ ...d.data(), id: d.id })));
     }, e => { if (active) setError(e.message); });
     return () => { active = false; epoch.current++; stop(); stopWorkouts(); };
-  }, [playerId, planId, preview]);
+  }, [playerId, planId, preview, walkthrough]);
 
   const run = async <T,>(action: () => Promise<T>): Promise<T> => {
     if (busy.current) throw new Error('Please wait for your progress to save.');
     busy.current = true; setSaving(true); setError(null);
     try { return await action(); }
-    catch (e: any) { if (!preview && e.code) captureIssue(e, 'workout_save', { playerId }); setError(e.message || 'Could not save. Check your connection and retry.'); throw e; }
+    catch (e: any) { if (!inMemory && e.code) captureIssue(e, 'workout_save', { playerId }); setError(e.message || 'Could not save. Check your connection and retry.'); throw e; }
     finally { busy.current = false; setSaving(false); }
   };
   const remember = (id: string, log: Row, token: number) => {
     if (epoch.current !== token) return;
+    if (walkthrough) { local.current = { ...local.current, [id]: { ...log, id } }; setLocalVersion(v => v + 1); return; }
     current.current = { ...current.current, [id]: { ...log, id } }; setLogs(current.current);
   };
+  const memoryLogs = () => walkthrough ? local.current : current.current;
   const start = (reviewed: Row) => run(async () => {
     const token = epoch.current;
     if (!loaded) throw new Error('Wait for workout history to load, then try again.');
     let saved: Row;
-    if (preview) saved = { ...(current.current[reviewed.id] || initialLog(reviewed, new Date())), timerStartedHere: !current.current[reviewed.id] };
+    if (inMemory) saved = { ...(memoryLogs()[reviewed.id] || initialLog(reviewed, new Date())), timerStartedHere: !memoryLogs()[reviewed.id] };
     else saved = await startPlayerWorkout(playerId, reviewed);
     if (epoch.current !== token) throw new Error('The selected player changed.');
     const { timerStartedHere, ...log } = saved;
@@ -63,8 +73,8 @@ export function usePlayerWorkouts(playerId: string, planId: string | null, previ
   const mutate = (id: string, patch: (old: Row) => Row) => run(async () => {
     const token = epoch.current;
     let saved: Row;
-    if (preview) {
-      const old = current.current[id];
+    if (inMemory) {
+      const old = memoryLogs()[id];
       if (!old || old.endedAt) throw new Error('This workout is not active.');
       saved = { ...old, ...patch(old) };
     } else saved = await mutatePlayerWorkout(playerId, id, patch);
@@ -72,11 +82,11 @@ export function usePlayerWorkouts(playerId: string, planId: string | null, previ
   });
   const saveBlock = (id: string, blockId: string, row: Row | null) => mutate(id, old => ({ blocks: patchBlock(old, blockId, row) }));
   const finish = (id: string, reason: string, activeSeconds?: number) => mutate(id, () => ({
-    endedAt: preview ? new Date() : firebase.firestore.Timestamp.now(), endReason: reason,
+    endedAt: inMemory ? new Date() : firebase.firestore.Timestamp.now(), endReason: reason,
     ...(activeSeconds !== undefined ? { activeSeconds: Math.max(0, activeSeconds) } : {}),
   }));
   return { workouts, logs, logsLoaded: loaded, error, saving, start, saveBlock, finish,
-    logFor: id => current.current[id] || null,
+    logFor: id => (walkthrough ? local.current[id] : null) || current.current[id] || null,
     // Player execution starts explicitly, before mounting the guided player.
     beginWorkout: () => {},
     updateBlock: (id, row) => { void saveBlock(id, row.blockId, row).catch(() => {}); },

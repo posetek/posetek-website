@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "status": "published-and-verified",
+  "productionDeploy": "6af626e37d3ff00c50b761d9",
+  "predecessorDeploy": "6af598a062c763422296510e",
+  "publishedAtUtc": "2026-11-12T20:56:46.338Z",
+  "websiteSourcePR": 157,
+  "websiteSignInSourceCommit": "ac0849383c5ebc466d0be1c656e5f04f18f93f96",
+  "websiteMergeCommit": "c379f905e2388e8b3cd86e72b64d71ef33d1f56b",
+  "promotion": "Verified draft promoted without rebuilding after confirming the predecessor still served.",
+  "websiteHostedCI": "Owner authorized proceeding without waiting for hosted CI.",
+  "servedFiles": 2846,
+  "providerRecords": 2847,
+  "preservedFiles": 2844,
+  "removedFiles": 0,
+  "replaced": [
+    {
+      "path": "/player-signin.html",
+      "sha": "4efae88a5962ad91b393bbd92f819cef7c03fc85",
+      "size": 6604
+    }
+  ],
+  "added": [
+    {
+      "path": "/_astro/playersigninroot.bermr_um.js",
+      "sha": "cd92209ff0b2a7ff45b30ac9fb19e8fbb0e6e3db",
+      "size": 87040
+    }
+  ],
+  "artifactManifestSha256": "92f292bb9746fbdf800ef5f9da361fd04a1958af8571fc07bc16f67bd2eaef26",
+  "configuration": "13 header rules and 12 redirects preserved in order; only the resolved publish directory differed.",
+  "preservationBaseline": {
+    "files": 2844,
+    "localRecoveryMappings": 37
+  },
+  "verification": {
+    "localAuthenticatedChromium": "Firebase emulators at the pinned Backend commit: prefilled signup, verification request, exact-player Stats, reload, existing sign-in, organization signup, explicit Training and report links, invitation reuse and stranger denial. Some runs timed out at dev hydration; a diagnostic rerun passed.",
+    "localChecks": "181 focused frontend tests, 131 tooling tests, 25 guest browser checks, app and isolated sign-in builds, Svelte, lint, static Firestore checks and the ordinary predecessor preservation guard passed. Full frontend suite: 2,828 passed; a replay test timed out on branch and unchanged main.",
+    "draftAndProduction": "Exact provider inventory; sign-in document and all its assets matched; application and report reader matched; 12 routes preserved status and security headers; signed-out Chromium verified the existing-player form and synthetic prefilled-code entry with external requests blocked.",
+    "limits": "No live account sign-in, real invitation claim, report send, or Backend/rules/native deployment."
+  }
+}

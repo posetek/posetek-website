@@ -1,6 +1,8 @@
+import type { AdminTesting } from "../../admin/lib/workspaceTesting";
 import type { ExpandedRequest } from "./expandedQuery";
 import { shiftDate } from "./expandedQuery";
 import { workoutMinutes } from '../../../lib/workout-duration';
+import type { AdminActivityReportData, AdminPlayerActivity } from '../../admin/lib/adminActivity';
 export type InsightScope = { kind: "coachRoster"; coachId?: string } | { kind: "global" } | { kind: "organization"; organizationId: string } | { kind: "team"; organizationId: string; teamId: string };
 export type CountGroup = { key: string; count: number };
 export type InsightAccess = "admin" | "manager" | "coach";
@@ -25,19 +27,26 @@ export interface CoachTestingOverview {
   improvingPlayers: CoachTestingPlayer[]; reviewPlayers: CoachTestingPlayer[];
 }
 export interface ExpandedPlayer {
+  adminReporting?: AdminPlayerActivity;
   id: string; firstName: string; lastName: string; organizationId: string; organizationName: string; teamId: string | null; teamName: string | null;
   division: string; age: number | null; ageBand: string; registered?: boolean; signupInvitationReady?: boolean;
   testing: { status: string; exercisesComplete: number; exerciseKeys: string[]; recordedDocuments: number; distinctAttempts: number; qualifyingTests: number; dateUnknownAttempts?: number; hasDateUnknownAttempts?: boolean };
   performance?: { d1: number | null; change: number | null; lastTestDate: string | null; previousTestDate: string | null;
     sessionsDone: number | null; sessionsPlanned: number | null; activePlan: boolean; planAgeDays: number | null; needsYouReasons: string[];
     coachFocus?: { version: 1; completedInPeriod: number | null; measuredTests: CoachMeasuredTest[] } };
-  workouts: { status: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number; allPrescribedSetsCompleted: number; unknownPrescription: number; outcomeEvents?: number; timerRecords?: number; estimatedRecords?: number };
+  workouts: { status: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number; allPrescribedSetsCompleted: number; unknownPrescription: number; outcomeEvents?: number; timerRecords?: number; estimatedRecords?: number;
+    /** Sessions recorded on the player's phone and counted above; absent on an earlier reporting service. */
+    onDeviceEvents?: number;
+    /** The same totals from saved workout logs alone, for comparison with the logs a page lists. */
+    savedLogs?: { completed: number; timerMinutes: number; estimatedMinutes: number; timerRecords: number; estimatedRecords: number } };
   usage: { status: string; collected: boolean; webCollected: boolean; iosCollected: boolean; activeMinutes: number; webMinutes: number; iosMinutes: number; activeDays: number };
 }
 /** Optional admin-only metrics for account rows; excluded history is never returned. */
 export type RosterMetric = { playerId: string; status: "included"; player: ExpandedPlayer }
   | { playerId: string; status: "excluded" };
 export interface ExpandedInsights {
+  adminTesting?: AdminTesting;
+  adminReporting?: AdminActivityReportData;
   schemaVersion: 2;
   scope: InsightScope & { label: string; access: InsightAccess; assignedTeamsOnly: boolean };
   choices: InsightChoices;
@@ -54,15 +63,25 @@ export interface ExpandedInsights {
     exercises: { key: string; playersQualified: number; qualifyingTests: number; distinctAttempts: number }[];
     progress?: QualifiedProgress[];
     days: { date: string; recordedDocuments: number; distinctAttempts: number; qualifyingTests: number }[] };
-  workouts: { statuses: CountGroup[]; started: number; completed: number; inProgress: number; endedEarly: number; abandoned: number; unknownEnding: number; outcomeEvents?: number; timerRecords?: number; estimatedRecords?: number; knownPrescription?: number; duplicateLogs: number; doneBlocks: number; partialBlocks: number; skippedBlocks: number; setsCompleted: number; timerMinutes: number; estimatedMinutes: number; unknownDuration: number; allPrescribedSetsCompleted: number; unknownPrescription: number;
+  workouts: { statuses: CountGroup[]; started: number; completed: number; inProgress: number; endedEarly: number; abandoned: number; unknownEnding: number; outcomeEvents?: number; onDeviceEvents?: number;
+    /** Started and completed workouts by kind of training; administrator reports only. */
+    types?: { key: string; started: number; completed: number; timerMinutes: number }[]; timerRecords?: number; estimatedRecords?: number; knownPrescription?: number; duplicateLogs: number; doneBlocks: number; partialBlocks: number; skippedBlocks: number; setsCompleted: number; timerMinutes: number; estimatedMinutes: number; unknownDuration: number; allPrescribedSetsCompleted: number; unknownPrescription: number;
     days: { date: string; started: number; completed: number; timerMinutes: number; estimatedMinutes: number }[] };
   usage: { statuses: CountGroup[]; collectedPlayers: number; notCollectedPlayers: number; webCollectedPlayers: number; iosCollectedPlayers: number; activePlayers: number; returningPlayers: number; activeMinutes: number; webMinutes: number; iosMinutes: number; overlapMinutes: number; collectionStartedAtMillis: number | null; webCollectionStartedAtMillis: number | null; iosCollectionStartedAtMillis: number | null; featureMinutes: Record<string, number>;
-    days: { date: string; activeMinutes: number | null; webMinutes: number | null; iosMinutes: number | null; collectedPlayers?: number; webCollectedPlayers?: number; iosCollectedPlayers?: number }[] };
+    days: { date: string; activeMinutes: number | null; webMinutes: number | null; iosMinutes: number | null; featureMinutes?: Record<string, number> | null; collectedPlayers?: number; webCollectedPlayers?: number; iosCollectedPlayers?: number }[] };
   players: ExpandedPlayer[];
   rosterMetrics?: RosterMetric[];
   pagination: { total: number; pageSize: number; nextCursor: string | null };
 }
+/** Whole-cohort display evidence without a page, row ordering or roster identities. */
+export type ExpandedReportSummary = Omit<ExpandedInsights, 'players' | 'pagination' | 'rosterMetrics' | 'nameSearch' | 'roster' | 'adminReporting'> & {
+  roster: Omit<ExpandedInsights['roster'], 'matched'>;
+  adminReporting?: Omit<AdminActivityReportData, 'sort' | 'followUp'>;
+};
 export const TESTING_LABELS: Record<string, string> = { fullyTested: "Fully tested", partiallyTested: "Partially tested", noSuccessfulTests: "No successful tests", noRecordedTests: "No recorded tests" };
+/** Kinds of training, as the reporting service names them. */
+export const WORKOUT_TYPE_LABELS: Record<string, string> = { field: "Field training", yoga: "Yoga", core: "Core", gym: "Gym", fitness: "Fitness", hiit: "HIIT", run: "Run", bike: "Ride", walk: "Walk", other: "Other" };
+export const workoutTypeLabel = (key: string | undefined) => WORKOUT_TYPE_LABELS[key || ""] || "Other";
 export const WORKOUT_LABELS: Record<string, string> = { completed: "Completed a workout", inProgress: "No ending record", endedEarly: "Ended early", abandoned: "Abandoned", none: "No workout status" };
 export const USAGE_LABELS: Record<string, string> = { returning: "Returning", active: "Active on one day", inactive: "No active use", notCollected: "Not collected" };
 export const EXERCISES = ["shooting", "sprint", "jump", "broadJump", "changeOfDirection", "dribbling"];

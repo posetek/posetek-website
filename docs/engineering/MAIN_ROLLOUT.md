@@ -153,7 +153,7 @@ Website `6ac95bd8769320160da44176` promoted the exact verified artifact at
 21:28:04 UTC, with runtime source `4b5cc6804732588dd0284d85634237b27b1d2107`. The live website uses
 normal production Firebase; no emulator connection, paid reviewer, deployment
 identity, private mobile artifact delivery, backend dependency release or native
-acceptance was activated. [The release receipt](../../deployment/ADMIN_PROFILE_CONTACTS_PRODUCTION.json)
+acceptance was activated. [The release receipt](../releases/receipts/ADMIN_PROFILE_CONTACTS_PRODUCTION.json)
 records hosted/production checks and the reconciled preservation build. Review
 was explicit local Codex advisory review; the paid hosted coordinator stays inactive.
 
@@ -163,7 +163,7 @@ was explicit local Codex advisory review; the paid hosted coordinator stays inac
 `995f78e2148e4e9d5fc62c579db89be40dfefc94`, its CI and explicit test-only emulator bootstrap.
 Website `6acbde38a912d2909dd0501a` promotes runtime source
 `a4e8da1e00cabb17b21ef60924d77e98f0038731` from the exact verified candidate.
-[The release receipt](../../deployment/WORKOUT_REPORTING_CONSISTENCY_PRODUCTION.json)
+[The release receipt](../releases/receipts/WORKOUT_REPORTING_CONSISTENCY_PRODUCTION.json)
 records production acceptance, unchanged canonical service versions/configuration
 and notification controls, cleanup and the reconciled preservation build. Local
 Codex advisory review is explicit; hosted/paid reviewer activation and pending

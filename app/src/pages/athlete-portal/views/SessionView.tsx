@@ -16,11 +16,13 @@ import {
   trackingTimelineMeta,
   type ReplayTracking,
 } from "../../../lib/replay-tracking";
-import { attemptLabel, resultLabel, sameResultStatus } from "../../../lib/result-values";
+import { attemptLabel, resultLabel } from "../../../lib/result-values";
 import type { Drill } from "../lib/drills";
 import type { Access } from "../lib/loaders";
 import { authArtifacts, fetchJson, sharedArtifacts } from "../lib/loaders";
+import { storage } from "../../../lib/firebase";
 import {
+  artifactFolder,
   frameMarkers,
   num,
   parsePose,
@@ -88,7 +90,7 @@ export default function SessionView({ drill, folder, selectedId, reps, access, p
   );
 }
 
-interface ViewerData {
+export interface ViewerData {
   mediaUrl: string | null;
   frames: PosePoint[][];
   tracking: ReplayTracking | null;
@@ -97,6 +99,50 @@ interface ViewerData {
   markers: FrameMarker[];
   metadata: Record<string, any>;
   mediaSource?: string;
+  /** Every file the media answer listed (signed URLs), for viewers that draw more than the pose. */
+  artifactUrls: Record<string, string>;
+}
+
+/**
+ * Everything one rep's replay needs: its pose frames (or tracking, for a rep processed without
+ * pose), the timing metadata, the frame markers and the metric tiles. Shared by the rep viewer
+ * and the Stats pose player.
+ */
+export async function loadRepReplay(drill: Drill, rep: any, access: Access, playerId: string | null, shareToken: string | null): Promise<ViewerData> {
+  const payload = access === "shared"
+    ? await sharedArtifacts(drill, rep, shareToken)
+    : await authArtifacts(drill, rep, playerId!);
+  const urls: Record<string, string> = { ...(payload.artifactUrls || {}) };
+  // The live media endpoint returns no tracking.json although the file is stored (its deployed
+  // version predates tracking replays; backend main returns it). Staff may read the rep's folder
+  // themselves, so they get the box replay meanwhile. A player gets it once the endpoint is redeployed.
+  if (TRACKING_DRILLS.has(drill.key) && !urls[TRACKING_ARTIFACT] && !urls["pose.json"] && playerId && ["admin", "manager", "coach"].includes(access)) {
+    try { urls[TRACKING_ARTIFACT] = await storage.ref(artifactFolder(rep, drill, playerId)).child(TRACKING_ARTIFACT).getDownloadURL(); }
+    catch { /* Not stored, or this viewer may not read the folder. */ }
+  }
+  const [pose, metadata] = await Promise.all([
+    fetchJson(urls["pose.json"]).catch(() => null),
+    fetchJson(urls["metadata.json"]).catch(() => null),
+  ]);
+  const meta = { ...(metadata || {}) };
+  const frames = parsePose(pose, meta);
+  // Reps processed without pose carry tracking.json (person box + COM per frame).
+  const trackingRaw = TRACKING_DRILLS.has(drill.key) && !poseReplayUsable(frames.length, meta)
+    ? await fetchJson(urls[TRACKING_ARTIFACT]).catch(() => null)
+    : null;
+  const replay = selectReplaySource(frames.length, meta, parseTracking(trackingRaw, meta));
+  const tracking = replay.kind === "tracking" ? replay.tracking : null;
+  return {
+    mediaUrl: payload.mediaUrl || null,
+    frames: tracking ? [] : frames,
+    tracking,
+    playbackMetadata: tracking ? trackingTimelineMeta(meta, tracking) : meta,
+    metadata: meta,
+    mediaSource: payload.source,
+    artifactUrls: urls,
+    metrics: repMetricSpecs(drill, rep, meta),
+    markers: frameMarkers(drill, rep, rep.resultStatus ? { ...meta, ...rep } : meta),
+  };
 }
 
 interface RepViewerProps {
@@ -113,39 +159,7 @@ function RepViewer({ drill, rep, access, playerId, shareToken }: RepViewerProps)
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      const payload = access === "shared"
-        ? await sharedArtifacts(drill, rep, shareToken)
-        : await authArtifacts(drill, rep, playerId!);
-      if (rep.resultStatus && payload.resultStatus && !sameResultStatus(rep.resultStatus, payload.resultStatus)) {
-        throw new Error("This result changed since it was opened. Refresh the athlete results to view the latest revision.");
-      }
-      const urls = payload.artifactUrls || {};
-      const [pose, metadata] = await Promise.all([
-        fetchJson(urls["pose.json"]).catch(() => null),
-        fetchJson(urls["metadata.json"]).catch(() => null),
-      ]);
-      if (cancelled) return;
-      const meta = { ...(metadata || {}) };
-      const frames = parsePose(pose, meta);
-      // Reps processed without pose carry tracking.json (person box + COM per frame).
-      const trackingRaw = TRACKING_DRILLS.has(drill.key) && !poseReplayUsable(frames.length, meta)
-        ? await fetchJson(urls[TRACKING_ARTIFACT]).catch(() => null)
-        : null;
-      if (cancelled) return;
-      const replay = selectReplaySource(frames.length, meta, parseTracking(trackingRaw, meta));
-      const tracking = replay.kind === "tracking" ? replay.tracking : null;
-      setData({
-        mediaUrl: payload.mediaUrl || null,
-        frames: tracking ? [] : frames,
-        tracking,
-        playbackMetadata: tracking ? trackingTimelineMeta(meta, tracking) : meta,
-        metadata: meta,
-        mediaSource: payload.source,
-        metrics: repMetricSpecs(drill, rep, meta),
-        markers: frameMarkers(drill, rep, rep.resultStatus ? { ...meta, ...rep } : meta),
-      });
-    })().catch(err => {
+    loadRepReplay(drill, rep, access, playerId, shareToken).then(result => { if (!cancelled) setData(result); }).catch(err => {
       console.error("[rep viewer]", err);
       if (!cancelled) setError(err?.message || "The rep files could not be opened.");
     });

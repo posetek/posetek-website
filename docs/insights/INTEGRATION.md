@@ -4,7 +4,7 @@
 `6aabb282bcbad486db278962` was published September 17, 2026 at 2:31:39 AM PDT
 from source `55d46ea`. It integrates Taiyo's `609faa0` Team Insights prototype
 into the existing application. The original [worklog](WORKLOG.md) remains a
-record of the prototype. See the [production receipt](../../deployment/TEAM_INSIGHTS_PRODUCTION.json)
+record of the prototype. See the [production receipt](../releases/receipts/TEAM_INSIGHTS_PRODUCTION.json)
 for verified release hashes, checks and recovery IDs.
 
 ## Product and access contract

@@ -17,10 +17,10 @@ vi.mock('react', async original => ({ ...await original<typeof import('react')>(
 vi.mock('../../../lib/firebase', () => ({ default: {}, auth: { currentUser: { uid: 'wizard-owner' } }, db: {}, cloud: {}, storage: {} }));
 vi.mock('./player-age', () => ({ readOwnPlayerAge: async () => 21, saveOwnPlayerAge: harness.saveAge }));
 import WorkoutSetupWizard from './WorkoutSetupWizard';
-import { locationSetup } from './training-access';
+import { chooseLocation, emptySetup, setGoalAccess } from './training-access';
 import { rememberGuidedWorkout } from './guided-workout';
 
-const setup = { ...locationSetup('pitch'), equipment: ['cones', 'markers', 'timer', 'ball', 'goal'] };
+const field = () => chooseLocation('pitch', emptySetup()), setup = setGoalAccess(field(), true);
 const unavailable = { schemaVersion: 1, supportedMinutes: [], scheduleRevision: 0, limitations: [
   { code: 'age_ineligible', domain: 'speed', message: 'The available Speed library covers ages 9–19, and does not include age 21.' },
   { code: 'age_ineligible', domain: 'agility', message: 'The available Agility library covers ages 9–19, and does not include age 21.' },
@@ -120,6 +120,14 @@ describe('workout availability and recovery', () => {
     expect(text(tree)).toContain('21 years'); expect(button(tree, 'Change focus')).toBeTruthy();
     expect(search(tree, element => element.type === 'button' && text(element) === 'Create my workout')).toBeUndefined();
     expect(harness.generate).not.toHaveBeenCalled();
+  });
+
+  it('holds the Soccer field setup step until the goal question is answered', () => {
+    harness.step = 'setup'; let tree = render({ setup: field() });
+    button(tree, /^Next/).props.onClick(); tree = render({ setup: field() });
+    expect(text(tree)).toContain('Do you have a goal? Choose Yes or No.'); expect(text(tree)).not.toContain('How much time do you have?');
+    tree = render(); button(tree, /^Next/).props.onClick(); tree = render(); expect(text(tree)).toContain('How much time do you have?');
+    expect(text(tree)).not.toContain('Do you have a goal?');
   });
 
   it('treats an incomplete server result as a retryable error, never as no eligible workouts', async () => {

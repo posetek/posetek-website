@@ -88,6 +88,29 @@
   status = 200
   force = true
 
+# Isolated private report reader and its first-party event endpoint.
+[[redirects]]
+  from = "/api/one-pager-event"
+  to = "https://us-central1-kickai-69dd0.cloudfunctions.net/recordOnePagerEngagement"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/report"
+  to = "/report/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/report/"
+  to = "/report/index.html"
+  status = 200
+
+# Isolated player sign-in entry, carried from live deployment 6aeff48be31e6080ee877d2f.
+[[redirects]]
+  from = "/signin"
+  to = "/player-signin.html"
+  status = 200
+
 # SPA fallback: files that exist in dist/ (unported legacy pages, assets) are
 # served directly; everything else — including the ported legacy URLs like
 # /profile.html that are intentionally absent from dist/ — is handled by the
@@ -125,3 +148,35 @@
   for = "/_astro/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/report*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Netlify-CDN-Cache-Control = "no-store"
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+
+[[headers]]
+  for = "/signin"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://us-central1-kickai-69dd0.cloudfunctions.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com; img-src 'self' data:; font-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+
+[[headers]]
+  for = "/player-signin.html"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://us-central1-kickai-69dd0.cloudfunctions.net https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com; img-src 'self' data:; font-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
