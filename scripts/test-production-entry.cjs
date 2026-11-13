@@ -10,7 +10,7 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
   '/admin/accounts/player/p/plan/a/workout/w', '/admin/drills', '/admin/drills/d/edit',
   '/admin/analysis', '/admin/analysis/', '/admin/accounts/player/p/results',
   '/admin/accounts/player/p/results/kick', '/admin/accounts/player/p/results/kick/r',
-  '/organization', '/athlete', '/administrator'];
+  '/organization', '/athlete', '/family', '/administrator'];
 (async () => {
   fs.mkdirSync(out, { recursive: true });
   const config = fs.readFileSync(path.join(root, 'netlify.toml'), 'utf8');
