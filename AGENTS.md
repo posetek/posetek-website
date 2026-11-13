@@ -17,13 +17,23 @@ PR requirements and release/deployment holds remain unchanged. Runtime tool
 approval is separate from this policy; report exact tool rejections and never
 switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.md#website-worktree-local-lane).
 
+## Website and one-pager releases
+
+Check Netlify's currently published deploy before assembling a whole-site
+artifact. Capture that deploy's inventory and preserve the files and routing
+outside the approved change. The
+[latest recorded release](docs/releases/receipts/ADMIN_WEEKLY_TREND_INDICATORS_PRODUCTION.json)
+pins the protected baseline and the application runtime. One-pager releases
+also use the current published deploy to carry forward the app and sign-in
+entry. Keep `[skip netlify]` on every source and receipt merge.
+
 ## Player Stats landing — November 12, 2026
 
 Deployment `6af626e37d3ff00c50b761d9` makes ordinary player sign-in and signup
 explicitly open the resolved athlete's Stats tab. Explicit Training links still
 open Workouts. Only the isolated `/player-signin.html` changed, with one new
 hashed script. The athlete application, marketing and all private report files
-were preserved. The next whole-site deploy must start from this deployment.
+were preserved.
 [Production receipt](docs/releases/receipts/PLAYER_STATS_LANDING_PRODUCTION.json)
 
 ## Athlete workspace — November 12, 2026
@@ -54,10 +64,6 @@ admin test account and the synthetic demo athlete; a real athlete's session is n
 claimed.
 [Release handoff](docs/releases/PLAYER_WORKSPACE.md) ·
 [Production receipt](docs/releases/receipts/PLAYER_WORKSPACE_PRODUCTION.json)
-
-**The next one-pager deploy must start from the current live deploy, `6af626e3`.**
-Those deploys upload a full copy of the site; starting from an earlier deploy can
-put earlier application or sign-in bytes back. Keep `[skip netlify]` on every source and receipt merge.
 
 **The live report reader is newer than main's copy, and its source is not on main.**
 The November 12 one-pager deploys published a `render.mjs` and `report.css` with the

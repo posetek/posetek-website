@@ -25,8 +25,10 @@ Overview and Usage share six compact cards: players with at least four different
 recorded drills, claimed accounts, observed iOS users under the requested iOS
 downloads label, repeat users active on at least two distinct days in the shown
 week, weekly distinct users, and estimated platform time.
-Prior values are shown beneath current values. Known increases/decreases use
-color and directional text; partial coverage never produces a confident trend.
+Prior values appear beneath current values. The cards use green up arrows for
+higher displayed values, red down arrows for lower values, and neutral dashes
+for ties. Partial coverage and Week to date labels identify the figures being
+compared. A comparison requires both figures.
 The repeated scope breadcrumb, Current selection label, date/coverage lines,
 follow-up panels and Overview team-comparison table are removed. The scope title,
 Browse navigation, reporting controls and Teams tab remain.
@@ -73,14 +75,14 @@ reconstructed from period totals. The exact-day data table preserves nulls.
   Positive website or iOS time qualifies a day; multiple visits or platforms on
   one day still count as one day. The card shows this definition. Missing
   collection and historical coverage retain unavailable/partial states.
-- Weekly users and platform minutes: Monday through selected report end, shown
-  beside the whole previous Monday–Sunday week. Since November 10 "Last week" is
-  that whole week on every weekday; the earlier matching-weekday comparison made
-  a Monday report describe last week by its Monday alone. While the current week
-  is a part week the card says "Week to date" and shows no change arrow. A
-  player counts once per window; overlapping web/iOS time counts once. A
-  reporting service that still sends matching weekdays keeps the earlier wording
-  and arrows.
+- Weekly users: each active player counts once from Monday through the selected
+  report end. "Last week" shows the whole preceding Monday–Sunday week on the
+  current reporting service. Older services can return matching weekdays.
+  A part-week card shows "Week to date" alongside the difference between its
+  displayed values.
+- Time on platform: overlapping web and iOS time counts once. The deployed
+  reporting service (version 14) uses the same weekly windows as Weekly users.
+  The cumulative reporting source on main compares totals through each cutoff.
 - Completed workouts: distinct deduplicated saved logs ended as completed, plus
   (since November 10) sessions recorded on the player's phone that the app has
   synced: repeats of a finished workout, yoga, runs, rides and walks. They are

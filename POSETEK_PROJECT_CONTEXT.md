@@ -33,6 +33,18 @@ example draft requires exact artifact review and hosted acceptance before the us
 
 # PoseTek website project context
 
+## Admin comparison indicators — November 12, 2026
+
+Deployment `6af6ab89e3e24351f3908e28` colors declines red in the organization
+Overview and Usage cards. Arrows compare displayed totals, including cards
+labeled Partial coverage or Week to date. Time on platform uses the deployed
+reporting service's weekly figures. Signed-in checks verified both tabs.
+
+The deployment replaced the application entry and added seven hashed assets.
+All 2,851 other prior files, including 78 encrypted report files, matched the
+previous release. [Production receipt](docs/releases/receipts/ADMIN_WEEKLY_TREND_INDICATORS_PRODUCTION.json)
+
+
 
 ## Player Stats landing — November 12, 2026
 
