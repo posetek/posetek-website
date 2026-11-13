@@ -27,10 +27,15 @@ const scoreCards=sealReport({
  ],
 });
 const scoreComparison=sealReport(scoreComparisonFixture);
+const {playerSignupUrl: fixtureInvitation, ...comparisonWithoutInvite} = scoreComparisonFixture;
+const workoutPdf = await readFile(new URL('./fixtures/private-parent-start-workout.pdf', import.meta.url));
+const existingAccountReport = {...comparisonWithoutInvite, workoutEntry:'stats', pdfBase64:workoutPdf.toString('base64')};
+const startWorkout=sealReport(existingAccountReport);
+const invalidWorkoutEntry=sealReport({...existingAccountReport,playerSignupUrl:fixtureInvitation});
 const invalidComparison=sealReport({...scoreComparisonFixture,metrics:[
  {...scoreComparisonFixture.metrics[0],comparison:{value:2.52,median:2.76,count:4}}, ...scoreComparisonFixture.metrics.slice(1),
 ]});
-const reports=new Map([a,b,malicious,resultsFirst,tracked,scoreCards,scoreComparison,invalidComparison].map(x=>[x.id,x.envelope]));
+const reports=new Map([a,b,malicious,resultsFirst,tracked,scoreCards,scoreComparison,invalidComparison,startWorkout,invalidWorkoutEntry].map(x=>[x.id,x.envelope]));
 const headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; font-src 'self'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"};
 const requests=[], events=[];
 let corrupt=false, trackingUnavailable=false;
@@ -278,11 +283,38 @@ try {
      compare.waitForEvent('download'),compare.getByRole('button',{name:'Download PDF'}).click(),
     ]);
     assert.deepEqual(await readFile(await downloadV2.path()),Buffer.from(scoreComparisonFixture.pdfBase64,'base64'));
+    await compare.evaluate(fragment=>{location.hash=fragment;},invalidWorkoutEntry.fragment);
+    await compare.locator('#report-status').filter({hasText:'could not be opened'}).waitFor();
+    assert.equal(await compare.getByRole('link',{name:'Start a workout'}).count(),0);
+    await compare.evaluate(fragment=>{location.hash=fragment;},startWorkout.fragment);
+    const workout = compare.getByRole('link',{name:'Start a workout',exact:true});
+    await workout.waitFor();
+    const statsPath = '/signin?reportPlayer=syntheticPlayer123&reportView=stats';
+    assert.equal(await workout.getAttribute('href'),statsPath);
+    assert.equal(await compare.getByRole('link',{name:'Sign up for workouts'}).count(),0);
+    await compare.getByText('Use your existing PoseTek login to review your Stats, then start a workout.').waitFor();
+    const [workoutDownload]=await Promise.all([
+     compare.waitForEvent('download'),compare.getByRole('button',{name:'Download PDF'}).click(),
+    ]);
+    const receivedPdf=await readFile(await workoutDownload.path());
+    assert.deepEqual(receivedPdf,workoutPdf);
+    assert(receivedPdf.includes(Buffer.from('/URI (https://posetek.net'+statsPath+')')));
+    assert(receivedPdf.includes(Buffer.from('(Start a workout)')));
+    const [workoutReportId, workoutKey]=startWorkout.fragment.split('.');
+    const workoutToken=createHmac('sha256',Buffer.from(workoutKey,'base64url')).update('posetek-one-pager-tracking:v1:'+workoutReportId).digest('base64url');
+    const workoutActions=()=>events.filter(event=>event.body.token===workoutToken).map(event=>event.body.action);
+    for(let attempt=0;!workoutActions().includes('opened')&&attempt<40;attempt++) await delay(50);
+    assert(workoutActions().includes('opened'));
+    await workout.tap();
+    await compare.waitForURL(origin+statsPath);
+    assert(!workoutActions().includes('workouts'),'Opening Stats does not count as a Workouts click');
+    await compare.goto(origin+'/report/#'+scoreComparison.fragment);
     await compare.evaluate(fragment=>{location.hash=fragment;},invalidComparison.fragment);
     await compare.locator('#report-status').filter({hasText:'could not be opened'}).waitFor();
     assert.equal(await panel.count(),0);
     assert.deepEqual(comparisonErrors,[]);
     results.at(-1).statsComparisons='all six cards, touch and keyboard, signed gap, sparse data, matching units and club placement';
+    results.at(-1).existingAccountWorkoutEntry='exact Stats link on report and PDF, legacy signup preserved, conflicting payload blocked, no Workouts event';
    } finally {
     await touchContext.close();
    }

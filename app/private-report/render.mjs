@@ -383,6 +383,11 @@ function validate(report) {
   validateDevelopment(report.development, report.exercises, focused);
   if (focused) validateFocusedMetrics(report.metrics);
   if (report.visualLayout === COMPARISON_LAYOUT) validateScoreComparisons(report);
+  if (report.workoutEntry !== undefined && (report.workoutEntry !== 'stats' ||
+      report.visualLayout !== COMPARISON_LAYOUT || report.resultsFirst !== true ||
+      report.playerSignupUrl !== undefined || !workoutLinks(report.playerId))) {
+    throw new Error('Invalid existing-player workout entry');
+  }
   if (report.development && (report.pathwayCharts || report.resultsFirst !== true)) throw new Error('Development requires results-first classic layout');
   if (report.pathwayCoverage !== undefined) {
     if (!report.pathwayCharts || !report.pathwayCoverage || typeof report.pathwayCoverage.broaderComparisonsPending !== 'boolean') throw new Error('Invalid pathway coverage');
@@ -695,6 +700,15 @@ function makeWorkoutEntry(report, record, visual = false) {
     return entry;
   }
   const platform = workoutPlatform();
+  if (report.workoutEntry === 'stats') {
+    const stats = `/signin?reportPlayer=${encodeURIComponent(report.playerId)}&reportView=stats`;
+    entry.append(
+      workoutAnchor('Start a workout', stats, 'pt-primary'),
+      element('p', 'pt-cta-note', 'Use your existing PoseTek login to review your Stats, then start a workout.'),
+      workoutAnchor('Get PoseTek on iPhone or iPad', links.install, 'pt-install-button', record && (() => record('testflight'))),
+    );
+    return entry;
+  }
   if (report.playerSignupUrl !== undefined) {
     const workout = workoutAnchor(`Open ${report.firstName}’s workouts`, playerSignupLink(report.playerSignupUrl, report.playerId), 'pt-primary', record && (() => record('workouts')));
     // Keep the report open while signup starts. WebKit can cancel the event
@@ -899,7 +913,10 @@ export function renderReport(report, record, {visual = ['score-cards-v1', COMPAR
   }
   main.append(actions);
   main.append(element('p', 'pt-private-note', 'Keep this link within your family.'));
-  if (record) main.append(element('p', 'pt-private-note', 'PoseTek records when this report link is opened, about how long it is viewed, and when its Workouts and TestFlight buttons are used.'));
+  if (record) {
+    const actions = report.workoutEntry === 'stats' ? 'its TestFlight button is used' : 'its Workouts and TestFlight buttons are used';
+    main.append(element('p', 'pt-private-note', `PoseTek records when this report link is opened, about how long it is viewed, and when ${actions}.`));
+  }
   phone.append(header, main);
   pdfUrl = URL.createObjectURL(new Blob([pdf], {type: 'application/pdf'}));
   mount.replaceChildren(phone);
