@@ -227,6 +227,20 @@ suite uses the same synthetic fixture. The first eventual v2 candidate uses
 pins the serving v1 and reviewed v2 bytes of the renderer and stylesheet.
 Later v2 batches use plain append once the serving reader matches the source.
 
+### First-workout reports for existing player accounts
+
+New results-first `score-cards-v2` reports may set `workoutEntry: 'stats'`.
+Omit `playerSignupUrl` for this entry. The report and its one-page PDF show
+**Start a workout**, opening `/signin?reportPlayer=<id>&reportView=stats`.
+The PDF uses the same path on `https://posetek.net`. The sign-in page resolves
+the existing login to the exact player before opening Stats. The report key
+and report ID stay on the encrypted report link. Earlier reports retain their
+signup and Training actions.
+
+Registered first-workout reports use the existing open, view-time and TestFlight
+events. The Start a workout button opens Stats and does not record a Workouts
+click. A saved workout start comes from workout history.
+
 The preceding browser-only source (`6b2f4dd`, PR #120) supports a label-only
 transition from the initial unsent-preview label to “Private player report” using
 `--append --update-entry-label`. That command requires the matching, unchanged

@@ -165,11 +165,17 @@ async function runInside() {
       const response = await page.goto(origin + '/signin' + suffix);
       assert.ok((await response.text()).includes('<!-- posetek-player-signin-entry -->'), 'serve the isolated /signin document');
     };
-    const signIn = async () => {
-      await page.locator('#email').fill(email);
-      await page.locator('#password').fill(password);
+    const signIn = async (address = email, secret = password) => {
+      await page.locator('#email').fill(address);
+      await page.locator('#password').fill(secret);
       await page.locator('#loginSubmit').click();
     };
+    // A cold Astro dev optimizer can reload after the first browser imports.
+    // Warm up on ordinary sign-in before opening a fragment that must be scrubbed.
+    const warmup = await context.newPage();
+    await warmup.goto(origin + '/signin');
+    await warmup.locator('#loginForm').waitFor();
+    await warmup.close();
     await openSignIn('#playerCode=' + code);
     await page.locator('#playerCodeSubmit').waitFor({ state: 'visible' });
     assert.ok(await page.locator('#playerCode').inputValue() === code, 'prefill the invitation field');
@@ -207,6 +213,27 @@ async function runInside() {
     await openSignIn('?reportPlayer=' + encodeURIComponent(player.id));
     await expectTab('Workouts', athletePath('training'));
 
+    const statsLink = `?reportPlayer=${encodeURIComponent(player.id)}&reportView=stats&returnTo=%2Fadmin`;
+    await openSignIn(statsLink);
+    await expectTab('Stats', athletePath('stats'));
+
+    await openSignIn(statsLink + '&reportView=stats');
+    await page.getByRole('alert').filter({ hasText: 'Reopen the original report link to continue.' }).waitFor();
+    assert.equal(await page.locator('#loginForm').count(), 0);
+    assert.equal(await page.locator('#signupModal, .signup-prompt').count(), 0);
+
+    await openSignIn();
+    await page.getByRole('button', { name: 'Use a different account' }).click();
+    await page.locator('#loginForm').waitFor();
+    await openSignIn(statsLink + '#playerCode=' + code);
+    await page.getByRole('heading', { name: 'Sign in to open Stats' }).waitFor();
+    await page.getByText("Sign in with this player's existing login to open their Stats.", { exact: true }).waitFor();
+    await page.locator('#loginForm').waitFor();
+    assert.equal(await page.locator('#signupModal, .signup-prompt').count(), 0);
+    assert.equal(new URL(page.url()).hash, '');
+    await signIn();
+    await expectTab('Stats', athletePath('stats'));
+
     const orgCode = 'ORG' + randomUUID().slice(0, 8).toUpperCase();
     const organization = db.collection('organizations').doc('synthetic-organization');
     await organization.set({ name: 'Synthetic Organization', code: orgCode, codeVersion: 2, players: [] });
@@ -230,6 +257,23 @@ async function runInside() {
     assert.equal(created.length, 1);
     assert.equal(created[0].data().organization.path, organization.path);
 
+    const expectAccountMismatch = async () => {
+      const error = page.locator('#loginError');
+      await error.filter({ hasText: "Use this player's login to open Stats." }).waitFor();
+      assert.equal(new URL(page.url()).pathname, '/signin');
+      assert.equal(await page.getByRole('navigation', { name: 'Player tabs' }).count(), 0);
+    };
+    await openSignIn(statsLink);
+    await expectAccountMismatch();
+    await page.getByRole('button', { name: 'Continue with signed-in account' }).click();
+    await expectAccountMismatch();
+    await page.getByRole('button', { name: 'Use a different account' }).click();
+    await signIn(newEmail, newPassword);
+    await expectAccountMismatch();
+    await page.getByRole('button', { name: 'Use a different account' }).click();
+    await signIn();
+    await expectTab('Stats', athletePath('stats'));
+
     const second = await fetch(`http://${host}:${ports.auth}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-api-key`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ email: 'synthetic-stranger@example.test', password: randomUUID(), returnSecureToken: true }),
@@ -248,7 +292,7 @@ async function runInside() {
     assert.equal(errors.length, 0, `browser errors: ${errors.join('; ')}`);
     assert.deepEqual([...new Set(blocked)].filter(value => !['https://fonts.googleapis.com', 'https://images.unsplash.com'].includes(value)), []);
     await context.close();
-    console.log('Authenticated emulator journey passed: prefilled signup, verification, exact-player Stats, refresh, existing sign-in, Training links, organization signup, one-time claim and stranger denial');
+    console.log('Authenticated emulator journey passed: prefilled signup, verification, Stats report sign-in and account switching, malformed report rejection, legacy Training, organization signup, one-time claim and stranger denial');
   } finally {
     await browser?.close();
     astro.kill('SIGTERM');

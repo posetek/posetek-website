@@ -16,7 +16,16 @@ import { findCoach, findPlayer } from "../../lib/identity";
 import { useThemeColor } from "../../lib/use-theme-color";
 import { refreshAdminIdentity, upsertAdminProfile } from "../admin/lib/identity";
 import { capturePlayerInvitationLink, createInvitedPlayer, forgetPlayerInvitationLink, initialPlayerInvitationLink, readPlayerInvitationLink, unavailablePlayerInvitation } from "./player-invitation-link";
-import { readReportPlayerEntry, reportPlayerDestination, reportSignupDestination, initialReportPlayerDestination, ReportPlayerEntryError } from "./report-player-entry";
+import {
+  initialReportPlayerDestination,
+  invalidReportEntry,
+  readReportPlayerEntry,
+  reportPlayerDestination,
+  reportPlayerSignupError,
+  reportSignupDestination,
+  reportStatsSignIn,
+  ReportPlayerEntryError,
+} from "./report-player-entry";
 import { accountDestination, accountError } from "./account-entry";
 import type { AccountRole } from "./account-entry";
 import {
@@ -45,14 +54,22 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const reportEntry = readReportPlayerEntry(location.search);
-  const [invitationLink, setInvitationLink] = useState(() => { capturePlayerInvitationLink(window); return initialPlayerInvitationLink(); });
+  const signupEntryError = reportPlayerSignupError(reportEntry);
+  const reportStats = reportEntry.view === "stats";
+  const invalidReport = reportEntry.present && !reportEntry.playerId;
+  const [invitationLink, setInvitationLink] = useState(() => {
+    capturePlayerInvitationLink(window);
+    if (signupEntryError) forgetPlayerInvitationLink();
+    return initialPlayerInvitationLink();
+  });
   const [signedIn, setSignedIn] = useState(Boolean(auth.currentUser));
   const [authReady, setAuthReady] = useState(false);
   const [invitationCheck, setInvitationCheck] = useState<"checking" | "ready" | "unavailable" | "error" | null>(invitationLink.present ? "checking" : null);
 
   // Overlay modals (the login panel is inline now — legacy showModal(loginModal)
   // only scrolls it into view and focuses the email field).
-  const [signupOpen, setSignupOpen] = useState(invitationLink.present);
+  const [signupRequested, setSignupOpen] = useState(invitationLink.present);
+  const signupOpen = signupRequested && !signupEntryError;
   const [forgotOpen, setForgotOpen] = useState(false);
   const [coachOrgOpen, setCoachOrgOpen] = useState(false);
   const loginPanelRef = useRef<HTMLElement>(null);
@@ -96,6 +113,12 @@ export default function LandingPage() {
     const openInvitation = () => {
       if (!readPlayerInvitationLink(window.location.href).invitation.present) return;
       capturePlayerInvitationLink(window);
+      if (reportPlayerSignupError(readReportPlayerEntry(window.location.search))) {
+        forgetPlayerInvitationLink();
+        setInvitationLink(initialPlayerInvitationLink());
+        setPlayerCode(""); setSignupOpen(false); setInvitationCheck(null);
+        return;
+      }
       const next = initialPlayerInvitationLink();
       setInvitationLink(next); setPlayerCode(next.code); setActiveTab("playerCode");
       setSignupOpen(true); setPlayerCodeError(""); setInvitationCheck("checking");
@@ -152,7 +175,7 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    if (!invitationLink.present) return;
+    if (signupEntryError || !invitationLink.present) return;
     let current = true;
     if (!/^[A-Za-z0-9-]{6,64}$/.test(playerCode.trim())) { setInvitationCheck("unavailable"); return; }
     setInvitationCheck("checking");
@@ -169,7 +192,7 @@ export default function LandingPage() {
         .catch(() => { if (current) setInvitationCheck("error"); });
     }, 350);
     return () => { current = false; window.clearTimeout(timer); };
-  }, [invitationLink.present, playerCode, reportEntry.present]);
+  }, [invitationLink.present, playerCode, reportEntry.present, signupEntryError]);
 
   // Check auth state to update UI (legacy: a signed-out visitor carrying a safe
   // returnTo gets the login panel brought into view)
@@ -192,8 +215,8 @@ export default function LandingPage() {
       setSignedIn(Boolean(user));
       setAuthReady(true);
       setPendingActivation(false);
-      if (!user && getSafeReturnToUrl()) showLoginPanel();
-      if (restoredSession && user && requestedEntry.present) {
+      if (!user && (requestedEntry.view === "stats" || getSafeReturnToUrl())) showLoginPanel();
+      if (restoredSession && user && requestedEntry.playerId) {
         const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
         setContinueLoading(true); setSignupOpen(false);
         void initialReportPlayerDestination(requestedEntry, user, loadAccountAccess, isCurrent)
@@ -255,6 +278,7 @@ export default function LandingPage() {
   }
 
   function openSignupModal(tab: SignupTab = "playerCode") {
+    if (signupEntryError) return;
     setSignupOpen(true);
     setActiveTab(tab);
   }
@@ -433,6 +457,7 @@ export default function LandingPage() {
 
   // Organization signup handler
   async function handleOrgSignup() {
+    if (signupEntryError) return;
     const firstNameVal = firstName.trim();
     const lastNameVal = lastName.trim();
     const email = signupEmail;
@@ -498,7 +523,7 @@ export default function LandingPage() {
       setPlayerCodeError("");
       setPlayerCodeSuccess("");
 
-      if (reportEntry.present && !reportEntry.playerId) throw new Error("Reopen the original report link to continue.");
+      if (signupEntryError) throw new ReportPlayerEntryError(signupEntryError);
       const problem = validatePlayerCodeSignup({ code, password, confirmPassword: confirmPasswordVal });
       if (problem) throw new Error(problem);
 
@@ -545,6 +570,7 @@ export default function LandingPage() {
 
   // Independent signup handler
   async function handleIndependentSignup() {
+    if (signupEntryError) return;
     const firstNameVal = indFirstName.trim();
     const lastNameVal = indLastName.trim();
     const email = indEmail;
@@ -620,15 +646,16 @@ export default function LandingPage() {
               <p className="login-kicker">Secure account access</p>
               <div className="modal-header">
                 <h2 className="modal-title" id="login-title">
-                  Sign in to PoseTek
+                  {reportStats ? "Sign in to open Stats" : "Sign in to PoseTek"}
                 </h2>
-                <p className="login-support">One sign-in for players, coaches and admins.</p>
+                {invalidReport ? <p className="login-support" role="alert">{invalidReportEntry}</p> :
+                  <p className="login-support">{reportStats ? reportStatsSignIn : "One sign-in for players, coaches and admins."}</p>}
                 {/* legacy: hidden by CSS; its click handler (hideModal(loginModal)) is a no-op */}
                 <button className="close-btn" id="closeModal" type="button" tabIndex={-1} aria-hidden="true">
                   &times;
                 </button>
               </div>
-              {!authReady ? <p className="login-support" role="status">Checking your sign-in…</p> : signedIn ? (
+              {invalidReport ? null : !authReady ? <p className="login-support" role="status">Checking your sign-in…</p> : signedIn ? (
                 <div className="existing-session" aria-label="Signed-in account">
                   <p className="login-support">You are already signed in.</p>
                   <button type="button" className="submit-btn" disabled={continueLoading || switchLoading || loginLoading || !auth.currentUser} onClick={() => void handleContinue()}>
@@ -706,7 +733,7 @@ export default function LandingPage() {
               <div className="success-message" id="loginSuccess" role="status" aria-live="polite" style={{ display: loginSuccess ? "block" : "none" }}>{loginSuccess}</div>
               {signInHelp && <aside className="account-signin-help" aria-label="Sign-in help"><strong>Forgot your password?</strong><p>Players and independent coaches can request a reset email for their existing account.</p><button className="secondary-action" type="button" disabled={loginLoading} onClick={() => { void handleForgotPassword(); }}>Reset password by email</button><p>{STAFF_RECOVERY_HELP}</p><Link className="text-link" to="/join">Open a private recovery or access code</Link><AccountRecoveryRequest initialEmail={loginEmail} /></aside>}
               {pendingActivation && <Link className="secondary-action activation-pending" to="/join">Finish staff activation</Link>}
-              <div className="signup-prompt">
+              {!signupEntryError && <div className="signup-prompt">
                 <p>Joining PoseTek?</p>
                 <div className="account-entry-options">
                   <button type="button" className="secondary-action" id="getStartedBtn" onClick={() => openSignupModal()}><strong>Player</strong><span>Use your player signup code</span></button>
@@ -716,7 +743,7 @@ export default function LandingPage() {
                   <button type="button" className="secondary-action" onClick={() => openSignupModal("independent")}>Create an independent coach account</button>
                   <button type="button" className="secondary-action" onClick={() => openSignupModal("organization")}>Organization-code signup</button>
                 </div></details>
-              </div>
+              </div>}
               <p className="access-note">
                 Your account permissions determine which athlete and team data you can access.
               </p>
@@ -726,7 +753,7 @@ export default function LandingPage() {
       </main>
 
       {/* Signup Modal */}
-      <div className={`modal-overlay${signupOpen ? " active" : ""}`} id="signupModal" data-clarity-mask="true">
+      {!signupEntryError && <div className={`modal-overlay${signupOpen ? " active" : ""}`} id="signupModal" data-clarity-mask="true">
         <div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="signup-title" tabIndex={-1} ref={signupDialogRef}>
           <div className="modal-content-wrapper">
             <div className="modal-header">
@@ -1127,7 +1154,7 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Forgot Password Modal */}
       <div className={`modal-overlay${forgotOpen ? " active" : ""}`} id="forgotPasswordModal">
