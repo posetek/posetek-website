@@ -8,6 +8,8 @@ import PlayerShell, { playerTabPath } from "../athlete-portal/player/PlayerShell
 import { communityPanel, communityPanelPath, communityPersonPath } from "./navigation";
 import { coachWorkspacePath } from "../../lib/coach-navigation";
 import { loadAccountAccess } from "../../lib/account-access";
+import { guardianRecordFor } from "../../lib/parent-session";
+import { familyDestination } from "../landing/account-entry";
 import AuthenticatedOrganizationHeader from "../organization/AuthenticatedOrganizationHeader";
 import { getClubContext } from "../../lib/organization-data";
 import "./feed.css";
@@ -234,7 +236,13 @@ function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, o
         });
         return;
       }
-      callSocial(`getSocialContext`, {
+      // A parent has no social identity of its own: send it to its normal destination, never the feed.
+      void guardianRecordFor(r.uid).catch(() => null).then(guardian => {
+        if (!t || authRequest.current !== i) return;
+        if (guardian) { navigate(familyDestination(guardian.playerIds), { replace: true }); return; }
+        loadSocialContext();
+      });
+      const loadSocialContext = () => callSocial(`getSocialContext`, {
         organizationId: organizationId,
         viewAsPlayerId: viewAsPlayerId
       }).then(e => {

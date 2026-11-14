@@ -80,7 +80,8 @@ export default function PlayerWorkout({ workout, store, playerId, preview: sampl
           running: !activityState.current.painStopped && !activityState.current.summary && !activityState.current.chat
             && reconcileClock(clockRef.current, Date.now()).runningSince !== null,
           blockId: blocks[indexRef.current]?.blockId }),
-        scope: () => actingPlayerScope(owner.uid, owner.playerId),
+        // Read once now: the child's view (and its registration) may close before the final pause.
+        scope: actingPlayerScope(owner.uid, owner.playerId),
         send: async request => (await cloud.httpsCallable('recordWorkoutActivity')(request)).data as WorkoutActivityResponse,
       });
       // A restored paused timer waits for explicit Resume. Rendering it or

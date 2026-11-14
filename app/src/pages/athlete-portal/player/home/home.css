@@ -17,6 +17,9 @@
   .home-recap-title .material-symbols-outlined { font-size: 19px; }
   .home-platform-time { gap: 2px; }
   .home-platform-time strong { font-size: 22px; font-weight: 700; line-height: 1.2; }
+  .home-parent-strip { display: flex; align-items: stretch; gap: 12px; min-width: 0; }
+  .home-parent-strip > .home-platform-time { flex: 1 1 auto; min-width: 0; }
+  .home-parent-add { flex: 0 0 auto; min-height: 48px; margin-left: auto; padding: 0 16px; border: 1px solid var(--v4-border); border-radius: 18px; background: var(--v4-card); color: var(--v4-accent); font-size: 15px; font-weight: 600; }
   .home-recap-header .home-caption { flex: 0 0 auto; }
   .home-recap-count { font-size: 22px; font-weight: 700; line-height: 1.25; color: #fff; }
   .home-recap-focus { font-size: 15px; font-weight: 600; line-height: 1.35; color: #fff; }

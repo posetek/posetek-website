@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actingPlayerId, actingPlayerScope, enterActingPlayer } from '../../../lib/acting-player';
-import { createSocialApi } from '../../feed/api';
+import { forgetParentSessions, isParentSession } from '../../../lib/parent-session';
+import { createSocialApi, ParentSocialRefusal, socialParentSession } from '../../feed/api';
 import { createWorkoutActivity } from './workout-activity';
 import { actsForPlayer } from './player-age';
 import { weekTitle } from './home/recent-training';
@@ -37,24 +38,54 @@ describe('social endpoints are owner-only', () => {
     await expect(api('setSocialKudos', { id: 'activity', liked: true } as never)).rejects.toThrow();
     expect(parent.calls).toEqual([]);
   });
-  it('treats a registered acting child as a parent session for the shared client', () => {
+  // The shared client's real predicate, against a stand-in Firestore holding only guardians records.
+  const guardiansDb = (records: Record<string, unknown>, denied = false) => ({ collection: () => ({
+    doc: (id: string) => ({ get: async () => {
+      if (denied) throw Object.assign(new Error('denied'), { code: 'permission-denied' });
+      return { id, exists: id in records, data: () => records[id] };
+    } }),
+    where: () => { throw new Error('never queried'); },
+  }) }) as never;
+  beforeEach(forgetParentSessions);
+  it('treats a login acting for a child, or any login with a guardians record, as a parent session', async () => {
+    expect(await isParentSession(null)).toBe(false);
     leave = enterActingPlayer('parent', 'child-a');
-    expect(actingPlayerId('parent')).not.toBeNull();
+    expect(await isParentSession('parent', guardiansDb({}))).toBe(true);
+    leave(); leave = undefined;
+    expect(await isParentSession('parent-on-feed', guardiansDb({ 'parent-on-feed': { userUID: 'parent-on-feed', playerIds: ['child-a'] } }))).toBe(true);
+    expect(await isParentSession('player', guardiansDb({}))).toBe(false);
+    expect(await isParentSession('before-rules', guardiansDb({}, true))).toBe(false);
+  });
+  it('refuses every social call through that predicate for a parent, and calls through for an owner', async () => {
+    const parent = transport(), owner = transport();
+    const records = { 'parent-on-feed': { userUID: 'parent-on-feed', playerIds: ['child-a'] } };
+    await expect(createSocialApi(parent, () => isParentSession('parent-on-feed', guardiansDb(records)))('getSocialFeed', { scope: 'organization' })).rejects.toBeInstanceOf(ParentSocialRefusal);
+    await createSocialApi(owner, () => isParentSession('player', guardiansDb(records)))('getSocialFeed', { scope: 'organization' });
+    expect(parent.calls).toEqual([]); expect(owner.calls).toEqual([['getSocialFeed', { scope: 'organization' }]]);
+    expect(typeof socialParentSession).toBe('function');
   });
 });
 
 describe('workout activity in a parent session', () => {
-  it('names the child on every request only while the scope says so', async () => {
+  const reporter = (scope: { playerId?: string }, sent: Record<string, unknown>[]) => createWorkoutActivity({ uid: 'parent', playerId: 'child-a', source: 'workoutLogs', logId: 'log', sessionId: 'session',
+    read: () => ({ uid: 'parent', playerId: 'child-a', currentOwner: true, visible: true, running: true, ended: false }),
+    send: vi.fn(async request => { sent.push(request); return { accepted: true, ownerEpoch: 1 }; }), scope });
+  const settle = async () => { for (let i = 0; i < 6; i++) await Promise.resolve(); };
+  it('names the child on every request, including the final pause after the child view has closed', async () => {
     const sent: Record<string, unknown>[] = [];
-    let scope: { playerId?: string } = { playerId: 'child-a' };
-    const activity = createWorkoutActivity({ uid: 'parent', playerId: 'child-a', source: 'workoutLogs', logId: 'log', sessionId: 'session',
-      read: () => ({ uid: 'parent', playerId: 'child-a', currentOwner: true, visible: true, running: true, ended: false }),
-      send: vi.fn(async request => { sent.push(request); return { accepted: true, ownerEpoch: 1 }; }), scope: () => scope });
-    activity.resume(); await Promise.resolve(); await Promise.resolve();
-    expect(sent[0]).toMatchObject({ type: 'resume', playerId: 'child-a' });
-    scope = {}; activity.pause(); await Promise.resolve(); await Promise.resolve();
-    expect(sent[1].type).toBe('pause'); expect('playerId' in sent[1]).toBe(false);
-    activity.dispose();
+    leave = enterActingPlayer('parent', 'child-a');
+    const activity = reporter(actingPlayerScope('parent', 'child-a'), sent);
+    activity.resume(); await settle();
+    // The child's view unmounts: its registration ends before the workout's close() runs.
+    leave(); leave = undefined;
+    activity.close(); await settle();
+    expect(sent.map(request => [request.type, request.playerId])).toEqual([['resume', 'child-a'], ['pause', 'child-a']]);
+  });
+  it('sends an owner request without playerId', async () => {
+    const sent: Record<string, unknown>[] = [];
+    const activity = reporter({}, sent);
+    activity.resume(); await settle(); activity.close(); await settle();
+    expect(sent.every(request => !('playerId' in request))).toBe(true);
   });
 });
 

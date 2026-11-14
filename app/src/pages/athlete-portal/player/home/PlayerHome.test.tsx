@@ -65,17 +65,19 @@ describe('Home (AthleteWorkspaceHome)', () => {
     expect(empty).toContain('0 recorded sessions');
     expect(empty).toContain('Your next completed workout will appear here.');
   });
-  it('gives a parent the organization-activity-off state, without loading the feed', () => {
+  it('gives a parent no feed section at all, and an Add player button beside the time figure', () => {
     const props = {
       ctx: { access: 'athlete', guardian: true, guardianPlayerIds: ['preview-player'], playerId: 'preview-player', athlete: { name: 'Avery Demo' }, notify: () => {}, allStatsReps: () => [] },
       route: { view: 'home', screen: null, page: 'tests', drill: 'shooting', session: null, rep: null },
       go: () => {}, back: () => {}, active: true, preview: false, athlete: { name: 'Avery Demo' }, reps: {}, personal: {}, report: report(false),
     } as unknown as PlayerTabProps;
-    const html = renderToStaticMarkup(<MemoryRouter initialEntries={['/athlete?player=preview-player&view=home']}><PlayerHome {...props} /></MemoryRouter>);
-    expect(html).toContain('Organization activity is turned off.');
+    const html = renderToStaticMarkup(<MemoryRouter initialEntries={['/athlete?player=preview-player&view=home']}><PlayerHome {...props} onAddPlayer={() => {}} /></MemoryRouter>);
     expect(html).toContain('Avery Demo’s week');
-    expect(html).not.toContain('Loading organization settings');
-    expect(html).not.toContain('Loading your feed');
+    for (const text of ['Organization activity', 'turned off', 'Loading organization settings', 'Loading your feed']) expect(html).not.toContain(text);
+    expect(html).toMatch(/class="home-parent-strip">.*<button type="button" class="home-parent-add">Add player<\/button>/);
+  });
+  it('keeps the player Home without the parent strip', () => {
+    expect(render('')).not.toContain('home-parent-strip');
   });
   it('names the athlete for a staff viewer', () => {
     expect(render('&homePreview=week-empty', { access: 'coach' })).toContain('Avery Demo’s week');

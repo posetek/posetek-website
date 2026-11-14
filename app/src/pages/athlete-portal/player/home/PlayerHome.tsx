@@ -28,13 +28,13 @@ function ConfigProbe({ preview, onConfig }: { preview: boolean; onConfig: (confi
  * (`CommunityFeedView` with `workspacePlayerName`): the week recap first, then "Organization
  * activity" in the organization scope with no scope menu, behind `config/llm.communityFeedEnabled`.
  */
-export default function PlayerHome({ ctx, preview, active, athlete, report, personal }: PlayerTabProps) {
+export default function PlayerHome({ ctx, preview, active, athlete, report, personal, onAddPlayer }: PlayerTabProps & { onAddPlayer?: () => void }) {
   const location = useLocation();
   const mode = preview ? new URLSearchParams(location.search).get('homePreview') : null;
   const [configAttempt, setConfigAttempt] = useState(0);
   const [config, setConfig] = useState<Config>(null);
-  // Social identity is the child's own login, so a parent session never loads the feed: Home shows
-  // the state a player sees when organization activity is off, with no new copy.
+  // Social identity is the child's own login, so a parent session never loads feed settings or the
+  // feed, and Home renders no feed section.
   const parentSession = ctx.guardian === true && !preview;
   const settingsFailed = parentSession ? false : preview ? mode === 'feed-settings-error' : !!config?.unavailable;
   const settingsLoaded = parentSession || (preview ? mode !== 'feed-settings-loading' : config !== null && !config.unavailable);
@@ -59,19 +59,26 @@ export default function PlayerHome({ ctx, preview, active, athlete, report, pers
     <div className="home-stack">
       <WeekRecap key={`${ctx.playerId}:${auth.currentUser?.uid ?? ''}`} access={ctx.access} guardian={ctx.guardian === true} playerName={playerName} playerId={ctx.playerId} active={active}
         preview={preview} previewState={recapPreview} feedUnavailable={feedUnavailable(enabled, phase)} report={report} includePersonal={personal?.enabled === true} />
-      <PlatformTimeFigure time={platformTime} />
-      <div className="home-section-heading">
-        <h2>Organization activity</h2>
-        {organizationName && <p>{organizationName}</p>}
-      </div>
-      {enabled ? phase.kind === 'idle' || phase.kind === 'loading' ? <LoadingState />
-        : phase.kind === 'gated' ? <StateCard kind="gated" message={phase.message} onRetry={feed.reload} />
-        : phase.kind === 'refused' ? <StateCard kind="refused" message={phase.message} onRetry={feed.reload} />
-        : phase.kind === 'failed' ? <StateCard kind="error" message={phase.message} onRetry={feed.reload} />
-        : <FeedList feed={feed} active={active} sample={preview} />
-        : settingsFailed ? <StateCard kind="error" message="Organization activity settings could not be loaded." onRetry={() => { setConfig(null); setConfigAttempt(value => value + 1); }} />
-        : settingsLoaded ? <p className="home-secondary">Organization activity is turned off.</p>
-        : <LoadingRow text="Loading organization settings" />}
+      {/* Parents only: the child's time on PoseTek and Add player (plan §4.5). */}
+      {parentSession && <div className="home-parent-strip">
+        <PlatformTimeFigure time={platformTime} />
+        {onAddPlayer && <button type="button" className="home-parent-add" onClick={onAddPlayer}>Add player</button>}
+      </div>}
+      {/* No feed section at all for a parent: social identity is the child's own login. */}
+      {!parentSession && <>
+        <div className="home-section-heading">
+          <h2>Organization activity</h2>
+          {organizationName && <p>{organizationName}</p>}
+        </div>
+        {enabled ? phase.kind === 'idle' || phase.kind === 'loading' ? <LoadingState />
+          : phase.kind === 'gated' ? <StateCard kind="gated" message={phase.message} onRetry={feed.reload} />
+          : phase.kind === 'refused' ? <StateCard kind="refused" message={phase.message} onRetry={feed.reload} />
+          : phase.kind === 'failed' ? <StateCard kind="error" message={phase.message} onRetry={feed.reload} />
+          : <FeedList feed={feed} active={active} sample={preview} />
+          : settingsFailed ? <StateCard kind="error" message="Organization activity settings could not be loaded." onRetry={() => { setConfig(null); setConfigAttempt(value => value + 1); }} />
+          : settingsLoaded ? <p className="home-secondary">Organization activity is turned off.</p>
+          : <LoadingRow text="Loading organization settings" />}
+      </>}
     </div>
   </>;
 }
