@@ -123,4 +123,21 @@ describe('a workout built with no plan', () => {
     expect(typeof zone).toBe('string');
     expect(() => new Intl.DateTimeFormat('en-US', { timeZone: zone })).not.toThrow();
   });
+  // A browser whose resolved zone is `zone`; constructing a formatter for a zone uses the real Intl check.
+  const browserWith = (zone: unknown) => ({
+    DateTimeFormat: function (locale?: string, options?: Intl.DateTimeFormatOptions) {
+      return options ? new Intl.DateTimeFormat(locale, options) : { resolvedOptions: () => ({ timeZone: zone }) };
+    },
+  }) as unknown as Pick<typeof Intl, 'DateTimeFormat'>;
+  it('keeps a recognised zone', () => {
+    expect(browserTimezone(browserWith('America/New_York'))).toBe('America/New_York');
+    expect(browserTimezone(browserWith('UTC'))).toBe('UTC');
+  });
+  it('sends UTC for a missing, empty, placeholder or unrecognised zone, or when Intl fails', () => {
+    for (const zone of [undefined, null, '', '  ', 'Etc/Unknown', 'Not/AZone', 42]) expect(browserTimezone(browserWith(zone))).toBe('UTC');
+    const broken = { DateTimeFormat: () => { throw new RangeError('no Intl'); } } as unknown as Pick<typeof Intl, 'DateTimeFormat'>;
+    expect(browserTimezone(broken)).toBe('UTC');
+    // The target carries what the card was given, so the fallback reaches the chat.
+    expect(createTarget(null, answers(), browserTimezone(browserWith('Etc/Unknown')))).toMatchObject({ planId: 'standalone', timezone: 'UTC' });
+  });
 });

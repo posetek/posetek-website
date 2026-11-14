@@ -7,7 +7,7 @@ import { submitLlmJob, waitForJob } from '../lib/loaders';
 import type { PortalContext } from '../views/shared';
 import TrainingView from '../views/TrainingView';
 import '../views/training-hub.css';
-import { STANDALONE_SCOPE, executable, executionPlan, isStandalone } from './execution';
+import { executable, executionPlan, isStandalone } from './execution';
 import type { Row } from './execution';
 import { usePlayerWorkouts } from './use-player-workouts';
 import { capabilityEnabled, useCoachConfig } from './gateway';
@@ -35,7 +35,9 @@ import PlanDetails from './workouts/PlanDetails';
 import { HistoryList, SavedLibrary } from './workouts/HistoryAndSaved';
 import { FreeSessionBanner, HubLinks, PlanInvitationCard, PlanSummaryCard, ResumeBanner, TestsGrid, WorkoutActions } from './workouts/WorkoutsRoot';
 import CreateWorkoutCard from './workouts/CreateWorkoutCard';
-import { BUILD_REFUSED, RUN_REFUSED, canBuildWorkout, createTarget, defaultMinutes, openingRequest, runMode, usableV3Plan, workoutScope } from './workouts/create-workout';
+import { BUILD_REFUSED, RUN_REFUSED, canBuildWorkout, createTarget, defaultMinutes, openingRequest, runMode, usableV3Plan } from './workouts/create-workout';
+import { listedWorkouts, storeKeyFor, workoutStoreScopes } from './workouts/store-scopes';
+import type { StoreKey } from './workouts/store-scopes';
 import AppOnlySheet from './workouts/AppOnlySheet';
 import type { AppOnlyKind } from './workouts/AppOnlySheet';
 import { allWorkoutLogs, useAllWorkoutLogs } from './workouts/use-workout-logs';
@@ -119,17 +121,17 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
   const plan = plans?.find(p => p.status === 'active') || plans?.find(p => p.status === 'completed') || null;
   const activePlan = plan?.status === 'active' ? plan : null;
   const v3Active = activePlan?.schemaVersion === 3 ? activePlan : null;
-  // New workouts are built on a usable plan only (the app's `usablePlan`): once the active V3 plan's
-  // block has ended they are standalone, while the hub keeps showing that plan and its workouts.
-  const buildPlan = usableV3Plan(v3Active);
-  const endedV3 = v3Active && !buildPlan ? v3Active : null;
-  // With an ended plan, its standalone workouts live in a second store, as the app's Saved library
-  // lists them beside the plan's; a standalone workout runs on that store.
-  const onStandaloneStore = (w: Row | null | undefined) => !!endedV3 && isStandalone(w);
-  // The active V3 plan's workouts and logs; with none, the workouts built without a plan.
-  const store = usePlayerWorkouts(ctx.playerId!, (playing && !onStandaloneStore(playing) ? playing.planId : null) || (plans ? workoutScope(v3Active) : null), preview, mode === 'walkthrough');
-  const standaloneStore = usePlayerWorkouts(ctx.playerId!, endedV3 ? STANDALONE_SCOPE : null, preview, mode === 'walkthrough');
-  const storeFor = (w: Row | null | undefined) => onStandaloneStore(w) ? standaloneStore : store;
+  // The app's store follows the active plan and the standalone namespace together; here the main
+  // store follows the active V3 plan (or, with none, the standalone namespace) and, while there is an
+  // active V3 plan, a second store follows the standalone one. A followed workout keeps its store.
+  const [playingStore, setPlayingStore] = useState<StoreKey>('main');
+  const scopes = workoutStoreScopes(!!plans, v3Active?.id ?? null, playing ? { workout: playing, store: playingStore } : null);
+  const store = usePlayerWorkouts(ctx.playerId!, scopes.main, preview, mode === 'walkthrough');
+  const standaloneStore = usePlayerWorkouts(ctx.playerId!, scopes.standalone, preview, mode === 'walkthrough');
+  const storeOn = (key: StoreKey) => key === 'standalone' ? standaloneStore : store;
+  const storeFor = (w: Row | null | undefined) => storeOn(storeKeyFor(w, scopes));
+  // Both stores as one list, the app's `WorkoutStore.planWorkouts` and `logs`.
+  const listed = listedWorkouts(store, standaloneStore, scopes);
   const [recordedSessions, setRecordedSessions] = useState<Row[]>([]);
   // Every workout log, for History; only while that page is on screen.
   const history = useAllWorkoutLogs(ctx.playerId, preview, needsAllLogs(page, active));
@@ -182,7 +184,9 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
       setPersonalSource(found ? { workout: found.workout, reference: { planId: plan!.id, workoutId: found.workout.workoutId, revision: Number(found.workout.revision || 1) } } : undefined);
       setPersonalSelected(undefined); setPersonalCreate(false); setPersonalOpen(true); onAcknowledge(); return;
     }
-    // A handoff builds on a usable plan only; an ended block goes to plan setup (`CoachWorkoutRoute.resolve`).
+    // A handoff builds on a usable plan only, judged when it arrives; an ended block goes to plan
+    // setup (`CoachWorkoutRoute.resolve`).
+    const buildPlan = usableV3Plan(v3Active, new Date());
     if (request.destination !== 'program_intake' && buildPlan) {
       const supplied = request.workoutRef;
       if (supplied?.kind === 'plan') { setError('Personal workout copies are not enabled yet. Your assigned workout stays as prescribed.'); onAcknowledge(); return; }
@@ -233,7 +237,9 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     // One guided workout at a time: a personal session still open is saved on the server and closes
     // here, so it can be resumed later rather than run alongside this one.
     if (personalOpen) closePersonal();
-    try { setPlaying(await storeFor(w).start(w)); setReview(null); setChatTarget(null); setFullOpen(false); } catch { /* store owns error */ }
+    // The workout stays on the store it starts on until it finishes.
+    const key = storeKeyFor(w, scopes);
+    try { const started = await storeOn(key).start(w); setPlayingStore(key); setPlaying(started); setReview(null); setChatTarget(null); setFullOpen(false); } catch { /* store owns error */ }
   };
   const apply = async (andStart: boolean) => {
     if (!proposal || applying) return;
@@ -277,10 +283,10 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     if (new URLSearchParams(location.search).has('personalConversation')) navigate({ search: personalDraftLink(location.search) }, { replace: true });
   };
   const openPlan = () => { setSeed(''); setIntake(true); setPanel(''); };
-  // The store holds the active V3 plan's workouts, or with none the standalone ones.
-  const saved = savedWorkouts(store.workouts, store.logs, v3Active);
+  // The active V3 plan's ad-hoc workouts and the standalone ones, as the app's home lists and resumes them.
+  const saved = savedWorkouts(listed.workouts, listed.logs, v3Active);
   const personalWorkouts = personal.enabled ? personal.workouts : [], personalLogs = personal.enabled ? personal.logs : {};
-  const resume = findResume(v3Active, logs, saved, personalWorkouts, personalLogs);
+  const resume = findResume(v3Active, Object.values(listed.logs), saved, personalWorkouts, personalLogs);
   const openResume = (target: ResumeTarget) => {
     const exec = target.kind === 'personal' ? null : executable(executionPlan(v3Active, target.workout), target.workout, Number(target.workout.weekNumber), target.kind);
     switch (resumeAction(target, { needsCheck: !!exec && needsTrainingStartCheck(exec) })) {
@@ -290,6 +296,7 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     }
   };
   // History: every workout log, the hub's own (newer in a preview), and personal sessions.
+  // A detached second store holds no logs.
   const historyLogs = useMemo(() => allWorkoutLogs(history.logs, [...Object.values(store.logs), ...Object.values(standaloneStore.logs)], personalLogs), [history.logs, store.logs, standaloneStore.logs, personalLogs]);
   // Build Workout, "Create another" and Stats' "Start a workout now": the app's card and workout chat.
   // Earlier personal workouts stay where they are listed; Build Workout no longer creates them.
@@ -309,7 +316,7 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
   // A workout conversation keeps its own address only on the hub; opened from another page it leaves that page's address alone.
   if (personalOpen) return <PersonalWorkoutHub key={personalEntry} embedded store={personal} playerId={ctx.playerId!} athlete={ctx.athlete} config={config} preview={preview} source={personalSource} initialWorkout={personalSelected} initialCreate={personalCreate} initialRequest={seed} initialHandoff={personalHandoff} initialConversation={conversationOpen}
     onGuided={setPersonalGuided} onSelection={id => { const search = personalDraftLink(location.search, id), here = playerRoute(location.search); if (here.view === 'workouts' && here.screen === null && search !== new URLSearchParams(location.search).toString()) navigate({ search }); }} onBack={closePersonal} onCompleted={() => { closePersonal(); onCompleted?.(); }} />;
-  if (playing) return <PlayerWorkout workout={playing} store={storeFor(playing)} playerId={ctx.playerId!} preview={preview} walkthrough={mode === 'walkthrough'} onExit={() => setPlaying(null)} onCompleted={onCompleted} />;
+  if (playing) return <PlayerWorkout workout={playing} store={storeOn(playingStore)} playerId={ctx.playerId!} preview={preview} walkthrough={mode === 'walkthrough'} onExit={() => setPlaying(null)} onCompleted={onCompleted} />;
 
   // Presentations over whichever page opened them, the hub included.
   const overlay = (title: string, onClose: () => void, body: ReactNode) => <section className="wk-page"><PlayerHeader title={title} onBack={onClose} />{hubNotice}{body}</section>;
@@ -349,7 +356,7 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     const refused = !canBuildWorkout(ctx.access) ? BUILD_REFUSED : !capabilityEnabled(config, 'workout_chat') ? 'Workout builder unavailable' : undefined;
     return overlay('Create your workout', () => setCreateOpen(false), <>{message}
       <CreateWorkoutCard initialMinutes={defaultMinutes(v3Active?.minutesPerSession)} disabledReason={refused}
-        onBuild={answers => { setSeed(openingRequest(answers)); setProposal(null); setCreateOpen(false); setChatTarget(createTarget(buildPlan?.id ?? null, answers)); }} />
+        onBuild={answers => { setSeed(openingRequest(answers)); setProposal(null); setCreateOpen(false); setChatTarget(createTarget(usableV3Plan(v3Active, new Date())?.id ?? null, answers)); }} />
     </>);
   }
   if (weekDetail !== null && plan) return overlay(`Week ${weekDetail}`, () => setWeekDetail(null), <PlanWeekDetail plan={plan} weekNumber={weekDetail} onOpenDrill={openDrill} />);
@@ -365,7 +372,7 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     // invitation to build one, Create a workout, then Saved Workouts, Workout History and Tests.
     const banners = <>
       {!preview && activeFreeSession && <FreeSessionBanner session={activeFreeSession} onClick={() => setAppOnly({ title: 'Free session in progress', kind: 'freeSession' })} />}
-      {resume && <ResumeBanner text={resumeBannerText(resume)} disabled={resume.kind !== 'personal' && !store.logsLoaded} onClick={() => openResume(resume)} />}
+      {resume && <ResumeBanner text={resumeBannerText(resume)} disabled={resume.kind !== 'personal' && !storeFor(resume.workout).logsLoaded} onClick={() => openResume(resume)} />}
     </>;
     const actions = <WorkoutActions onCreate={createWorkout} onCardio={() => setAppOnly({ title: 'Cardio', kind: 'cardio' })} />;
     const links = <HubLinks onSaved={() => go('workouts', { screen: 'saved' })} onHistory={() => go('workouts', { screen: 'history' })} onTests={() => go('workouts', { screen: 'tests' })} />;
@@ -395,8 +402,8 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     </section>;
   }
   if (page === 'saved') return <section className="wk-page">{header}{notices}
-    <SavedLibrary entries={savedEntries(endedV3 ? [...store.workouts, ...standaloneStore.workouts] : store.workouts, endedV3 ? { ...store.logs, ...standaloneStore.logs } : store.logs, personalWorkouts, personalLogs, v3Active)}
-      loading={!!plans && (!store.logsLoaded || (!!endedV3 && !standaloneStore.logsLoaded)) || (personal.enabled && !personal.loaded)} error={storeError || ''}
+    <SavedLibrary entries={savedEntries(listed.workouts, listed.logs, personalWorkouts, personalLogs, v3Active)}
+      loading={!!plans && !listed.logsLoaded || (personal.enabled && !personal.loaded)} error={storeError || ''}
       onOpen={entry => { if (entry.inProgress && entry.source === 'adhoc') { const exec = executable(executionPlan(v3Active, entry.workout), entry.workout, Number(entry.workout.weekNumber), 'adhoc'); if (needsTrainingStartCheck(exec)) setReview(exec); else void start(exec); } else reviewSaved(entry); }}
       onEdit={entry => openPersonal(entry.workout)} />
   </section>;
