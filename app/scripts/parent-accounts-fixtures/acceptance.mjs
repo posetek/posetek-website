@@ -83,6 +83,31 @@ try {
     await signIn(page, 'parent@example.test');
     await page.getByRole('button', { name: 'Add to my account' }).waitFor();
   });
+  await scenario('a player holding a parent link sees the guidance once, then Continue reaches its own home', `/signin#parentCode=${CODE}`, async page => {
+    await page.locator('#parentCodeTab.active').waitFor();
+    await signIn(page, 'other@example.test');
+    await page.getByText(guidance('a player account')).waitFor();
+    await page.locator('#closeSignupModal').click();
+    await page.getByRole('button', { name: 'Continue with signed-in account' }).click();
+    await page.waitForURL(url => url.pathname === '/athlete');
+    assert.equal(new URL(page.url()).searchParams.get('player'), 'other-child');
+  });
+  await scenario('a restored player session on a parent link is never trapped: Continue goes home', `/signin?as=other-player#parentCode=${CODE}`, async page => {
+    await page.getByText(guidance('a player account')).waitFor();
+    await page.locator('#closeSignupModal').click();
+    await page.getByRole('button', { name: 'Continue with signed-in account' }).click();
+    await page.waitForURL(url => url.pathname === '/athlete');
+    assert.equal(new URL(page.url()).searchParams.get('player'), 'other-child');
+  });
+  await scenario("a parent already linked to the report's child, with an unused code, gets Add to my account", `/signin?as=parent&reportPlayer=child-a#parentCode=${CODE}`, async page => {
+    await page.getByRole('button', { name: 'Add to my account' }).waitFor();
+    assert.equal(new URL(page.url()).pathname, '/signin');
+  });
+  await scenario("a parent already linked to the report's child, with a used code, continues to that child", `/signin?as=parent&reportPlayer=child-a#parentCode=PAR-${'F'.repeat(32)}`, async page => {
+    await page.waitForURL(url => url.pathname === '/athlete');
+    assert.equal(new URL(page.url()).searchParams.get('player'), 'child-a');
+    assert.equal(new URL(page.url()).searchParams.get('view'), 'training');
+  });
   await scenario("the child's own login keeps auto-continuing on a report that carries a parent link", `/signin?as=child&reportPlayer=child-b#parentCode=${CODE}`, async page => {
     await page.waitForURL(url => url.pathname === '/athlete');
     assert.equal(new URL(page.url()).searchParams.get('player'), 'child-b');

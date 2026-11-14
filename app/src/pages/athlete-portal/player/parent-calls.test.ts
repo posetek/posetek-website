@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actingPlayerId, actingPlayerScope, enterActingPlayer } from '../../../lib/acting-player';
-import { forgetParentSessions, isParentSession } from '../../../lib/parent-session';
+import { forgetParentSession, forgetParentSessions, isParentSession } from '../../../lib/parent-session';
 import { createSocialApi, ParentSocialRefusal, socialParentSession } from '../../feed/api';
 import { createWorkoutActivity } from './workout-activity';
 import { actsForPlayer } from './player-age';
@@ -55,6 +55,25 @@ describe('social endpoints are owner-only', () => {
     expect(await isParentSession('parent-on-feed', guardiansDb({ 'parent-on-feed': { userUID: 'parent-on-feed', playerIds: ['child-a'] } }))).toBe(true);
     expect(await isParentSession('player', guardiansDb({}))).toBe(false);
     expect(await isParentSession('before-rules', guardiansDb({}, true))).toBe(false);
+  });
+  it('falls back to "not a parent" after a short wait for a slow read, without keeping the fallback', async () => {
+    let finish!: () => void;
+    const slow = { collection: () => ({ doc: (id: string) => ({ get: () => new Promise(resolve => { finish = () => resolve({ id, exists: true, data: () => ({ userUID: id, playerIds: ['child-a'] }) }); }) }) }) } as never;
+    const started = Date.now();
+    expect(await isParentSession('slow-parent', slow, 20)).toBe(false);
+    expect(Date.now() - started).toBeLessThan(1000);
+    finish(); await Promise.resolve(); await Promise.resolve();
+    // The read itself completed and is kept: the next check knows.
+    expect(await isParentSession('slow-parent', slow, 20)).toBe(true);
+  });
+  it('reads the record again after a redeem changed it', async () => {
+    const records: Record<string, unknown> = {};
+    const source = guardiansDb(records);
+    expect(await isParentSession('new-parent', source)).toBe(false);
+    records['new-parent'] = { userUID: 'new-parent', playerIds: ['child-a'] };
+    expect(await isParentSession('new-parent', source)).toBe(false);
+    forgetParentSession('new-parent');
+    expect(await isParentSession('new-parent', source)).toBe(true);
   });
   it('refuses every social call through that predicate for a parent, and calls through for an owner', async () => {
     const parent = transport(), owner = transport();

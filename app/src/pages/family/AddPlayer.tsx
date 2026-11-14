@@ -3,6 +3,7 @@ import { auth } from "../../lib/firebase";
 import { accountError } from "../landing/account-entry";
 import { addParentInvitation, guardianRedeemMessage, parentCodeFromInput, unavailableParentInvitation } from "../landing/parent-invitation-link";
 import { redeemGuardianInvitation } from "../landing/signup-data";
+import { forgetParentSession } from "../../lib/parent-session";
 
 type Props = {
   /** Every child now linked to the login, from the redeem response. */
@@ -26,6 +27,8 @@ export default function AddPlayer({ onAdded, variant = "club", redeem = redeemGu
     setBusy(true); setError("");
     try {
       const playerIds = await addParentInvitation(code, { currentUid, redeem });
+      // The login's guardians record changed: the next "is this a parent" check reads it again.
+      forgetParentSession(currentUid());
       setValue("");
       onAdded(playerIds);
     } catch (failure: any) {

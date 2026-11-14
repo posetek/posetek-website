@@ -19,6 +19,7 @@ import { capturePlayerInvitationLink, createInvitedPlayer, forgetPlayerInvitatio
 import { addParentInvitation, captureParentInvitationLink, createInvitedParent, forgetParentInvitationLink, guardianErrorReason, guardianRedeemMessage, initialParentInvitationLink, parentCodeFromInput, parentLinkAction, readParentInvitationLink, unavailableParentInvitation } from "./parent-invitation-link";
 import type { ParentLinkAction } from "./parent-invitation-link";
 import { parentLinkSignIn } from "./parent-sign-in";
+import { forgetParentSession } from "../../lib/parent-session";
 import {
   initialReportPlayerDestination,
   invalidReportEntry,
@@ -304,12 +305,8 @@ export default function LandingPage() {
         const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
         setContinueLoading(true);
         void loadAccountAccess(user, isCurrent)
-          .then(access => {
-            if (!isCurrent()) return;
-            const decision = parentLinkSignIn(requestedEntry, access);
-            if (decision.kind === "continue") navigate(decision.destination);
-            else returnToParentPanel(decision.action);
-          })
+          .then(access => isCurrent() ? answerWaitingParentLink(requestedEntry, access, waitingLink.code, isCurrent) : true)
+          .then(answer => { if (typeof answer === "string" && isCurrent()) navigate(answer); })
           .catch(() => { /* the Parent panel's own check answers */ })
           .finally(() => { if (isCurrent()) setContinueLoading(false); });
       } else if (restoredSession && user && requestedEntry.playerId) {
@@ -453,14 +450,40 @@ export default function LandingPage() {
     setActiveTab("parentCode"); setSignupOpen(true); setParentAction(action);
   }
 
+  // The waiting link cannot be used by this account: after its guidance is shown once, the page
+  // forgets the link, so Continue reaches the account's own destination (re-review N1).
+  function forgetWaitingParentLink() {
+    forgetParentInvitationLink(); setParentLink({ present: false, code: "" }); setParentCheck(null);
+  }
+
+  // Whether the waiting code can still add a child: only a parent's sign-in needs to know (N2).
+  async function waitingCodeUnused(access: { kind: string; role?: string }, code: string): Promise<boolean> {
+    if (access.kind !== "active" || access.role !== "parent" || !code) return false;
+    try { return await validateGuardianInvitation(code); } catch { return false; }
+  }
+
+  // The one place a sign-in meets a waiting parent link. Returns true when the page stays here.
+  // Continue is the account's explicit choice to go on: guidance is not repeated there.
+  async function answerWaitingParentLink(entry: typeof reportEntry, access: Parameters<typeof parentLinkSignIn>[1], code: string, isCurrent: () => boolean, fromContinue = false): Promise<string | null | true> {
+    const unused = await waitingCodeUnused(access, code);
+    if (!isCurrent()) return true;
+    const decision = parentLinkSignIn(entry, access, unused);
+    if (decision.kind === "continue") return decision.destination;
+    if (decision.kind === "add") { returnToParentPanel({ kind: "add" }); return true; }
+    forgetWaitingParentLink();
+    if (fromContinue) return null;
+    returnToParentPanel({ kind: "guidance", message: decision.message });
+    return true;
+  }
+
   async function openAccount(user: any, isCurrent: () => boolean, passwordSignIn: boolean) {
     const access = await loadAccountAccess(user, isCurrent);
     if (!isCurrent()) return;
-    // A waiting parent link is redeemed with "Add to my account", never dropped by a redirect. Only
-    // the report's own child login, or a parent already linked to that child, continues as before.
+    // A waiting parent link is redeemed with "Add to my account", never dropped by a redirect; an
+    // account that cannot use it sees why once and then goes on normally.
     if (parentLinkWaiting()) {
-      const decision = parentLinkSignIn(reportEntry, access);
-      if (decision.kind === "panel") { returnToParentPanel(decision.action); return; }
+      const answer = await answerWaitingParentLink(reportEntry, access, parentLink.code, isCurrent, !passwordSignIn);
+      if (answer === true) return;
     }
     const reportDestination = access.kind === "activation"
       ? reportPlayerDestination(reportEntry, null, null)
@@ -726,6 +749,7 @@ export default function LandingPage() {
 
       const destination = parentDestination(playerIds);
       forgetParentInvitationLink();
+      forgetParentSession(auth.currentUser?.uid);
       pendingParentSignup.current = null;
       const signupUid = auth.currentUser?.uid;
       if (!signupUid) throw new Error("Your account was created. Sign in with that account to continue.");
@@ -756,6 +780,7 @@ export default function LandingPage() {
       // parent's own players instead of a "created" message.
       const destination = parentDestination(playerIds, true);
       forgetParentInvitationLink();
+      forgetParentSession(user.uid);
       navigate(destination);
     } catch (error: any) {
       if (!isCurrent()) return;

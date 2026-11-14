@@ -67,7 +67,8 @@ export const db = { collection: (name: string) => ({
 }) };
 
 const answers: Record<string, (data: Data) => unknown> = {
-  validateGuardianInvitation: () => ({ valid: true }),
+  // Only the fixture's open code is unused; any other well-formed code reads as used.
+  validateGuardianInvitation: data => ({ valid: data.code === CODE }),
   redeemGuardianInvitation: data => {
     if (!current) throw Object.assign(new Error('Sign in'), { code: 'functions/unauthenticated' });
     if (current.uid !== 'synthetic-parent' && current.uid !== 'synthetic-unlinked') throw Object.assign(new Error('refused'), { code: 'functions/failed-precondition', details: { reason: 'player-login' } });

@@ -81,24 +81,27 @@ describe("report continuation for a parent", () => {
   });
 });
 
-describe("signing in while a parent link waits (review findings 1 and 7)", () => {
+describe("signing in while a parent link waits (review 1 and 7, re-review N1 and N2)", () => {
   const report = readReportPlayerEntry("?reportPlayer=child-b");
   const none = readReportPlayerEntry("");
-  it("lets the report's own child login and a parent linked to that child continue as before", () => {
-    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "child-b" })).toEqual({ kind: "continue", destination: "/athlete?player=child-b&userType=player&view=training" });
-    expect(parentLinkSignIn(report, { kind: "active", role: "parent", playerIds: ["child-b"] })).toEqual({ kind: "continue", destination: "/athlete?player=child-b&userType=player&view=training" });
+  const training = "/athlete?player=child-b&userType=player&view=training";
+  it("lets the report's own child login continue as before, whatever the code's state", () => {
+    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "child-b" }, true)).toEqual({ kind: "continue", destination: training });
+    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "child-b" }, false)).toEqual({ kind: "continue", destination: training });
+  });
+  it("continues a parent already linked to the report's child only when the waiting code can no longer add anyone", () => {
+    expect(parentLinkSignIn(report, { kind: "active", role: "parent", playerIds: ["child-b"] }, false)).toEqual({ kind: "continue", destination: training });
+    // An unused code may carry a sibling: Add to my account, never dropped silently.
+    expect(parentLinkSignIn(report, { kind: "active", role: "parent", playerIds: ["child-b"] }, true)).toEqual({ kind: "add" });
   });
   it("returns an existing parent or an unlinked login to Add to my account instead of redirecting", () => {
-    expect(parentLinkSignIn(none, { kind: "active", role: "parent", playerIds: ["child-a"] })).toEqual({ kind: "panel", action: { kind: "add" } });
-    expect(parentLinkSignIn(report, { kind: "active", role: "parent", playerIds: ["child-a"] })).toEqual({ kind: "panel", action: { kind: "add" } });
-    expect(parentLinkSignIn(none, { kind: "activation", reason: "unlinked" })).toEqual({ kind: "panel", action: { kind: "add" } });
+    expect(parentLinkSignIn(none, { kind: "active", role: "parent", playerIds: ["child-a"] }, true)).toEqual({ kind: "add" });
+    expect(parentLinkSignIn(report, { kind: "active", role: "parent", playerIds: ["child-a"] }, false)).toEqual({ kind: "add" });
+    expect(parentLinkSignIn(none, { kind: "activation", reason: "unlinked" }, false)).toEqual({ kind: "add" });
   });
-  it("gives every other account its wrong-kind-of-sign-in guidance", () => {
-    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "other-child" })).toEqual({ kind: "panel", action: parentLinkAction("player") });
-    expect(parentLinkSignIn(none, { kind: "active", role: "player", playerId: "child-b" })).toEqual({ kind: "panel", action: parentLinkAction("player") });
-    for (const role of ["admin", "manager", "coach", "independent"] as const) {
-      const decision = parentLinkSignIn(none, { kind: "active", role });
-      expect(decision.kind === "panel" && decision.action.kind).toBe("guidance");
-    }
+  it("answers every other account with guidance, which the page shows once and never intercepts again", () => {
+    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "other-child" }, true)).toEqual({ kind: "guidance", message: (parentLinkAction("player") as { message: string }).message });
+    expect(parentLinkSignIn(none, { kind: "active", role: "player", playerId: "child-b" }, true).kind).toBe("guidance");
+    for (const role of ["admin", "manager", "coach", "independent"] as const) expect(parentLinkSignIn(none, { kind: "active", role }, true).kind).toBe("guidance");
   });
 });
