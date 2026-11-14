@@ -22,22 +22,24 @@ describe('the acting child of a parent session', () => {
   });
 });
 
-describe('social endpoints in a parent session', () => {
+describe('social endpoints are owner-only', () => {
   const transport = () => { const calls: [string, unknown][] = []; return { calls, httpsCallable: (name: string) => async (data: unknown) => { calls.push([name, data]); return { data: {} }; } }; };
-  it('adds the acting child to the endpoints whose playerId is free, and nothing for an owner', async () => {
-    const owner = transport(), parent = transport();
-    await createSocialApi(owner, () => null)('getSocialFeed', { scope: 'organization' });
-    await createSocialApi(parent, () => 'child-a')('getSocialFeed', { scope: 'organization' });
-    await createSocialApi(parent, () => 'child-a')('setSocialKudos', { id: 'activity', liked: true } as never);
-    expect(owner.calls).toEqual([['getSocialFeed', { scope: 'organization' }]]);
-    expect(parent.calls).toEqual([['getSocialFeed', { scope: 'organization', playerId: 'child-a' }], ['setSocialKudos', { id: 'activity', liked: true, playerId: 'child-a' }]]);
+  it('sends an owner request unchanged, with no acting child on any endpoint', async () => {
+    const owner = transport();
+    await createSocialApi(owner, () => false)('getSocialFeed', { scope: 'organization' });
+    await createSocialApi(owner, () => false)('socialConnection', { playerId: 'teammate', action: 'request' });
+    expect(owner.calls).toEqual([['getSocialFeed', { scope: 'organization' }], ['socialConnection', { playerId: 'teammate', action: 'request' }]]);
   });
-  it("never overwrites another athlete's playerId or an administrator preview", async () => {
-    const parent = transport(), api = createSocialApi(parent, () => 'child-a');
-    await api('socialConnection', { playerId: 'teammate', action: 'request' });
-    await api('getSocialPeople', { playerId: 'teammate' });
-    await api('getSocialContext', { viewAsPlayerId: 'previewed' });
-    expect(parent.calls.map(call => call[1])).toEqual([{ playerId: 'teammate', action: 'request' }, { playerId: 'teammate' }, { viewAsPlayerId: 'previewed' }]);
+  it('never calls a social endpoint in a parent session', async () => {
+    const parent = transport(), api = createSocialApi(parent, () => true);
+    await expect(api('getSocialContext', {})).rejects.toThrow();
+    await expect(api('getSocialFeed', { scope: 'organization' })).rejects.toThrow();
+    await expect(api('setSocialKudos', { id: 'activity', liked: true } as never)).rejects.toThrow();
+    expect(parent.calls).toEqual([]);
+  });
+  it('treats a registered acting child as a parent session for the shared client', () => {
+    leave = enterActingPlayer('parent', 'child-a');
+    expect(actingPlayerId('parent')).not.toBeNull();
   });
 });
 

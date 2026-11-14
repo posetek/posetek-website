@@ -33,9 +33,12 @@ export default function PlayerHome({ ctx, preview, active, athlete, report, pers
   const mode = preview ? new URLSearchParams(location.search).get('homePreview') : null;
   const [configAttempt, setConfigAttempt] = useState(0);
   const [config, setConfig] = useState<Config>(null);
-  const settingsFailed = preview ? mode === 'feed-settings-error' : !!config?.unavailable;
-  const settingsLoaded = preview ? mode !== 'feed-settings-loading' : config !== null && !config.unavailable;
-  const enabled = preview ? !['feed-off', 'feed-settings-error', 'feed-settings-loading'].includes(mode || '') : settingsLoaded && remoteFeedEnabled(config);
+  // Social identity is the child's own login, so a parent session never loads the feed: Home shows
+  // the state a player sees when organization activity is off, with no new copy.
+  const parentSession = ctx.guardian === true && !preview;
+  const settingsFailed = parentSession ? false : preview ? mode === 'feed-settings-error' : !!config?.unavailable;
+  const settingsLoaded = parentSession || (preview ? mode !== 'feed-settings-loading' : config !== null && !config.unavailable);
+  const enabled = !parentSession && (preview ? !['feed-off', 'feed-settings-error', 'feed-settings-loading'].includes(mode || '') : settingsLoaded && remoteFeedEnabled(config));
   const samplePhase = previewFeedPhase(mode);
   const sample = preview ? {
     phase: samplePhase, context: enabled && samplePhase.kind === 'ready' ? PREVIEW_CONTEXT : null,
@@ -48,11 +51,11 @@ export default function PlayerHome({ ctx, preview, active, athlete, report, pers
   const recapPreview = (mode?.startsWith('week-') ? mode.slice(5) : undefined) as RecapPreview;
   const phase = feed.phase;
   // Parents only: the child's total time on PoseTek.
-  const platformTime = usePlatformTime(ctx.playerId, ctx.guardian === true && !preview);
+  const platformTime = usePlatformTime(ctx.playerId, parentSession);
 
   return <>
     <PlayerHeader title="Home" />
-    {!preview && <ConfigProbe key={configAttempt} preview={false} onConfig={setConfig} />}
+    {!preview && !parentSession && <ConfigProbe key={configAttempt} preview={false} onConfig={setConfig} />}
     <div className="home-stack">
       <WeekRecap key={`${ctx.playerId}:${auth.currentUser?.uid ?? ''}`} access={ctx.access} guardian={ctx.guardian === true} playerName={playerName} playerId={ctx.playerId} active={active}
         preview={preview} previewState={recapPreview} feedUnavailable={feedUnavailable(enabled, phase)} report={report} includePersonal={personal?.enabled === true} />

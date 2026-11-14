@@ -15,27 +15,21 @@ const mutationNames = new Set<SocialCallableName>([
 ]);
 
 /**
- * Endpoints that name the acting child in a parent session (Parent accounts plan §11.3). Not
- * `getSocialPeople` or `socialConnection`, whose `playerId` already names the other athlete, and
- * not the administrator-only directory and moderation calls.
+ * Social identity is the athlete's own login on the server (Parent accounts decision, 2026-11-14),
+ * so a parent session never calls the social endpoints. The player view offers no social surface
+ * to a parent; `parentSession` makes this boundary refuse any call that slips through.
  */
-export const ACTING_PLAYER_SOCIAL_CALLS = new Set<SocialCallableName>([
-  "getSocialContext", "getSocialFeed", "getSocialActivity", "getSocialComments", "getSocialMedia",
-  "setSocialKudos", "saveSocialComment", "setSocialVisibility", "saveSocialPreferences", "reportSocialActivity",
-]);
-
-/** `acting` returns the child a parent login is viewing, or null; owners send exactly what they sent. */
-export function createSocialApi(transport: SocialTransport, acting: () => string | null = () => null): SocialApi {
+export function createSocialApi(transport: SocialTransport, parentSession: () => boolean = () => false): SocialApi {
   return async <Name extends SocialCallableName>(name: Name, data: SocialRequests[Name]) => {
-    const viewer = data as { viewAsPlayerId?: string; id?: string; playerId?: string };
+    const viewer = data as { viewAsPlayerId?: string; id?: string };
     const mutation = mutationNames.has(name) || (name === "moderateSocialActivity" && !!viewer.id);
     // Defense in depth for new consumers. The recovered backend also enforces
     // this rule; removing disabled buttons can never authorize an admin preview write.
     if (viewer.viewAsPlayerId && mutation) throw new Error("Athlete previews are read-only.");
-    const playerId = ACTING_PLAYER_SOCIAL_CALLS.has(name) && !viewer.viewAsPlayerId && viewer.playerId === undefined ? acting() : null;
-    const response = await transport.httpsCallable(name)(playerId ? { ...data, playerId } : data);
+    if (parentSession()) throw new Error("Organization activity is turned off.");
+    const response = await transport.httpsCallable(name)(data);
     return response.data as SocialResponses[Name];
   };
 }
 
-export const callSocial = createSocialApi(cloud, () => actingPlayerId(auth.currentUser?.uid));
+export const callSocial = createSocialApi(cloud, () => actingPlayerId(auth.currentUser?.uid) !== null);
