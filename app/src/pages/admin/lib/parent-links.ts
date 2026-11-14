@@ -39,6 +39,8 @@ export function parentLinksReadError(error: unknown): string {
 }
 export const loadingParentLinks = (): ParentLinksView => ({ data: null, names: {}, pending: "loading", choosing: null, confirmingRemove: null, confirmingRevoke: null, message: "", error: false });
 const closed = { choosing: null, confirmingRemove: null, confirmingRevoke: null } as const;
+/** Parents opened while signed out: the existing sign-in-again message, never an endless check. */
+export const signedOutParentLinks = (): ParentLinksView => ({ ...loadingParentLinks(), pending: null, message: guardianLinkError({ code: "unauthenticated" }), error: true });
 
 /** The children a copied link carries before any sibling is ticked: the open link's, else this player. */
 export function baseLinkPlayers(playerId: string, data: PlayerGuardians): string[] {

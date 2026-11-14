@@ -6,7 +6,7 @@ vi.mock("../../../lib/organization-data", () => ({ clubCall: vi.fn() }));
 import SignupStatus, { SignupInvitationControls } from "./SignupStatus";
 import type { ParentLinkActions, ParentLinksProps } from "./SignupStatus";
 import type { InvitationView } from "../lib/invitation";
-import { loadingParentLinks, parentLinksController, showsParentLinked } from "../lib/parent-links";
+import { loadingParentLinks, parentLinksController, showsParentLinked, signedOutParentLinks } from "../lib/parent-links";
 import type { ParentLinksPort, ParentLinksView } from "../lib/parent-links";
 import { ensureGuardianInvitation, getPlayerGuardians, guardianLinkError, parentLinkedFrom, parsePlayerGuardians, resetGuardianReadReporting } from "../../../lib/guardians";
 import type { PlayerGuardians } from "../../../lib/guardians";
@@ -75,6 +75,11 @@ describe("parent links in the shared signup control", () => {
     expect(html).toContain("parent@example.test · linked Nov 13, 2026 · also linked to Sam Synthetic");
     expect(html).toContain('aria-label="Remove parent@example.test as a parent of Example Player"');
     expect(render({ data: guardians({ guardians: [linked] }) }, { variant: "club" })).toContain("Parent linked");
+  });
+  it("says sign in again when Parents is opened signed out, never an endless check", () => {
+    const html = render(signedOutParentLinks());
+    expect(html).toContain("Sign in again to manage parent links.");
+    expect(html).not.toContain("Checking parent links"); expect(html).not.toContain("Retry parent links");
   });
   it("never treats a failed read as nobody linked", () => {
     const html = render({ data: null, error: true, message: "Parent links could not be checked." });

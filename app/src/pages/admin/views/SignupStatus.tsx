@@ -6,7 +6,7 @@ import { ensureGuardianInvitation, getPlayerGuardians, parentViewPath, removePla
 import { loadFamilyChildren } from "../../family/family";
 import { invitationController, loadingInvitation } from "../lib/invitation";
 import type { InvitationView } from "../lib/invitation";
-import { loadingParentLinks, parentLinksController, showsParentLinked } from "../lib/parent-links";
+import { loadingParentLinks, parentLinksController, showsParentLinked, signedOutParentLinks } from "../lib/parent-links";
 import type { ParentCopyKind, ParentLinksView } from "../lib/parent-links";
 import "./parent-links.scss";
 
@@ -66,7 +66,9 @@ export default function SignupStatus({ playerId, playerName, registered = false,
   const openParents = () => {
     setParentsOpen(true);
     const uid = auth.currentUser?.uid;
-    if (!uid || parentController.current) return;
+    // Signed out: say so, instead of a check that can never finish (re-review N5).
+    if (!uid) { setParents({ playerId, uid: null, reloadKey, view: signedOutParentLinks() }); return; }
+    if (parentController.current) return;
     const links = parentLinksController(playerId, {
       read: id => getPlayerGuardians(id), ensure: ids => ensureGuardianInvitation(ids), revoke: id => revokeGuardianInvitation(id), remove: (id, guardianUid) => removePlayerGuardian(id, guardianUid),
       copy: text => navigator.clipboard.writeText(text),
@@ -145,7 +147,7 @@ function ParentLinks({ playerId, view, admin, actions, playerName, buttonClass, 
   // Parent codes and emails never enter session replay.
   return <div className="admin-parent-links" data-clarity-mask="true">
     {view.pending === "loading" && <span className="admin-code-unavailable" role="status">Checking parent links…</span>}
-    {!data && view.error && <button className={buttonClass} type="button" disabled={busy} onClick={actions.retry}>Retry parent links</button>}
+    {!data && view.error && !view.message.startsWith("Sign in again") && <button className={buttonClass} type="button" disabled={busy} onClick={actions.retry}>Retry parent links</button>}
     {data && data.guardians.length > 0 && <div className="admin-parent-list"><span className="admin-parent-label">Parents</span>
       {data.guardians.map(guardian => {
         const others = guardian.playerIds.filter(id => id !== playerId).map(nameOf);
