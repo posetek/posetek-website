@@ -36,7 +36,9 @@ type Listed = { workouts: Row[]; logs: Record<string, Row>; logsLoaded: boolean 
 
 /**
  * Both stores' workouts and logs as one list, as the app's single store holds them. With no second
- * store the main store's own arrays come back unchanged.
+ * store the main store's own arrays come back unchanged. The list is ready when the main store is:
+ * the second store's workouts join it when they arrive, and a second store that never loads (its
+ * listener failed) leaves the main store's list as it was.
  */
 export function listedWorkouts(main: Listed, second: Listed, scopes: StoreScopes): Listed {
   if (!scopes.standalone) return main;
@@ -44,6 +46,15 @@ export function listedWorkouts(main: Listed, second: Listed, scopes: StoreScopes
   return {
     workouts: [...main.workouts, ...second.workouts.filter(w => !seen.has(w.id))],
     logs: { ...second.logs, ...main.logs },
-    logsLoaded: main.logsLoaded && second.logsLoaded,
+    logsLoaded: main.logsLoaded,
   };
+}
+
+/**
+ * The store failure a screen shows. The main store's shows on every hub screen, as before; the
+ * second store's only on a screen for a workout that runs on it (`opened` is that workout's store),
+ * so a failed standalone listener never puts a banner over the plan's own pages.
+ */
+export function shownStoreError(main: { error: string | null }, second: { error: string | null }, opened: StoreKey | null = null): string | null {
+  return main.error || (opened === 'standalone' ? second.error : null) || null;
 }
