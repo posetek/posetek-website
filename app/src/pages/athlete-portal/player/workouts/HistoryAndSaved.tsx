@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Row } from '../execution';
-import { completedMinutes } from '../execution';
+import { completedMinutes, isStandalone } from '../execution';
 import { WORKOUT_TYPE_LABELS, endReasonChip, freeSessionSummary, historyBlockSummary, historyRows, savedDetailLine, sessionDateText } from './hub';
 import type { SavedEntry } from './hub';
 import { Eyebrow, InfoNote, doseLine } from './MyWorkoutPlan';
@@ -34,11 +34,11 @@ export function HistoryList({ logs, sessions, planId, loading, error, canReview,
       return <section className="wk-card wk-history-card" key={key}>
         <button type="button" className="wk-history-row" aria-expanded={expanded} onClick={toggle}>
           <span className="wk-history-icon material-symbols-outlined" aria-hidden="true">bolt</span>
-          <span className="wk-history-title"><strong>{row.source === 'personal' ? 'Workout' : `Workout · week ${row.weekNumber}`}</strong><small>{sessionDateText(row.startedAt)}</small></span>
+          <span className="wk-history-title"><strong>{row.source === 'personal' || isStandalone(row) ? 'Workout' : `Workout · week ${row.weekNumber}`}</strong><small>{sessionDateText(row.startedAt)}</small></span>
           <span className={`wk-tag ${chip.tone}`}>{chip.text}</span>
         </button>
         <p className="wk-muted wk-small">{historyBlockSummary(row)}</p>
-        {planId && row.planId && row.source !== 'personal' && row.planId !== planId && <InfoNote icon="history" text="From an earlier plan." />}
+        {planId && row.planId && row.source !== 'personal' && !isStandalone(row) && row.planId !== planId && <InfoNote icon="history" text="From an earlier plan." />}
         {(row.blocks || []).some((b: Row) => b.skipReason === 'pain') && <InfoNote icon="medical_services" text="You stopped something for pain in this workout." />}
         {expanded && <div className="wk-history-detail">
           {snapshot.title && <h3>{snapshot.title}</h3>}

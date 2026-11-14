@@ -5,6 +5,7 @@
 // page's content (`TrainingHubPlanPage`) and the history row summary (`TrainingHistoryView`).
 import { currentWeekNumber, localDayString, nextWorkout, planHorizonWeeks, planLogId, weekOf, weekWindow } from '../../../../lib/contracts/planV3';
 import { domainFromLegacy } from '../../../../lib/contracts/drillV2';
+import { isStandalone, standaloneWindowOpen } from '../execution';
 import type { Row } from '../execution';
 
 export const millis = (value: any): number => {
@@ -316,17 +317,21 @@ export function inWeekWindow(plan: Row | null, weekNumber: number, now = new Dat
   return day >= window.start && day < window.end;
 }
 
+/** A saved ad-hoc workout can start now: inside its plan week, or a standalone one inside its own window. */
+export const savedWorkoutOpen = (workout: Row, plan: Row | null, now = new Date()) =>
+  isStandalone(workout) ? standaloneWindowOpen(workout, now) : inWeekWindow(plan, workout.weekNumber, now);
+
 /**
- * The active plan's ad-hoc workouts that can still be started or resumed, newest first
- * (`SavedWorkoutsSection.savedWorkouts`). A missing `source` counts as ad hoc: these documents come
- * from the ad-hoc collection for the plan.
+ * The ad-hoc workouts that can still be started or resumed, newest first
+ * (`SavedWorkoutsSection.savedWorkouts`): the active plan's, or with no plan the standalone ones.
+ * A missing `source` counts as ad hoc: these documents come from the ad-hoc collection for the plan.
  */
 export function savedWorkouts(planWorkouts: Row[], logs: Record<string, Row>, plan: Row | null, now = new Date()): Row[] {
   return planWorkouts.filter(w => {
     if ((w.source ?? 'adhoc') !== 'adhoc') return false;
     const log = logs[w.id];
     if (log) return !log.endedAt;
-    return inWeekWindow(plan, w.weekNumber, now);
+    return savedWorkoutOpen(w, plan, now);
   }).sort((a, b) => (millis(b.generatedAt) || 0) - (millis(a.generatedAt) || 0) || String(b.id).localeCompare(String(a.id)));
 }
 
@@ -364,7 +369,9 @@ export function savedEntries(adhoc: Row[], adhocLogs: Record<string, Row>, perso
     const log = adhocLogs[w.id];
     if (log?.endedAt) continue;
     const inProgress = !!log;
-    const reason = !inProgress && !(plan && w.planId === plan.id && inWeekWindow(plan, w.weekNumber, now)) ? 'From an earlier training week. Create a new workout for your current plan.' : null;
+    const reason = inProgress ? null
+      : isStandalone(w) ? (standaloneWindowOpen(w, now) ? null : 'From an earlier training week. Create a new workout.')
+      : !(plan && w.planId === plan.id && inWeekWindow(plan, w.weekNumber, now)) ? 'From an earlier training week. Create a new workout for your current plan.' : null;
     entries.push({ id: `cloud:${w.id}`, source: 'adhoc', workout: w, inProgress, unavailableReason: reason, type: type(w) });
   }
   for (const w of personal) {
