@@ -83,9 +83,8 @@ async function load() {
     if (!response.ok || Number(response.headers.get('content-length')) > MAX_ENVELOPE_BYTES) throw new Error('Unavailable');
     const buffer = await response.arrayBuffer();
     const report = await decryptReport(buffer, parsed.id, parsed.key);
-    // The results-first signup reader is the November outreach cohort. The server
-    // independently accepts events only for the exact privately registered links.
-    const token = report.resultsFirst === true && report.playerSignupUrl
+    // The server accepts events only for the exact privately registered links.
+    const token = report.resultsFirst === true && (report.playerSignupUrl || report.workoutEntry === 'stats')
       ? await reportTrackingToken(parsed.id, parsed.key).catch(() => null) : null;
     if (ownGeneration !== generation) return;
     const record = token ? (action, seconds) => recordEvent(token, action, seconds) : undefined;

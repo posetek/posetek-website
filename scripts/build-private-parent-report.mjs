@@ -36,6 +36,17 @@ const PATHWAY_CHART_UPDATE = {
   "render.mjs": {before: WORKOUT_ENTRY_UPDATE["render.mjs"].before, after: {"sha": "a433ddae33c57ce7fb966a70934ccea8925b9b6e", "size": 27303}},
   "report.css": {before: WORKOUT_ENTRY_UPDATE["report.css"].before, after: {"sha": "32d2fbcf52202c9731968b078416df86b1592ec3", "size": 10279}},
 };
+// Adopt only the two reviewed score-card assets over the serving v1 reader.
+const SCORE_COMPARISON_UPDATE = {
+  'render.mjs': {
+    before: { sha: '86c58ad9d2d668872548d39399fb8041faa5f134', size: 38722 },
+    after: { sha: '27473a609b853e3e3c555bff5b7a1b57b71e1fea', size: 50802 },
+  },
+  'report.css': {
+    before: { sha: '2ac57f2f9e42208b5b9f7efe84c7b1181509bd0c', size: 14870 },
+    after: { sha: 'a671eaf00a90778ec535f290fb360028ff7f0079', size: 17976 },
+  },
+};
 const PLAYER_SIGNUP_CONFIG_SHA256 = '3b4ad4637ba331ff415ad5843279e17a6d1f1a81c3e7628bef1c5e16f4166947';
 const hash = bytes => createHash('sha1').update(bytes).digest('hex');
 const collisionKey = name => name.normalize('NFC').toLowerCase();
@@ -124,14 +135,15 @@ function overlaps(a, b) {
 
 // root is injectable only through this module API for filesystem fixture tests.
 // The CLI always uses this repository and has no guard-skip option.
-export async function buildPrivateParentReport({ root = repository, evidenceDirectory, sealedDirectory, append = false, updateEntryLabel = false, updateWorkoutEntry = false, updatePathwayCharts = false, withPlayerSignup = false }) {
+export async function buildPrivateParentReport({ root = repository, evidenceDirectory, sealedDirectory, append = false, updateEntryLabel = false, updateWorkoutEntry = false, updatePathwayCharts = false, updateScoreComparisons = false, withPlayerSignup = false }) {
   root = resolve(root);
   if (typeof withPlayerSignup !== 'boolean' || withPlayerSignup && (!append || !updatePathwayCharts)) fail('Player signup entry requires the explicit reviewed reader transition');
   if (typeof append !== 'boolean') fail('Append mode must be boolean');
   if (typeof updateEntryLabel !== 'boolean' || (updateEntryLabel && !append)) fail('Entry label transition requires explicit append mode');
   if (typeof updateWorkoutEntry !== 'boolean' || (updateWorkoutEntry && !append)) fail('Workout entry transition requires explicit append mode');
   if (typeof updatePathwayCharts !== 'boolean' || (updatePathwayCharts && !append)) fail('Pathway chart transition requires explicit append mode');
-  if ([updateEntryLabel, updateWorkoutEntry, updatePathwayCharts].filter(Boolean).length > 1) fail('Choose only one pinned reader transition');
+  if (typeof updateScoreComparisons !== 'boolean' || (updateScoreComparisons && !append)) fail('Score comparison transition requires explicit append mode');
+  if ([updateEntryLabel, updateWorkoutEntry, updatePathwayCharts, updateScoreComparisons].filter(Boolean).length > 1) fail('Choose only one pinned reader transition');
   if (append && !sealedDirectory) fail('Append mode requires new sealed reports');
   if (!evidenceDirectory) fail('An evidence directory is required');
   const evidence = resolve(root, evidenceDirectory), output = join(root, 'production-dist');
@@ -180,7 +192,8 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
       // Normal append cannot replace the viewer. Each explicit transition pins
       // both its old and new bytes, with no arbitrary replacement option.
       const previous = prior.get(path);
-      const transition = updatePathwayCharts ? PATHWAY_CHART_UPDATE[name] : updateWorkoutEntry ? WORKOUT_ENTRY_UPDATE[name]
+      const transition = updateScoreComparisons ? SCORE_COMPARISON_UPDATE[name]
+        : updatePathwayCharts ? PATHWAY_CHART_UPDATE[name] : updateWorkoutEntry ? WORKOUT_ENTRY_UPDATE[name]
         : name === 'index.html' && updateEntryLabel ? ENTRY_LABEL_UPDATE : null;
       if (transition) {
         if (!previous || previous.sha !== transition.before.sha || previous.size !== transition.before.size ||
@@ -267,7 +280,7 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
       isolatedPlayerSignupEntry: withPlayerSignup,
       configurationPath: withPlayerSignup ? 'deployment/private-player-signup.netlify.toml' : null,
       configurationSha256: signupConfig ? createHash('sha256').update(signupConfig).digest('hex') : null,
-      readerTransition: updatePathwayCharts ? 'pathways-v1' : updateWorkoutEntry ? 'workouts-v1' : updateEntryLabel ? 'neutral-label' : null,
+      readerTransition: updateScoreComparisons ? 'score-cards-v2' : updatePathwayCharts ? 'pathways-v1' : updateWorkoutEntry ? 'workouts-v1' : updateEntryLabel ? 'neutral-label' : null,
       requiresSeparateNativeAcceptance: !append || updateWorkoutEntry || updatePathwayCharts,
       previousDeploymentId: baseline.deploymentId,
       inventorySha256: createHash('sha256').update(inventoryBytes).digest('hex'),
@@ -299,6 +312,8 @@ export async function buildPrivateParentReport({ root = repository, evidenceDire
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2), withPlayerSignup = args.at(-1) === '--with-player-signup';
   if (withPlayerSignup) args.pop();
+  const updateScoreComparisons = args.at(-1) === '--update-score-comparisons';
+  if (updateScoreComparisons) args.pop();
   const updatePathwayCharts = args.at(-1) === '--update-pathway-charts';
   if (updatePathwayCharts) args.pop();
   const updateWorkoutEntry = args.at(-1) === '--update-workout-entry';
@@ -309,8 +324,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (append) args.pop();
   const [evidenceDirectory, flag, sealedDirectory, ...extra] = args;
   if (!evidenceDirectory || (flag && (flag !== '--sealed-dir' || !sealedDirectory)) || extra.length) {
-    fail('Use: build-private-parent-report.mjs <evidence-directory> [--sealed-dir <binary-only-directory>] [--append] [--update-entry-label | --update-workout-entry | --update-pathway-charts] [--with-player-signup]');
+    fail('Use: build-private-parent-report.mjs <evidence-directory> [--sealed-dir <binary-only-directory>] [--append] [--update-entry-label | --update-workout-entry | --update-pathway-charts | --update-score-comparisons] [--with-player-signup]');
   }
-  const receipt = await buildPrivateParentReport({ evidenceDirectory, sealedDirectory, append, updateEntryLabel, updateWorkoutEntry, updatePathwayCharts, withPlayerSignup });
+  const receipt = await buildPrivateParentReport({ evidenceDirectory, sealedDirectory, append, updateEntryLabel, updateWorkoutEntry, updatePathwayCharts, updateScoreComparisons, withPlayerSignup });
   console.log(`[private-report] Preserved ${receipt.preservedFiles} predecessor files; added ${receipt.addedFiles.length} report files. No upload performed.`);
 }

@@ -47,7 +47,7 @@ import { PlayerHierarchyBreadcrumbs } from "./AdminBreadcrumbs";
 import { PlayerWorkoutHistoryContent } from "./PlayerWorkoutHistory";
 import "../player-detail.scss";
 import "./admin-directory-lightning.scss";
-import PlayerContactCard from "./PlayerContactCard";
+import PlayerContactCard, { type PhoneChanges } from "./PlayerContactCard";
 import Icon from "./AdminWorkspaceIcon";
 import { useReadOnlyReport } from '../../../lib/useReadOnlyReport';
 import { useForegroundReport } from '../../../lib/foreground-report';
@@ -87,6 +87,7 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
   const [reportRevision, setReportRevision] = useState(0);
   const [summaryBusy, setSummaryBusy] = useState(false);
   const [workoutEvidence, setWorkoutEvidence] = useState<PlayerWorkoutsData | null>(null);
+  const [savedPhones, setSavedPhones] = useState<PhoneChanges>({});
   const refreshActivity = useCallback(() => setReportRevision(value => value + 1), []);
   const resolvedAge = resolvePlayerAge(player.raw);
   const athlete = useMemo(() => ({ ...player.raw, id: player.id }), [player]);
@@ -128,7 +129,8 @@ export function PlayerDetailContent({ player, panel, onProfileSaved, children, s
         {children ?? <>
           {panel === 'results' && <AdminResults embedded athlete={athlete} />}
           {panel === 'workouts' && <PlayerWorkoutsPanel player={player} revision={reportRevision} reportBusy={summaryBusy} onEvidence={setWorkoutEvidence} onRefresh={refreshActivity} />}
-          {panel === 'profile' && <PlayerProfilePanel player={player} onSaved={onProfileSaved} />}
+          {panel === 'profile' && <PlayerProfilePanel player={player} onSaved={onProfileSaved}
+            savedPhones={savedPhones} onPhonesSaved={changes => setSavedPhones(previous => ({ ...previous, ...changes }))} />}
           {panel === 'ai-incidents' && <PlayerAiIncidents playerId={player.id} />}
         </>}
       </div>
@@ -165,18 +167,24 @@ export function PlayerDetailTabs({ playerId, selected }: { playerId: string; sel
   </div>;
 }
 
-function PlayerProfilePanel({ player, onSaved }: { player: PlayerRow; onSaved: () => Promise<void> }) {
+function PlayerProfilePanel({ player, onSaved, savedPhones, onPhonesSaved }: {
+  player: PlayerRow; onSaved: () => Promise<void>; savedPhones: PhoneChanges; onPhonesSaved: (changes: PhoneChanges) => void;
+}) {
   const loader = useCallback(() => loadPlayerProfileData(player), [player]);
   const { state: load, refresh } = useAccountLoad(loader);
   const saved = async () => { refresh(); await onSaved(); };
   if (load.kind === 'loading') return <p className="admin-note" role="status">Loading profile inputs…</p>;
   if (load.kind === 'error') return <><p className="form-message" role="alert">{load.message}</p><button type="button" className="quiet-button" onClick={refresh}>Try again</button></>;
-  return <PlayerProfileContent player={player} data={load.data} onSaved={saved} />;
+  return <PlayerProfileContent player={player} data={load.data} onSaved={saved} savedPhones={savedPhones} onPhonesSaved={onPhonesSaved} />;
 }
 
-export function PlayerProfileContent({ player, data, onSaved, readOnly = false }: { player: PlayerRow; data: PlayerProfileData; onSaved: () => Promise<void>; readOnly?: boolean }) {
+export function PlayerProfileContent({ player, data, onSaved, savedPhones, onPhonesSaved, readOnly = false }: {
+  player: PlayerRow; data: PlayerProfileData; onSaved: () => Promise<void>; savedPhones?: PhoneChanges;
+  onPhonesSaved?: (changes: PhoneChanges) => void; readOnly?: boolean;
+}) {
   return <>
-    <PlayerContactCard key={`${player.id}/${String(player.raw?.phone_number ?? "")}`} player={player} onSaved={onSaved} readOnly={readOnly} />
+    <PlayerContactCard key={player.id} player={player} onSaved={onSaved}
+      savedPhones={savedPhones} onPhonesSaved={onPhonesSaved} readOnly={readOnly} />
     <div className="admin-grid-two">
       <ProfileCard key={String(player.raw?.updatedAt?.seconds ?? player.id)} player={player} coach={data.coach} onSaved={onSaved} readOnly={readOnly} />
       <CoachNoteCard playerId={player.id} note={data.note} onSaved={onSaved} readOnly={readOnly} />
