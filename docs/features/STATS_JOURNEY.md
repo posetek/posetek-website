@@ -38,6 +38,19 @@ Rules the browser follows:
   more sent (its last seconds already went when it was hidden or went idle); the report
   reads it as having left the site. The visitor's next activity on the
   page (an interaction, or the page becoming visible again) starts a new visit from `open`.
+- A sign-out, or another account signing in, drops the open visit with nothing more sent
+  (the server would refuse it); the report reads it as having left the site. The next
+  account's first landing is `open`. No request is made while signed out.
+
+Known limits of the numbers:
+
+- The last seconds of a visit are best effort. They are sent when the page is hidden, but a
+  page that is closing can cancel that request, and a sign-out sends nothing. Such a visit
+  can read up to 14 seconds short.
+- The server never credits a beat with more than its own clock allows since the visit began
+  or since the last beat. When the landing request is slow (a cold start), the first beat is
+  trimmed by that delay, so time on the page leans slightly low, never high.
+- A browser tab counts its own visits: Stats open in two tabs is two visits.
 - Every landing names the build `web-insights-v2`, the usage tracker's label; the server
   accepts only `^[a-z0-9.-]{1,32}$`.
 

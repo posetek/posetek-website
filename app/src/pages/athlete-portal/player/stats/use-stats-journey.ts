@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
-import { cloud } from '../../../../lib/firebase';
-import { createStatsJourney, journeyTracked } from './stats-journey';
+import { auth, cloud } from '../../../../lib/firebase';
+import { createStatsJourney, journeyTracked, newVisitId } from './stats-journey';
 import type { JourneyButton, JourneyPlace, JourneyResponse, StatsJourney } from './stats-journey';
 
 // One journey per page session, so "where from" and follow-through survive the workspace
@@ -10,20 +10,25 @@ let closing: object | null = null;
 /** Measurement never breaks the page (an old browser, a missing API): it just records nothing. */
 const quietly = (action: () => void) => { try { action(); } catch { /* nothing recorded */ } };
 
+/** The signed-in account, compared by the tracker to notice a sign-out or another account. Never sent. */
+const actor = () => auth.currentUser?.uid ?? null;
+
 function browserJourney(): StatsJourney {
   journey ??= createStatsJourney({
-    // Landings name JOURNEY_BUILD, the usage tracker's build label. Best effort: the tracker swallows every failure and never retries.
-    send: async payload => (await cloud.httpsCallable('recordStatsJourney')(payload)).data as JourneyResponse,
+    // Landings name JOURNEY_BUILD, the usage tracker's build label. Best effort: the tracker swallows
+    // every failure and never retries. Signed out, the server would refuse the request: none is made.
+    send: async payload => auth.currentUser ? (await cloud.httpsCallable('recordStatsJourney')(payload)).data as JourneyResponse : null,
     env: {
-      wall: Date.now, mono: () => performance.now(), newId: () => crypto.randomUUID(),
+      wall: Date.now, mono: () => performance.now(), newId: () => newVisitId(),
       visible: () => document.visibilityState === 'visible',
+      // These run on every tap, key and scroll and once a second, outside React: each is guarded on its own.
       on: (name, listener) => {
         const target = name === 'visibilitychange' ? document : window;
-        const callback = (event: Event) => listener({ isTrusted: event.isTrusted });
+        const callback = (event: Event) => quietly(() => listener({ isTrusted: event.isTrusted }));
         target.addEventListener(name, callback, { passive: true, capture: true });
         return () => target.removeEventListener(name, callback, true);
       },
-      every: (milliseconds, action) => { const id = setInterval(action, milliseconds); return () => clearInterval(id); },
+      every: (milliseconds, action) => { const id = setInterval(() => quietly(action), milliseconds); return () => clearInterval(id); },
     },
   });
   return journey;
@@ -48,12 +53,13 @@ export function useStatsJourney({ access, playerId, search, place }: { access: s
   const tracked = journeyTracked(access, playerId, search);
   useEffect(() => {
     closing = null;
-    if (tracked || journey) quietly(() => browserJourney().show({ tracked, playerId, place }));
+    if (tracked || journey) quietly(() => browserJourney().show({ tracked, playerId, place, actor: actor() }));
   }, [tracked, playerId, place]);
-  // Leaving the workspace ends the visit. Deferred so a development remount (StrictMode) is not a visit.
+  // Leaving the workspace ends the visit; after a sign-out it is dropped unsent instead. Deferred so a
+  // development remount (StrictMode) is not a visit.
   useEffect(() => () => {
     const token = closing = {};
-    queueMicrotask(() => { if (closing === token) quietly(() => journey?.show({ tracked: false, playerId: null, place: 'other' })); });
+    queueMicrotask(() => { if (closing === token) quietly(() => journey?.show({ tracked: false, playerId: null, place: 'other', actor: actor() })); });
   }, []);
   return useMemo(() => ({
     nextRef: node => {

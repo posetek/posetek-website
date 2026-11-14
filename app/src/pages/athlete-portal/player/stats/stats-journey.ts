@@ -34,8 +34,11 @@ export interface JourneyEnvironment {
   every(milliseconds: number, action: () => void): () => void;
 }
 
-/** What the workspace shows now: the Stats main page only when `place` is 'stats'. */
-export type JourneyShown = { tracked: boolean; playerId: string | null | undefined; place: JourneyPlace };
+/**
+ * What the workspace shows now: the Stats main page only when `place` is 'stats'. `actor` is the
+ * signed-in account, or nothing once signed out. It is only compared here, never sent.
+ */
+export type JourneyShown = { tracked: boolean; playerId: string | null | undefined; place: JourneyPlace; actor: string | null | undefined };
 
 /** The client label every landing sends; the server accepts only `^[a-z0-9.-]{1,32}$`. */
 export const JOURNEY_BUILD = WEB_USAGE_BUILD;
@@ -63,6 +66,15 @@ export function journeyTracked(access: string | null | undefined, playerId: stri
   return !['preview', 'share', 'viewAs', 'viewAsPlayerId'].some(key => query.has(key));
 }
 
+/** `crypto.randomUUID` where the browser has it (Safari 15.4+), otherwise the same v4 shape from random bytes. */
+export function newVisitId(source: Pick<Crypto, 'getRandomValues'> & { randomUUID?: () => string } = crypto): string {
+  if (typeof source.randomUUID === 'function') return source.randomUUID();
+  const bytes = source.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 type Visit = {
   id: string; playerId: string; startedAt: number; dead: boolean; reached: boolean; clicked: boolean;
   outcomes: Set<JourneyButton>; clock: EngagementClock; countedMs: number; activeAt: number; interactedAt: number; stopTicker: () => void;
@@ -74,7 +86,7 @@ export function createStatsJourney({ send, env, build = JOURNEY_BUILD }: {
   // `shown` is the athlete whose Stats main page is on screen; `visit` the visit in progress there,
   // if any (an inactive one ends while the page stays shown, and activity starts the next).
   let shown: string | null = null, visit: Visit | null = null, latest: Visit | null = null, previous: JourneyPlace | null = null;
-  let disabled = false, inView = false, via: { value: JourneyVia; at: number } | null = null;
+  let disabled = false, inView = false, via: { value: JourneyVia; at: number } | null = null, lastActor: string | null = null;
   // One sequential queue: a visit's `landed` is answered before any later event of it goes.
   let queue: Promise<void> = Promise.resolve();
   const deliver = (target: Visit, event: JourneyEvent) => {
@@ -140,6 +152,8 @@ export function createStatsJourney({ send, env, build = JOURNEY_BUILD }: {
     visit = null;
     return true;
   };
+  /** The account signed out or changed: its visit is dropped with nothing sent (the server would refuse it). */
+  const abandon = () => { visit?.stopTicker(); visit = null; latest = null; shown = null; via = null; };
   // Once counting stops on a visible but idle page (two minutes untouched), its last seconds go too.
   function tick() { if (!expire() && visit && env.visible() && env.mono() - visit.interactedAt >= IDLE_MS) flush(); }
   // The visitor is active on the page again: after an expired visit, that is a new visit opened here.
@@ -158,12 +172,15 @@ export function createStatsJourney({ send, env, build = JOURNEY_BUILD }: {
   ];
   return {
     /** Called whenever what the workspace shows changes, and with `tracked: false` when it closes. */
-    show({ tracked, playerId, place }: JourneyShown) {
-      const stats = tracked && !!playerId && place === 'stats';
+    show({ tracked, playerId, place, actor }: JourneyShown) {
+      // A sign-out or another account since the last showing: what was open belonged to the earlier
+      // sign-in. It reads as having left the site, and the next account's first landing is 'open'.
+      if ((actor ?? null) !== lastActor) { abandon(); previous = null; lastActor = actor ?? null; }
+      const stats = tracked && !!actor && !!playerId && place === 'stats';
       if (visit && (!stats || visit.playerId !== playerId) && !expire()) end(place === 'stats' ? 'other' : place);
       shown = stats ? playerId! : null;
       if (shown && !visit) start(shown, previous === null ? 'open' : previous === 'stats' ? 'other' : previous);
-      previous = place; via = null;
+      previous = actor ? place : null; via = null;
     },
     /** The page change about to happen comes from the tab bar (or a next-step button). */
     via(value: JourneyVia) { via = { value, at: env.mono() }; },

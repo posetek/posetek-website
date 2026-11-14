@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createStatsJourney, journeyPlace, journeyTracked, JOURNEY_BUILD, JOURNEY_INACTIVE_MS, JOURNEY_OUTCOME_WINDOW_MS } from './stats-journey';
+import { createStatsJourney, journeyPlace, journeyTracked, newVisitId, JOURNEY_BUILD, JOURNEY_INACTIVE_MS, JOURNEY_OUTCOME_WINDOW_MS } from './stats-journey';
 import type { JourneyEnvironment, JourneyPayload, JourneyPlace, JourneyResponse } from './stats-journey';
 
 /** A deterministic page: a monotonic and a wall clock, visibility, DOM-like events and interval timers. */
@@ -35,10 +35,15 @@ function page() {
     wall += end - mono; mono = end;
   };
   const emit = (name: string, isTrusted = true) => listeners.get(name)?.forEach(listener => listener({ isTrusted }));
-  const show = (place: JourneyPlace, playerId: string | null = 'player-1', tracked = true) => journey.show({ tracked, playerId, place });
+  // The signed-in account; `signIn(null)` is a sign-out.
+  let actor: string | null = 'account-1';
+  const show = (place: JourneyPlace, playerId: string | null = 'player-1', tracked = true) => journey.show({ tracked, playerId, place, actor });
   const events = async () => { await journey.settled(); return sent.map(({ schemaVersion: _version, visitId: _visit, playerId: _player, ...rest }) => rest); };
   return {
     journey, sent, advance, emit, show, events,
+    signIn: (next: string | null) => { actor = next; },
+    /** The workspace closing (another page of the site, or the sign-in page after a sign-out). */
+    close: () => journey.show({ tracked: false, playerId: null, place: 'other', actor }),
     hide: () => { visible = false; emit('visibilitychange'); },
     reveal: () => { visible = true; emit('visibilitychange'); },
     respond: (next: typeof respond) => { respond = next; },
@@ -89,12 +94,51 @@ describe('Stats page journey: visits', () => {
     const p = page();
     p.show('stats', 'player-1');
     p.show('stats', 'player-2');
-    p.journey.show({ tracked: false, playerId: null, place: 'other' });
+    p.close();
     const events = await p.events();
     expect(events.map(event => event.event)).toEqual(['landed', 'left', 'landed', 'left']);
     expect(p.sent.map(payload => payload.playerId)).toEqual(['player-1', 'player-1', 'player-2', 'player-2']);
     expect(events[1]).toEqual({ event: 'left', to: 'other', via: 'other' });
     expect(p.activeTimers()).toBe(0);
+    // Back in the workspace under the same sign-in, the visitor came from another page.
+    p.show('stats');
+    expect((await p.events()).at(-1)).toMatchObject({ event: 'landed', from: 'other' });
+  });
+
+  it('drops the open visit unsent on sign-out, and the next account starts fresh from "open"', async () => {
+    const p = page();
+    p.show('stats'); p.advance(20000); p.journey.clicked('coach');
+    const before = (await p.events()).length;
+    // Signing out unmounts the workspace with nobody signed in: the server would refuse anything sent now.
+    p.signIn(null); p.close();
+    expect((await p.events()).length).toBe(before);
+    expect(p.activeTimers()).toBe(0);
+    // Nothing of the earlier account's visit is credited or continued.
+    p.journey.outcome('coach', 'player-1'); p.emit('pointerdown'); p.advance(60000);
+    expect((await p.events()).length).toBe(before);
+    p.signIn('account-2'); p.show('stats');
+    const events = await p.events();
+    expect(events.slice(before)).toEqual([{ event: 'landed', from: 'open', platform: 'web', build: JOURNEY_BUILD }]);
+    expect(new Set(p.sent.map(payload => payload.visitId)).size).toBe(2);
+  });
+
+  it('starts fresh when another account is signed in without the workspace closing first', async () => {
+    const p = page();
+    p.show('coach'); p.show('stats'); p.advance(5000);
+    p.signIn('account-2'); p.show('stats');
+    const events = await p.events();
+    expect(events.map(event => event.event)).toEqual(['landed', 'landed']);
+    expect(events[1]).toMatchObject({ from: 'open' });
+    p.show('stats', 'player-1', true); p.signIn(null); p.show('stats');
+    expect((await p.events()).length).toBe(2);
+  });
+
+  it('makes a visit id in the server\'s shape with or without crypto.randomUUID', () => {
+    const shape = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
+    const bytes = { getRandomValues: <T extends ArrayBufferView | null>(array: T) => { if (array instanceof Uint8Array) array.forEach((_, index) => { array[index] = (index * 37 + 11) % 256; }); return array; } };
+    expect(newVisitId(bytes)).toMatch(shape);
+    expect(newVisitId({ ...bytes, randomUUID: () => '11111111-2222-4333-8444-555555555555' })).toBe('11111111-2222-4333-8444-555555555555');
+    expect(newVisitId()).toMatch(shape);
   });
 
   it('records nothing for the sample preview, share and view-as links, or without a player', async () => {
