@@ -4,7 +4,7 @@ import type { AccountRole } from "./account-entry";
 import { getSafeReturnToUrl } from "./landing-helpers";
 import { initialReportPlayerDestination, readReportPlayerEntry, reportParentNotLinked, reportParentSignupDestination, reportPlayerDestination } from "./report-player-entry";
 import { parentLinkSignIn } from "./parent-sign-in";
-import { parentLinkAction } from "./parent-invitation-link";
+import { guardianInvitationCheck, parentLinkAction, unavailableParentInvitation } from "./parent-invitation-link";
 
 const origin = "https://posetek.example";
 const base = origin + "/signin";
@@ -81,27 +81,44 @@ describe("report continuation for a parent", () => {
   });
 });
 
-describe("signing in while a parent link waits (review 1 and 7, re-review N1 and N2)", () => {
+describe("signing in while a parent link waits (review 1 and 7, re-review N1 and N2, final pass D2 and D3)", () => {
   const report = readReportPlayerEntry("?reportPlayer=child-b");
   const none = readReportPlayerEntry("");
   const training = "/athlete?player=child-b&userType=player&view=training";
+  const parentOf = (...playerIds: string[]) => ({ kind: "active" as const, role: "parent" as const, playerIds });
   it("lets the report's own child login continue as before, whatever the code's state", () => {
-    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "child-b" }, true)).toEqual({ kind: "continue", destination: training });
-    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "child-b" }, false)).toEqual({ kind: "continue", destination: training });
+    for (const code of ["unused", "used", "paused", "unknown"] as const) {
+      expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "child-b" }, code)).toEqual({ kind: "continue", destination: training });
+    }
   });
   it("continues a parent already linked to the report's child only when the waiting code can no longer add anyone", () => {
-    expect(parentLinkSignIn(report, { kind: "active", role: "parent", playerIds: ["child-b"] }, false)).toEqual({ kind: "continue", destination: training });
+    expect(parentLinkSignIn(report, parentOf("child-b"), "used")).toEqual({ kind: "continue", destination: training });
+    expect(parentLinkSignIn(report, parentOf("child-b"), "unknown")).toEqual({ kind: "continue", destination: training });
     // An unused code may carry a sibling: Add to my account, never dropped silently.
-    expect(parentLinkSignIn(report, { kind: "active", role: "parent", playerIds: ["child-b"] }, true)).toEqual({ kind: "add" });
+    expect(parentLinkSignIn(report, parentOf("child-b"), "unused")).toEqual({ kind: "add" });
   });
-  it("returns an existing parent or an unlinked login to Add to my account instead of redirecting", () => {
-    expect(parentLinkSignIn(none, { kind: "active", role: "parent", playerIds: ["child-a"] }, true)).toEqual({ kind: "add" });
-    expect(parentLinkSignIn(report, { kind: "active", role: "parent", playerIds: ["child-a"] }, false)).toEqual({ kind: "add" });
-    expect(parentLinkSignIn(none, { kind: "activation", reason: "unlinked" }, false)).toEqual({ kind: "add" });
+  it("returns an existing parent or an unlinked login to Add to my account when the code is unused", () => {
+    expect(parentLinkSignIn(none, parentOf("child-a"), "unused")).toEqual({ kind: "add" });
+    expect(parentLinkSignIn(none, { kind: "activation", reason: "unlinked" }, "unused")).toEqual({ kind: "add" });
   });
-  it("answers every other account with guidance, which the page shows once and never intercepts again", () => {
-    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "other-child" }, true)).toEqual({ kind: "guidance", message: (parentLinkAction("player") as { message: string }).message });
-    expect(parentLinkSignIn(none, { kind: "active", role: "player", playerId: "child-b" }, true).kind).toBe("guidance");
-    for (const role of ["admin", "manager", "coach", "independent"] as const) expect(parentLinkSignIn(none, { kind: "active", role }, true).kind).toBe("guidance");
+  it("D2: shows a parent with a used or invalid code the existing message once, as a notice, instead of trapping it", () => {
+    expect(parentLinkSignIn(none, parentOf("child-a"), "used")).toEqual({ kind: "notice", message: unavailableParentInvitation, guidance: false });
+    expect(parentLinkSignIn(report, parentOf("child-a"), "used")).toEqual({ kind: "notice", message: unavailableParentInvitation, guidance: false });
+  });
+  it("D3: paused links are a notice that keeps the link, never treated as a used code", () => {
+    expect(parentLinkSignIn(none, parentOf("child-a"), "paused")).toEqual({ kind: "notice", message: "Parent links are paused. Try again later.", guidance: false });
+    // Not continued past a sibling either, as for an unused code.
+    expect(parentLinkSignIn(report, parentOf("child-b"), "paused")).toEqual({ kind: "notice", message: "Parent links are paused. Try again later.", guidance: false });
+  });
+  it("answers every other account with guidance, which the page shows once to that sign-in", () => {
+    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "other-child" }, "unknown")).toEqual({ kind: "notice", message: (parentLinkAction("player") as { message: string }).message, guidance: true });
+    expect(parentLinkSignIn(none, { kind: "active", role: "player", playerId: "child-b" }, "unknown")).toMatchObject({ kind: "notice", guidance: true });
+    for (const role of ["admin", "manager", "coach", "independent"] as const) expect(parentLinkSignIn(none, { kind: "active", role }, "unknown")).toMatchObject({ kind: "notice", guidance: true });
+  });
+  it("reads a paused answer from validateGuardianInvitation, and a server without reason as before", () => {
+    expect(guardianInvitationCheck({ valid: false, reason: "redemption-disabled" })).toEqual({ valid: false, paused: true });
+    expect(guardianInvitationCheck({ valid: false })).toEqual({ valid: false, paused: false });
+    expect(guardianInvitationCheck({ valid: true })).toEqual({ valid: true, paused: false });
+    expect(guardianInvitationCheck({ valid: true, reason: "redemption-disabled" })).toEqual({ valid: true, paused: false });
   });
 });

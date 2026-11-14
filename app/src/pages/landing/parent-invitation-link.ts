@@ -71,6 +71,18 @@ function errorCode(error: unknown): string {
 
 export const parentLinksPaused = "Parent links are paused. Try again later.";
 
+/** `validateGuardianInvitation`'s answer: `reason: "redemption-disabled"` marks a paused switch. */
+export type GuardianInvitationCheck = { valid: boolean; paused: boolean };
+export function guardianInvitationCheck(data: unknown): GuardianInvitationCheck {
+  const value = data && typeof data === "object" ? data as { valid?: unknown; reason?: unknown } : {};
+  const valid = value.valid === true;
+  return { valid, paused: !valid && value.reason === "redemption-disabled" };
+}
+/** The error a paused preflight raises, so every caller shows the paused message and creates nothing. */
+export function pausedRedemptionError(): Error {
+  return Object.assign(new Error(parentLinksPaused), { code: "functions/failed-precondition", details: { reason: "redemption-disabled" } });
+}
+
 /** The guidance a refused parent link shows. Unknown failures return null so callers keep their own copy. */
 export function guardianRedeemMessage(error: unknown): string | null {
   const code = errorCode(error);

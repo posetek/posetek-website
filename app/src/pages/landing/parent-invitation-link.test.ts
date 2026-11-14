@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   addParentInvitation, captureParentInvitationLink, createInvitedParent, forgetParentInvitationLink, guardianRedeemMessage,
-  initialParentInvitationLink, parentCodeFromInput, parentLinkAction, readParentInvitationLink,
+  initialParentInvitationLink, parentCodeFromInput, parentLinkAction, pausedRedemptionError, readParentInvitationLink,
 } from "./parent-invitation-link";
 import { readPlayerInvitationLink } from "./player-invitation-link";
 
@@ -209,6 +209,12 @@ describe("paused parent links (redemption-disabled)", () => {
     const error = await createInvitedParent(input, calls).catch(failure => failure);
     expect(guardianRedeemMessage(error)).toBe("Parent links are paused. Try again later.");
     expect(calls.discard).toHaveBeenCalledWith({ uid: "new-parent" });
+  });
+  it("D3: a paused preflight creates no login at all and says links are paused", async () => {
+    const calls = steps(); calls.validate.mockRejectedValue(pausedRedemptionError());
+    const error = await createInvitedParent(input, calls).catch(failure => failure);
+    expect(guardianRedeemMessage(error)).toBe("Parent links are paused. Try again later.");
+    expect(calls.create).not.toHaveBeenCalled(); expect(calls.redeem).not.toHaveBeenCalled(); expect(calls.discard).not.toHaveBeenCalled();
   });
   it("gives Add to my account and Add player the same message", async () => {
     const error = await addParentInvitation(code, { currentUid: () => "parent", redeem: async () => { throw paused(); } }).catch(failure => failure);

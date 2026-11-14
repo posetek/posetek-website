@@ -16,9 +16,13 @@ import { findCoach, findGuardian, findPlayer } from "../../lib/identity";
 import { useThemeColor } from "../../lib/use-theme-color";
 import { refreshAdminIdentity, upsertAdminProfile } from "../admin/lib/identity";
 import { capturePlayerInvitationLink, createInvitedPlayer, forgetPlayerInvitationLink, initialPlayerInvitationLink, readPlayerInvitationLink, unavailablePlayerInvitation } from "./player-invitation-link";
-import { addParentInvitation, captureParentInvitationLink, createInvitedParent, forgetParentInvitationLink, guardianErrorReason, guardianRedeemMessage, initialParentInvitationLink, parentCodeFromInput, parentLinkAction, readParentInvitationLink, unavailableParentInvitation } from "./parent-invitation-link";
+import { addParentInvitation, captureParentInvitationLink, createInvitedParent, forgetParentInvitationLink, guardianErrorReason, guardianRedeemMessage, initialParentInvitationLink, parentCodeFromInput, parentLinkAction, parentLinksPaused, pausedRedemptionError, readParentInvitationLink, unavailableParentInvitation } from "./parent-invitation-link";
 import type { ParentLinkAction } from "./parent-invitation-link";
 import { parentLinkSignIn } from "./parent-sign-in";
+import type { WaitingCodeState } from "./parent-sign-in";
+
+/** The Parent panel's signed-in answer; a notice is a message alone, with no action. */
+type ParentPanelAction = ParentLinkAction | { kind: "notice"; message: string };
 import { forgetParentSession } from "../../lib/parent-session";
 import {
   initialReportPlayerDestination,
@@ -52,7 +56,7 @@ import {
   joinOrganization,
   redeemGuardianInvitation,
   redeemPlayerSignupCode,
-  validateGuardianInvitation,
+  checkGuardianInvitation,
 } from "./signup-data";
 import "./landing.scss";
 import AccountRecoveryRequest from "../../components/AccountRecoveryRequest";
@@ -81,7 +85,7 @@ export default function LandingPage() {
   const [signedInUid, setSignedInUid] = useState<string | null>(auth.currentUser?.uid || null);
   const [authReady, setAuthReady] = useState(false);
   const [invitationCheck, setInvitationCheck] = useState<"checking" | "ready" | "unavailable" | "error" | null>(invitationLink.present ? "checking" : null);
-  const [parentCheck, setParentCheck] = useState<"checking" | "ready" | "unavailable" | "error" | null>(parentLink.present ? "checking" : null);
+  const [parentCheck, setParentCheck] = useState<"checking" | "ready" | "unavailable" | "paused" | "error" | null>(parentLink.present ? "checking" : null);
 
   // Overlay modals (the login panel is inline now — legacy showModal(loginModal)
   // only scrolls it into view and focuses the email field).
@@ -133,7 +137,9 @@ export default function LandingPage() {
   const [parentCodeSuccess, setParentCodeSuccess] = useState("");
   const [parentCodeLoading, setParentCodeLoading] = useState(false);
   // What a signed-in visitor on the Parent panel sees: "Add to my account", or guidance.
-  const [parentAction, setParentAction] = useState<ParentLinkAction | "checking" | null>(null);
+  const [parentAction, setParentAction] = useState<ParentPanelAction | "checking" | null>(null);
+  // Sign-ins already answered about the waiting parent link (final pass D1): only these skip it.
+  const answeredParentLink = useRef(new Set<string>());
   const [parentAddLoading, setParentAddLoading] = useState(false);
   const pendingParentSignup = useRef<firebase.User | null>(null);
   // The login this panel's own signup created keeps the signup form, not "Add to my account".
@@ -225,9 +231,12 @@ export default function LandingPage() {
     if (!/^[A-Za-z0-9-]{6,64}$/.test(parentCode.trim())) { setParentCheck("unavailable"); return; }
     setParentCheck("checking");
     const timer = window.setTimeout(() => {
-      validateGuardianInvitation(parentCode.trim())
-        .then(ready => {
+      checkGuardianInvitation(parentCode.trim())
+        .then(check => {
           if (!current) return;
+          // Paused links keep the waiting link; the code is not treated as used (final pass D3).
+          if (check.paused) { setParentCheck("paused"); return; }
+          const ready = check.valid;
           setParentCheck(ready ? "ready" : "unavailable");
           // A used code from a report may already be this signed-in parent's: "Add to my account"
           // answers that. A signed-out visitor goes to sign-in, as for a player link.
@@ -246,6 +255,8 @@ export default function LandingPage() {
     const user = auth.currentUser;
     // Waits for the first auth observation: its epoch bump would otherwise orphan an earlier check.
     if (!authReady || !signupOpen || activeTab !== "parentCode" || !signedIn || !user || parentFormOwned) { setParentAction(null); return; }
+    // A sign-in already answered about the waiting link keeps that answer (D1, D2).
+    if (answeredParentLink.current.has(user.uid)) return;
     const revision = authEpoch.current;
     const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
     setParentAction("checking");
@@ -305,7 +316,7 @@ export default function LandingPage() {
         const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
         setContinueLoading(true);
         void loadAccountAccess(user, isCurrent)
-          .then(access => isCurrent() ? answerWaitingParentLink(requestedEntry, access, waitingLink.code, isCurrent) : true)
+          .then(access => isCurrent() ? answerWaitingParentLink(requestedEntry, access, waitingLink.code, user.uid, isCurrent) : true)
           .then(answer => { if (typeof answer === "string" && isCurrent()) navigate(answer); })
           .catch(() => { /* the Parent panel's own check answers */ })
           .finally(() => { if (isCurrent()) setContinueLoading(false); });
@@ -440,39 +451,40 @@ export default function LandingPage() {
     else navigate(destination);
   }
 
-  // A parent link with a code is waiting on this page (and not already used by this page's signup).
-  function parentLinkWaiting(): boolean {
-    return parentLink.present && !!parentLink.code && !signupEntryError && !parentCodeSuccess;
+  // A parent link with a code is waiting on this page (and not already used by this page's signup),
+  // and this sign-in has not already been answered about it (final pass D1).
+  function parentLinkWaiting(uid: string | null | undefined): boolean {
+    return parentLink.present && !!parentLink.code && !signupEntryError && !parentCodeSuccess && !(uid && answeredParentLink.current.has(uid));
   }
 
   // Open the Parent panel with its signed-in answer, instead of leaving the page (review finding 1).
-  function returnToParentPanel(action: ParentLinkAction) {
+  function returnToParentPanel(action: ParentPanelAction) {
     setActiveTab("parentCode"); setSignupOpen(true); setParentAction(action);
   }
 
-  // The waiting link cannot be used by this account: after its guidance is shown once, the page
-  // forgets the link, so Continue reaches the account's own destination (re-review N1).
-  function forgetWaitingParentLink() {
-    forgetParentInvitationLink(); setParentLink({ present: false, code: "" }); setParentCheck(null);
-  }
-
-  // Whether the waiting code can still add a child: only a parent's sign-in needs to know (N2).
-  async function waitingCodeUnused(access: { kind: string; role?: string }, code: string): Promise<boolean> {
-    if (access.kind !== "active" || access.role !== "parent" || !code) return false;
-    try { return await validateGuardianInvitation(code); } catch { return false; }
+  // What the waiting code can still do: only an account that could add it needs to know (N2, D2, D3).
+  async function waitingCodeState(access: { kind: string; role?: string }, code: string): Promise<WaitingCodeState> {
+    const couldAdd = access.kind === "activation" || access.role === "parent";
+    if (!couldAdd || !code) return "unknown";
+    try {
+      const check = await checkGuardianInvitation(code);
+      return check.valid ? "unused" : check.paused ? "paused" : "used";
+    } catch { return "unknown"; }
   }
 
   // The one place a sign-in meets a waiting parent link. Returns true when the page stays here.
-  // Continue is the account's explicit choice to go on: guidance is not repeated there.
-  async function answerWaitingParentLink(entry: typeof reportEntry, access: Parameters<typeof parentLinkSignIn>[1], code: string, isCurrent: () => boolean, fromContinue = false): Promise<string | null | true> {
-    const unused = await waitingCodeUnused(access, code);
+  // A notice (wrong kind of account, used code, paused links) is shown once to that sign-in, which
+  // then goes on normally; the link itself stays for any other account on this page (D1). Continue
+  // is the account's explicit choice to go on, so the notice is not repeated there.
+  async function answerWaitingParentLink(entry: typeof reportEntry, access: Parameters<typeof parentLinkSignIn>[1], code: string, uid: string, isCurrent: () => boolean, fromContinue = false): Promise<string | null | true> {
+    const state = await waitingCodeState(access, code);
     if (!isCurrent()) return true;
-    const decision = parentLinkSignIn(entry, access, unused);
+    const decision = parentLinkSignIn(entry, access, state);
     if (decision.kind === "continue") return decision.destination;
     if (decision.kind === "add") { returnToParentPanel({ kind: "add" }); return true; }
-    forgetWaitingParentLink();
+    answeredParentLink.current.add(uid);
     if (fromContinue) return null;
-    returnToParentPanel({ kind: "guidance", message: decision.message });
+    returnToParentPanel(decision.guidance ? { kind: "guidance", message: decision.message } : { kind: "notice", message: decision.message });
     return true;
   }
 
@@ -481,8 +493,8 @@ export default function LandingPage() {
     if (!isCurrent()) return;
     // A waiting parent link is redeemed with "Add to my account", never dropped by a redirect; an
     // account that cannot use it sees why once and then goes on normally.
-    if (parentLinkWaiting()) {
-      const answer = await answerWaitingParentLink(reportEntry, access, parentLink.code, isCurrent, !passwordSignIn);
+    if (parentLinkWaiting(user.uid)) {
+      const answer = await answerWaitingParentLink(reportEntry, access, parentLink.code, user.uid, isCurrent, !passwordSignIn);
       if (answer === true) return;
     }
     const reportDestination = access.kind === "activation"
@@ -726,7 +738,12 @@ export default function LandingPage() {
 
       const playerIds = await createInvitedParent({ code, email: parentEmail, password: parentPassword }, {
         currentUser: () => auth.currentUser,
-        validate: validateGuardianInvitation,
+        // Paused links stop the sign-up before any login is created (final pass D3).
+        validate: async value => {
+          const check = await checkGuardianInvitation(value);
+          if (check.paused) throw pausedRedemptionError();
+          return check.valid;
+        },
         create: async (address, secret) => {
           const result = await auth.createUserWithEmailAndPassword(address, secret);
           if (!result.user) throw new Error("Your account could not be created. Please try again.");
@@ -1139,7 +1156,7 @@ export default function LandingPage() {
             {/* Parent Tab: the player-code panel's fields; no child is named before the claim. */}
             <div className={`tab-content${activeTab === "parentCode" ? " active" : ""}`} id="parentCodeTab">
               {parentLink.present && <p className="login-support" role="status">
-                {parentCheck === "checking" ? "Checking your parent link…" : parentCheck === "ready" ? "Your parent code is filled in." : parentCheck === "error" ? "We could not check your link. Try again when your connection is available." : unavailableParentInvitation}
+                {parentCheck === "checking" ? "Checking your parent link…" : parentCheck === "ready" ? "Your parent code is filled in." : parentCheck === "paused" ? parentLinksPaused : parentCheck === "error" ? "We could not check your link. Try again when your connection is available." : unavailableParentInvitation}
               </p>}
               {signedIn && !parentFormOwned ? <div className="parent-signed-in">
                 {parentAction === "checking" || parentAction === null ? <p className="login-support" role="status">Checking your account…</p>
@@ -1150,6 +1167,7 @@ export default function LandingPage() {
                     <span style={{ opacity: parentAddLoading ? 0.5 : 1 }}>Add to my account</span>
                     <span className="spinner" style={{ display: parentAddLoading ? "block" : "none" }}></span>
                   </button></>
+                  : parentAction.kind === "notice" ? <p className="login-support" role="status">{parentAction.message}</p>
                   : <>
                     <p className="login-support" role="status">{parentAction.message}</p>
                     <button type="button" className="secondary-action" disabled={switchLoading} onClick={() => void handleSwitchAccount()}>Use a different account</button>

@@ -83,6 +83,36 @@ try {
     await signIn(page, 'parent@example.test');
     await page.getByRole('button', { name: 'Add to my account' }).waitFor();
   });
+  await scenario('D1: after a player sees the guidance, a parent signing in on the same page still adds the child', `/signin#parentCode=${CODE}`, async (page, calls) => {
+    await page.locator('#parentCodeTab.active').waitFor();
+    await signIn(page, 'other@example.test');
+    await page.getByText(guidance('a player account')).waitFor();
+    await page.locator('#parentCodeTab').getByRole('button', { name: 'Use a different account' }).click();
+    await signIn(page, 'parent@example.test');
+    await page.getByRole('button', { name: 'Add to my account' }).click();
+    await page.waitForURL(url => url.pathname === '/athlete');
+    assert.equal(new URL(page.url()).searchParams.get('player'), 'child-a');
+    assert.ok((await calls()).includes('redeemGuardianInvitation'));
+  });
+  await scenario('D2: a parent holding a used code sees the message once, then Continue reaches its home', `/signin#parentCode=PAR-${'F'.repeat(32)}`, async (page, calls) => {
+    await page.locator('#parentCodeTab.active').waitFor();
+    await signIn(page, 'parent@example.test');
+    await page.locator('#parentCodeTab').getByText('This parent code is invalid or has already been used.', { exact: false }).first().waitFor();
+    await page.locator('#closeSignupModal').click();
+    await page.getByRole('button', { name: 'Continue with signed-in account' }).click();
+    await page.waitForURL(url => url.pathname === '/athlete');
+    assert.equal(new URL(page.url()).searchParams.get('player'), 'child-a');
+    assert.ok(!(await calls()).includes('redeemGuardianInvitation'));
+  });
+  await scenario('D3: paused parent links say so, keep the link, and create no login', `/signin?paused=1#parentCode=${CODE}`, async page => {
+    await page.locator('#parentCodeTab').getByText('Parent links are paused. Try again later.').first().waitFor();
+    await page.locator('#parentEmail').fill('new-parent@example.test');
+    await page.locator('#parentPassword').fill('synthetic-password'); await page.locator('#parentConfirmPassword').fill('synthetic-password');
+    await page.locator('#parentCodeSubmit').click();
+    await page.locator('#parentCodeError').getByText('Parent links are paused. Try again later.').waitFor();
+    assert.equal(await page.evaluate(() => window.__parentFixture.accountsCreated), 0);
+    assert.equal(await page.locator('#parentCode').inputValue(), CODE);
+  });
   await scenario('a player holding a parent link sees the guidance once, then Continue reaches its own home', `/signin#parentCode=${CODE}`, async page => {
     await page.locator('#parentCodeTab.active').waitFor();
     await signIn(page, 'other@example.test');

@@ -21,7 +21,9 @@ const players: Record<string, Data> = {
 const guardians: Record<string, Data> = { 'synthetic-parent': { schemaVersion: 1, userUID: 'synthetic-parent', playerIds: ['child-a'] } };
 
 const calls: { name: string; data: unknown }[] = [];
-const fixture = { calls, code: CODE };
+// `?paused=1`: the server's emergency switch is on (redemption-disabled).
+const paused = new URLSearchParams(location.search).get('paused') === '1';
+const fixture = { calls, code: CODE, accountsCreated: 0 };
 (window as unknown as { __parentFixture: typeof fixture }).__parentFixture = fixture;
 
 const listeners = new Set<Listener>();
@@ -46,7 +48,7 @@ export const auth = {
     return { user: current };
   },
   async signOut() { current = null; notify(); },
-  async createUserWithEmailAndPassword() { throw Object.assign(new Error('exists'), { code: 'auth/email-already-in-use' }); },
+  async createUserWithEmailAndPassword() { fixture.accountsCreated++; throw Object.assign(new Error('exists'), { code: 'auth/email-already-in-use' }); },
   async sendPasswordResetEmail() {},
 };
 
@@ -68,9 +70,10 @@ export const db = { collection: (name: string) => ({
 
 const answers: Record<string, (data: Data) => unknown> = {
   // Only the fixture's open code is unused; any other well-formed code reads as used.
-  validateGuardianInvitation: data => ({ valid: data.code === CODE }),
+  validateGuardianInvitation: data => paused ? { valid: false, reason: 'redemption-disabled' } : { valid: data.code === CODE },
   redeemGuardianInvitation: data => {
     if (!current) throw Object.assign(new Error('Sign in'), { code: 'functions/unauthenticated' });
+    if (paused) throw Object.assign(new Error('paused'), { code: 'functions/failed-precondition', details: { reason: 'redemption-disabled' } });
     if (current.uid !== 'synthetic-parent' && current.uid !== 'synthetic-unlinked') throw Object.assign(new Error('refused'), { code: 'functions/failed-precondition', details: { reason: 'player-login' } });
     return data.code === CODE ? { playerIds: ['child-a'], addedPlayerIds: [] } : (() => { throw Object.assign(new Error('used'), { code: 'functions/not-found' }); })();
   },
