@@ -2,6 +2,7 @@
 // minutes and energy, then the workout chat (`workout_chat`) on a `new` target, saved by an
 // `apply_workout_draft` job. Pure, so each rule is pinned by a test.
 import type { Access } from '../../lib/loaders';
+import { localDayString, planHorizonWeeks, weekWindow } from '../../../../lib/contracts/planV3';
 import { STANDALONE_SCOPE } from '../execution';
 import type { Row } from '../execution';
 
@@ -96,3 +97,18 @@ export const RUN_REFUSED = 'Athlete starts this workout';
  * only an earlier-format plan) to the standalone namespace, as the app's `TrainingWorkoutCreationIntent`.
  */
 export const workoutScope = (activeV3Plan: Row | null): string => activeV3Plan?.id ?? STANDALONE_SCOPE;
+
+/**
+ * The plan a new workout is built on (`TrainingWorkoutCreationIntent.usablePlan`): an active V3 plan
+ * of 1 to 12 weeks whose block has not ended, else null, and the build is standalone. The block ends
+ * when its last week does (`blockEndDate`, exclusive), on the plan's calendar: its last day is still
+ * usable. A plan whose end cannot be computed is not usable.
+ */
+export function usableV3Plan(plan: Row | null | undefined, now = new Date()): Row | null {
+  if (!plan?.id || plan.status !== 'active' || plan.schemaVersion !== 3) return null;
+  const weeks = planHorizonWeeks(plan);
+  if (weeks < 1 || weeks > 12) return null;
+  const block = weekWindow(plan, weeks);
+  if (!block) return null;
+  return localDayString(now, plan.timezone) < block.end ? plan : null;
+}
