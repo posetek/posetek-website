@@ -96,7 +96,7 @@ describe('resume, saved workouts and the plan card', () => {
     // With an active plan a standalone row keeps its own window.
     expect(savedEntries(rows.slice(0, 1), {}, [], {}, plan(), now)[0].unavailableReason).toBeNull();
   });
-  it('lists an ended plan’s workouts beside the standalone ones built after it, and keeps the resume on the plan', () => {
+  it('lists an ended plan’s workouts beside the standalone ones built after it, and resumes the newest open one of either', () => {
     // A one-week block from 2026-11-02 has ended by `now`; the hub still shows it.
     const ended = plan({ horizonWeeks: 1, startDate: '2026-11-02' });
     const planRows = [{ id: 'open', planId: 'p', weekNumber: 1, generatedAt: 1, title: 'Open', blocks: [{ blockId: 'b' }] }, { id: 'unstarted', planId: 'p', weekNumber: 1, generatedAt: 2 }];
@@ -106,6 +106,9 @@ describe('resume, saved workouts and the plan card', () => {
     expect(entries.map(e => [e.id, e.inProgress, e.unavailableReason])).toEqual([
       ['cloud:built', false, null], ['cloud:unstarted', false, 'From an earlier training week. Create a new workout for your current plan.'], ['cloud:open', true, null]]);
     expect(findResume(ended, Object.values(planLogs), savedWorkouts(planRows, planLogs, ended, now))?.workout.id).toBe('open');
+    // A standalone workout started later is the one the banner resumes, as on the app.
+    const logs = { ...planLogs, built: { id: 'built', planId: 'standalone', source: 'adhoc', startedAt: 2 } };
+    expect(findResume(ended, Object.values(logs), savedWorkouts([...planRows, ...standalone], logs, ended, now))?.workout.id).toBe('built');
   });
   it('summarizes the plan on the hub: this week’s theme, its sessions and the next workout', () => {
     // Monday of week 1 in the plan's timezone.

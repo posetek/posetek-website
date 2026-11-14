@@ -57,9 +57,18 @@ export function equipmentToday(answers: Pick<CreateAnswers, 'place' | 'goal'>): 
   return answers.goal ? ['ball', 'goal'] : ['ball'];
 }
 
-/** The browser's IANA zone, as the app sends `TimeZone.current.identifier`; the gateway's default otherwise. */
-export function browserTimezone(): string {
-  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
+/**
+ * The browser's IANA zone, as the app sends `TimeZone.current.identifier`. A missing zone, one Intl
+ * does not recognise, or ICU's "Etc/Unknown" placeholder (some locked-down hosts) is sent as UTC,
+ * since the gateway refuses a build whose zone is not a valid IANA identifier.
+ */
+export function browserTimezone(intl: Pick<typeof Intl, 'DateTimeFormat'> = Intl): string {
+  try {
+    const zone = intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (typeof zone !== 'string' || !zone.trim() || zone === 'Etc/Unknown') return 'UTC';
+    new intl.DateTimeFormat('en-US', { timeZone: zone });
+    return zone;
+  } catch { return 'UTC'; }
 }
 
 /**
