@@ -1,14 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 vi.mock("../../../lib/firebase", () => ({ auth: {} }));
 vi.mock("../../../lib/organization-data", () => ({ clubCall: vi.fn() }));
-import { SignupInvitationControls } from "./SignupStatus";
-import type { ParentLinkActions } from "./SignupStatus";
+import SignupStatus, { SignupInvitationControls, showsParentLinked } from "./SignupStatus";
+import type { ParentLinkActions, ParentLinksProps } from "./SignupStatus";
 import type { InvitationView } from "../lib/invitation";
 import { loadingParentLinks, parentLinksController } from "../lib/parent-links";
 import type { ParentLinksPort, ParentLinksView } from "../lib/parent-links";
-import { guardianLinkError, parsePlayerGuardians } from "../../../lib/guardians";
+import { ensureGuardianInvitation, getPlayerGuardians, guardianLinkError, parentLinkedFrom, parsePlayerGuardians, resetGuardianReadReporting } from "../../../lib/guardians";
 import type { PlayerGuardians } from "../../../lib/guardians";
 import { familyChildPath, familyPreviewRequest, previewParent } from "../../family/family";
 
@@ -16,36 +16,58 @@ const CODE = "PAR-" + "0123456789ABCDEF".repeat(2);
 const invitation = (playerIds = ["player"]) => ({ invitationId: "invite-1", code: CODE, signupUrl: `https://posetek.net/signin#parentCode=${CODE}`, playerIds });
 const guardians = (extra: Partial<PlayerGuardians> = {}): PlayerGuardians => ({ playerId: "player", issuingEnabled: true, guardians: [], invitation: null, siblingCandidates: [], ...extra });
 const linked = { uid: "parent-uid", email: "parent@example.test", linkedAtMillis: Date.UTC(2026, 10, 13, 18), playerIds: ["player", "sibling"] };
-const noop: ParentLinkActions = { retry() {}, copy() {}, confirmCopy() {}, cancel() {}, askRemove() {}, remove() {}, revoke() {} };
+const noop: ParentLinkActions = { retry() {}, copy() {}, confirmCopy() {}, cancel() {}, askRemove() {}, remove() {}, askRevoke() {}, revoke() {} };
 const ready: InvitationView = { invitation: { playerId: "player", status: "ready", code: "PLR-SAMPLE-123", signupUrl: "https://posetek.net/signin#playerCode=PLR-SAMPLE-123" }, pending: null, message: "", error: false };
 
-function render(parents: Partial<ParentLinksView>, options: { admin?: boolean; invitation?: InvitationView; variant?: "admin" | "club" } = {}) {
+function render(parents: Partial<ParentLinksView>, options: { admin?: boolean; invitation?: InvitationView; variant?: "admin" | "club"; open?: boolean; parentLinked?: boolean } = {}) {
   const view: ParentLinksView = { ...loadingParentLinks(), pending: null, ...parents };
+  const props: ParentLinksProps = { playerId: "player", view, admin: options.admin ?? false, actions: noop, open: options.open ?? true, onToggle() {}, parentLinked: options.parentLinked };
   return renderToStaticMarkup(<MemoryRouter><SignupInvitationControls playerName="Example Player" view={options.invitation || ready} variant={options.variant}
-    onGenerate={() => {}} onRetry={() => {}} onCopy={() => {}} parents={{ playerId: "player", view, admin: options.admin ?? false, actions: noop }} /></MemoryRouter>);
+    onGenerate={() => {}} onRetry={() => {}} onCopy={() => {}} parents={props} /></MemoryRouter>);
 }
 
-function port(reads: PlayerGuardians[]) {
+function port(reads: PlayerGuardians[], answers: { removed?: boolean; revoked?: boolean } = {}) {
   const queue = [...reads];
   const calls = { ensure: [] as string[][], copied: [] as string[], removed: [] as string[], revoked: [] as string[] };
   const value: ParentLinksPort = {
     read: vi.fn(async () => (queue.length > 1 ? queue.shift()! : queue[0])),
     ensure: vi.fn(async ids => { calls.ensure.push(ids); return invitation(ids); }),
-    revoke: vi.fn(async id => { calls.revoked.push(id); return true; }),
-    remove: vi.fn(async (_player, uid) => { calls.removed.push(uid); return true; }),
+    revoke: vi.fn(async id => { calls.revoked.push(id); return answers.revoked ?? true; }),
+    remove: vi.fn(async (_player, uid) => { calls.removed.push(uid); return answers.removed ?? true; }),
     copy: vi.fn(async text => { calls.copied.push(text); }),
-    names: vi.fn(async () => ({ sibling: "Sam Synthetic" })),
+    names: vi.fn(async () => ({ sibling: "Sam Synthetic", cousin: "Cam Synthetic" })),
     isCurrent: () => true,
   };
   return { value, calls };
 }
-const run = (reads: PlayerGuardians[]) => {
-  const p = port(reads); let view = loadingParentLinks();
+const run = (reads: PlayerGuardians[], answers?: { removed?: boolean; revoked?: boolean }) => {
+  const p = port(reads, answers); let view = loadingParentLinks();
   const controller = parentLinksController("player", p.value, next => { view = next; });
   return { ...p, controller, view: () => view };
 };
 
 describe("parent links in the shared signup control", () => {
+  it("makes no parent call until the row's Parents disclosure is opened", () => {
+    const closed = render({ data: null }, { open: false });
+    expect(closed).toContain('aria-label="Parents for Example Player"'); expect(closed).toContain('aria-expanded="false"');
+    expect(closed).not.toContain("admin-parent-links");
+    // Rendering the live row never reads parent links on its own.
+    const html = renderToStaticMarkup(<MemoryRouter><SignupStatus playerId="player" playerName="Example Player" registered /></MemoryRouter>);
+    expect(html).toContain("Parents"); expect(html).not.toContain("Checking parent links");
+  });
+  it("derives Parent linked from roster data without a read, and keeps today's status when there is none", () => {
+    expect(render({ data: null }, { open: false, parentLinked: true })).toContain("Parent linked");
+    const none = render({ data: null }, { open: false });
+    expect(none).toContain("Awaiting signup"); expect(none).not.toContain("Parent linked");
+    expect(parentLinkedFrom({ guardianUIDs: ["p"] })).toBe(true);
+    expect(parentLinkedFrom({ guardianUIDs: [] })).toBe(false);
+    expect(parentLinkedFrom({ parentLinked: true })).toBe(true);
+    expect(parentLinkedFrom({ firstName: "Avery" })).toBeUndefined();
+    // A completed read wins over the roster hint.
+    const props = (data: PlayerGuardians | null, hint?: boolean) => ({ playerId: "player", view: { ...loadingParentLinks(), pending: null, data }, admin: false, actions: noop, open: true, onToggle() {}, parentLinked: hint });
+    expect(showsParentLinked(props(guardians(), true))).toBe(false);
+    expect(showsParentLinked(props(guardians({ guardians: [linked] }), false))).toBe(true);
+  });
   it("reads 'Parent linked' instead of 'Awaiting signup' once a parent is confirmed, and lists them", () => {
     const html = render({ data: guardians({ guardians: [linked] }), names: { sibling: "Sam Synthetic" } });
     expect(html).toContain("Parent linked"); expect(html).not.toContain("Awaiting signup");
@@ -64,24 +86,29 @@ describe("parent links in the shared signup control", () => {
     expect(on).toContain('aria-label="Copy parent link for Example Player"'); expect(on).toContain('aria-label="Copy parent code for Example Player"');
     expect(on).toMatch(/class="admin-parent-links" data-clarity-mask="true"/);
     expect(on).not.toContain(CODE);
-    const off = render({ data: guardians({ issuingEnabled: false }) });
-    expect(off).not.toContain("Copy parent");
+    expect(render({ data: guardians({ issuingEnabled: false }) })).not.toContain("Copy parent");
   });
-  it("shows an open link as pending with Revoke", () => {
-    const html = render({ data: guardians({ invitation: invitation() }) });
-    expect(html).toContain("Parent link pending"); expect(html).toContain('aria-label="Revoke the parent link for Example Player"');
+  it("shows an open link as pending with the players it covers, and asks before revoking", () => {
+    const html = render({ data: guardians({ invitation: invitation(["player", "sibling"]) }), names: { sibling: "Sam Synthetic" } });
+    expect(html).toContain("Parent link pending · Example Player, Sam Synthetic");
+    expect(html).toContain('aria-label="Revoke the parent link for Example Player"');
+    expect(html).not.toContain("It stops working at once");
+    const confirming = render({ data: guardians({ invitation: invitation(["player", "sibling"]) }), names: { sibling: "Sam Synthetic" }, confirmingRevoke: "invite-1" });
+    expect(confirming).toContain("Revoke the parent link for Example Player, Sam Synthetic? It stops working at once.");
   });
-  it("shows sibling suggestions unchecked, with one confirm", () => {
-    const html = render({ data: guardians(), choosing: { kind: "link", candidates: [{ playerId: "sibling", firstName: "Sam", lastName: "Synthetic" }] } });
-    expect(html).toContain("Sam Synthetic"); expect(html).not.toContain("checked=\"\""); expect(html.match(/Copy parent link/g)).toHaveLength(1);
+  it("shows the open link's children as fixed and the suggestions unchecked, with one confirm", () => {
+    const html = render({ data: guardians(), names: { sibling: "Sam Synthetic" }, choosing: { kind: "link", fixed: ["player", "sibling"], epoch: 1, candidates: [{ playerId: "cousin", firstName: "Cam", lastName: "Synthetic" }] } });
+    expect(html).toMatch(/<input type="checkbox" disabled="" checked=""\/>Example Player/);
+    expect(html).toMatch(/<input type="checkbox" disabled="" checked=""\/>Sam Synthetic/);
+    expect(html).toMatch(/<input type="checkbox"\/>Cam Synthetic/);
+    expect(html.match(/Copy parent link/g)).toHaveLength(1);
   });
   it("offers Parent view to PoseTek admins only", () => {
     expect(render({ data: guardians({ guardians: [linked] }) }, { admin: true })).toContain('href="/family?previewParent=parent-uid&amp;fromPlayer=player"');
     expect(render({ data: guardians({ guardians: [linked] }) }, { admin: false })).not.toContain("Parent view");
   });
   it("asks before removing", () => {
-    const html = render({ data: guardians({ guardians: [linked] }), confirmingRemove: "parent-uid" });
-    expect(html).toContain("Remove parent@example.test? They lose access to Example Player at once.");
+    expect(render({ data: guardians({ guardians: [linked] }), confirmingRemove: "parent-uid" })).toContain("Remove parent@example.test? They lose access to Example Player at once.");
   });
 });
 
@@ -101,6 +128,24 @@ describe("parent links controller", () => {
     await r.controller.confirmCopy(["sibling", "not-offered"]);
     expect(r.calls.ensure).toEqual([["player", "sibling"]]); expect(r.calls.copied).toEqual([CODE]); expect(r.view().choosing).toBeNull();
   });
+  it("keeps the open link's children when siblings are added", async () => {
+    const open = guardians({ invitation: invitation(["player", "sibling"]), siblingCandidates: [{ playerId: "cousin", firstName: "Cam", lastName: "Synthetic" }] });
+    const r = run([open]);
+    await r.controller.load(); await r.controller.copy("link");
+    expect(r.view().choosing?.fixed).toEqual(["player", "sibling"]);
+    await r.controller.confirmCopy([]);
+    expect(r.calls.ensure).toEqual([["player", "sibling"]]);
+    await r.controller.copy("link"); await r.controller.confirmCopy(["cousin"]);
+    expect(r.calls.ensure.at(-1)).toEqual(["player", "sibling", "cousin"]);
+  });
+  it("opens the chooser with a new epoch every time, so earlier ticks never return", async () => {
+    const r = run([guardians({ siblingCandidates: [{ playerId: "sibling", firstName: "Sam", lastName: "Synthetic" }] })]);
+    await r.controller.load(); await r.controller.copy("link");
+    const first = r.view().choosing!.epoch;
+    r.controller.cancel(); expect(r.view().choosing).toBeNull();
+    await r.controller.copy("link"); expect(r.view().choosing!.epoch).not.toBe(first);
+    r.controller.askRemove("parent-uid"); expect(r.view().choosing).toBeNull();
+  });
   it("does nothing while issuing is off", async () => {
     const r = run([guardians({ issuingEnabled: false })]);
     await r.controller.load(); await r.controller.copy("link");
@@ -113,10 +158,20 @@ describe("parent links controller", () => {
     r.controller.askRemove("parent-uid"); await r.controller.remove("parent-uid");
     expect(r.calls.removed).toEqual(["parent-uid"]); expect(r.view().data?.guardians).toEqual([]); expect(r.view().message).toBe("Parent removed.");
   });
-  it("revokes an open link and re-reads", async () => {
+  it("says Parent removed only when the server answers true", async () => {
+    const r = run([guardians({ guardians: [linked] })], { removed: false });
+    await r.controller.load(); r.controller.askRemove("parent-uid"); await r.controller.remove("parent-uid");
+    expect(r.view().message).toBe(""); expect(r.view().data?.guardians).toEqual([linked]);
+  });
+  it("revokes only after confirmation, re-reads, and says so only on true", async () => {
     const r = run([guardians({ invitation: invitation() }), guardians()]);
-    await r.controller.load(); await r.controller.revoke("invite-1");
-    expect(r.calls.revoked).toEqual(["invite-1"]); expect(r.view().data?.invitation).toBeNull();
+    await r.controller.load();
+    await r.controller.revoke("invite-1"); expect(r.calls.revoked).toEqual([]);
+    r.controller.askRevoke("invite-1"); await r.controller.revoke("invite-1");
+    expect(r.calls.revoked).toEqual(["invite-1"]); expect(r.view().data?.invitation).toBeNull(); expect(r.view().message).toBe("Parent link revoked.");
+    const refused = run([guardians({ invitation: invitation() })], { revoked: false });
+    await refused.controller.load(); refused.controller.askRevoke("invite-1"); await refused.controller.revoke("invite-1");
+    expect(refused.view().message).toBe(""); expect(refused.view().data?.invitation?.invitationId).toBe("invite-1");
   });
   it("shows a refused issue with fixed copy, including the six-parent limit", async () => {
     const r = run([guardians()]);
@@ -132,7 +187,8 @@ describe("parent links controller", () => {
   });
 });
 
-describe("getPlayerGuardians response", () => {
+describe("guardian callables", () => {
+  beforeEach(resetGuardianReadReporting);
   it("keeps each parent's children and always includes the requested player", () => {
     const parsed = parsePlayerGuardians("player", { playerId: "player", issuingEnabled: true, invitation: null, siblingCandidates: [],
       guardians: [{ uid: "parent-uid", email: null, linkedAtMillis: null, playerIds: ["sibling"] }] });
@@ -141,6 +197,18 @@ describe("getPlayerGuardians response", () => {
   it("refuses a link whose fragment does not carry its own code, or an answer for another player", () => {
     expect(() => parsePlayerGuardians("player", { ...guardians(), invitation: { ...invitation(), signupUrl: "https://posetek.net/signin#parentCode=PAR-OTHER-CODE" } })).toThrow();
     expect(() => parsePlayerGuardians("player", { ...guardians(), playerId: "other" })).toThrow();
+  });
+  it("copies a link only when it carries exactly the chosen children", async () => {
+    const call = (playerIds: string[]) => async () => invitation(playerIds);
+    expect((await ensureGuardianInvitation(["sibling", "player"], call(["player", "sibling"]))).playerIds).toEqual(["player", "sibling"]);
+    await expect(ensureGuardianInvitation(["player"], call(["player", "sibling"]))).rejects.toThrow("does not match");
+    await expect(ensureGuardianInvitation(["player", "sibling"], call(["player"]))).rejects.toThrow("does not match");
+  });
+  it("reports a failed read at most once per page", async () => {
+    const report = vi.fn(), failing = async () => { throw Object.assign(new Error("not found"), { code: "functions/not-found" }); };
+    await expect(getPlayerGuardians("a", failing, report)).rejects.toThrow();
+    await expect(getPlayerGuardians("b", failing, report)).rejects.toThrow();
+    expect(report).toHaveBeenCalledOnce();
   });
 });
 

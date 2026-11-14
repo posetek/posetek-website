@@ -121,7 +121,8 @@ export function captureIssue(error: unknown, operation: string, context: { playe
   } catch { /* Reporting is never load-bearing. */ }
 }
 export function instrumentIssueCallable<T extends (...args: any[]) => Promise<any>>(name: string, call: T): T {
-  if (/UserIssue|UserIssues|WorkoutActivity|WorkoutNotificationStatus/.test(name)) return call;
+  // getPlayerGuardians runs once per opened roster row; lib/guardians.ts reports it once per page.
+  if (/UserIssue|UserIssues|WorkoutActivity|WorkoutNotificationStatus|^getPlayerGuardians$/.test(name)) return call;
   return (async (...args: Parameters<T>) => {
     const ownerUid = currentOwner();
     const correlated = CORRELATED_CALLABLES.has(name);

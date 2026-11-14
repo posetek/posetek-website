@@ -58,12 +58,41 @@ async function defaultCall(name: string, data: Record<string, unknown>) {
   return (await cloud.httpsCallable(name)(data)).data;
 }
 
-export async function getPlayerGuardians(playerId: string, call: GuardianCall = defaultCall): Promise<PlayerGuardians> {
-  return parsePlayerGuardians(playerId, await call("getPlayerGuardians", { playerId }));
+// The callable wrapper does not report getPlayerGuardians (user-issues.ts); a failed read is
+// reported here at most once per page, however many roster rows open their parent links.
+let readFailureReported = false;
+export function resetGuardianReadReporting(): void { readFailureReported = false; }
+
+export async function getPlayerGuardians(playerId: string, call: GuardianCall = defaultCall,
+  report: (error: unknown, playerId: string) => void = defaultReport): Promise<PlayerGuardians> {
+  let data: unknown;
+  try { data = await call("getPlayerGuardians", { playerId }); }
+  catch (error) {
+    if (!readFailureReported) { readFailureReported = true; report(error, playerId); }
+    throw error;
+  }
+  return parsePlayerGuardians(playerId, data);
+}
+function defaultReport(error: unknown, playerId: string) {
+  void import("./user-issues").then(({ captureIssue }) => captureIssue(error, "getPlayerGuardians", { playerId })).catch(() => {});
+}
+
+/**
+ * Whether roster data the page already has says a parent is linked: `guardianUIDs` on a player
+ * document, or the additive `parentLinked` boolean on a report row. Undefined when neither is there.
+ */
+export function parentLinkedFrom(row: unknown): boolean | undefined {
+  const value = record(row);
+  if (!value) return undefined;
+  if (Array.isArray(value.guardianUIDs)) return value.guardianUIDs.length > 0;
+  return typeof value.parentLinked === "boolean" ? value.parentLinked : undefined;
 }
 export async function ensureGuardianInvitation(playerIds: string[], call: GuardianCall = defaultCall): Promise<GuardianInvitation> {
-  const invitation = parseGuardianInvitation(await call("ensureGuardianInvitation", { playerIds: [...new Set(playerIds)].sort() }));
-  if (!playerIds.every(id => invitation.playerIds.includes(id))) throw new Error("The parent link does not match the chosen players. Try again.");
+  const chosen = [...new Set(playerIds)].sort();
+  const invitation = parseGuardianInvitation(await call("ensureGuardianInvitation", { playerIds: chosen }));
+  // Exactly the chosen children: a link for more players than were chosen is never copied.
+  const returned = [...invitation.playerIds].sort();
+  if (returned.length !== chosen.length || returned.some((id, index) => id !== chosen[index])) throw new Error("The parent link does not match the chosen players. Try again.");
   return invitation;
 }
 export async function revokeGuardianInvitation(invitationId: string, call: GuardianCall = defaultCall): Promise<boolean> {
