@@ -3,10 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 vi.mock("../../../lib/firebase", () => ({ auth: {} }));
 vi.mock("../../../lib/organization-data", () => ({ clubCall: vi.fn() }));
-import SignupStatus, { SignupInvitationControls, showsParentLinked } from "./SignupStatus";
+import SignupStatus, { SignupInvitationControls } from "./SignupStatus";
 import type { ParentLinkActions, ParentLinksProps } from "./SignupStatus";
 import type { InvitationView } from "../lib/invitation";
-import { loadingParentLinks, parentLinksController } from "../lib/parent-links";
+import { loadingParentLinks, parentLinksController, showsParentLinked } from "../lib/parent-links";
 import type { ParentLinksPort, ParentLinksView } from "../lib/parent-links";
 import { ensureGuardianInvitation, getPlayerGuardians, guardianLinkError, parentLinkedFrom, parsePlayerGuardians, resetGuardianReadReporting } from "../../../lib/guardians";
 import type { PlayerGuardians } from "../../../lib/guardians";
@@ -64,9 +64,10 @@ describe("parent links in the shared signup control", () => {
     expect(parentLinkedFrom({ parentLinked: true })).toBe(true);
     expect(parentLinkedFrom({ firstName: "Avery" })).toBeUndefined();
     // A completed read wins over the roster hint.
-    const props = (data: PlayerGuardians | null, hint?: boolean) => ({ playerId: "player", view: { ...loadingParentLinks(), pending: null, data }, admin: false, actions: noop, open: true, onToggle() {}, parentLinked: hint });
-    expect(showsParentLinked(props(guardians(), true))).toBe(false);
-    expect(showsParentLinked(props(guardians({ guardians: [linked] }), false))).toBe(true);
+    const view = (data: PlayerGuardians | null): ParentLinksView => ({ ...loadingParentLinks(), pending: null, data });
+    expect(showsParentLinked(view(guardians()), true)).toBe(false);
+    expect(showsParentLinked(view(guardians({ guardians: [linked] })), false)).toBe(true);
+    expect(showsParentLinked(view(null), true)).toBe(true);
   });
   it("reads 'Parent linked' instead of 'Awaiting signup' once a parent is confirmed, and lists them", () => {
     const html = render({ data: guardians({ guardians: [linked] }), names: { sibling: "Sam Synthetic" } });

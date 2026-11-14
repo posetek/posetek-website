@@ -6,7 +6,7 @@ import { ensureGuardianInvitation, getPlayerGuardians, parentViewPath, removePla
 import { loadFamilyChildren } from "../../family/family";
 import { invitationController, loadingInvitation } from "../lib/invitation";
 import type { InvitationView } from "../lib/invitation";
-import { hasLinkedParent, loadingParentLinks, parentLinksController } from "../lib/parent-links";
+import { loadingParentLinks, parentLinksController, showsParentLinked } from "../lib/parent-links";
 import type { ParentCopyKind, ParentLinksView } from "../lib/parent-links";
 import "./parent-links.scss";
 
@@ -104,12 +104,6 @@ export interface ParentLinksProps {
   parentLinked?: boolean;
 }
 
-/** "Parent linked" from a read when this row has one, else from the host's roster data. */
-export function showsParentLinked(parents: ParentLinksProps | undefined): boolean {
-  if (!parents) return false;
-  return parents.view.data ? hasLinkedParent(parents.view) : parents.parentLinked === true;
-}
-
 /** The same compact actions serve roster rows and the organization invitation card. */
 export function SignupInvitationControls({ playerName, view, variant = "admin", disabled = false, showClaimed = true, onGenerate, onRetry, onCopy, parents }: {
   playerName: string; view: InvitationView; variant?: "admin" | "club"; disabled?: boolean; showClaimed?: boolean;
@@ -119,7 +113,7 @@ export function SignupInvitationControls({ playerName, view, variant = "admin", 
 }) {
   const invitation = view.invitation;
   const buttonClass = variant === "admin" ? "quiet-button small admin-copy-code" : "quiet-button small";
-  const parentLinked = showsParentLinked(parents);
+  const parentLinked = !!parents && showsParentLinked(parents.view, parents.parentLinked);
   return <div className={variant === "admin" ? "admin-signup" : "club-player-invitation"}>
     {invitation?.status === "claimed" ? showClaimed && <span className="admin-code-unavailable">Account already claimed. The player can sign in with their existing account.</span> : <>
       {variant === "admin" && (parentLinked ? <span className="admin-chip">Parent linked</span> : <span className="admin-chip warn">Awaiting signup</span>)}

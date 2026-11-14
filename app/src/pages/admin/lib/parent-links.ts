@@ -28,6 +28,11 @@ export function hasLinkedParent(view: ParentLinksView | undefined): boolean {
   return !!view?.data && view.data.guardians.length > 0;
 }
 
+/** "Parent linked" from a read when this row has one, else from the host's roster data. */
+export function showsParentLinked(view: ParentLinksView, rosterHint: boolean | undefined): boolean {
+  return view.data ? hasLinkedParent(view) : rosterHint === true;
+}
+
 export function parentLinksReadError(error: unknown): string {
   const message = guardianLinkError(error);
   return message.startsWith("You do not have permission") || message.startsWith("Sign in again") ? message : "Parent links could not be checked.";
