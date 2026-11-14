@@ -243,7 +243,8 @@ export default function LandingPage() {
   // the resolved account, without ever signing anyone out.
   useEffect(() => {
     const user = auth.currentUser;
-    if (!signupOpen || activeTab !== "parentCode" || !signedIn || !user || parentFormOwned) { setParentAction(null); return; }
+    // Waits for the first auth observation: its epoch bump would otherwise orphan an earlier check.
+    if (!authReady || !signupOpen || activeTab !== "parentCode" || !signedIn || !user || parentFormOwned) { setParentAction(null); return; }
     const revision = authEpoch.current;
     const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
     setParentAction("checking");
@@ -251,7 +252,7 @@ export default function LandingPage() {
       .then(access => { if (isCurrent()) setParentAction(parentLinkAction(access.kind === "active" ? access.role : null)); })
       .catch(() => { if (isCurrent()) setParentAction({ kind: "add" }); });
     // The signed-in identity is a dependency: switching accounts while signed in re-checks.
-  }, [signupOpen, activeTab, signedIn, signedInUid, parentFormOwned]);
+  }, [authReady, signupOpen, activeTab, signedIn, signedInUid, parentFormOwned]);
 
   useEffect(() => {
     if (signupEntryError || !invitationLink.present) return;
