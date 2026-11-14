@@ -44,8 +44,6 @@ The deployment replaced the application entry and added seven hashed assets.
 All 2,851 other prior files, including 78 encrypted report files, matched the
 previous release. [Production receipt](docs/releases/receipts/ADMIN_WEEKLY_TREND_INDICATORS_PRODUCTION.json)
 
-
-
 ## Player Stats landing — November 12, 2026
 
 Deployment `6af626e37d3ff00c50b761d9` explicitly opens Stats for the player
@@ -56,6 +54,18 @@ The release replaces only the isolated sign-in document and adds one hashed
 script; 2,844 predecessor files, including the athlete application and all report
 files, stay exact. The new baseline protects 2,844 files with all 37 recovery
 mappings. [Production receipt](docs/releases/receipts/PLAYER_STATS_LANDING_PRODUCTION.json)
+
+## Private report score cards — November 12, 2026
+
+The live reader supports both score-card layouts for results-first reports.
+The v2 reader adds selectable test details, team median gaps and developmental
+curves. The v1 score cards and earlier report layouts retain their behavior.
+
+The serving v2 reader hashes are recorded in `deployment/homepage-baseline.json`.
+This source reconciliation records those reader files as served and retains the
+pinned two-file transition used to install them. Family report inputs, encrypted
+files, PDF files and access links are kept outside source control.
+
 
 ## Admin reporting fixes and one-pager time on page — November 10, 2026
 
