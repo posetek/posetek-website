@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listedWorkouts, storeKeyFor, workoutStoreScopes } from './store-scopes';
+import { listedWorkouts, shownStoreError, storeKeyFor, workoutStoreScopes } from './store-scopes';
 import type { StoreKey } from './store-scopes';
 import { usableV3Plan } from './create-workout';
 import { savedWorkouts, findResume } from './hub';
@@ -78,9 +78,42 @@ describe('what the hub lists from both stores (the app’s single `WorkoutStore`
       expect(findResume(plan, Object.values(listed.logs), saved)?.workout.id).toBe('draft_1');
     }
   });
-  it('waits for both stores before the list counts as loaded, and never lists one workout twice', () => {
+  it('is ready when the main store is, without waiting for the standalone store, and never lists one workout twice', () => {
     const scopes = workoutStoreScopes(true, 'plan-1', null);
-    expect(listedWorkouts(store(), store([], {}, false), scopes).logsLoaded).toBe(false);
+    expect(listedWorkouts(store(), store([], {}, false), scopes).logsLoaded).toBe(true);
+    expect(listedWorkouts(store([], {}, false), store(), scopes).logsLoaded).toBe(false);
     expect(listedWorkouts(store([standaloneWorkout]), store([standaloneWorkout]), scopes).workouts).toHaveLength(1);
+  });
+  it('lists the plan’s workouts as before when the standalone listener fails, and adds its workouts once they arrive', () => {
+    const scopes = workoutStoreScopes(true, 'plan-1', null);
+    const main = store([planWorkout], { adhoc_1: { id: 'adhoc_1', planId: 'plan-1', source: 'adhoc', startedAt: 1 } });
+    // A listener that fails never delivers its first snapshot.
+    const neverLoaded = { ...store([], {}, false), error: 'Missing or insufficient permissions.' };
+    const failed = listedWorkouts(main, neverLoaded, scopes);
+    expect([failed.workouts, failed.logs, failed.logsLoaded]).toEqual([main.workouts, main.logs, true]);
+    expect(savedWorkouts(failed.workouts, failed.logs, plan, live)).toEqual(savedWorkouts(main.workouts, main.logs, plan, live));
+    expect(listedWorkouts(main, store([standaloneWorkout], {}, true), scopes).workouts.map(w => w.id)).toEqual(['adhoc_1', 'draft_1']);
+  });
+});
+
+describe('which store failure a screen shows', () => {
+  const ok = { error: null }, mainDown = { error: 'Could not load your plan workouts.' }, standaloneDown = { error: 'Missing or insufficient permissions.' };
+  it('shows the main store’s failure on every hub screen, as before', () => {
+    for (const opened of [null, 'main', 'standalone'] as const) expect(shownStoreError(mainDown, standaloneDown, opened)).toBe(mainDown.error);
+  });
+  it('never shows a standalone listener failure over the hub or a plan workout', () => {
+    expect(shownStoreError(ok, standaloneDown)).toBeNull();
+    expect(shownStoreError(ok, standaloneDown, 'main')).toBeNull();
+  });
+  it('shows it on a screen for a workout that runs on the standalone store', () => {
+    const scopes = workoutStoreScopes(true, 'plan-1', null);
+    expect(shownStoreError(ok, standaloneDown, storeKeyFor(standaloneWorkout, scopes))).toBe(standaloneDown.error);
+    expect(shownStoreError(ok, standaloneDown, storeKeyFor(planWorkout, scopes))).toBeNull();
+    expect(shownStoreError(ok, ok, 'standalone')).toBeNull();
+  });
+  it('with no plan, the one store is the main store and its failure shows everywhere', () => {
+    const scopes = workoutStoreScopes(true, null, null);
+    expect(storeKeyFor(standaloneWorkout, scopes)).toBe('main');
+    expect(shownStoreError(standaloneDown, ok)).toBe(standaloneDown.error);
   });
 });

@@ -36,7 +36,7 @@ import { HistoryList, SavedLibrary } from './workouts/HistoryAndSaved';
 import { FreeSessionBanner, HubLinks, PlanInvitationCard, PlanSummaryCard, ResumeBanner, TestsGrid, WorkoutActions } from './workouts/WorkoutsRoot';
 import CreateWorkoutCard from './workouts/CreateWorkoutCard';
 import { BUILD_REFUSED, RUN_REFUSED, canBuildWorkout, createTarget, defaultMinutes, openingRequest, runMode, usableV3Plan } from './workouts/create-workout';
-import { listedWorkouts, storeKeyFor, workoutStoreScopes } from './workouts/store-scopes';
+import { listedWorkouts, shownStoreError, storeKeyFor, workoutStoreScopes } from './workouts/store-scopes';
 import type { StoreKey } from './workouts/store-scopes';
 import AppOnlySheet from './workouts/AppOnlySheet';
 import type { AppOnlyKind } from './workouts/AppOnlySheet';
@@ -239,7 +239,12 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     if (personalOpen) closePersonal();
     // The workout stays on the store it starts on until it finishes.
     const key = storeKeyFor(w, scopes);
-    try { const started = await storeOn(key).start(w); setPlayingStore(key); setPlaying(started); setReview(null); setChatTarget(null); setFullOpen(false); } catch { /* store owns error */ }
+    try { const started = await storeOn(key).start(w); setPlayingStore(key); setPlaying(started); setReview(null); setChatTarget(null); setFullOpen(false); }
+    catch (e: any) {
+      // The main store shows its own failure on every hub screen. The standalone store's is shown
+      // only here, where it was used (a start from Saved or the resume banner has no review screen).
+      if (key === 'standalone') setError(e?.message || 'Could not open this workout. Try again.');
+    }
   };
   const apply = async (andStart: boolean) => {
     if (!proposal || applying) return;
@@ -274,8 +279,10 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
   };
 
   const logs = Object.values(store.logs);
-  const storeError = store.error || standaloneStore.error;
-  const message = (error || storeError) && <p className="player-error" role="alert">{error || storeError}</p>;
+  // Every hub screen shows the main store's failure; the standalone store's only where it is used.
+  const errorLine = (storeFailure: string | null) => (error || storeFailure) && <p className="player-error" role="alert">{error || storeFailure}</p>;
+  const storeError = shownStoreError(store, standaloneStore);
+  const message = errorLine(storeError);
   const openPersonal = (w?: Row, create = false) => { setSeed(''); setPersonalSource(undefined); setPersonalSelected(w); setPersonalHandoff(undefined); setConversationOpen(false); setPersonalCreate(create); if (create) personal.newConversation(); setPersonalOpen(true); setPersonalEntry(v => v + 1); };
   const closePersonal = () => {
     setPersonalOpen(false); setPersonalSource(undefined); setPersonalSelected(undefined); setPersonalCreate(false); setConversationOpen(false); setPersonalGuided(false);
@@ -347,7 +354,7 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     const snapshot = log?.workoutSnapshot || review;
     const copy = personal.enabled ? () => { personal.newConversation(); setPersonalEntry(v => v + 1); setConversationOpen(false); setPersonalHandoff(undefined); setSeed(''); setPersonalSelected(undefined); setPersonalSource({ workout: snapshot, ...(review.source === 'plan' ? { reference: { planId: review.planId, workoutId: review.workoutId, revision: Number(review.workoutRevision || 1) } } : {}) }); setPersonalOpen(true); setReview(null); } : undefined;
     const adjust = review.source !== 'plan' && capabilityEnabled(config, 'workout_chat') ? () => { setSeed(''); setChatTarget({ kind: 'adhoc', plannedWorkoutId: review.workoutId }); setReview(null); } : copy;
-    return overlay('Your workout', () => setReview(null), <>{message}
+    return overlay('Your workout', () => setReview(null), <>{errorLine(shownStoreError(store, standaloneStore, storeKeyFor(review, scopes)))}
       <WorkoutReview workout={review} log={log} start={startControl} onAdjust={adjust} adjustLabel={adjust === copy ? 'Customize a personal copy' : 'Tell me what to change'}
         onCreateAnother={() => { setReview(null); createWorkout(); }} onDrill={openDrill} onFull={() => setFullOpen(true)} />
     </>);
