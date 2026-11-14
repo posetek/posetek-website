@@ -132,7 +132,11 @@ export async function createInvitedParent<U extends SignupUser>(
     if (linked?.length) return linked;
   } else if (steps.currentUser()) throw new Error("You are already signed in. Sign out before creating another account.");
   const code = input.code.trim();
-  if (!CODE.test(code) || !await steps.validate(code)) throw new Error(unavailableParentInvitation);
+  if (!CODE.test(code)) throw new Error(unavailableParentInvitation);
+  // A retry for the login this page created may follow a redemption whose answer was lost: the code
+  // then reads as used, but redeeming again returns the same success to that login. Only a new
+  // account is preflighted.
+  if (!pending && !await steps.validate(code)) throw new Error(unavailableParentInvitation);
   if (pending ? steps.currentUser()?.uid !== pending.uid : steps.currentUser()) throw new Error("Your sign-in changed. Sign out before creating another account.");
   let created: U | null = pending || null;
   let redeemed = false;

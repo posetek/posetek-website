@@ -40,12 +40,15 @@ export function reportPlayerDestination(entry: ReportPlayerEntry, role: AccountR
   if (!entry.present) return null;
   if (!entry.playerId) throw new ReportPlayerEntryError(invalidReportEntry);
   const allowed = role === "player" ? playerId === entry.playerId : role === "parent" && playerIds.includes(entry.playerId);
+  // A parent is never told to use the player's login: its own account is simply not linked yet.
+  if (!allowed && role === "parent") throw new ReportPlayerEntryError(reportParentNotLinked);
   if (!allowed) {
     const destination = entry.view === "stats" ? "Stats" : "their workouts";
     throw new ReportPlayerEntryError(`Use this player's login to open ${destination}. If you are signed in to a different player or a staff account, choose Use a different account.`);
   }
   return reportViewPath(entry);
 }
+export const reportParentNotLinked = "This parent account is not linked to this player. Open the parent link for this player to add them.";
 
 /** The report's requested page for its child: Stats, or Training. */
 function reportViewPath(entry: ReportPlayerEntry & { playerId: string }): string {
@@ -60,10 +63,17 @@ export function reportSignupDestination(entry: ReportPlayerEntry, redeemedPlayer
   return reportTrainingPath(redeemedPlayerId);
 }
 
-/** A parent link redeemed from a report continues only when the report's child is now linked. */
-export function reportParentSignupDestination(entry: ReportPlayerEntry, linkedPlayerIds: readonly string[]): string | null {
+/**
+ * A parent link redeemed from a report continues only when the report's child is now linked. A new
+ * account that does not match is told so; an existing parent ("Add to my account") whose link does
+ * not cover the report's child simply opens its own players (`existing`), nothing was created.
+ */
+export function reportParentSignupDestination(entry: ReportPlayerEntry, linkedPlayerIds: readonly string[], existing = false): string | null {
   if (!entry.present) return null;
-  if (!entry.playerId || !linkedPlayerIds.includes(entry.playerId)) throw new ReportPlayerEntryError(reportMismatch);
+  if (!entry.playerId || !linkedPlayerIds.includes(entry.playerId)) {
+    if (existing) return null;
+    throw new ReportPlayerEntryError(reportMismatch);
+  }
   return reportViewPath(entry);
 }
 

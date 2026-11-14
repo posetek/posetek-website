@@ -145,9 +145,16 @@ describe("parent signup preflight and account safety", () => {
     expect(calls.resolve.mock.invocationCallOrder[0]).toBeGreaterThan(calls.redeem.mock.invocationCallOrder[0]);
     expect(calls.discard).not.toHaveBeenCalled();
   });
-  it("retains the account when the guardians record cannot be read (rules not yet published)", async () => {
+  it("retains the account when the guardians record is unreadable (rules not yet published)", async () => {
+    // The real resolve (findGuardian) answers a denied read with null, never a rejection.
     const calls = steps(); calls.redeem.mockRejectedValue(new Error("Network error"));
-    calls.resolve.mockRejectedValue(Object.assign(new Error("denied"), { code: "permission-denied" }));
+    calls.resolve.mockResolvedValue(null);
+    await expect(createInvitedParent(input, calls)).rejects.toThrow("linking could not be confirmed");
+    expect(calls.discard).not.toHaveBeenCalled();
+  });
+  it("retains the account when the guardians read itself fails offline", async () => {
+    const calls = steps(); calls.redeem.mockRejectedValue(new Error("Network error"));
+    calls.resolve.mockRejectedValue(Object.assign(new Error("offline"), { code: "unavailable" }));
     await expect(createInvitedParent(input, calls)).rejects.toThrow("could not be confirmed");
     expect(calls.discard).not.toHaveBeenCalled();
   });
@@ -157,6 +164,13 @@ describe("parent signup preflight and account safety", () => {
     expect(calls.discard).not.toHaveBeenCalled();
     expect(await createInvitedParent(input, calls, { uid: "new-parent" })).toEqual(["child-a", "child-b"]);
     expect(calls.create).toHaveBeenCalledTimes(1); expect(calls.verify).toHaveBeenCalledTimes(2);
+  });
+  it("retries a lost redemption for the same login without the preflight, which now reads the code as used", async () => {
+    const calls = steps(); calls.redeem.mockRejectedValueOnce(new Error("Network error"));
+    await expect(createInvitedParent(input, calls)).rejects.toThrow("linking could not be confirmed");
+    calls.validate.mockResolvedValue(false); calls.validate.mockClear();
+    expect(await createInvitedParent(input, calls, { uid: "new-parent" })).toEqual(["child-a", "child-b"]);
+    expect(calls.validate).not.toHaveBeenCalled(); expect(calls.redeem).toHaveBeenCalledTimes(2);
   });
   it("resumes straight to the linked children when a retained account was in fact linked", async () => {
     const calls = steps(); calls.currentUser.mockReturnValue({ uid: "new-parent" }); calls.resolve.mockResolvedValue(["child-a"]);

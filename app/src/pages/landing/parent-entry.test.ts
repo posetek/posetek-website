@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import { accountDestination, familyDestination, signInProfileWrite } from "./account-entry";
 import type { AccountRole } from "./account-entry";
 import { getSafeReturnToUrl } from "./landing-helpers";
-import { initialReportPlayerDestination, readReportPlayerEntry, reportParentSignupDestination, reportPlayerDestination } from "./report-player-entry";
+import { initialReportPlayerDestination, readReportPlayerEntry, reportParentNotLinked, reportParentSignupDestination, reportPlayerDestination } from "./report-player-entry";
+import { parentLinkSignIn } from "./parent-sign-in";
+import { parentLinkAction } from "./parent-invitation-link";
 
 const origin = "https://posetek.example";
 const base = origin + "/signin";
@@ -49,11 +51,12 @@ describe("report continuation for a parent", () => {
   it("accepts a parent linked to the report's child and lands on that child's Training", () => {
     expect(reportPlayerDestination(entry, "parent", null, ["child-a", "child-b"])).toBe(training);
   });
-  it("refuses a parent who is not linked to the report's child", () => {
-    expect(() => reportPlayerDestination(entry, "parent", null, ["child-a"])).toThrow("player's login");
-    expect(() => reportPlayerDestination(entry, "parent", null, [])).toThrow("player's login");
+  it("refuses a parent who is not linked to the report's child, without telling it to use the player's login", () => {
+    expect(() => reportPlayerDestination(entry, "parent", null, ["child-a"])).toThrow(reportParentNotLinked);
+    expect(() => reportPlayerDestination(entry, "parent", null, [])).toThrow(reportParentNotLinked);
     // A parent's own playerId is never a substitute for its guardians record.
-    expect(() => reportPlayerDestination(entry, "parent", "child-b", [])).toThrow("player's login");
+    expect(() => reportPlayerDestination(entry, "parent", "child-b", [])).toThrow(reportParentNotLinked);
+    expect(reportParentNotLinked).not.toContain("player's login");
   });
   it("keeps the player behaviour unchanged", () => {
     expect(reportPlayerDestination(entry, "player", "child-b")).toBe(training);
@@ -65,11 +68,37 @@ describe("report continuation for a parent", () => {
     expect(() => reportParentSignupDestination(entry, ["child-a"])).toThrow("does not match");
     expect(reportParentSignupDestination(readReportPlayerEntry(""), ["child-a"])).toBeNull();
   });
+  it("sends an existing parent whose link misses the report's child to its own players, with no 'account was created' message", () => {
+    expect(reportParentSignupDestination(entry, ["child-a"], true)).toBeNull();
+    expect(reportParentSignupDestination(entry, ["child-a", "child-b"], true)).toBe(training);
+  });
   it("enters a restored parent session for a linked child directly", async () => {
     const user = { uid: "parent-uid", reload: async () => {}, getIdTokenResult: async () => ({ claims: {} }) };
     const load = vi.fn(async () => ({ kind: "active" as const, role: "parent" as const, playerIds: ["child-b"] }));
     expect(await initialReportPlayerDestination(entry, user, load, () => true)).toBe(training);
     load.mockResolvedValue({ kind: "active", role: "parent", playerIds: ["child-a"] });
-    await expect(initialReportPlayerDestination(entry, user, load, () => true)).rejects.toThrow("player's login");
+    await expect(initialReportPlayerDestination(entry, user, load, () => true)).rejects.toThrow(reportParentNotLinked);
+  });
+});
+
+describe("signing in while a parent link waits (review findings 1 and 7)", () => {
+  const report = readReportPlayerEntry("?reportPlayer=child-b");
+  const none = readReportPlayerEntry("");
+  it("lets the report's own child login and a parent linked to that child continue as before", () => {
+    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "child-b" })).toEqual({ kind: "continue", destination: "/athlete?player=child-b&userType=player&view=training" });
+    expect(parentLinkSignIn(report, { kind: "active", role: "parent", playerIds: ["child-b"] })).toEqual({ kind: "continue", destination: "/athlete?player=child-b&userType=player&view=training" });
+  });
+  it("returns an existing parent or an unlinked login to Add to my account instead of redirecting", () => {
+    expect(parentLinkSignIn(none, { kind: "active", role: "parent", playerIds: ["child-a"] })).toEqual({ kind: "panel", action: { kind: "add" } });
+    expect(parentLinkSignIn(report, { kind: "active", role: "parent", playerIds: ["child-a"] })).toEqual({ kind: "panel", action: { kind: "add" } });
+    expect(parentLinkSignIn(none, { kind: "activation", reason: "unlinked" })).toEqual({ kind: "panel", action: { kind: "add" } });
+  });
+  it("gives every other account its wrong-kind-of-sign-in guidance", () => {
+    expect(parentLinkSignIn(report, { kind: "active", role: "player", playerId: "other-child" })).toEqual({ kind: "panel", action: parentLinkAction("player") });
+    expect(parentLinkSignIn(none, { kind: "active", role: "player", playerId: "child-b" })).toEqual({ kind: "panel", action: parentLinkAction("player") });
+    for (const role of ["admin", "manager", "coach", "independent"] as const) {
+      const decision = parentLinkSignIn(none, { kind: "active", role });
+      expect(decision.kind === "panel" && decision.action.kind).toBe("guidance");
+    }
   });
 });
