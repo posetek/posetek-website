@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const harness = vi.hoisted(() => ({
   states: [] as any[], refs: [] as { current: any }[], stateIndex: 0, refIndex: 0,
-  get: vi.fn(), stream: vi.fn(), config: { coachWorkspaceEnabled: false } as Record<string, any>,
+  get: vi.fn(), stream: vi.fn(), onDraft: vi.fn(), config: { coachWorkspaceEnabled: false } as Record<string, any>,
   canChat: true, handoff: false,
 }));
 vi.mock('react', async original => ({
@@ -90,7 +90,7 @@ function history() {
 describe('Coach chat history and AI sharing recovery', () => {
   afterEach(() => vi.unstubAllGlobals());
   beforeEach(() => {
-    harness.states.length = 0; harness.refs.length = 0; harness.get.mockReset(); harness.stream.mockReset();
+    harness.states.length = 0; harness.refs.length = 0; harness.get.mockReset(); harness.stream.mockReset(); harness.onDraft.mockReset();
     harness.get.mockResolvedValue({ docs: [] }); harness.stream.mockResolvedValue(undefined); harness.config = { coachWorkspaceEnabled: false };
     harness.canChat = true; harness.handoff = false;
   });
@@ -178,6 +178,41 @@ describe('Coach chat history and AI sharing recovery', () => {
     control.props.onAllowed();
     expect(text(render())).toContain('The coach is temporarily unavailable.');
     expect(harness.stream).toHaveBeenCalledTimes(1);
+  });
+
+  describe('a standalone build the server refuses', () => {
+    // What Build Workout sends with no usable plan.
+    const standalone = { kind: 'new', planId: 'standalone', timeAvailableMinutes: 45, energy: 'normal', timezone: 'America/Los_Angeles', equipmentToday: ['ball'] };
+    const build = () => render({ capability: 'workout_chat', context: { workoutRef: standalone }, onDraft: harness.onDraft });
+    const refusals: [string, Record<string, string>][] = [
+      ['the daily cap', { code: 'quota_exceeded', message: "You've reached today's limit for workout building." }],
+      ['an older server that does not accept standalone', { code: 'invalid_request', message: 'Set up a training plan to build workouts.' }],
+    ];
+    for (const [label, refusal] of refusals) it(`shows ${label} in the chat’s error display and keeps the words to retry`, async () => {
+      harness.stream.mockRejectedValueOnce(Object.assign(new Error(refusal.message), { code: refusal.code }));
+      submit(build());
+      await vi.waitFor(() => expect(build().props['aria-busy']).toBe(false));
+      expect(harness.stream.mock.calls[0][0]).toMatchObject({ capability: 'workout_chat', message: 'Yes, build it.', context: { workoutRef: standalone } });
+      const failed = build();
+      const alert = find(failed, element => element.props?.role === 'alert');
+      expect(text(alert)).toContain(refusal.message);
+      expect(find(failed, element => element.type === 'textarea').props.value).toBe('Yes, build it.');
+      // No proposal is offered, so nothing can be saved from the refused turn.
+      expect(harness.onDraft).toHaveBeenLastCalledWith(null);
+    });
+    it('offers AI sharing review when sharing is off, without retrying on its own', async () => {
+      harness.stream.mockRejectedValueOnce(Object.assign(new Error('Review AI sharing before using your coach.'), { code: 'ai_consent_required' }));
+      submit(build());
+      await vi.waitFor(() => expect(build().props['aria-busy']).toBe(false));
+      const blocked = build();
+      expect(text(find(blocked, element => element.props?.role === 'alert'))).toContain('Review AI sharing before using your coach.');
+      const control = find(blocked, element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
+      control.props.onAllowed();
+      expect(text(build())).not.toContain('Review AI sharing before using your coach.');
+      expect(find(build(), element => element.type === 'textarea').props.value).toBe('Yes, build it.');
+      expect(harness.stream).toHaveBeenCalledTimes(1);
+      expect(harness.onDraft).toHaveBeenLastCalledWith(null);
+    });
   });
 
   it('sends valid memory commands through the real transport without chat or workout context', async () => {
