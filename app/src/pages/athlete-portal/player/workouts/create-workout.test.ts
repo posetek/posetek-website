@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUILD_REFUSED, ENERGY_CHOICES, MINUTE_STOPS, WORKOUT_PLACES, browserTimezone, canBuildWorkout, createReady, createTarget, defaultMinutes, equipmentToday, openingRequest, runMode, workoutScope } from './create-workout';
+import { BUILD_REFUSED, ENERGY_CHOICES, MINUTE_STOPS, WORKOUT_PLACES, browserTimezone, canBuildWorkout, createReady, createTarget, defaultMinutes, equipmentToday, openingRequest, runMode, usableV3Plan, workoutScope } from './create-workout';
 import type { CreateAnswers } from './create-workout';
 
 const answers = (change: Partial<CreateAnswers> = {}): CreateAnswers => ({ place: 'field', goal: true, minutes: 45, energy: 'normal', ...change });
@@ -90,6 +90,33 @@ describe('a workout built with no plan', () => {
     expect(equipmentToday({ place: 'field', goal: false })).toEqual(['ball']);
     expect(equipmentToday({ place: 'gym', goal: null })).toEqual(['bench', 'dumbbells', 'resistanceBand']);
     expect(equipmentToday({ place: 'home', goal: null })).toEqual([]);
+  });
+  // A two-week block from Monday 2026-11-02 ends at the start of 2026-11-16 in Los Angeles.
+  const block = (over: Record<string, unknown> = {}) => ({ id: 'plan-1', schemaVersion: 3, status: 'active', horizonWeeks: 2,
+    startDate: '2026-11-02', timezone: 'America/Los_Angeles', minutesPerSession: 45, ...over });
+  const targetOn = (plan: Record<string, unknown> | null, now: Date) => createTarget(usableV3Plan(plan, now)?.id ?? null, answers(), 'America/Los_Angeles');
+  it('builds a standalone workout once the active plan’s block has ended (the app’s `usablePlan`)', () => {
+    const ended = new Date('2026-11-20T18:00:00Z');
+    expect(usableV3Plan(block(), ended)).toBeNull();
+    expect(targetOn(block(), ended)).toEqual({ kind: 'new', planId: 'standalone', timeAvailableMinutes: 45, energy: 'normal',
+      timezone: 'America/Los_Angeles', equipmentToday: ['ball', 'goal'] });
+  });
+  it('keeps a live plan’s target byte for byte', () => {
+    const live = new Date('2026-11-10T18:00:00Z');
+    expect(usableV3Plan(block(), live)).toEqual(block());
+    expect(JSON.stringify(targetOn(block(), live))).toBe('{"kind":"new","planId":"plan-1","timeAvailableMinutes":45,"energy":"normal"}');
+  });
+  it('counts the block’s last day as live and its end day as ended, on the plan’s calendar', () => {
+    // 2026-11-15 23:30 in Los Angeles is the last day; 00:30 on 2026-11-16 there is past the end.
+    expect(targetOn(block(), new Date('2026-11-16T07:30:00Z')).planId).toBe('plan-1');
+    expect(targetOn(block(), new Date('2026-11-16T08:30:00Z')).planId).toBe('standalone');
+    // The same instant is still the last day in a zone further west.
+    expect(usableV3Plan(block({ timezone: 'Pacific/Honolulu' }), new Date('2026-11-16T08:30:00Z'))?.id).toBe('plan-1');
+  });
+  it('is not usable without an active V3 plan of 1 to 12 weeks with a start date', () => {
+    const live = new Date('2026-11-10T18:00:00Z');
+    for (const plan of [null, block({ status: 'completed' }), block({ schemaVersion: 2 }), block({ id: '' }), block({ horizonWeeks: 13, weeks: [] }), block({ startDate: undefined })])
+      expect(usableV3Plan(plan, live)).toBeNull();
   });
   it('sends the browser’s IANA zone', () => {
     const zone = browserTimezone();
