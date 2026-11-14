@@ -16,8 +16,9 @@ const actor = () => auth.currentUser?.uid ?? null;
 function browserJourney(): StatsJourney {
   journey ??= createStatsJourney({
     // Landings name JOURNEY_BUILD, the usage tracker's build label. Best effort: the tracker swallows
-    // every failure and never retries. Signed out, the server would refuse the request: none is made.
-    send: async payload => auth.currentUser ? (await cloud.httpsCallable('recordStatsJourney')(payload)).data as JourneyResponse : null,
+    // every failure and never retries. Signed out, the server would refuse the request, and under another
+    // account (signed in from another tab) it would not be this visit's: neither is sent.
+    send: async (payload, account) => auth.currentUser?.uid === account ? (await cloud.httpsCallable('recordStatsJourney')(payload)).data as JourneyResponse : null,
     env: {
       wall: Date.now, mono: () => performance.now(), newId: () => newVisitId(),
       visible: () => document.visibilityState === 'visible',

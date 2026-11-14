@@ -7,7 +7,7 @@ function page() {
   let mono = 0, wall = Date.UTC(2026, 10, 13, 18), visible = true, ids = 0;
   const listeners = new Map<string, Set<(event: { isTrusted?: boolean }) => void>>();
   const timers: { every: number; next: number; action: () => void; alive: boolean }[] = [];
-  const sent: JourneyPayload[] = [];
+  const sent: JourneyPayload[] = [], accounts: string[] = [];
   let respond: (payload: JourneyPayload) => Promise<JourneyResponse> = async () => ({ accepted: true });
   const env: JourneyEnvironment = {
     wall: () => wall, mono: () => mono, visible: () => visible,
@@ -24,7 +24,7 @@ function page() {
     },
   };
   // The browser adapter passes no build either: every landing names JOURNEY_BUILD.
-  const journey = createStatsJourney({ env, send: payload => { sent.push(payload); return respond(payload); } });
+  const journey = createStatsJourney({ env, send: (payload, account) => { sent.push(payload); accounts.push(account); return respond(payload); } });
   const advance = (milliseconds: number) => {
     const end = mono + milliseconds;
     for (;;) {
@@ -40,7 +40,7 @@ function page() {
   const show = (place: JourneyPlace, playerId: string | null = 'player-1', tracked = true) => journey.show({ tracked, playerId, place, actor });
   const events = async () => { await journey.settled(); return sent.map(({ schemaVersion: _version, visitId: _visit, playerId: _player, ...rest }) => rest); };
   return {
-    journey, sent, advance, emit, show, events,
+    journey, sent, accounts, advance, emit, show, events,
     signIn: (next: string | null) => { actor = next; },
     /** The workspace closing (another page of the site, or the sign-in page after a sign-out). */
     close: () => journey.show({ tracked: false, playerId: null, place: 'other', actor }),
@@ -131,6 +131,15 @@ describe('Stats page journey: visits', () => {
     expect(events[1]).toMatchObject({ from: 'open' });
     p.show('stats', 'player-1', true); p.signIn(null); p.show('stats');
     expect((await p.events()).length).toBe(2);
+  });
+
+  it('hands every event to the sender with the account its visit began under', async () => {
+    const p = page();
+    p.show('stats'); p.journey.clicked('coach'); p.show('coach');
+    p.signIn('account-2'); p.show('stats');
+    expect((await p.events()).map(event => event.event)).toEqual(['landed', 'clicked', 'left', 'landed']);
+    // The browser adapter sends only while that same account is signed in.
+    expect(p.accounts).toEqual(['account-1', 'account-1', 'account-1', 'account-2']);
   });
 
   it('makes a visit id in the server\'s shape with or without crypto.randomUUID', () => {

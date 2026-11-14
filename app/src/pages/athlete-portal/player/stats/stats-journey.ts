@@ -76,12 +76,13 @@ export function newVisitId(source: Pick<Crypto, 'getRandomValues'> & { randomUUI
 }
 
 type Visit = {
-  id: string; playerId: string; startedAt: number; dead: boolean; reached: boolean; clicked: boolean;
+  id: string; playerId: string; actor: string; startedAt: number; dead: boolean; reached: boolean; clicked: boolean;
   outcomes: Set<JourneyButton>; clock: EngagementClock; countedMs: number; activeAt: number; interactedAt: number; stopTicker: () => void;
 };
 
 export function createStatsJourney({ send, env, build = JOURNEY_BUILD }: {
-  send(payload: JourneyPayload): Promise<JourneyResponse>; env: JourneyEnvironment; build?: string;
+  /** `actor` is the account the visit began under: the adapter sends only while that account is still signed in. */
+  send(payload: JourneyPayload, actor: string): Promise<JourneyResponse>; env: JourneyEnvironment; build?: string;
 }) {
   // `shown` is the athlete whose Stats main page is on screen; `visit` the visit in progress there,
   // if any (an inactive one ends while the page stays shown, and activity starts the next).
@@ -95,7 +96,7 @@ export function createStatsJourney({ send, env, build = JOURNEY_BUILD }: {
     queue = queue.then(async () => {
       if (disabled || target.dead) return;
       let result: JourneyResponse;
-      try { result = await send(payload); } catch { result = null; }
+      try { result = await send(payload, target.actor); } catch { result = null; }
       if (result?.accepted === false && result.reason === 'disabled') disabled = true;
       // A landing that was not accepted (for any reason, or an error) leaves a dead visit: nothing more
       // goes for it. A late refusal means the server takes nothing more for it either.
@@ -132,7 +133,7 @@ export function createStatsJourney({ send, env, build = JOURNEY_BUILD }: {
     // Showing the page is the visitor's own doing (a tap, a link or a load): it counts as interaction.
     const clock = new EngagementClock(env.mono(), env.wall());
     clock.configure(env.visible(), 'overview');
-    visit = latest = { id: env.newId(), playerId, startedAt: env.wall(), dead: false, reached: false, clicked: false,
+    visit = latest = { id: env.newId(), playerId, actor: lastActor!, startedAt: env.wall(), dead: false, reached: false, clicked: false,
       outcomes: new Set(), clock, countedMs: 0, activeAt: env.wall(), interactedAt: env.mono(), stopTicker: env.every(1000, tick) };
     deliver(visit, { event: 'landed', from, platform: 'web', build });
     if (inView) reach(true);
