@@ -28,7 +28,8 @@ describe('parent session in the player view', () => {
     expect(html).not.toContain('/support#delete-account');
     expect(deletionTitle({ kind: 'player', playerId: 'child-a', name: 'Avery' })).toBe("Delete Avery's data");
     expect(deletionDetail({ kind: 'player', playerId: 'child-a', name: 'Avery' })).toMatch(/Avery's profile, recordings, results.*Your parent account stays/);
-    expect(deletionDetail({ kind: 'self' })).toMatch(/parent account.*players' profiles and data stay/);
+    // What the server now deletes for a parent account: the account, its links and its AI conversations.
+    expect(deletionDetail({ kind: 'self' })).toBe("Deletes your parent account, its links to your players and the AI conversations this sign-in created. Your players' profiles, recordings and training history stay. This cannot be undone.");
   });
   it('keeps the existing support link for a player', () => {
     const html = renderToStaticMarkup(<AccountSettings ctx={base} onClose={noop} email="player@example.test" />);

@@ -3,13 +3,19 @@
 // player codes: never logged, never stored, masked wherever shown.
 
 export interface GuardianLink { uid: string; email: string | null; linkedAtMillis: number | null; playerIds: string[] }
-export interface GuardianInvitation { invitationId: string; code: string; signupUrl: string; playerIds: string[] }
+/** `createdAtMillis` is sent with `invitations` entries; ensure's answer and older servers omit it. */
+export interface GuardianInvitation { invitationId: string; code: string; signupUrl: string; playerIds: string[]; createdAtMillis?: number | null }
 export interface SiblingCandidate { playerId: string; firstName: string; lastName: string }
 export interface PlayerGuardians {
   playerId: string;
   issuingEnabled: boolean;
   guardians: GuardianLink[];
+  /** The newest open link for this player that the caller may see in full. */
   invitation: GuardianInvitation | null;
+  /** Every such open link, newest first (falls back to `[invitation]` for a server without it). */
+  invitations: GuardianInvitation[];
+  /** Open links for this player the caller may not see in full (0 when not sent). */
+  otherOpenInvitationCount: number;
   siblingCandidates: SiblingCandidate[];
 }
 export type GuardianCall = (name: string, data: Record<string, unknown>) => Promise<unknown>;
@@ -31,7 +37,10 @@ export function parseGuardianInvitation(value: unknown): GuardianInvitation {
   try { url = new URL(row.signupUrl); } catch { throw unreadable(); }
   // The link must carry exactly this code in its fragment, on the sign-in page.
   if (url.pathname !== "/signin" || new URLSearchParams(url.hash.slice(1)).get("parentCode") !== row.code) throw unreadable();
-  return { invitationId: row.invitationId, code: row.code, signupUrl: url.href, playerIds: ids(row.playerIds) };
+  const created = row.createdAtMillis;
+  if (created !== undefined && created !== null && !(typeof created === "number" && Number.isFinite(created))) throw unreadable();
+  return { invitationId: row.invitationId, code: row.code, signupUrl: url.href, playerIds: ids(row.playerIds),
+    ...(created !== undefined ? { createdAtMillis: created as number | null } : {}) };
 }
 
 export function parsePlayerGuardians(playerId: string, value: unknown): PlayerGuardians {
@@ -49,8 +58,13 @@ export function parsePlayerGuardians(playerId: string, value: unknown): PlayerGu
     if (!s || typeof s.playerId !== "string" || !ID.test(s.playerId) || typeof s.firstName !== "string" || typeof s.lastName !== "string") throw unreadable();
     return { playerId: s.playerId, firstName: s.firstName, lastName: s.lastName };
   }).filter(candidate => candidate.playerId !== playerId);
-  return { playerId, issuingEnabled: row.issuingEnabled, guardians, siblingCandidates,
-    invitation: row.invitation === null || row.invitation === undefined ? null : parseGuardianInvitation(row.invitation) };
+  const invitation = row.invitation === null || row.invitation === undefined ? null : parseGuardianInvitation(row.invitation);
+  if (row.invitations !== undefined && !Array.isArray(row.invitations)) throw unreadable();
+  const invitations = Array.isArray(row.invitations) ? row.invitations.map(parseGuardianInvitation) : invitation ? [invitation] : [];
+  const others = row.otherOpenInvitationCount;
+  if (others !== undefined && !(Number.isSafeInteger(others) && (others as number) >= 0)) throw unreadable();
+  return { playerId, issuingEnabled: row.issuingEnabled, guardians, siblingCandidates, invitation, invitations,
+    otherOpenInvitationCount: (others as number | undefined) ?? 0 };
 }
 
 async function defaultCall(name: string, data: Record<string, unknown>) {

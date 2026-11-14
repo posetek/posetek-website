@@ -75,6 +75,7 @@ describe("refused parent links", () => {
     expect(guardianRedeemMessage(refused("admin-login"))).toMatch(/PoseTek admin account.*different email/);
     expect(guardianRedeemMessage(refused("limit"))).toMatch(/cannot add more players/);
     expect(guardianRedeemMessage(refused("deletion-pending"))).toMatch(/being deleted/);
+    expect(guardianRedeemMessage(refused("redemption-disabled"))).toBe("Parent links are paused. Try again later.");
     expect(guardianRedeemMessage({ code: "functions/not-found" })).toMatch(/invalid or has already been used/);
     expect(guardianRedeemMessage({ code: "functions/internal", message: "raw secret" })).toBeNull();
   });
@@ -198,6 +199,20 @@ describe("parent signup preflight and account safety", () => {
     calls.resolve.mockImplementation(async () => { calls.currentUser.mockReturnValue({ uid: "different-user" }); return ["child-a"]; });
     await expect(createInvitedParent(input, calls, { uid: "new-parent" })).rejects.toThrow("sign-in changed");
     expect(calls.discard).not.toHaveBeenCalled(); expect(calls.redeem).not.toHaveBeenCalled();
+  });
+});
+
+describe("paused parent links (redemption-disabled)", () => {
+  const paused = () => Object.assign(new Error("paused"), { code: "functions/failed-precondition", details: { reason: "redemption-disabled" } });
+  it("stops a new sign-up without keeping the login, and says links are paused", async () => {
+    const calls = steps(); calls.redeem.mockRejectedValue(paused());
+    const error = await createInvitedParent(input, calls).catch(failure => failure);
+    expect(guardianRedeemMessage(error)).toBe("Parent links are paused. Try again later.");
+    expect(calls.discard).toHaveBeenCalledWith({ uid: "new-parent" });
+  });
+  it("gives Add to my account and Add player the same message", async () => {
+    const error = await addParentInvitation(code, { currentUid: () => "parent", redeem: async () => { throw paused(); } }).catch(failure => failure);
+    expect(guardianRedeemMessage(error)).toBe("Parent links are paused. Try again later.");
   });
 });
 

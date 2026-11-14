@@ -14,10 +14,21 @@ export function deletionTitle(target: DeletionTarget): string {
 /** What each delete action removes, named before anything is sent. */
 export function deletionDetail(target: DeletionTarget): string {
   return target.kind === "self"
-    ? "Deletes your parent account and its links to your players. Your players' profiles and data stay. This cannot be undone."
+    ? "Deletes your parent account, its links to your players and the AI conversations this sign-in created. Your players' profiles, recordings and training history stay. This cannot be undone."
     : `Deletes ${target.name}'s profile, recordings, results and training history, and ${target.name}'s own sign-in if there is one. Your parent account stays. This cannot be undone.`;
 }
 
+/**
+ * The delete page's message for a refused request. A child whose own sign-in also owns another
+ * profile cannot be deleted from a parent account (`shared-login`); that refusal is definitive.
+ */
+export function deletionErrorMessage(error: unknown, fallback: string): string {
+  const details = error && typeof error === "object" ? (error as { details?: unknown }).details : null;
+  const reason = details && typeof details === "object" ? (details as { reason?: unknown }).reason : null;
+  if (code(error) === "failed-precondition" && reason === "shared-login") return deletionSharedLogin;
+  return fallback;
+}
+export const deletionSharedLogin = "This player's own sign-in is also used for another profile, so this player cannot be deleted from here. Ask PoseTek to delete this player.";
 export interface DeletionResponse { accepted?: unknown; deletingCaller?: unknown }
 export interface DeletionSteps {
   currentUid(): string | null;

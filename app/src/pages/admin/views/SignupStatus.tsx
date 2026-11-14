@@ -143,7 +143,7 @@ function ParentLinks({ playerId, view, admin, actions, playerName, buttonClass, 
   const data = view.data;
   const confirming = data?.guardians.find(guardian => guardian.uid === view.confirmingRemove);
   const nameOf = (id: string) => id === playerId ? playerName : view.names[id] || "another player";
-  const pendingNames = data?.invitation ? data.invitation.playerIds.map(nameOf).join(", ") : "";
+  const namesFor = (playerIds: string[]) => playerIds.map(nameOf).join(", ");
   // Parent codes and emails never enter session replay.
   return <div className="admin-parent-links" data-clarity-mask="true">
     {view.pending === "loading" && <span className="admin-code-unavailable" role="status">Checking parent links…</span>}
@@ -164,15 +164,19 @@ function ParentLinks({ playerId, view, admin, actions, playerName, buttonClass, 
       <button className={buttonClass} type="button" disabled={busy} onClick={() => actions.remove(confirming.uid)}>Remove</button>
       <button className={buttonClass} type="button" onClick={actions.cancel}>Cancel</button>
     </span>}
-    {data?.invitation && <span className="admin-parent">
-      <span>Parent link pending · {pendingNames}</span>
-      <button className={buttonClass} type="button" disabled={busy} aria-label={`Revoke the parent link for ${playerName}`} onClick={() => actions.askRevoke(data.invitation!.invitationId)}>Revoke</button>
-    </span>}
-    {data?.invitation && view.confirmingRevoke === data.invitation.invitationId && <span className="admin-parent-confirm" role="group" aria-label="Confirm revoking">
-      <span>Revoke the parent link for {pendingNames}? It stops working at once.</span>
-      <button className={buttonClass} type="button" disabled={busy} onClick={() => actions.revoke(data.invitation!.invitationId)}>Revoke</button>
-      <button className={buttonClass} type="button" onClick={actions.cancel}>Cancel</button>
-    </span>}
+    {/* Every open link this account may manage, newest first, each with its own confirmed Revoke. */}
+    {data?.invitations.map(entry => <span className="admin-parent-pending" key={entry.invitationId}>
+      <span className="admin-parent">
+        <span>Parent link pending · {namesFor(entry.playerIds)}{linkedDate(entry.createdAtMillis ?? null) ? ` · created ${linkedDate(entry.createdAtMillis ?? null)}` : ""}</span>
+        <button className={buttonClass} type="button" disabled={busy} aria-label={`Revoke the parent link for ${namesFor(entry.playerIds)}`} onClick={() => actions.askRevoke(entry.invitationId)}>Revoke</button>
+      </span>
+      {view.confirmingRevoke === entry.invitationId && <span className="admin-parent-confirm" role="group" aria-label="Confirm revoking">
+        <span>Revoke the parent link for {namesFor(entry.playerIds)}? It stops working at once.</span>
+        <button className={buttonClass} type="button" disabled={busy} onClick={() => actions.revoke(entry.invitationId)}>Revoke</button>
+        <button className={buttonClass} type="button" onClick={actions.cancel}>Cancel</button>
+      </span>}
+    </span>)}
+    {data && data.otherOpenInvitationCount > 0 && <span className="admin-code-unavailable">{data.otherOpenInvitationCount === 1 ? "1 other parent link is open that this account cannot manage." : `${data.otherOpenInvitationCount} other parent links are open that this account cannot manage.`}</span>}
     {data?.issuingEnabled && !view.choosing && <>
       <button className={buttonClass} type="button" disabled={busy} aria-label={`Copy parent link for ${playerName}`} onClick={() => actions.copy("link")}>Copy parent link</button>
       <button className={buttonClass} type="button" disabled={busy} aria-label={`Copy parent code for ${playerName}`} onClick={() => actions.copy("code")}>Copy parent code</button>

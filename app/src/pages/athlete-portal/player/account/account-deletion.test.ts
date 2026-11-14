@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deletionPayload, forgetDeletionReceipts, randomReceiptToken, requestGuardianDeletion, submitGuardianDeletion } from "./account-deletion";
+import { deletionDetail, deletionErrorMessage, deletionPayload, deletionSharedLogin, forgetDeletionReceipts, randomReceiptToken, requestGuardianDeletion, submitGuardianDeletion } from "./account-deletion";
 import type { DeletionTarget } from "./account-deletion";
 
 const child: DeletionTarget = { kind: "player", playerId: "child-a", name: "Avery" };
@@ -78,6 +78,22 @@ describe("parent deletion requests", () => {
     await submitGuardianDeletion({ actorUid: "parent-uid", target: child, typed: "DELETE", password: "", needsPassword: false },
       { currentUser: () => ({ uid: "parent-uid", email: null, reauthenticate: reauth }), call: async () => ({ data: { accepted: true } }) });
     expect(reauth).not.toHaveBeenCalled();
+  });
+  it("tells the parent to ask PoseTek when the child's sign-in also owns another profile, and drops that receipt", async () => {
+    const s = steps();
+    const shared = Object.assign(new Error("server text"), { code: "functions/failed-precondition", details: { reason: "shared-login" } });
+    s.send.mockRejectedValueOnce(shared);
+    const error = await request(child, s).catch(failure => failure);
+    expect(deletionErrorMessage(error, "fallback")).toBe(deletionSharedLogin);
+    expect(deletionSharedLogin).toMatch(/Ask PoseTek to delete this player/);
+    // Definitive: the receipt is not reused for a later request.
+    await request(child, s);
+    expect(s.send.mock.calls[0][0].receiptToken).not.toBe(s.send.mock.calls[1][0].receiptToken);
+    expect(deletionErrorMessage(Object.assign(new Error("x"), { code: "functions/failed-precondition", details: { reason: "other" } }), "fallback")).toBe("fallback");
+  });
+  it("describes what each delete removes, as the server now does it", () => {
+    expect(deletionDetail({ kind: "self" })).toBe("Deletes your parent account, its links to your players and the AI conversations this sign-in created. Your players' profiles, recordings and training history stay. This cannot be undone.");
+    expect(deletionDetail(child)).toBe("Deletes Avery's profile, recordings, results and training history, and Avery's own sign-in if there is one. Your parent account stays. This cannot be undone.");
   });
   it("makes 64-character lowercase hex receipts", () => {
     expect(randomReceiptToken()).toMatch(/^[a-f0-9]{64}$/);

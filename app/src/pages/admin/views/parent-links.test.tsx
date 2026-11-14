@@ -14,7 +14,11 @@ import { familyChildPath, familyPreviewRequest, previewParent } from "../../fami
 
 const CODE = "PAR-" + "0123456789ABCDEF".repeat(2);
 const invitation = (playerIds = ["player"]) => ({ invitationId: "invite-1", code: CODE, signupUrl: `https://posetek.net/signin#parentCode=${CODE}`, playerIds });
-const guardians = (extra: Partial<PlayerGuardians> = {}): PlayerGuardians => ({ playerId: "player", issuingEnabled: true, guardians: [], invitation: null, siblingCandidates: [], ...extra });
+const guardians = (extra: Partial<PlayerGuardians> = {}): PlayerGuardians => {
+  const invitationOnly = extra.invitation ?? null;
+  return { playerId: "player", issuingEnabled: true, guardians: [], invitation: null, siblingCandidates: [], otherOpenInvitationCount: 0,
+    invitations: invitationOnly ? [invitationOnly] : [], ...extra };
+};
 const linked = { uid: "parent-uid", email: "parent@example.test", linkedAtMillis: Date.UTC(2026, 10, 13, 18), playerIds: ["player", "sibling"] };
 const noop: ParentLinkActions = { retry() {}, copy() {}, confirmCopy() {}, cancel() {}, askRemove() {}, remove() {}, askRevoke() {}, revoke() {} };
 const ready: InvitationView = { invitation: { playerId: "player", status: "ready", code: "PLR-SAMPLE-123", signupUrl: "https://posetek.net/signin#playerCode=PLR-SAMPLE-123" }, pending: null, message: "", error: false };
@@ -97,10 +101,23 @@ describe("parent links in the shared signup control", () => {
   it("shows an open link as pending with the players it covers, and asks before revoking", () => {
     const html = render({ data: guardians({ invitation: invitation(["player", "sibling"]) }), names: { sibling: "Sam Synthetic" } });
     expect(html).toContain("Parent link pending · Example Player, Sam Synthetic");
-    expect(html).toContain('aria-label="Revoke the parent link for Example Player"');
+    expect(html).toContain('aria-label="Revoke the parent link for Example Player, Sam Synthetic"');
     expect(html).not.toContain("It stops working at once");
     const confirming = render({ data: guardians({ invitation: invitation(["player", "sibling"]) }), names: { sibling: "Sam Synthetic" }, confirmingRevoke: "invite-1" });
     expect(confirming).toContain("Revoke the parent link for Example Player, Sam Synthetic? It stops working at once.");
+  });
+  it("lists every open link this account may manage, with players and created date, and counts the others", () => {
+    const newest = { ...invitation(["player", "sibling"]), invitationId: "invite-2", createdAtMillis: Date.UTC(2026, 10, 14, 18) };
+    const older = { ...invitation(["player"]), invitationId: "invite-1", createdAtMillis: Date.UTC(2026, 10, 12, 18) };
+    const html = render({ data: guardians({ invitation: newest, invitations: [newest, older], otherOpenInvitationCount: 2 }), names: { sibling: "Sam Synthetic" } });
+    expect(html).toContain("Parent link pending · Example Player, Sam Synthetic · created Nov 14, 2026");
+    expect(html).toContain("Parent link pending · Example Player · created Nov 12, 2026");
+    expect(html.indexOf("created Nov 14")).toBeLessThan(html.indexOf("created Nov 12"));
+    expect(html).toContain("2 other parent links are open that this account cannot manage.");
+    const confirming = render({ data: guardians({ invitation: newest, invitations: [newest, older] }), confirmingRevoke: "invite-1" });
+    expect(confirming).toContain("Revoke the parent link for Example Player? It stops working at once.");
+    expect(confirming.match(/It stops working at once/g)).toHaveLength(1);
+    expect(render({ data: guardians({ otherOpenInvitationCount: 1 }) })).toContain("1 other parent link is open that this account cannot manage.");
   });
   it("shows the open link's children as fixed and the suggestions unchecked, with one confirm", () => {
     const html = render({ data: guardians(), names: { sibling: "Sam Synthetic" }, choosing: { kind: "link", fixed: ["player", "sibling"], epoch: 1, candidates: [{ playerId: "cousin", firstName: "Cam", lastName: "Synthetic" }] } });
@@ -195,6 +212,18 @@ describe("parent links controller", () => {
 
 describe("guardian callables", () => {
   beforeEach(resetGuardianReadReporting);
+  it("reads every visible open link and the count of the others, and tolerates a server without them", () => {
+    const newest = { ...invitation(["player", "sibling"]), invitationId: "invite-2", createdAtMillis: 1_794_000_000_000 };
+    const parsed = parsePlayerGuardians("player", { playerId: "player", issuingEnabled: true, guardians: [], siblingCandidates: [],
+      invitation: newest, invitations: [newest, { ...invitation(), createdAtMillis: null }], otherOpenInvitationCount: 3 });
+    expect(parsed.invitations.map(entry => entry.invitationId)).toEqual(["invite-2", "invite-1"]);
+    expect(parsed.otherOpenInvitationCount).toBe(3);
+    const older = parsePlayerGuardians("player", { playerId: "player", issuingEnabled: true, guardians: [], siblingCandidates: [], invitation: invitation() });
+    expect(older.invitations.map(entry => entry.invitationId)).toEqual(["invite-1"]); expect(older.otherOpenInvitationCount).toBe(0);
+    expect(parsePlayerGuardians("player", { playerId: "player", issuingEnabled: true, guardians: [], siblingCandidates: [], invitation: null }).invitations).toEqual([]);
+    expect(() => parsePlayerGuardians("player", { ...guardians(), otherOpenInvitationCount: -1 })).toThrow();
+    expect(() => parsePlayerGuardians("player", { ...guardians(), invitations: [{ ...invitation(), createdAtMillis: "yesterday" }] })).toThrow();
+  });
   it("keeps each parent's children and always includes the requested player", () => {
     const parsed = parsePlayerGuardians("player", { playerId: "player", issuingEnabled: true, invitation: null, siblingCandidates: [],
       guardians: [{ uid: "parent-uid", email: null, linkedAtMillis: null, playerIds: ["sibling"] }] });

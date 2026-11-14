@@ -69,6 +69,8 @@ function errorCode(error: unknown): string {
   return error && typeof error === "object" && "code" in error ? String((error as { code: unknown }).code).split("/").pop() || "" : "";
 }
 
+export const parentLinksPaused = "Parent links are paused. Try again later.";
+
 /** The guidance a refused parent link shows. Unknown failures return null so callers keep their own copy. */
 export function guardianRedeemMessage(error: unknown): string | null {
   const code = errorCode(error);
@@ -81,6 +83,8 @@ export function guardianRedeemMessage(error: unknown): string | null {
     case "admin-login": return otherAccount("a PoseTek admin account");
     case "limit": return "This link cannot add more players to this account. Ask your coach for help.";
     case "deletion-pending": return "This account or player is being deleted.";
+    // The server's emergency switch: shown on sign-up, Add to my account and Add player alike.
+    case "redemption-disabled": return parentLinksPaused;
     default: return null;
   }
 }

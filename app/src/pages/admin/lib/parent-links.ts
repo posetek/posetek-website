@@ -67,7 +67,7 @@ export function parentLinksController(playerId: string, port: ParentLinksPort, p
   async function fresh(ticket: number): Promise<PlayerGuardians | null> {
     const data = await port.read(playerId);
     if (!current(ticket)) return null;
-    const others = [...new Set([...data.guardians.flatMap(guardian => guardian.playerIds), ...(data.invitation?.playerIds || [])])].filter(id => id !== playerId);
+    const others = [...new Set([...data.guardians.flatMap(guardian => guardian.playerIds), ...data.invitations.flatMap(entry => entry.playerIds)])].filter(id => id !== playerId);
     let names: Record<string, string> = {};
     if (others.length) try { names = await port.names(others); } catch { /* names are optional */ }
     if (!current(ticket)) return null;
@@ -78,7 +78,7 @@ export function parentLinksController(playerId: string, port: ParentLinksPort, p
     let invitation: GuardianInvitation;
     try { invitation = await port.ensure(playerIds); } catch (error) { fail(ticket, error); return; }
     if (!current(ticket)) return;
-    set({ data: view.data && { ...view.data, invitation } });
+    set({ data: view.data && { ...view.data, invitation, invitations: [invitation, ...view.data.invitations.filter(entry => entry.invitationId !== invitation.invitationId)] } });
     try {
       await port.copy(kind === "link" ? invitation.signupUrl : invitation.code);
       if (current(ticket)) set({ pending: null, ...closed, message: kind === "link" ? "Parent link copied." : "Parent code copied.", error: false });

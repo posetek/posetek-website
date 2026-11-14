@@ -4,6 +4,7 @@
 .admin-parent-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; flex-basis: 100%; }
 .admin-parent-label { font-size: 12px; font-weight: 600; opacity: .8; }
 .admin-parent, .admin-parent-confirm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; font-size: 13px; }
+.admin-parent-pending { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; flex-basis: 100%; min-width: 0; }
 .admin-parent-status { font-size: 13px; font-weight: 600; }
 .admin-parent-siblings { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; flex-basis: 100%; margin: 0; padding: 8px 10px; border: 1px solid currentColor; border-color: rgba(127, 127, 127, .4); border-radius: 8px; }
 .admin-parent-siblings legend { font-size: 12px; padding: 0 4px; }
