@@ -132,7 +132,8 @@ try {
       assert.deepEqual((await reportTabs.getByRole('tab').allTextContents()).slice(-3), ['Usage', 'One-pager tracking', 'Journey']);
       const fromOnePager = reportPanel.getByRole('region', { name: 'From the one-pager' });
       await fromOnePager.waitFor();
-      assert.deepEqual(await fromOnePager.locator('li').allTextContents(), ['Reports sent 33', 'Opened 3', 'Has an account 1', 'Landed on Stats 2', 'Clicked a button 1']);
+      assert.deepEqual(await fromOnePager.locator('li').allTextContents(), ['Reports sent 33', 'Opened 3', 'Landed on Stats after opening 2', 'Clicked a button 1']);
+      await fromOnePager.getByText('Landings and clicks are those in the selected period.', { exact: true }).waitFor();
       // A failing one-pager service hides that block and nothing else.
       await reports.evaluate(() => { window.fixtureTrackingState = 'list-error'; });
       await reportPanel.getByRole('button', { name: 'Refresh', exact: true }).click();

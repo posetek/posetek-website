@@ -121,18 +121,22 @@ export function journeyPlayers(visits: StatsJourneyVisit[], endAt: number): Jour
   }).sort((a, b) => b.lastAt - a.lastAt || a.playerId.localeCompare(b.playerId));
 }
 
-export type OnePagerReportRow = { id: string; openedAt: number | null; accountAt?: number | null; hasAccount?: boolean };
-/** Every report of every cohort, step by step. Landing and clicking count the athlete's own visits only. */
+export type OnePagerReportRow = { id: string; openedAt: number | null };
+/**
+ * One-pager reports followed onto the Stats page, as nested steps: each step is part of the one
+ * before it. A report counts as landed only when the athlete's own visit (never staff) began at or
+ * after the report was first opened, and as clicked only when such a visit had a button click.
+ * The visits are those of the selected period; the reports are every cohort's.
+ */
 export function onePagerJourney(reports: OnePagerReportRow[], visits: StatsJourneyVisit[]) {
   const athlete = visits.filter(visit => !visit.staff);
-  const landed = new Set(athlete.map(visit => visit.playerId));
-  const clicked = new Set(athlete.filter(visit => visit.clickedAt !== null).map(visit => visit.playerId));
+  const followed = reports.map(report => report.openedAt === null ? []
+    : athlete.filter(visit => visit.playerId === report.id && visit.landedAt >= report.openedAt!));
   return {
     sent: reports.length,
     opened: reports.filter(report => report.openedAt !== null).length,
-    account: reports.filter(report => report.hasAccount === true || typeof report.accountAt === "number").length,
-    landed: reports.filter(report => landed.has(report.id)).length,
-    clicked: reports.filter(report => clicked.has(report.id)).length,
+    landed: followed.filter(rows => rows.length > 0).length,
+    clicked: followed.filter(rows => rows.some(visit => visit.clickedAt !== null)).length,
   };
 }
 

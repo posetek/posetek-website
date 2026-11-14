@@ -82,17 +82,23 @@ describe("Stats page journey report", () => {
     expect(rows[1]).toMatchObject({ playerId: "e", teamId: null, clicked: [], next: "other", followed: [] });
   });
 
-  it("follows one-pager reports onto the Stats page with the athlete's own visits", () => {
+  it("follows one-pager reports onto the Stats page as nested steps, with the athlete's own visits after the report was opened", () => {
     const reports = [
-      { id: "a", openedAt: END - 9 * DAY, accountAt: END - 8 * DAY, hasAccount: true },
-      { id: "b", openedAt: END - 9 * DAY, accountAt: null, hasAccount: false },
-      { id: "f", openedAt: null, accountAt: null, hasAccount: true },
+      { id: "a", openedAt: END - 9 * DAY },
+      { id: "b", openedAt: END - 9 * DAY },
+      { id: "f", openedAt: END - 9 * DAY },   // opened, but only staff looked at f's page
+      { id: "c", openedAt: null },            // c visited Stats without ever opening the report
       { id: "g", openedAt: null },
     ];
-    // f was only looked at by staff, so f neither landed nor clicked.
-    expect(onePagerJourney(reports, everyone)).toEqual({ sent: 4, opened: 2, account: 2, landed: 2, clicked: 2 });
+    expect(onePagerJourney(reports, everyone)).toEqual({ sent: 5, opened: 3, landed: 2, clicked: 2 });
     // Without b's own visit, a staff click on b's page does not count for b.
-    expect(onePagerJourney(reports, everyone.filter(row => !(row.playerId === "b" && !row.staff)))).toMatchObject({ landed: 1, clicked: 1 });
+    expect(onePagerJourney(reports, everyone.filter(row => !(row.playerId === "b" && !row.staff)))).toEqual({ sent: 5, opened: 3, landed: 1, clicked: 1 });
+    // A visit before the report was opened is not a landing from it: d visited 20 days ago and opened yesterday.
+    expect(onePagerJourney([{ id: "d", openedAt: END - DAY }], everyone)).toEqual({ sent: 1, opened: 1, landed: 0, clicked: 0 });
+    // a clicked three days ago and opened the report two days ago: the later visit lands, the earlier click does not count.
+    expect(onePagerJourney([{ id: "a", openedAt: END - 2 * DAY }], everyone)).toEqual({ sent: 1, opened: 1, landed: 1, clicked: 0 });
+    // A visit in the same instant as the open counts.
+    expect(onePagerJourney([{ id: "a", openedAt: A1 }], everyone)).toEqual({ sent: 1, opened: 1, landed: 1, clicked: 1 });
   });
 
   it("shows a share of a total, and none of nothing", () => {

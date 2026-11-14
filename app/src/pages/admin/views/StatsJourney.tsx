@@ -119,14 +119,19 @@ function JourneyReport({ data, includeStaff, team, teams }: { data: StatsJourney
   </>;
 }
 
-/** Secondary: one-pager reports followed onto the Stats page by the athlete themselves. */
+/**
+ * Secondary: one-pager reports followed onto the Stats page by the athlete themselves, each step
+ * part of the one before. The reports are already the selected team's (by current roster), so
+ * their players' visits count whichever team those visits were stamped with.
+ */
 function FromOnePager({ reports, data, team }: { reports: OnePagerReportRow[]; data: StatsJourneyData; team: JourneyTeamScope }) {
-  const steps = onePagerJourney(reports, journeyVisits(data, { includeStaff: true, team }));
+  const steps = onePagerJourney(reports, journeyVisits(data, { includeStaff: false, team: { teamIds: team.teamIds } }));
   return <section className="stats-journey-onepager" aria-labelledby="stats-journey-onepager-title">
     <h4 id="stats-journey-onepager-title" className="workspace-roster-heading">From the one-pager</h4>
     <ol className="stats-journey-steps">
-      {([["Reports sent", steps.sent], ["Opened", steps.opened], ["Has an account", steps.account], ["Landed on Stats", steps.landed], ["Clicked a button", steps.clicked]] as const)
+      {([["Reports sent", steps.sent], ["Opened", steps.opened], ["Landed on Stats after opening", steps.landed], ["Clicked a button", steps.clicked]] as const)
         .map(([label, value]) => <li key={label}>{label} <strong>{value}</strong></li>)}
     </ol>
+    <p className="admin-note">Landings and clicks are those in the selected period.</p>
   </section>;
 }

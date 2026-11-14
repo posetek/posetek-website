@@ -79,9 +79,14 @@ team's visits count. Counting lives in `app/src/pages/admin/lib/statsJourney.ts`
   the report is "Left the site"; younger ones are still open and left out (a note says how
   many).
 - **Players**: one row per player, most recent visit first.
-- **From the one-pager**, only for an organization with one-pager cohorts: reports sent,
-  opened, with an account, whose player landed on Stats (an athlete visit, never staff) and
-  clicked a button.
+- **From the one-pager**, only for an organization with one-pager cohorts: nested steps,
+  each part of the one before. Reports sent, opened, then landed on Stats (the athlete's own
+  visit, never staff, began at or after the report was first opened), then clicked a button
+  in such a visit. The reports are every cohort's; the landings and clicks are those of the
+  selected period. With a team selected, the reports are those of players now on that team.
+
+The tab is not shown for a legacy organization (one without the current organization
+record), where the other reporting panes are limited too; visits are still recorded there.
 
 When more than 5,000 visits fall in the period, only the newest 5,000 are counted and the tab
 says so.
