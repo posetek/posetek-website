@@ -65,14 +65,10 @@ claimed.
 [Release handoff](docs/releases/PLAYER_WORKSPACE.md) ·
 [Production receipt](docs/releases/receipts/PLAYER_WORKSPACE_PRODUCTION.json)
 
-**The live report reader is newer than main's copy, and its source is not on main.**
-The November 12 one-pager deploys published a `render.mjs` and `report.css` with the
-`score-cards-v1` layout; `app/private-report/` still holds the files PR #140 merged.
-Never ship main's `render.mjs` or `report.css` over the live ones, and land the live
-reader's source on main before the next reader change, because the report builder's
-`--append` mode requires the committed reader to equal the live one.
-`deployment/homepage-baseline.json` pins the current deploy and records the live
-reader's hashes.
+**The live report reader uses `score-cards-v2`.** Its exact `render.mjs` and
+`report.css` hashes are pinned in `deployment/homepage-baseline.json`. Preserve
+those bytes in source reconciliation and use them as the predecessor for the
+next reader transition. Existing report payloads keep their layout.
 
 ## Admin reporting fixes and one-pager time on page — November 10, 2026
 

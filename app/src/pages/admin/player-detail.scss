@@ -95,9 +95,9 @@
 }
 
 .pt-admin .admin-phone-form {
-  max-width: 440px; margin-top: 18px;
+  max-width: 440px; margin-top: 18px; display: grid; gap: 14px;
   label { display: grid; gap: 8px; color: var(--admin-dim); font-size: 13px; }
   input { width: 100%; box-sizing: border-box; }
-  .admin-note { margin: 8px 0 14px; }
+  .admin-note { margin: 4px 0 0; }
   .admin-phone-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 }
