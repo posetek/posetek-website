@@ -46,6 +46,31 @@ export function randomReceiptToken(random: (bytes: Uint8Array<ArrayBuffer>) => v
   return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
+/** What the delete page needs from Firebase, so its submit path is testable as written. */
+export interface DeletionEnvironment {
+  currentUser(): { uid: string; email: string | null; reauthenticate(email: string, password: string): Promise<void> } | null;
+  call(name: "requestAccountDeletion", data: Record<string, string>): Promise<{ data?: unknown }>;
+  newToken?(): string;
+}
+
+/** The delete page's submit: re-authenticate with the password when the login has one, then send. */
+export function submitGuardianDeletion(
+  input: { actorUid: string; target: DeletionTarget; typed: string; password: string; needsPassword: boolean }, env: DeletionEnvironment,
+): Promise<{ receiptToken: string; deletingCaller: boolean }> {
+  return requestGuardianDeletion(input, {
+    currentUid: () => env.currentUser()?.uid || null,
+    reauthenticate: async secret => {
+      const current = env.currentUser();
+      if (!current) throw new Error("Sign in again to confirm.");
+      if (!input.needsPassword) return;
+      if (!current.email) throw new Error("Sign in again to confirm.");
+      await current.reauthenticate(current.email, secret);
+    },
+    newToken: () => env.newToken?.() || randomReceiptToken(),
+    send: async payload => ((await env.call("requestAccountDeletion", payload)).data || {}) as DeletionResponse,
+  });
+}
+
 export const accountChanged = "The signed-in account changed. Close this screen and try again.";
 
 export async function requestGuardianDeletion(

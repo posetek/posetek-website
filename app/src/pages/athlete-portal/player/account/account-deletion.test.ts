@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { deletionPayload, forgetDeletionReceipts, randomReceiptToken, requestGuardianDeletion } from "./account-deletion";
+import { deletionPayload, forgetDeletionReceipts, randomReceiptToken, requestGuardianDeletion, submitGuardianDeletion } from "./account-deletion";
 import type { DeletionTarget } from "./account-deletion";
 
 const child: DeletionTarget = { kind: "player", playerId: "child-a", name: "Avery" };
@@ -59,6 +59,25 @@ describe("parent deletion requests", () => {
   it("treats an unaccepted response as unconfirmed", async () => {
     const s = steps(); s.send.mockResolvedValue({ accepted: false });
     await expect(request(child, s)).rejects.toThrow("not confirmed");
+  });
+  it("submits a child's deletion for that child, and the parent's own without a target, after re-authenticating", async () => {
+    const calls: [string, Record<string, string>][] = [], reauth = vi.fn(async () => {});
+    const env = { currentUser: () => ({ uid: "parent-uid", email: "parent@example.test", reauthenticate: reauth }),
+      call: vi.fn(async (name: string, data: Record<string, string>) => { calls.push([name, data]); return { data: { accepted: true, deletingCaller: data.targetId === undefined } }; }),
+      newToken: () => "b".repeat(64) };
+    await submitGuardianDeletion({ actorUid: "parent-uid", target: child, typed: "DELETE", password: "synthetic", needsPassword: true }, env);
+    const own = await submitGuardianDeletion({ actorUid: "parent-uid", target: { kind: "self" }, typed: "DELETE", password: "synthetic", needsPassword: true }, env);
+    expect(calls).toEqual([
+      ["requestAccountDeletion", { confirmation: "DELETE", receiptToken: "b".repeat(64), targetType: "player", targetId: "child-a" }],
+      ["requestAccountDeletion", { confirmation: "DELETE", receiptToken: "b".repeat(64) }],
+    ]);
+    expect(reauth).toHaveBeenCalledWith("parent@example.test", "synthetic"); expect(own.deletingCaller).toBe(true);
+  });
+  it("skips the password step for a login without one", async () => {
+    const reauth = vi.fn(async () => {});
+    await submitGuardianDeletion({ actorUid: "parent-uid", target: child, typed: "DELETE", password: "", needsPassword: false },
+      { currentUser: () => ({ uid: "parent-uid", email: null, reauthenticate: reauth }), call: async () => ({ data: { accepted: true } }) });
+    expect(reauth).not.toHaveBeenCalled();
   });
   it("makes 64-character lowercase hex receipts", () => {
     expect(randomReceiptToken()).toMatch(/^[a-f0-9]{64}$/);

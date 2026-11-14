@@ -1,18 +1,14 @@
 import { useEffect } from 'react';
-import { auth, cloud, db } from '../firebase';
+import { auth, cloud } from '../firebase';
 import { actingPlayerId } from '../acting-player';
-import { findGuardian } from '../identity';
+import { guardianRecordFor } from '../parent-session';
 import { featureForLocation } from './clock';
+import { usageMode } from './mode';
 import { browserUsageLocks, removeOtherActorQueues, UsageQueue } from './queue';
 import type { UsageStorage } from './queue';
 import { createUsageSession } from './session';
 
 const BUILD = 'web-insights-v2';
-
-/** A login with its own guardians record records usage as a parent; any failure means it does not. */
-async function usageParentSession(uid: string): Promise<boolean> {
-  try { return (await findGuardian(db, uid)) !== null; } catch { return false; }
-}
 
 // Mounted once in the authenticated application's router. Public marketing
 // assets remain unchanged. No UID or URL enters a payload; a parent session's
@@ -31,9 +27,10 @@ export default function UsageTracking() {
       try { context = (await cloud.httpsCallable('getClubContext')({})).data; } catch { return; }
       if (epoch !== ownEpoch || auth.currentUser?.uid !== user.uid) return;
       // A parent's time in a child's view counts for that child; staff, admin and preview stay out.
-      const parent = ['player', 'coach', 'manager', 'admin'].includes(context?.role) ? false : await usageParentSession(user.uid);
+      const mode = await usageMode(context?.role, user.uid, async uid => (await guardianRecordFor(uid)) !== null);
       if (epoch !== ownEpoch || auth.currentUser?.uid !== user.uid) return;
-      if (context?.role !== 'player' && !parent) { removeOtherActorQueues(storage, null); return; }
+      if (!mode) { removeOtherActorQueues(storage, null); return; }
+      const parent = mode === 'parent';
       // A new instance ID avoids the copied sessionStorage ID in duplicated tabs.
       const queue = new UsageQueue(user.uid, crypto.randomUUID(), storage, browserUsageLocks(), Date.now, parent);
       const videoPositions = new WeakMap<HTMLVideoElement, number>();

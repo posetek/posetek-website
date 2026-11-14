@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import firebase, { auth, cloud } from '../../../../lib/firebase';
 import { accountError, authErrorCode } from '../../../landing/account-entry';
-import { DELETE_CONFIRMATION, deletionDetail, randomReceiptToken, requestGuardianDeletion } from './account-deletion';
+import { DELETE_CONFIRMATION, deletionDetail, submitGuardianDeletion } from './account-deletion';
 import type { DeletionTarget } from './account-deletion';
 
 const AUTH_ERRORS = ['invalid-credential', 'wrong-password', 'user-not-found', 'too-many-requests', 'network-request-failed', 'user-mismatch', 'requires-recent-login'];
@@ -19,19 +19,15 @@ export default function GuardianDeletion({ target }: { target: DeletionTarget })
     if (busy) return;
     setBusy(true); setError('');
     try {
-      setAccepted(await requestGuardianDeletion({ actorUid, target, typed, password }, {
-        currentUid: () => auth.currentUser?.uid || null,
-        reauthenticate: async secret => {
+      setAccepted(await submitGuardianDeletion({ actorUid, target, typed, password, needsPassword }, {
+        currentUser: () => {
           const current = auth.currentUser;
-          if (!current) throw new Error('Sign in again to confirm.');
-          if (needsPassword) {
-            if (!current.email) throw new Error('Sign in again to confirm.');
-            await current.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(current.email, secret));
+          return current && { uid: current.uid, email: current.email, reauthenticate: async (email: string, secret: string) => {
+            await current.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(email, secret));
             await current.getIdToken(true);
-          }
+          } };
         },
-        newToken: () => randomReceiptToken(),
-        send: async payload => (await cloud.httpsCallable('requestAccountDeletion')(payload)).data || {},
+        call: (name, data) => cloud.httpsCallable(name)(data),
       }));
     } catch (failure: any) {
       setError(AUTH_ERRORS.includes(authErrorCode(failure)) ? accountError(failure) : failure?.message || 'Deletion could not be requested. Please try again.');
