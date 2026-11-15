@@ -8,6 +8,7 @@ __pycache__/
 /production-dist/
 /marketing-dist/
 /app/astro-dist/
+/app/player-signin-dist/
 /astro-dist/
 /app/.astro/
 /artifacts/
