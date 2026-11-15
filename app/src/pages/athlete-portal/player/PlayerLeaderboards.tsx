@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { auth, cloud } from '../../../lib/firebase';
+import { actingPlayerScope } from '../../../lib/acting-player';
 import { metricValue, resultUsable } from '../../../lib/result-values';
 import { fullName } from '../lib/metrics';
 import { drillKey } from './scoring';
@@ -125,7 +126,8 @@ export function loadTeamStandings(scope: TeamScope, receive: (state: LoadState) 
   timer = setTimeout(() => {
     if (active) { active = false; receive({ status: 'error', players: [], error: 'Your team results are taking longer than expected. Please try again.' }); }
   }, 20000);
-  void cloud.httpsCallable('getTeamLeaderboard')({}).then(response => {
+  // A parent names the child it is viewing; the server answers for that child (`data.playerId`).
+  void cloud.httpsCallable('getTeamLeaderboard')(actingPlayerScope(uid, scope.playerId)).then(response => {
     if (!active || auth.currentUser?.uid !== uid) return;
     const data = response.data as Row;
     if (data.playerId !== scope.playerId || (scope.teamId && data.teamId !== scope.teamId) || (scope.organizationId && data.organizationId !== scope.organizationId)) {

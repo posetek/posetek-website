@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { auth, cloud } from '../firebase';
+import { actingPlayerId } from '../acting-player';
+import { guardianRecordFor } from '../parent-session';
 import { featureForLocation } from './clock';
+import { usageMode } from './mode';
 import { browserUsageLocks, removeOtherActorQueues, UsageQueue } from './queue';
 import type { UsageStorage } from './queue';
 import { createUsageSession } from './session';
@@ -8,7 +11,8 @@ import { createUsageSession } from './session';
 const BUILD = 'web-insights-v2';
 
 // Mounted once in the authenticated application's router. Public marketing
-// assets remain unchanged. No UID, URL, or selected player enters a payload.
+// assets remain unchanged. No UID or URL enters a payload; a parent session's
+// batches name the child whose view the time was spent in, nothing else.
 export default function UsageTracking() {
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -22,12 +26,17 @@ export default function UsageTracking() {
       let context: any;
       try { context = (await cloud.httpsCallable('getClubContext')({})).data; } catch { return; }
       if (epoch !== ownEpoch || auth.currentUser?.uid !== user.uid) return;
-      if (context?.role !== 'player') { removeOtherActorQueues(storage, null); return; }
+      // A parent's time in a child's view counts for that child; staff, admin and preview stay out.
+      const mode = await usageMode(context?.role, user.uid, async uid => (await guardianRecordFor(uid)) !== null);
+      if (epoch !== ownEpoch || auth.currentUser?.uid !== user.uid) return;
+      if (!mode) { removeOtherActorQueues(storage, null); return; }
+      const parent = mode === 'parent';
       // A new instance ID avoids the copied sessionStorage ID in duplicated tabs.
-      const queue = new UsageQueue(user.uid, crypto.randomUUID(), storage, browserUsageLocks(), Date.now);
+      const queue = new UsageQueue(user.uid, crypto.randomUUID(), storage, browserUsageLocks(), Date.now, parent);
       const videoPositions = new WeakMap<HTMLVideoElement, number>();
       const session = createUsageSession({
         uid: user.uid, sessionId: crypto.randomUUID(), build: BUILD, queue,
+        ...(parent ? { actingPlayer: () => actingPlayerId(auth.currentUser?.uid) } : {}),
         invoke: async batch => (await cloud.httpsCallable('recordInsightUsage')(batch)).data as { accepted?: boolean; reason?: string },
         environment: {
           wall: Date.now, mono: () => performance.now(), currentUid: () => auth.currentUser?.uid,

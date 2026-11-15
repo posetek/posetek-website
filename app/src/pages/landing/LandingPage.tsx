@@ -12,21 +12,30 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import firebase, { auth, cloud, db } from "../../lib/firebase";
 import { loadAccountAccess, STAFF_RECOVERY_HELP } from "../../lib/account-access";
-import { findCoach, findPlayer } from "../../lib/identity";
+import { findCoach, findGuardian, findPlayer } from "../../lib/identity";
 import { useThemeColor } from "../../lib/use-theme-color";
 import { refreshAdminIdentity, upsertAdminProfile } from "../admin/lib/identity";
 import { capturePlayerInvitationLink, createInvitedPlayer, forgetPlayerInvitationLink, initialPlayerInvitationLink, readPlayerInvitationLink, unavailablePlayerInvitation } from "./player-invitation-link";
+import { addParentInvitation, captureParentInvitationLink, createInvitedParent, forgetParentInvitationLink, guardianErrorReason, guardianRedeemMessage, initialParentInvitationLink, parentCodeFromInput, parentLinkAction, parentLinksPaused, pausedRedemptionError, readParentInvitationLink, unavailableParentInvitation } from "./parent-invitation-link";
+import type { ParentLinkAction } from "./parent-invitation-link";
+import { parentLinkSignIn } from "./parent-sign-in";
+import type { WaitingCodeState } from "./parent-sign-in";
+
+/** The Parent panel's signed-in answer; a notice is a message alone, with no action. */
+type ParentPanelAction = ParentLinkAction | { kind: "notice"; message: string };
+import { forgetParentSession } from "../../lib/parent-session";
 import {
   initialReportPlayerDestination,
   invalidReportEntry,
   readReportPlayerEntry,
+  reportParentSignupDestination,
   reportPlayerDestination,
   reportPlayerSignupError,
   reportSignupDestination,
   reportStatsSignIn,
   ReportPlayerEntryError,
 } from "./report-player-entry";
-import { accountDestination, accountError } from "./account-entry";
+import { accountDestination, accountError, familyDestination, signInProfileWrite } from "./account-entry";
 import type { AccountRole } from "./account-entry";
 import {
   coachHomeRoute,
@@ -36,6 +45,7 @@ import {
   playerStatsRoute,
   validateIndependentSignup,
   validateOrgSignup,
+  validateParentCodeSignup,
   validatePlayerCodeSignup,
 } from "./landing-helpers";
 import type { CoachOrgAction, CoachOrgChoice, SignupTab } from "./landing-helpers";
@@ -44,7 +54,9 @@ import {
   createOrganization,
   discardFailedSignup,
   joinOrganization,
+  redeemGuardianInvitation,
   redeemPlayerSignupCode,
+  checkGuardianInvitation,
 } from "./signup-data";
 import "./landing.scss";
 import AccountRecoveryRequest from "../../components/AccountRecoveryRequest";
@@ -62,13 +74,22 @@ export default function LandingPage() {
     if (signupEntryError) forgetPlayerInvitationLink();
     return initialPlayerInvitationLink();
   });
+  // Captured after the player link, which already scrubs a link that mixes both kinds of code.
+  // A report entry that opens no signup (Stats, or a malformed marker) drops it too.
+  const [parentLink, setParentLink] = useState(() => {
+    captureParentInvitationLink(window);
+    if (signupEntryError) forgetParentInvitationLink();
+    return initialParentInvitationLink();
+  });
   const [signedIn, setSignedIn] = useState(Boolean(auth.currentUser));
+  const [signedInUid, setSignedInUid] = useState<string | null>(auth.currentUser?.uid || null);
   const [authReady, setAuthReady] = useState(false);
   const [invitationCheck, setInvitationCheck] = useState<"checking" | "ready" | "unavailable" | "error" | null>(invitationLink.present ? "checking" : null);
+  const [parentCheck, setParentCheck] = useState<"checking" | "ready" | "unavailable" | "paused" | "error" | null>(parentLink.present ? "checking" : null);
 
   // Overlay modals (the login panel is inline now — legacy showModal(loginModal)
   // only scrolls it into view and focuses the email field).
-  const [signupRequested, setSignupOpen] = useState(invitationLink.present);
+  const [signupRequested, setSignupOpen] = useState(invitationLink.present || parentLink.present);
   const signupOpen = signupRequested && !signupEntryError;
   const [forgotOpen, setForgotOpen] = useState(false);
   const [coachOrgOpen, setCoachOrgOpen] = useState(false);
@@ -79,7 +100,7 @@ export default function LandingPage() {
   useEffect(() => () => window.clearTimeout(loginFocusTimerRef.current), []);
 
   // Signup tabs
-  const [activeTab, setActiveTab] = useState<SignupTab>("playerCode");
+  const [activeTab, setActiveTab] = useState<SignupTab>(parentLink.present ? "parentCode" : "playerCode");
 
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
@@ -107,10 +128,40 @@ export default function LandingPage() {
   const pendingPlayerSignup = useRef<firebase.User | null>(null);
   const verificationSentFor = useRef<string | null>(null);
 
+  // Parent-code signup form: the player-code panel's fields.
+  const [parentCode, setParentCode] = useState(parentLink.code);
+  const [parentEmail, setParentEmail] = useState("");
+  const [parentPassword, setParentPassword] = useState("");
+  const [parentConfirmPassword, setParentConfirmPassword] = useState("");
+  const [parentCodeError, setParentCodeError] = useState("");
+  const [parentCodeSuccess, setParentCodeSuccess] = useState("");
+  const [parentCodeLoading, setParentCodeLoading] = useState(false);
+  // What a signed-in visitor on the Parent panel sees: "Add to my account", or guidance.
+  const [parentAction, setParentAction] = useState<ParentPanelAction | "checking" | null>(null);
+  // Sign-ins already answered about the waiting parent link (final pass D1): only these skip it.
+  const answeredParentLink = useRef(new Set<string>());
+  const [parentAddLoading, setParentAddLoading] = useState(false);
+  const pendingParentSignup = useRef<firebase.User | null>(null);
+  // The login this panel's own signup created keeps the signup form, not "Add to my account".
+  const parentFormOwned = parentCodeLoading || Boolean(parentCodeSuccess) || Boolean(pendingParentSignup.current);
+
   useEffect(() => {
     // Pasting another invitation into an already-open sign-in tab is a fragment
     // navigation, not a document reload. Consume it just like the initial link.
     const openInvitation = () => {
+      if (readParentInvitationLink(window.location.href).invitation.present) {
+        captureParentInvitationLink(window);
+        if (reportPlayerSignupError(readReportPlayerEntry(window.location.search))) {
+          forgetParentInvitationLink();
+          setParentLink(initialParentInvitationLink());
+          setParentCode(""); setSignupOpen(false); setParentCheck(null);
+          return;
+        }
+        const next = initialParentInvitationLink();
+        setParentLink(next); setParentCode(next.code); setActiveTab("parentCode");
+        setSignupOpen(true); setParentCodeError(""); setParentCheck("checking");
+        return;
+      }
       if (!readPlayerInvitationLink(window.location.href).invitation.present) return;
       capturePlayerInvitationLink(window);
       if (reportPlayerSignupError(readReportPlayerEntry(window.location.search))) {
@@ -171,8 +222,49 @@ export default function LandingPage() {
   // Authentication and invitation fields must never enter session replay.
   useEffect(() => {
     document.title = "Sign In | PoseTek";
-    return () => forgetPlayerInvitationLink();
+    return () => { forgetPlayerInvitationLink(); forgetParentInvitationLink(); };
   }, []);
+
+  useEffect(() => {
+    if (signupEntryError || !parentLink.present) return;
+    let current = true;
+    if (!/^[A-Za-z0-9-]{6,64}$/.test(parentCode.trim())) { setParentCheck("unavailable"); return; }
+    setParentCheck("checking");
+    const timer = window.setTimeout(() => {
+      checkGuardianInvitation(parentCode.trim())
+        .then(check => {
+          if (!current) return;
+          // Paused links keep the waiting link; the code is not treated as used (final pass D3).
+          if (check.paused) { setParentCheck("paused"); return; }
+          const ready = check.valid;
+          setParentCheck(ready ? "ready" : "unavailable");
+          // A used code from a report may already be this signed-in parent's: "Add to my account"
+          // answers that. A signed-out visitor goes to sign-in, as for a player link.
+          if (!ready && reportEntry.present && !auth.currentUser) {
+            setSignupOpen(false); setLoginSuccess(unavailableParentInvitation); showLoginPanel();
+          }
+        })
+        .catch(() => { if (current) setParentCheck("error"); });
+    }, 350);
+    return () => { current = false; window.clearTimeout(timer); };
+  }, [parentLink.present, parentCode, reportEntry.present, signupEntryError]);
+
+  // A signed-in visitor on the Parent panel: decide between "Add to my account" and guidance from
+  // the resolved account, without ever signing anyone out.
+  useEffect(() => {
+    const user = auth.currentUser;
+    // Waits for the first auth observation: its epoch bump would otherwise orphan an earlier check.
+    if (!authReady || !signupOpen || activeTab !== "parentCode" || !signedIn || !user || parentFormOwned) { setParentAction(null); return; }
+    // A sign-in already answered about the waiting link keeps that answer (D1, D2).
+    if (answeredParentLink.current.has(user.uid)) return;
+    const revision = authEpoch.current;
+    const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
+    setParentAction("checking");
+    loadAccountAccess(user, isCurrent)
+      .then(access => { if (isCurrent()) setParentAction(parentLinkAction(access.kind === "active" ? access.role : null)); })
+      .catch(() => { if (isCurrent()) setParentAction({ kind: "add" }); });
+    // The signed-in identity is a dependency: switching accounts while signed in re-checks.
+  }, [authReady, signupOpen, activeTab, signedIn, signedInUid, parentFormOwned]);
 
   useEffect(() => {
     if (signupEntryError || !invitationLink.present) return;
@@ -213,10 +305,22 @@ export default function LandingPage() {
       }
       const revision = ++authEpoch.current;
       setSignedIn(Boolean(user));
+      setSignedInUid(nextUid);
       setAuthReady(true);
       setPendingActivation(false);
       if (!user && (requestedEntry.view === "stats" || getSafeReturnToUrl())) showLoginPanel();
-      if (restoredSession && user && requestedEntry.playerId) {
+      const waitingLink = initialParentInvitationLink();
+      if (restoredSession && user && requestedEntry.playerId && waitingLink.present && waitingLink.code) {
+        // Resolve access first (review finding 7): the report's own child login, or a parent already
+        // linked to that child, continues; anyone else stays on the Parent panel.
+        const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
+        setContinueLoading(true);
+        void loadAccountAccess(user, isCurrent)
+          .then(access => isCurrent() ? answerWaitingParentLink(requestedEntry, access, waitingLink.code, user.uid, isCurrent) : true)
+          .then(answer => { if (typeof answer === "string" && isCurrent()) navigate(answer); })
+          .catch(() => { /* the Parent panel's own check answers */ })
+          .finally(() => { if (isCurrent()) setContinueLoading(false); });
+      } else if (restoredSession && user && requestedEntry.playerId) {
         const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
         setContinueLoading(true); setSignupOpen(false);
         void initialReportPlayerDestination(requestedEntry, user, loadAccountAccess, isCurrent)
@@ -341,16 +445,61 @@ export default function LandingPage() {
     finishCoachOrgModal({ action: coachOrgAction as CoachOrgAction, value: val });
   }
 
-  function redirectAfterAuth(role: AccountRole, playerId: string | null = null) {
-    const destination = accountDestination(role, playerId, window.location.search, window.location.href, window.location.origin);
+  function redirectAfterAuth(role: AccountRole, playerId: string | null = null, playerIds: readonly string[] = []) {
+    const destination = accountDestination(role, playerId, window.location.search, window.location.href, window.location.origin, playerIds);
     if (destination.startsWith("http") || destination === "/admin") window.location.href = destination;
     else navigate(destination);
+  }
+
+  // A parent link with a code is waiting on this page (and not already used by this page's signup),
+  // and this sign-in has not already been answered about it (final pass D1).
+  function parentLinkWaiting(uid: string | null | undefined): boolean {
+    return parentLink.present && !!parentLink.code && !signupEntryError && !parentCodeSuccess && !(uid && answeredParentLink.current.has(uid));
+  }
+
+  // Open the Parent panel with its signed-in answer, instead of leaving the page (review finding 1).
+  function returnToParentPanel(action: ParentPanelAction) {
+    setActiveTab("parentCode"); setSignupOpen(true); setParentAction(action);
+  }
+
+  // What the waiting code can still do: only an account that could add it needs to know (N2, D2, D3).
+  async function waitingCodeState(access: { kind: string; role?: string }, code: string): Promise<WaitingCodeState> {
+    const couldAdd = access.kind === "activation" || access.role === "parent";
+    if (!couldAdd || !code) return "unknown";
+    try {
+      const check = await checkGuardianInvitation(code);
+      return check.valid ? "unused" : check.paused ? "paused" : "used";
+    } catch { return "unknown"; }
+  }
+
+  // The one place a sign-in meets a waiting parent link. Returns true when the page stays here.
+  // A notice (wrong kind of account, used code, paused links) is shown once to that sign-in, which
+  // then goes on normally; the link itself stays for any other account on this page (D1). Continue
+  // is the account's explicit choice to go on, so the notice is not repeated there.
+  async function answerWaitingParentLink(entry: typeof reportEntry, access: Parameters<typeof parentLinkSignIn>[1], code: string, uid: string, isCurrent: () => boolean, fromContinue = false): Promise<string | null | true> {
+    const state = await waitingCodeState(access, code);
+    if (!isCurrent()) return true;
+    const decision = parentLinkSignIn(entry, access, state);
+    if (decision.kind === "continue") return decision.destination;
+    if (decision.kind === "add") { returnToParentPanel({ kind: "add" }); return true; }
+    answeredParentLink.current.add(uid);
+    if (fromContinue) return null;
+    returnToParentPanel(decision.guidance ? { kind: "guidance", message: decision.message } : { kind: "notice", message: decision.message });
+    return true;
   }
 
   async function openAccount(user: any, isCurrent: () => boolean, passwordSignIn: boolean) {
     const access = await loadAccountAccess(user, isCurrent);
     if (!isCurrent()) return;
-    const reportDestination = reportPlayerDestination(reportEntry, access.kind === "activation" ? null : access.role, access.kind === "activation" ? null : access.playerId || null);
+    // A waiting parent link is redeemed with "Add to my account", never dropped by a redirect; an
+    // account that cannot use it sees why once and then goes on normally.
+    if (parentLinkWaiting(user.uid)) {
+      const answer = await answerWaitingParentLink(reportEntry, access, parentLink.code, user.uid, isCurrent, !passwordSignIn);
+      if (answer === true) return;
+    }
+    const reportDestination = access.kind === "activation"
+      ? reportPlayerDestination(reportEntry, null, null)
+      : reportPlayerDestination(reportEntry, access.role, access.playerId || null, access.playerIds || []);
     if (access.kind === "activation") {
       const returnTo = getSafeReturnToUrl();
       if (access.reason === "unlinked" && returnTo && new URL(returnTo).pathname === "/join") { redirectAfterAuth("pending"); return; }
@@ -362,21 +511,23 @@ export default function LandingPage() {
           : "You are signed in. Open your staff access link to connect your account. If you expected a player profile, ask your coach to check your account link.");
       return;
     }
-    if (access.role === "admin") {
+    // A parent has no profile of its own and never writes the child's lastLogin.
+    const profileWrite = signInProfileWrite(access.role, access.playerId || null);
+    if (profileWrite === "admin") {
       const identity = await refreshAdminIdentity(user);
       if (!isCurrent()) return;
       if (!identity.isAdmin) throw new Error("Account access changed. Sign in again.");
       if (passwordSignIn) await upsertAdminProfile(identity);
-    } else if (passwordSignIn && access.role === "independent") {
+    } else if (passwordSignIn && profileWrite === "coach") {
       const coachDoc = await findCoach(db, user.uid);
       if (!isCurrent()) return;
       await coachDoc?.ref.update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
-    } else if (passwordSignIn && access.role === "player" && access.playerId) {
+    } else if (passwordSignIn && profileWrite === "player" && access.playerId) {
       await db.collection("players").doc(access.playerId).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
     }
     if (isCurrent()) {
       if (reportDestination) navigate(reportDestination);
-      else redirectAfterAuth(access.role, access.playerId || null);
+      else redirectAfterAuth(access.role, access.playerId || null, access.playerIds || []);
     }
   }
 
@@ -565,6 +716,97 @@ export default function LandingPage() {
       setPlayerCodeError(accountError(error, error?.message || "Your account could not be created. Please try again."));
     } finally {
       setPlayerCodeLoading(false);
+    }
+  }
+
+  // Where a parent goes once linked: the report's child when one was requested, else the one child
+  // or the picker.
+  function parentDestination(playerIds: string[], existing = false): string {
+    return reportParentSignupDestination(reportEntry, playerIds, existing) || familyDestination(playerIds);
+  }
+
+  // Parent code signup handler (createInvitedPlayer's steps, against the guardian callables)
+  async function handleParentCodeSignup() {
+    const code = parentCode.trim();
+    try {
+      setParentCodeLoading(true);
+      setParentCodeError("");
+      setParentCodeSuccess("");
+      if (signupEntryError) throw new ReportPlayerEntryError(signupEntryError);
+      const problem = validateParentCodeSignup({ code, password: parentPassword, confirmPassword: parentConfirmPassword });
+      if (problem) throw new Error(problem);
+
+      const playerIds = await createInvitedParent({ code, email: parentEmail, password: parentPassword }, {
+        currentUser: () => auth.currentUser,
+        // Paused links stop the sign-up before any login is created (final pass D3).
+        validate: async value => {
+          const check = await checkGuardianInvitation(value);
+          if (check.paused) throw pausedRedemptionError();
+          return check.valid;
+        },
+        create: async (address, secret) => {
+          const result = await auth.createUserWithEmailAndPassword(address, secret);
+          if (!result.user) throw new Error("Your account could not be created. Please try again.");
+          return result.user;
+        },
+        verify: async user => {
+          if (verificationSentFor.current !== user.uid) {
+            await user.sendEmailVerification(); verificationSentFor.current = user.uid;
+          }
+        },
+        redeem: redeemGuardianInvitation,
+        resolve: async user => (await findGuardian(db, user.uid))?.playerIds || null,
+        created: user => { pendingParentSignup.current = user; },
+        discard: async user => {
+          try { await user.delete(); }
+          catch { throw new Error("Your new account could not be cleared after signup stopped. Keep this page open and try Create Account again when your connection is available."); }
+          pendingParentSignup.current = null; verificationSentFor.current = null;
+        },
+      }, pendingParentSignup.current);
+
+      const destination = parentDestination(playerIds);
+      forgetParentInvitationLink();
+      forgetParentSession(auth.currentUser?.uid);
+      pendingParentSignup.current = null;
+      const signupUid = auth.currentUser?.uid;
+      if (!signupUid) throw new Error("Your account was created. Sign in with that account to continue.");
+      setParentCodeSuccess("Account created. Check your inbox for the verification email.");
+      redirectTimerRef.current = window.setTimeout(() => {
+        if (auth.currentUser?.uid !== signupUid) { setParentCodeError("Your account was created. Sign in with that account to continue."); return; }
+        navigate(destination);
+      }, 1500);
+    } catch (error: any) {
+      setParentCodeError(guardianRedeemMessage(error) || accountError(error, error?.message || "Your account could not be created. Please try again."));
+    } finally {
+      setParentCodeLoading(false);
+    }
+  }
+
+  // "Add to my account": a signed-in parent redeems the link for the login it already has.
+  async function handleAddToAccount() {
+    const user = auth.currentUser;
+    if (!user || parentAddLoading) return;
+    const revision = authEpoch.current;
+    const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
+    setParentAddLoading(true); setParentCodeError("");
+    try {
+      if (signupEntryError) throw new ReportPlayerEntryError(signupEntryError);
+      const playerIds = await addParentInvitation(parentCodeFromInput(parentCode), { currentUid: () => (isCurrent() ? user.uid : null), redeem: redeemGuardianInvitation });
+      if (!isCurrent()) return;
+      // Nothing was created here, so a link that does not cover the report's child opens the
+      // parent's own players instead of a "created" message.
+      const destination = parentDestination(playerIds, true);
+      forgetParentInvitationLink();
+      forgetParentSession(user.uid);
+      navigate(destination);
+    } catch (error: any) {
+      if (!isCurrent()) return;
+      // A refused account keeps its sign-in; "Use a different account" is the explicit way out.
+      const message = guardianRedeemMessage(error);
+      if (message && ["player-login", "staff-login", "admin-login"].includes(guardianErrorReason(error) || "")) setParentAction({ kind: "guidance", message });
+      else setParentCodeError(message || (error instanceof ReportPlayerEntryError ? error.message : accountError(error, error?.message || "This player could not be added. Please try again.")));
+    } finally {
+      if (loginMounted.current) setParentAddLoading(false);
     }
   }
 
@@ -757,7 +999,7 @@ export default function LandingPage() {
         <div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="signup-title" tabIndex={-1} ref={signupDialogRef}>
           <div className="modal-content-wrapper">
             <div className="modal-header">
-              <h3 className="modal-title" id="signup-title">{activeTab === "playerCode" ? "Create your player account" : activeTab === "independent" ? "Independent coach signup" : "Organization-code signup"}</h3>
+              <h3 className="modal-title" id="signup-title">{activeTab === "playerCode" ? "Create your player account" : activeTab === "parentCode" ? "Create your parent account" : activeTab === "independent" ? "Independent coach signup" : "Organization-code signup"}</h3>
               <button
                 className="close-btn"
                 id="closeSignupModal"
@@ -779,6 +1021,15 @@ export default function LandingPage() {
                 onClick={() => setActiveTab("playerCode")}
               >
                 Player code
+              </button>
+              <button
+                className={`tab${activeTab === "parentCode" ? " active" : ""}`}
+                type="button"
+                data-tab="parentCode"
+                aria-pressed={activeTab === "parentCode"}
+                onClick={() => setActiveTab("parentCode")}
+              >
+                Parent
               </button>
               <button
                 className={`tab${activeTab === "organization" ? " active" : ""}`}
@@ -900,6 +1151,61 @@ export default function LandingPage() {
                   ></span>
                 </button>
               </form>
+            </div>
+
+            {/* Parent Tab: the player-code panel's fields; no child is named before the claim. */}
+            <div className={`tab-content${activeTab === "parentCode" ? " active" : ""}`} id="parentCodeTab">
+              {parentLink.present && <p className="login-support" role="status">
+                {parentCheck === "checking" ? "Checking your parent link…" : parentCheck === "ready" ? "Your parent code is filled in." : parentCheck === "paused" ? parentLinksPaused : parentCheck === "error" ? "We could not check your link. Try again when your connection is available." : unavailableParentInvitation}
+              </p>}
+              {signedIn && !parentFormOwned ? <div className="parent-signed-in">
+                {parentAction === "checking" || parentAction === null ? <p className="login-support" role="status">Checking your account…</p>
+                  : parentAction.kind === "add" ? <>{!parentLink.code && <div className="form-group">
+                    <label htmlFor="parentAddCode">Parent code</label>
+                    <input type="text" id="parentAddCode" name="parent-code" placeholder="Enter parent code" autoComplete="off" spellCheck={false} value={parentCode} data-clarity-mask="true" onChange={(e) => { setParentCode(e.target.value); setParentCodeError(""); }} />
+                  </div>}<button type="button" className="submit-btn" id="parentAddSubmit" disabled={parentAddLoading || !parentCode.trim()} onClick={() => void handleAddToAccount()}>
+                    <span style={{ opacity: parentAddLoading ? 0.5 : 1 }}>Add to my account</span>
+                    <span className="spinner" style={{ display: parentAddLoading ? "block" : "none" }}></span>
+                  </button></>
+                  : parentAction.kind === "notice" ? <p className="login-support" role="status">{parentAction.message}</p>
+                  : <>
+                    <p className="login-support" role="status">{parentAction.message}</p>
+                    <button type="button" className="secondary-action" disabled={switchLoading} onClick={() => void handleSwitchAccount()}>Use a different account</button>
+                  </>}
+                <div className="error-message" role="alert" style={{ display: parentCodeError ? "block" : "none" }}>{parentCodeError}</div>
+              </div> : <>
+                <p className="login-support"><button type="button" className="secondary-action" onClick={() => { closeSignupModal(); showLoginPanel(); }}>Already have an account? Sign in</button></p>
+                <form
+                  id="parentCodeForm"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void handleParentCodeSignup();
+                  }}
+                >
+                  <div className="form-group">
+                    <label htmlFor="parentCode">Parent code</label>
+                    <input type="text" id="parentCode" name="parent-code" placeholder="Enter parent code" autoComplete="off" spellCheck={false} required value={parentCode} data-clarity-mask="true" onChange={(e) => { setParentCode(e.target.value); setParentCodeError(""); }} />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="parentEmail">Email</label>
+                    <input type="email" id="parentEmail" name="parent-email" placeholder="name@example.com" autoComplete="email" inputMode="email" spellCheck={false} required value={parentEmail} onChange={(e) => setParentEmail(e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="parentPassword">Password</label>
+                    <input type="password" id="parentPassword" name="parent-password" placeholder="At least 6 characters" autoComplete="new-password" required minLength={6} value={parentPassword} onChange={(e) => setParentPassword(e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="parentConfirmPassword">Confirm Password</label>
+                    <input type="password" id="parentConfirmPassword" name="parent-confirm-password" placeholder="Enter the password again" autoComplete="new-password" required value={parentConfirmPassword} onChange={(e) => setParentConfirmPassword(e.target.value)} />
+                  </div>
+                  <div className="error-message" id="parentCodeError" role="alert" style={{ display: parentCodeError ? "block" : "none" }}>{parentCodeError}</div>
+                  <div className="success-message" id="parentCodeSuccess" role="status" aria-live="polite" style={{ display: parentCodeSuccess ? "block" : "none" }}>{parentCodeSuccess}</div>
+                  <button type="submit" className="submit-btn" id="parentCodeSubmit" disabled={parentCodeLoading || parentCheck === "checking" || (parentLink.present && parentCheck === "unavailable" && !pendingParentSignup.current)}>
+                    <span style={{ opacity: parentCodeLoading ? 0.5 : 1 }}>Create Account</span>
+                    <span className="spinner" id="parentCodeSpinner" style={{ display: parentCodeLoading ? "block" : "none" }}></span>
+                  </button>
+                </form>
+              </>}
             </div>
 
             {/* Organization Tab */}

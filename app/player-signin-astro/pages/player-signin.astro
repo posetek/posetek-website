@@ -16,10 +16,17 @@ import WebsiteIcons from "../../astro/components/WebsiteIcons.astro";
       const signupUrl = new URL(window.location.href);
       const signupFragment = new URLSearchParams(signupUrl.hash.slice(1));
       const signupValues = [...signupUrl.searchParams.getAll("playerCode"), ...signupFragment.getAll("playerCode")];
-      if (signupValues.length) {
-        const normalized = signupValues.map(value => value.trim());
-        window.__posetekPlayerInvitation = { present: true, code: normalized.every(value => value === normalized[0]) && /^[A-Za-z0-9-]{6,64}$/.test(normalized[0]) ? normalized[0] : "" };
-        signupUrl.searchParams.delete("playerCode"); signupFragment.delete("playerCode"); signupUrl.hash = signupFragment.toString();
+      const parentValues = [...signupUrl.searchParams.getAll("parentCode"), ...signupFragment.getAll("parentCode")];
+      const signupCode = values => {
+        const normalized = values.map(value => value.trim());
+        return normalized.every(value => value === normalized[0]) && /^[A-Za-z0-9-]{6,64}$/.test(normalized[0]) ? normalized[0] : "";
+      };
+      // A link carrying both kinds of code fills in neither.
+      if (signupValues.length) window.__posetekPlayerInvitation = { present: true, code: parentValues.length ? "" : signupCode(signupValues) };
+      else if (parentValues.length) window.__posetekParentInvitation = { present: true, code: signupCode(parentValues) };
+      if (signupValues.length || parentValues.length) {
+        for (const key of ["playerCode", "parentCode"]) { signupUrl.searchParams.delete(key); signupFragment.delete(key); }
+        signupUrl.hash = signupFragment.toString();
         window.history.replaceState(window.history.state, "", signupUrl.href);
       }
     </script>

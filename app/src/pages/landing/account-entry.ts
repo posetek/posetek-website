@@ -1,15 +1,26 @@
 import { getSafeReturnToUrl, playerStatsRoute } from "./landing-helpers";
 
-export type AccountRole = "admin" | "manager" | "coach" | "independent" | "player" | "pending";
+export type AccountRole = "admin" | "manager" | "coach" | "independent" | "player" | "parent" | "pending";
+
+/** The parent's picker. */
+export const FAMILY_PATH = "/family";
+
+/** One child opens exactly what that child's own sign-in opens; none or several open the picker. */
+export function familyDestination(playerIds: readonly string[]): string {
+  return playerIds.length === 1 ? playerStatsRoute(playerIds[0]) : FAMILY_PATH;
+}
 
 /** Routing is a convenience. Destination pages and server membership checks still enforce access. */
-export function accountDestination(role: AccountRole, playerId: string | null, search: string, base: string, origin: string): string {
+export function accountDestination(role: AccountRole, playerId: string | null, search: string, base: string, origin: string, playerIds: readonly string[] = []): string {
   const home = role === "admin" ? "/admin" : role === "manager" ? "/organization"
-    : role === "coach" || role === "independent" ? "/insights" : role === "player" && playerId ? playerStatsRoute(playerId) : "/join";
+    : role === "coach" || role === "independent" ? "/insights" : role === "player" && playerId ? playerStatsRoute(playerId)
+    : role === "parent" ? familyDestination(playerIds) : "/join";
   const target = getSafeReturnToUrl(search, base, origin);
   if (!target) return home;
   const path = new URL(target).pathname;
-  if (role === "player" && ["/feed", "/feed.html"].includes(path)) return home;
+  if ((role === "player" || role === "parent") && ["/feed", "/feed.html"].includes(path)) return home;
+  if (role === "parent" && path === "/join") return home;
+  if (path === FAMILY_PATH && role !== "parent") return home;
   const staff = role === "admin" || role === "manager" || role === "coach" || role === "independent";
   if (path === "/admin" || path.startsWith("/admin/")) return role === "admin" ? target : home;
   if (role === "pending") return path === "/join" ? target : home;
@@ -17,6 +28,17 @@ export function accountDestination(role: AccountRole, playerId: string | null, s
     return staff ? target : home;
   }
   return target;
+}
+
+/**
+ * The profile write a password sign-in makes. A parent has no profile of its own, so it never
+ * touches the child's `lastLogin`, which belongs to the child's own login.
+ */
+export function signInProfileWrite(role: AccountRole, playerId: string | null): "admin" | "coach" | "player" | null {
+  if (role === "admin") return "admin";
+  if (role === "independent") return "coach";
+  if (role === "player" && playerId) return "player";
+  return null;
 }
 
 export function authErrorCode(error: unknown): string {

@@ -2,8 +2,9 @@ import { StrictMode, useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import LandingPage from "../pages/landing/LandingPage";
 import { capturePlayerInvitationLink } from "../pages/landing/player-invitation-link";
+import { captureParentInvitationLink } from "../pages/landing/parent-invitation-link";
 import "../styles/base.css";
-if (typeof window !== "undefined") capturePlayerInvitationLink(window);
+if (typeof window !== "undefined") { capturePlayerInvitationLink(window); captureParentInvitationLink(window); }
 function ExistingApplication() {
   const location = useLocation();
   useEffect(() => {

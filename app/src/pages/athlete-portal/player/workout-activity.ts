@@ -6,6 +6,8 @@ export type WorkoutActivityRequest = {
   source: WorkoutActivitySource; logId: string; sessionId: string; sequence: number;
   eventId: string; type: WorkoutActivityType; occurredAtMillis: number;
   ownerEpoch?: number; blockId?: string;
+  /** Only from a parent session: the child the workout belongs to (Parent accounts plan §11.3). */
+  playerId?: string;
 };
 export type WorkoutActivityResponse = { accepted: boolean; ownerEpoch?: number; serverTimeMillis?: number; reason?: string };
 export type WorkoutActivityState = {
@@ -41,8 +43,15 @@ export function createWorkoutActivity(options: {
   read: () => WorkoutActivityState;
   send: (request: WorkoutActivityRequest) => Promise<WorkoutActivityResponse>;
   online?: () => boolean; now?: () => number; newSessionId?: () => string;
+  /**
+   * `{ playerId }` when a parent started this workout for a child, else `{}`; owners send what they
+   * send today. Captured once at creation, so the final pause sent after the child's view has
+   * closed still names the child.
+   */
+  scope?: { playerId?: string };
 }) {
   const now = options.now || Date.now;
+  const scope = options.scope?.playerId ? { playerId: options.scope.playerId } : {};
   const online = options.online || (() => true);
   let sessionId = options.sessionId, sequence = 0, epoch: number | undefined;
   let claim: WorkoutActivityRequest | null = null, retry: WorkoutActivityRequest | null = null;
@@ -70,7 +79,7 @@ export function createWorkoutActivity(options: {
     const next = sequence++;
     return { source: options.source, logId: options.logId, sessionId, sequence: next,
       eventId: `${sessionId}:${next}`, type, occurredAtMillis,
-      ...(epoch !== undefined ? { ownerEpoch: epoch } : {}), ...(blockId ? { blockId } : {}) };
+      ...(epoch !== undefined ? { ownerEpoch: epoch } : {}), ...(blockId ? { blockId } : {}), ...scope };
   };
   const expireClaim = () => {
     if (!claim || fresh(claim)) return false;

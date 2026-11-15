@@ -5,6 +5,7 @@ vi.mock('../../../lib/firebase', () => ({
   auth: { get currentUser() { return harness.uid ? { uid: harness.uid } : null; }, onAuthStateChanged: (callback: (user: any) => void) => { harness.observer = callback; return harness.stop; } },
   cloud: { httpsCallable: () => harness.request },
 }));
+import { enterActingPlayer } from '../../../lib/acting-player';
 import PlayerLeaderboards, { PLAYER_BOARDS, LeaderboardResults, leaderboardGroups, leaderboardRows, loadTeamStandings, playerStandings, preferredLeaderboardGroup } from './PlayerLeaderboards';
 
 const rep = (type: string, fields: Record<string, unknown> = {}) => ({ id: 'rep', repType: type, resultStatus: { qualified: true, duplicate: false }, ...fields });
@@ -140,6 +141,21 @@ describe('team load isolation and retry', () => {
     harness.request.mockResolvedValueOnce({ data: { playerId: 'You', athletes: [player('Current', [])] } });
     const retryStop = loadTeamStandings({ playerId: 'You' }, state => states.push(state)); await Promise.resolve(); await Promise.resolve();
     expect(states.at(-1).status).toBe('ready'); expect(states.at(-1).players[0].id).toBe('Current'); retryStop();
+  });
+  it('asks an owner session exactly as before and a parent session for the viewed child', async () => {
+    harness.request.mockResolvedValue({ data: { playerId: 'You', teamId: 'team', athletes: [] } });
+    let states: any[] = [], stop = loadTeamStandings({ playerId: 'You', teamId: 'team' }, state => states.push(state));
+    await Promise.resolve(); await Promise.resolve();
+    expect(harness.request).toHaveBeenLastCalledWith({}); expect(states.at(-1).status).toBe('ready'); stop();
+    const leave = enterActingPlayer('owner', 'You');
+    states = []; stop = loadTeamStandings({ playerId: 'You', teamId: 'team' }, state => states.push(state));
+    await Promise.resolve(); await Promise.resolve();
+    // The server answers for the named child, so the response-scope check holds for a parent.
+    expect(harness.request).toHaveBeenLastCalledWith({ playerId: 'You' }); expect(states.at(-1).status).toBe('ready'); stop();
+    // A registration for another child or another login never leaks into this request.
+    leave(); const other = enterActingPlayer('owner', 'sibling');
+    stop = loadTeamStandings({ playerId: 'You', teamId: 'team' }, () => {}); await Promise.resolve();
+    expect(harness.request).toHaveBeenLastCalledWith({}); stop(); other();
   });
   it('clears results on rejection and never requests a team for a signed-out account', async () => {
     harness.request.mockRejectedValue(new Error('Transport unavailable')); const states: any[] = [];

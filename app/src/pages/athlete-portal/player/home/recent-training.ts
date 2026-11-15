@@ -145,9 +145,12 @@ export function progression(training: RecentTraining, now: Date): { text: string
   return null;
 }
 
-/** "Your week" for the athlete; "<name>’s week" for staff looking at an athlete (the app tests `userType == "Player"`). */
-export function weekTitle(access: string, playerName: string): string {
-  return access === 'athlete' || access === 'preview' ? 'Your week' : `${playerName}’s week`;
+/**
+ * "Your week" for the athlete; "<name>’s week" for staff looking at an athlete (the app tests
+ * `userType == "Player"`) and for a parent, whose access is "athlete" (plan §4.4).
+ */
+export function weekTitle(access: string, playerName: string, guardian = false): string {
+  return !guardian && (access === 'athlete' || access === 'preview') ? 'Your week' : `${playerName}’s week`;
 }
 export const sessionCountText = (count: number) => count === 1 ? '1 recorded session' : `${count} recorded sessions`;
 

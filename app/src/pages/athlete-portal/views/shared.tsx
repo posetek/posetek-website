@@ -15,6 +15,9 @@ export interface PortalContext {
   allStatsReps: () => any[];
   provisionalEstimates?: ProvisionalEstimate[];
   allResultReps?: () => any[];
+  /** A linked parent acting as this athlete (access is still "athlete"); see PortalData. */
+  guardian?: true;
+  guardianPlayerIds?: string[];
 }
 
 export function PageHero({ eyebrow, title, description, icon }: { eyebrow: string; title: string; description: string; icon: string }) {

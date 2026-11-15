@@ -35,23 +35,46 @@ export function reportTrainingPath(playerId: string): string {
 
 // Ignores generic returnTo completely for report entry. Only the authenticated,
 // server-resolved player matching the requested child can continue.
-export function reportPlayerDestination(entry: ReportPlayerEntry, role: AccountRole | null, playerId: string | null): string | null {
+// A parent passes only for a child its own guardians record lists.
+export function reportPlayerDestination(entry: ReportPlayerEntry, role: AccountRole | null, playerId: string | null, playerIds: readonly string[] = []): string | null {
   if (!entry.present) return null;
   if (!entry.playerId) throw new ReportPlayerEntryError(invalidReportEntry);
-  if (role !== "player" || playerId !== entry.playerId) {
+  const allowed = role === "player" ? playerId === entry.playerId : role === "parent" && playerIds.includes(entry.playerId);
+  // A parent is never told to use the player's login: its own account is simply not linked yet.
+  if (!allowed && role === "parent") throw new ReportPlayerEntryError(reportParentNotLinked);
+  if (!allowed) {
     const destination = entry.view === "stats" ? "Stats" : "their workouts";
     throw new ReportPlayerEntryError(`Use this player's login to open ${destination}. If you are signed in to a different player or a staff account, choose Use a different account.`);
   }
+  return reportViewPath(entry);
+}
+export const reportParentNotLinked = "This parent account is not linked to this player. Open the parent link for this player to add them.";
+
+/** The report's requested page for its child: Stats, or Training. */
+function reportViewPath(entry: ReportPlayerEntry & { playerId: string }): string {
   return entry.view === "stats" ? playerStatsRoute(entry.playerId) : reportTrainingPath(entry.playerId);
 }
 
+const reportMismatch = "Your account was created, but it does not match this report. Keep your login and contact PoseTek before continuing.";
 export function reportSignupDestination(entry: ReportPlayerEntry, redeemedPlayerId: string): string | null {
   if (!entry.present) return null;
   if (entry.view === "stats") throw new ReportPlayerEntryError(reportStatsSignIn);
-  if (!entry.playerId || redeemedPlayerId !== entry.playerId) {
-    throw new ReportPlayerEntryError("Your account was created, but it does not match this report. Keep your login and contact PoseTek before continuing.");
-  }
+  if (!entry.playerId || redeemedPlayerId !== entry.playerId) throw new ReportPlayerEntryError(reportMismatch);
   return reportTrainingPath(redeemedPlayerId);
+}
+
+/**
+ * A parent link redeemed from a report continues only when the report's child is now linked. A new
+ * account that does not match is told so; an existing parent ("Add to my account") whose link does
+ * not cover the report's child simply opens its own players (`existing`), nothing was created.
+ */
+export function reportParentSignupDestination(entry: ReportPlayerEntry, linkedPlayerIds: readonly string[], existing = false): string | null {
+  if (!entry.present) return null;
+  if (!entry.playerId || !linkedPlayerIds.includes(entry.playerId)) {
+    if (existing) return null;
+    throw new ReportPlayerEntryError(reportMismatch);
+  }
+  return reportViewPath(entry);
 }
 
 /** Initial restored sessions can enter only after canonical exact-player resolution. */
@@ -64,5 +87,7 @@ export async function initialReportPlayerDestination(
   if (!entry.present || !user || !isCurrent()) return null;
   const access = await load(user, isCurrent);
   if (!isCurrent()) return null;
-  return reportPlayerDestination(entry, access.kind === "active" ? access.role : null, access.kind === "active" ? access.playerId || null : null);
+  return access.kind === "active"
+    ? reportPlayerDestination(entry, access.role, access.playerId || null, access.playerIds || [])
+    : reportPlayerDestination(entry, null, null);
 }

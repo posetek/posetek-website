@@ -69,6 +69,14 @@ describe("dedicated authenticated drill access", () => {
     await expect(resolveAuthenticatedDrillPlayer({ uid: "athlete" }, "player")).rejects.toThrow("permission");
   });
 
+  it("opens a child's drill results for a linked parent, and not for a parent of another child", async () => {
+    mocks.get.mockResolvedValue(doc("player", { ...clubPlayer, guardianUIDs: ["parent-uid"] }));
+    expect((await resolveAuthenticatedDrillPlayer({ uid: "parent-uid" }, "player")).viewer.role).toBe("player");
+    expect(mocks.membership).not.toHaveBeenCalled();
+    mocks.get.mockResolvedValue(doc("player", { ...clubPlayer, guardianUIDs: ["someone-else"] }));
+    await expect(resolveAuthenticatedDrillPlayer({ uid: "parent-uid" }, "player")).rejects.toThrow("permission");
+  });
+
   it("resolves a linked athlete when a direct player parameter is absent", async () => {
     mocks.player.mockResolvedValue(doc("player", clubPlayer));
     expect((await resolveAuthenticatedDrillPlayer({ uid: "athlete" }, null)).player.id).toBe("player");

@@ -83,13 +83,16 @@ export function accountAccessError(error: unknown): string {
   return "We could not confirm your access. Your account has been kept. Try signing in, or ask PoseTek to check this link.";
 }
 
-export type ActiveAccountAccess = { kind: "active"; role: Exclude<AccountRole, "pending">; playerId?: string; organizationId?: string; organizationName?: string };
+/** `playerIds` is set for a parent: every child linked to the login, from its own `guardians/{uid}`. */
+export type ActiveAccountAccess = { kind: "active"; role: Exclude<AccountRole, "pending">; playerId?: string; playerIds?: string[]; organizationId?: string; organizationName?: string };
 export type AccountAccess = ActiveAccountAccess | { kind: "activation"; reason: "admin-unverified" | "unlinked" | "staff-inactive" };
 export interface AccessUser { uid: string; reload(): Promise<void>; getIdTokenResult(force: boolean): Promise<{ claims: Record<string, unknown> }> }
 export interface AccessDependencies {
   isCurrent(): boolean;
   context(): Promise<{ role: string; organization: { id: string; name: string } | null }>;
   coach(uid: string): Promise<{ data(): Record<string, unknown> | undefined } | null>;
+  /** The caller's own `guardians/{uid}`; null when missing or not yet readable under the published rules. */
+  guardian?(uid: string): Promise<{ playerIds: string[] } | null>;
   player(uid: string): Promise<{ id: string } | null>;
 }
 /** Fresh token and canonical membership precede legacy identity fallbacks. */
@@ -111,12 +114,16 @@ export async function resolveAccountAccess(user: AccessUser, deps: AccessDepende
     if (Object.hasOwn(data, "organizationId") || Object.hasOwn(data, "organizationRole")) return { kind: "activation", reason: "staff-inactive" };
     return { kind: "active", role: "independent" };
   }
+  // A parent login has no profile of its own: the server refuses to make an owner, staff or admin a
+  // parent, so its own guardians record decides before the owner lookup.
+  const guardian = deps.guardian ? await deps.guardian(user.uid) : null; current();
+  if (guardian) return { kind: "active", role: "parent", playerIds: [...guardian.playerIds] };
   const player = await deps.player(user.uid); current();
   return player ? { kind: "active", role: "player", playerId: player.id } : { kind: "activation", reason: "unlinked" };
 }
 export async function loadAccountAccess(user: AccessUser, isCurrent: () => boolean): Promise<AccountAccess> {
-  const [{ db }, { getClubContext }, { findCoach, findPlayer }] = await Promise.all([import("./firebase"), import("./organization-data"), import("./identity")]);
-  return resolveAccountAccess(user, { isCurrent, context: getClubContext, coach: uid => findCoach(db, uid), player: uid => findPlayer(db, uid) });
+  const [{ db }, { getClubContext }, { findCoach, findGuardian, findPlayer }] = await Promise.all([import("./firebase"), import("./organization-data"), import("./identity")]);
+  return resolveAccountAccess(user, { isCurrent, context: getClubContext, coach: uid => findCoach(db, uid), guardian: uid => findGuardian(db, uid), player: uid => findPlayer(db, uid) });
 }
 export function matchesAccessLink(link: Pick<AccountAccessLink, "targetUID" | "purpose" | "role" | "organizationId">, uid: string, access: AccountAccess): access is ActiveAccountAccess {
   if (uid !== link.targetUID || access.kind !== "active") return false;

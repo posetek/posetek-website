@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve, basename } from "node:path";
-import { composeAstroRelease, parseAstroReleaseArgs } from "./build-astro-release.mjs";
+import { spawnSync } from "node:child_process";
+import { composeAstroRelease, parseAstroReleaseArgs, buildPlayerSignIn, playerSignInRouting, playerSignInSourceStamp, PLAYER_SIGNIN_STAMP } from "./build-astro-release.mjs";
 import { sha1, mergeAstroAssets } from "./astro-assets.mjs";
 
 async function fixture(run) {
@@ -281,9 +282,155 @@ test("isolated preservation is independent of marketing preservation and cannot 
   assert.equal(await readFile(join(context.root, "production-dist/application.html"), "utf8"), "original app");
 }));
 
+// The standalone sign-in entry: live bytes in the baseline, a fresh isolated build beside the app.
+const SIGNIN_TOML = `[[redirects]]
+  from = "/signin"
+  to = "/player-signin.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/application.html"
+  status = 200
+${["/signin", "/player-signin.html"].map(path => `
+[[headers]]
+  for = "${path}"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet"
+    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://us-central1-kickai-69dd0.cloudfunctions.net https://firestore.googleapis.com"
+`).join("")}`;
+const signInPage = root => `<!-- posetek-player-signin-entry --><script>window.__posetekPlayerInvitation=null;window.__posetekParentInvitation=null</script><astro-island component-url="${root}" client="only"></astro-island>`;
+
+async function signInFixture(context, { stamp = "tree-1", rootChunk = "/_astro/PlayerSignInRoot.Abcd1234.js", chunkBody = "export const parentPanel = true;" } = {}) {
+  const { root, put, files, baseline } = context;
+  await isolatedFixture(context);
+  const live = signInPage("/_astro/PlayerSignInRoot.Live0000.js");
+  files.set("/player-signin.html", live); files.set("/_astro/playersigninroot.live0000.js", "live sign-in chunk");
+  for (const [path, bytes] of [["/player-signin.html", live], ["/_astro/playersigninroot.live0000.js", "live sign-in chunk"]]) {
+    baseline.files.push({ path, sha: sha1(bytes), size: Buffer.byteLength(bytes) });
+    await put("production-dist" + path, bytes);
+  }
+  await put("deployment/homepage-baseline.json", JSON.stringify(baseline));
+  await put("netlify.toml", SIGNIN_TOML);
+  const built = signInPage(rootChunk);
+  await put("app/player-signin-dist/player-signin.html", built);
+  await put("app/player-signin-dist" + rootChunk, chunkBody);
+  await put("app/player-signin-dist/_astro/AdminPage.Unused00.js", "never packaged");
+  if (stamp) await put("app/player-signin-dist/" + PLAYER_SIGNIN_STAMP, JSON.stringify({ appTree: stamp }));
+  const snapshot = await marketingFixture(root, put);
+  return { built, live, rootChunk, chunkBody, options: { ...snapshot, preserveIsolatedEntries: true, sourceStamp: async () => "tree-1" } };
+}
+
+test("the sign-in entry is replaced only with the flag, with its hashed assets, and nothing else protected changes", async () => fixture(async context => {
+  const { root, files } = context, s = await signInFixture(context);
+  const receipt = await composeAstroRelease(root, { ...s.options, replacePlayerSignIn: true });
+  assert.equal(await readFile(join(root, "production-dist/player-signin.html"), "utf8"), s.built);
+  assert.equal(await readFile(join(root, "production-dist" + s.rootChunk), "utf8"), s.chunkBody);
+  assert.equal(receipt.playerSignInReplaced, true);
+  assert.deepEqual(receipt.playerSignIn.previous, { path: "/player-signin.html", sha: sha1(s.live), size: Buffer.byteLength(s.live) });
+  assert.deepEqual(receipt.playerSignIn.document, { path: "/player-signin.html", sha: sha1(s.built), size: Buffer.byteLength(s.built) });
+  assert.deepEqual(receipt.playerSignIn.assets.map(row => row.path), [s.rootChunk]);
+  assert.equal(receipt.playerSignIn.appTree, "tree-1");
+  assert.deepEqual(Object.keys(receipt.playerSignIn.routingSha256.headers), ["/signin", "/player-signin.html"]);
+  assert.deepEqual(receipt.expectedChanges, { changed: ["/application.html", "/player-signin.html"], added: ["/_astro/PlayerSignInRoot.Abcd1234.js", "/_astro/new.87654321.js"] });
+  // Every other protected file, including the live sign-in chunk and both isolated entries, is byte-identical.
+  for (const [path, bytes] of files) if (!["/application.html", "/player-signin.html"].includes(path)) assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes, path);
+  assert.equal(receipt.preservedFiles, files.size - 2);
+  assert.ok(!(await readdir(join(root, "production-dist/_astro"))).includes("AdminPage.Unused00.js"), "only the entry's closure is carried");
+  assert.equal(await readFile(join(root, "netlify.toml"), "utf8"), SIGNIN_TOML);
+}));
+
+test("without the flag the live sign-in entry is preserved as today, even beside a fresh build", async () => fixture(async context => {
+  const { root, files } = context, s = await signInFixture(context);
+  const receipt = await composeAstroRelease(root, s.options);
+  assert.equal(await readFile(join(root, "production-dist/player-signin.html"), "utf8"), s.live);
+  assert.equal(receipt.playerSignInReplaced, undefined);
+  assert.deepEqual(receipt.expectedChanges, { changed: ["/application.html"], added: ["/_astro/new.87654321.js"] });
+  await assert.rejects(readFile(join(root, "production-dist" + s.rootChunk)), /ENOENT/);
+  for (const [path, bytes] of files) if (path !== "/application.html") assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes, path);
+}));
+
+test("a missing, unstamped, stale or non-isolated sign-in build is refused before any output changes", async () => {
+  for (const state of ["missing", "unstamped", "stale", "isolation"]) await fixture(async context => {
+    const { root, files } = context, s = await signInFixture(context, { stamp: state === "unstamped" ? null : state === "stale" ? "tree-0" : "tree-1" });
+    if (state === "missing") await rm(join(root, "app/player-signin-dist"), { recursive: true });
+    if (state === "isolation") await context.put("app/player-signin-dist/player-signin.html", '<astro-island component-url="/_astro/PlayerSignInRoot.Abcd1234.js"></astro-island>');
+    const expected = { missing: /no isolated sign-in build/, unstamped: /no isolated sign-in build/, stale: /stale against the current source/, isolation: /Sign-in replacement refused: Player signup isolation differs/ }[state];
+    await assert.rejects(composeAstroRelease(root, { ...s.options, replacePlayerSignIn: true }), expected);
+    for (const [path, bytes] of files) assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes, `${state}: ${path}`);
+    assert.deepEqual((await readdir(join(root, "production-dist/_astro"))).sort(), ["existing.12345678.js", "playersigninroot.live0000.js"]);
+  });
+});
+
+test("a sign-in asset that would change a protected or emitted file is refused before any output changes", async () => {
+  for (const target of ["/_astro/existing.12345678.js", "/_astro/new.87654321.js"]) await fixture(async context => {
+    const { root, files } = context, s = await signInFixture(context, { rootChunk: target, chunkBody: "different bytes at a pinned name" });
+    await assert.rejects(composeAstroRelease(root, { ...s.options, replacePlayerSignIn: true }), /would change protected file|collides with the application build/);
+    for (const [path, bytes] of files) assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes, path);
+  });
+});
+
+test("sign-in replacement requires both preservation modes, a baseline entry and the unchanged /signin routing", async () => {
+  await fixture(async context => {
+    const s = await signInFixture(context);
+    await assert.rejects(composeAstroRelease(context.root, { ...s.options, marketingSnapshot: undefined, replacePlayerSignIn: true }), /requires --preserve-marketing and --preserve-isolated-entries/);
+    await assert.rejects(composeAstroRelease(context.root, { ...s.options, preserveIsolatedEntries: false, replacePlayerSignIn: true }), /requires --preserve-marketing and --preserve-isolated-entries/);
+    assert.equal(await readFile(join(context.root, "production-dist/application.html"), "utf8"), "original app");
+  });
+  await fixture(async context => {
+    const s = await signInFixture(context);
+    context.baseline.files = context.baseline.files.filter(row => row.path !== "/player-signin.html");
+    await context.put("deployment/homepage-baseline.json", JSON.stringify(context.baseline));
+    await assert.rejects(composeAstroRelease(context.root, { ...s.options, replacePlayerSignIn: true }), /no verified \/player-signin.html/);
+  });
+  for (const edit of [toml => toml.replace('to = "/player-signin.html"', 'to = "/application.html"'), toml => toml.replace(/Cache-Control = "private, no-store, max-age=0"/, 'Cache-Control = "public, max-age=60"'), toml => toml.replace(/\n\[\[headers\]\]\n  for = "\/signin"[\s\S]*?(?=\n\[\[headers\]\])/, "")]) {
+    assert.throws(() => playerSignInRouting(edit(SIGNIN_TOML)), /Sign-in replacement refused/);
+    await fixture(async context => {
+      const s = await signInFixture(context);
+      await context.put("netlify.toml", edit(SIGNIN_TOML));
+      await assert.rejects(composeAstroRelease(context.root, { ...s.options, replacePlayerSignIn: true }), /Sign-in replacement refused/);
+      assert.equal(await readFile(join(context.root, "production-dist/player-signin.html"), "utf8"), s.live);
+    });
+  }
+});
+
+test("a non-hashed sign-in dependency or a collision with unprotected release output is refused before any output changes", async () => {
+  for (const state of ["unhashed", "output"]) await fixture(async context => {
+    const { root, files } = context;
+    const s = await signInFixture(context, state === "unhashed" ? { rootChunk: "/_astro/PlayerSignInRoot.js" } : {});
+    if (state === "output") await context.put("production-dist" + s.rootChunk, "stale unprotected bytes");
+    await assert.rejects(composeAstroRelease(root, { ...s.options, replacePlayerSignIn: true }), state === "unhashed" ? /unexpected dependency/ : /collides with the release output/);
+    for (const [path, bytes] of files) assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes, `${state}: ${path}`);
+  });
+});
+
+test("the real source stamp refuses uncommitted app/ changes and names the committed app/ tree otherwise", async () => fixture(async ({ root, put }) => {
+  const git = (...args) => { const result = spawnSync("git", ["-C", root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", ...args], { encoding: "utf8" }); assert.equal(result.status, 0, result.stderr); return result.stdout.trim(); };
+  git("init", "-q"); git("add", "app"); git("commit", "-q", "-m", "fixture");
+  assert.equal(playerSignInSourceStamp(root), git("rev-parse", "HEAD:app"));
+  await put("app/player-signin-astro/pages/player-signin.astro", "uncommitted edit");
+  assert.throws(() => playerSignInSourceStamp(root), /app\/ has uncommitted changes/);
+}));
+
+test("the sign-in build is stamped with the committed source it was built from", async () => fixture(async ({ root, put }) => {
+  await put("app/player-signin-dist/player-signin.html", "built");
+  let calls = 0;
+  const run = () => ({ status: 0 });
+  const appTree = await buildPlayerSignIn(root, { run, sourceStamp: async () => { calls++; return "tree-7"; } });
+  assert.equal(appTree, "tree-7"); assert.equal(calls, 2);
+  assert.deepEqual(JSON.parse(await readFile(join(root, "app/player-signin-dist", PLAYER_SIGNIN_STAMP), "utf8")), { appTree: "tree-7" });
+  let moving = 0;
+  await assert.rejects(buildPlayerSignIn(root, { run, sourceStamp: async () => "tree-" + moving++ }), /changed during its build/);
+  await assert.rejects(buildPlayerSignIn(root, { run: () => ({ status: 1 }), sourceStamp: async () => "tree-7" }), /Isolated sign-in build failed/);
+}));
+
 test("Astro release CLI accepts both preservation flags in either order and rejects ambiguous flags", () => {
   const expected = { marketingSnapshot: resolve("manifest.json"), preserveIsolatedEntries: true };
   assert.deepEqual(parseAstroReleaseArgs([]), {});
+  assert.deepEqual(parseAstroReleaseArgs(["--preserve-marketing", "manifest.json", "--preserve-isolated-entries", "--replace-player-signin"]), { ...expected, replacePlayerSignIn: true });
+  assert.deepEqual(parseAstroReleaseArgs(["--replace-player-signin", "--preserve-isolated-entries", "--preserve-marketing", "manifest.json"]), { ...expected, replacePlayerSignIn: true });
+  assert.throws(() => parseAstroReleaseArgs(["--replace-player-signin", "--replace-player-signin"]), /Usage:/);
   assert.deepEqual(parseAstroReleaseArgs(["--preserve-marketing", "manifest.json"]), { marketingSnapshot: resolve("manifest.json") });
   assert.deepEqual(parseAstroReleaseArgs(["--preserve-isolated-entries"]), { preserveIsolatedEntries: true });
   assert.deepEqual(parseAstroReleaseArgs(["--preserve-marketing", "manifest.json", "--preserve-isolated-entries"]), expected);
