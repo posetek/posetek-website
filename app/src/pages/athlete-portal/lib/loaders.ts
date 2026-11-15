@@ -55,10 +55,18 @@ async function findOwnPlayer(uid: string): Promise<any> {
 }
 
 export async function loadAuthenticated(user: any, requestedPlayer: string | null): Promise<PortalData> {
-  let playerDoc: any = requestedPlayer
-    ? await db.collection("players").doc(requestedPlayer).get()
-    : await findOwnPlayer(user.uid);
   let guardianRecord: { playerIds: string[] } | null | undefined;
+  let playerDoc: any;
+  try {
+    playerDoc = requestedPlayer ? await db.collection("players").doc(requestedPlayer).get() : await findOwnPlayer(user.uid);
+  } catch (error: any) {
+    // A parent no longer linked to this child (staff removed the link) goes back to
+    // its picker; every other refusal is reported as before.
+    if (!requestedPlayer || error?.code !== "permission-denied") throw error;
+    try { guardianRecord = await findGuardian(db, user.uid); } catch { throw error; }
+    if (guardianRecord) throw new GuardianChoiceRequired();
+    throw error;
+  }
   if (!requestedPlayer && !playerDoc) {
     // A parent's `/athlete` with no child named opens its only child; otherwise the picker.
     guardianRecord = await findGuardian(db, user.uid);
