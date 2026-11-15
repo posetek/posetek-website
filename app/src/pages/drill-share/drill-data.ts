@@ -6,7 +6,7 @@
 import { visibleAttempts } from "../../lib/result-values";
 import { parseProvisionalEstimates, type ProvisionalEstimate } from "../../lib/provisional-estimates";
 import { cloud, db } from "../../lib/firebase";
-import { findCoach, findPlayer, ownsPlayer } from "../../lib/identity";
+import { actsAsPlayer, findCoach, findPlayer } from "../../lib/identity";
 import { loadClubMembership } from "../../lib/organization-data";
 import { canAccessClubPlayer } from "../../lib/organization";
 import { refreshAdminIdentity } from "../admin/lib/identity";
@@ -38,7 +38,8 @@ export async function resolveAuthenticatedDrillPlayer(
   const playerData = playerDoc.data() || {};
   const player = { id: playerDoc.id, data: playerData };
   if (identity.isAdmin) return { viewer: { role: "admin", uid: user.uid, data: {} }, player };
-  if (ownsPlayer(playerDoc, user.uid)) return { viewer: { role: "player", uid: user.uid, docId: playerDoc.id, data: playerData }, player };
+  // The owner or a linked parent acts as the athlete (Parent accounts plan §4.4).
+  if (actsAsPlayer(playerDoc, user.uid)) return { viewer: { role: "player", uid: user.uid, docId: playerDoc.id, data: playerData }, player };
   // A migrated athlete is authorized only by current canonical membership;
   // stale legacy roster mirrors never substitute for a revoked assignment.
   if (Object.hasOwn(playerData, "organizationId")) {

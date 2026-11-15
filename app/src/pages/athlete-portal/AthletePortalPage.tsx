@@ -13,7 +13,8 @@ import { DRILLS, drillByKey } from "./lib/drills";
 import { allStatsReps, avatarInitials, fullName } from "./lib/metrics";
 import { VIEW_LABELS } from "./lib/mobile";
 import type { Access, PortalData } from "./lib/loaders";
-import { loadAuthenticated, loadShared } from "./lib/loaders";
+import { GuardianChoiceRequired, loadAuthenticated, loadShared } from "./lib/loaders";
+import { enterActingPlayer } from "../../lib/acting-player";
 import { athleteRosterNavigation } from "./lib/navigation";
 import { previewData } from "./lib/preview";
 import DrillDashboard from "./views/DrillDashboard";
@@ -65,6 +66,8 @@ export default function AthletePortalPage() {
   const [athlete, setAthlete] = useState<any>(null);
   const [reps, setReps] = useState<Record<string, any[]>>(() => Object.fromEntries(DRILLS.map(d => [d.key, []])));
   const [provisionalEstimates, setProvisionalEstimates] = useState<ProvisionalEstimate[]>([]);
+  const [guardianPlayerIds, setGuardianPlayerIds] = useState<string[] | null>(null);
+  const leaveActingPlayer = useRef<(() => void) | undefined>(undefined);
   const [view, setView] = useState("home");
   const [viewEpoch, setViewEpoch] = useState(0);
   const [drill, setDrill] = useState("shooting");
@@ -130,6 +133,11 @@ export default function AthletePortalPage() {
     setAthlete(data.athlete);
     setReps(data.reps);
     setProvisionalEstimates(data.access === "shared" ? [] : data.provisionalEstimates || []);
+    setGuardianPlayerIds(data.guardian ? data.guardianPlayerIds || [] : null);
+    // Registered before the child's view mounts, so its first calls already name the child.
+    leaveActingPlayer.current?.(); leaveActingPlayer.current = undefined;
+    const uid = auth.currentUser?.uid;
+    if (data.guardian && uid && data.playerId) leaveActingPlayer.current = enterActingPlayer(uid, data.playerId);
     setView(nextView);
     setDrill(nextDrill);
     setSession(null);
@@ -166,11 +174,16 @@ export default function AthletePortalPage() {
       }
       loadAuthenticated(user, params.get("player"))
         .then(data => { if (!cancelled) finishLoad(data); })
-        .catch(error => fail(error));
+        .catch(error => {
+          if (!cancelled && error instanceof GuardianChoiceRequired) { navigate("/family", { replace: true }); return; }
+          fail(error);
+        });
     });
+    const acting = leaveActingPlayer;
     return () => {
       cancelled = true;
       unsubscribe();
+      acting.current?.(); acting.current = undefined;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -218,9 +231,10 @@ export default function AthletePortalPage() {
 
   const statsReps = () => allStatsReps(reps);
   const ctx: PortalContext = useMemo(
-    () => ({ access: (access || "athlete") as Access, playerId, athlete, notify, allStatsReps: statsReps, provisionalEstimates, allResultReps: () => Object.values(reps).flat() }),
+    () => ({ access: (access || "athlete") as Access, playerId, athlete, notify, allStatsReps: statsReps, provisionalEstimates, allResultReps: () => Object.values(reps).flat(),
+      ...(guardianPlayerIds ? { guardian: true as const, guardianPlayerIds } : {}) }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [access, playerId, athlete, reps, provisionalEstimates],
+    [access, playerId, athlete, reps, provisionalEstimates, guardianPlayerIds],
   );
 
   const activeDrill = drillByKey(drill);

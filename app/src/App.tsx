@@ -11,6 +11,7 @@ const FeedPage = lazy(() => import("./pages/feed/FeedPage"));
 const OrganizationPage = lazy(() => import("./pages/organization/OrganizationPage"));
 const StaffInvitePage = lazy(() => import("./pages/staff-invite/StaffInvitePage"));
 const AthletePortalPage = lazy(() => import("./pages/athlete-portal/AthletePortalPage"));
+const FamilyPage = lazy(() => import("./pages/family/FamilyPage"));
 const DrillSharePage = lazy(() => import("./pages/drill-share/DrillSharePage"));
 const InsightsPage = lazy(() => import("./pages/insights/InsightsPage"));
 const AdminPage = lazy(() => import("./pages/admin/AdminPage"));
@@ -69,6 +70,9 @@ export default function App() {
 
           <Route path="/athlete" element={<AthletePortalPage />} />
           <Route path="/profile.html" element={<AthletePortalPage />} />
+
+          {/* A parent's children (Parent accounts plan §4.5). */}
+          <Route path="/family" element={<FamilyPage />} />
 
           <Route path="/drills/broad-jump" element={<DrillSharePage drill="broadJump" />} />
           <Route path="/broadJumpPage.html" element={<DrillSharePage drill="broadJump" />} />

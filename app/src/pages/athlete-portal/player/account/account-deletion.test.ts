@@ -1,0 +1,102 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { deletionDetail, deletionErrorMessage, deletionPayload, deletionSharedLogin, forgetDeletionReceipts, randomReceiptToken, requestGuardianDeletion, submitGuardianDeletion } from "./account-deletion";
+import type { DeletionTarget } from "./account-deletion";
+
+const child: DeletionTarget = { kind: "player", playerId: "child-a", name: "Avery" };
+function steps() {
+  let uid: string | null = "parent-uid", n = 0;
+  return {
+    setUid: (next: string | null) => { uid = next; },
+    currentUid: vi.fn(() => uid),
+    reauthenticate: vi.fn(async () => {}),
+    newToken: vi.fn(() => String(++n).padStart(64, "a")),
+    send: vi.fn(async (_payload: Record<string, string>): Promise<Record<string, unknown>> => ({ accepted: true, deletingCaller: false })),
+  };
+}
+const request = (target: DeletionTarget, s: ReturnType<typeof steps>, typed = "DELETE") => requestGuardianDeletion({ actorUid: "parent-uid", target, typed, password: "synthetic" }, s);
+
+beforeEach(forgetDeletionReceipts);
+describe("parent deletion requests", () => {
+  it("names a linked child as the target, and the parent account by omitting one", () => {
+    expect(deletionPayload(child, "t")).toEqual({ confirmation: "DELETE", receiptToken: "t", targetType: "player", targetId: "child-a" });
+    expect(deletionPayload({ kind: "self" }, "t")).toEqual({ confirmation: "DELETE", receiptToken: "t" });
+  });
+  it("requires the typed confirmation before anything else", async () => {
+    const s = steps();
+    await expect(request(child, s, "delete")).rejects.toThrow("Type DELETE");
+    expect(s.reauthenticate).not.toHaveBeenCalled(); expect(s.send).not.toHaveBeenCalled();
+  });
+  it("re-authenticates, then sends the child's request with a fresh receipt", async () => {
+    const s = steps();
+    expect(await request(child, s)).toEqual({ receiptToken: "a".repeat(63) + "1", deletingCaller: false });
+    expect(s.reauthenticate.mock.invocationCallOrder[0]).toBeLessThan(s.send.mock.invocationCallOrder[0]);
+    expect(s.send).toHaveBeenCalledWith({ confirmation: "DELETE", receiptToken: "a".repeat(63) + "1", targetType: "player", targetId: "child-a" });
+  });
+  it("reuses the receipt on a retry after a lost response, and drops it after a definitive refusal", async () => {
+    const s = steps();
+    s.send.mockRejectedValueOnce(Object.assign(new Error("timeout"), { code: "functions/deadline-exceeded" }));
+    await expect(request(child, s)).rejects.toThrow("timeout");
+    await request(child, s);
+    expect(s.send.mock.calls[0][0].receiptToken).toBe(s.send.mock.calls[1][0].receiptToken);
+    s.send.mockRejectedValueOnce(Object.assign(new Error("Account deletion is not available yet."), { code: "functions/failed-precondition" }));
+    await expect(request({ kind: "self" }, s)).rejects.toThrow("not available");
+    await request({ kind: "self" }, s);
+    expect(s.send.mock.calls[2][0].receiptToken).not.toBe(s.send.mock.calls[3][0].receiptToken);
+  });
+  it("keeps separate receipts for each child and for the parent account", async () => {
+    const s = steps();
+    await request(child, s); await request({ kind: "player", playerId: "child-b", name: "Bea" }, s); await request({ kind: "self" }, s);
+    expect(new Set(s.send.mock.calls.map(call => call[0].receiptToken)).size).toBe(3);
+  });
+  it("never reports acceptance to a login that replaced the one that asked", async () => {
+    const s = steps();
+    s.reauthenticate.mockImplementationOnce(async () => { s.setUid("someone-else"); });
+    await expect(request(child, s)).rejects.toThrow("account changed"); expect(s.send).not.toHaveBeenCalled();
+    s.setUid("parent-uid");
+    s.send.mockImplementationOnce(async () => { s.setUid("someone-else"); return { accepted: true }; });
+    await expect(request(child, s)).rejects.toThrow("account changed");
+  });
+  it("treats an unaccepted response as unconfirmed", async () => {
+    const s = steps(); s.send.mockResolvedValue({ accepted: false });
+    await expect(request(child, s)).rejects.toThrow("not confirmed");
+  });
+  it("submits a child's deletion for that child, and the parent's own without a target, after re-authenticating", async () => {
+    const calls: [string, Record<string, string>][] = [], reauth = vi.fn(async () => {});
+    const env = { currentUser: () => ({ uid: "parent-uid", email: "parent@example.test", reauthenticate: reauth }),
+      call: vi.fn(async (name: string, data: Record<string, string>) => { calls.push([name, data]); return { data: { accepted: true, deletingCaller: data.targetId === undefined } }; }),
+      newToken: () => "b".repeat(64) };
+    await submitGuardianDeletion({ actorUid: "parent-uid", target: child, typed: "DELETE", password: "synthetic", needsPassword: true }, env);
+    const own = await submitGuardianDeletion({ actorUid: "parent-uid", target: { kind: "self" }, typed: "DELETE", password: "synthetic", needsPassword: true }, env);
+    expect(calls).toEqual([
+      ["requestAccountDeletion", { confirmation: "DELETE", receiptToken: "b".repeat(64), targetType: "player", targetId: "child-a" }],
+      ["requestAccountDeletion", { confirmation: "DELETE", receiptToken: "b".repeat(64) }],
+    ]);
+    expect(reauth).toHaveBeenCalledWith("parent@example.test", "synthetic"); expect(own.deletingCaller).toBe(true);
+  });
+  it("skips the password step for a login without one", async () => {
+    const reauth = vi.fn(async () => {});
+    await submitGuardianDeletion({ actorUid: "parent-uid", target: child, typed: "DELETE", password: "", needsPassword: false },
+      { currentUser: () => ({ uid: "parent-uid", email: null, reauthenticate: reauth }), call: async () => ({ data: { accepted: true } }) });
+    expect(reauth).not.toHaveBeenCalled();
+  });
+  it("tells the parent to ask PoseTek when the child's sign-in also owns another profile, and drops that receipt", async () => {
+    const s = steps();
+    const shared = Object.assign(new Error("server text"), { code: "functions/failed-precondition", details: { reason: "shared-login" } });
+    s.send.mockRejectedValueOnce(shared);
+    const error = await request(child, s).catch(failure => failure);
+    expect(deletionErrorMessage(error, "fallback")).toBe(deletionSharedLogin);
+    expect(deletionSharedLogin).toMatch(/Ask PoseTek to delete this player/);
+    // Definitive: the receipt is not reused for a later request.
+    await request(child, s);
+    expect(s.send.mock.calls[0][0].receiptToken).not.toBe(s.send.mock.calls[1][0].receiptToken);
+    expect(deletionErrorMessage(Object.assign(new Error("x"), { code: "functions/failed-precondition", details: { reason: "other" } }), "fallback")).toBe("fallback");
+  });
+  it("describes what each delete removes, as the server now does it", () => {
+    expect(deletionDetail({ kind: "self" })).toBe("Deletes your parent account, its links to your players and the AI conversations this sign-in created. Your players' profiles, recordings and training history stay. This cannot be undone.");
+    expect(deletionDetail(child)).toBe("Deletes Avery's profile, recordings, results and training history, and Avery's own sign-in if there is one. Your parent account stays. This cannot be undone.");
+  });
+  it("makes 64-character lowercase hex receipts", () => {
+    expect(randomReceiptToken()).toMatch(/^[a-f0-9]{64}$/);
+    expect(randomReceiptToken(bytes => { bytes.fill(255); })).toBe("f".repeat(64));
+  });
+});

@@ -11,7 +11,8 @@ import { canAccessClubPlayer } from "../../../lib/organization";
 import { refreshAdminIdentity } from "../../admin/lib/identity";
 import firebase, { auth, cloud, db, storage } from "../../../lib/firebase";
 import { captureIssue } from "../../../lib/user-issues";
-import { findCoach as findCoachByUid, findPlayer, ownsPlayer } from "../../../lib/identity";
+import { actingPlayerScope } from "../../../lib/acting-player";
+import { findCoach as findCoachByUid, findGuardian, findPlayer, guardsPlayer, ownsPlayer } from "../../../lib/identity";
 import type { Drill } from "./drills";
 import { DRILLS } from "./drills";
 import { accepted, fullName, mergeUnique, normalizeRep, num, repNumber, sessionNumber } from "./metrics";
@@ -28,6 +29,18 @@ export interface PortalData {
   athlete: any;
   reps: Record<string, any[]>;
   provisionalEstimates?: ProvisionalEstimate[];
+  /**
+   * The signed-in login is a linked parent acting as this athlete. Access stays "athlete" so every
+   * owner gate in the player view passes unchanged; only parent-aware places read this.
+   */
+  guardian?: true;
+  /** A parent's children, from its own guardians record (this child alone when that is unreadable). */
+  guardianPlayerIds?: string[];
+}
+
+/** A parent opened `/athlete` without naming a child and has none or several: the picker decides. */
+export class GuardianChoiceRequired extends Error {
+  constructor() { super("Choose a player."); this.name = "GuardianChoiceRequired"; }
 }
 
 const emptyReps = (): Record<string, any[]> => Object.fromEntries(DRILLS.map(d => [d.key, []]));
@@ -42,20 +55,30 @@ async function findOwnPlayer(uid: string): Promise<any> {
 }
 
 export async function loadAuthenticated(user: any, requestedPlayer: string | null): Promise<PortalData> {
-  const playerDoc: any = requestedPlayer
+  let playerDoc: any = requestedPlayer
     ? await db.collection("players").doc(requestedPlayer).get()
     : await findOwnPlayer(user.uid);
+  let guardianRecord: { playerIds: string[] } | null | undefined;
+  if (!requestedPlayer && !playerDoc) {
+    // A parent's `/athlete` with no child named opens its only child; otherwise the picker.
+    guardianRecord = await findGuardian(db, user.uid);
+    if (guardianRecord && guardianRecord.playerIds.length !== 1) throw new GuardianChoiceRequired();
+    if (guardianRecord) playerDoc = await db.collection("players").doc(guardianRecord.playerIds[0]).get();
+  }
   if (!playerDoc?.exists) throw new Error("This athlete profile could not be found.");
   const own = ownsPlayer(playerDoc, user.uid);
   const identity = await refreshAdminIdentity(user);
+  // A linked parent acts as the athlete (never an admin: the server refuses to link one).
+  const guardian = !own && !identity.isAdmin && guardsPlayer(playerDoc, user.uid);
+  const acting = own || guardian;
   const player = playerDoc.data() || {};
-  let access: Access = own ? "athlete" : "shared";
+  let access: Access = acting ? "athlete" : "shared";
   if (identity.isAdmin) access = "admin";
-  else if (!own && typeof player.organizationId === "string" && player.organizationId) {
+  else if (!acting && typeof player.organizationId === "string" && player.organizationId) {
     const membership = await loadClubMembership(user.uid, player.organizationId);
     if (!canAccessClubPlayer(membership, player)) throw new Error("You do not have permission to view this athlete.");
     access = membership!.role;
-  } else if (!own) {
+  } else if (!acting) {
     const coach = await findCoach(user.uid);
     const coachData = coach?.data?.() || {};
     const linked = [player.coachUID, player.coachId, player.coachDocId];
@@ -77,7 +100,16 @@ export async function loadAuthenticated(user: any, requestedPlayer: string | nul
   } catch (error) {
     console.warn("[profile] Free Record listing unavailable", error);
   }
-  return { access, playerId: playerDoc.id, athlete, reps, provisionalEstimates: parseProvisionalEstimates((effective.data as any).provisionalEstimates) };
+  const data: PortalData = { access, playerId: playerDoc.id, athlete, reps, provisionalEstimates: parseProvisionalEstimates((effective.data as any).provisionalEstimates) };
+  if (guardian) {
+    if (guardianRecord === undefined) {
+      try { guardianRecord = await findGuardian(db, user.uid); } catch { guardianRecord = null; }
+    }
+    const ids = guardianRecord?.playerIds || [];
+    data.guardian = true;
+    data.guardianPlayerIds = ids.includes(playerDoc.id) ? ids : [playerDoc.id, ...ids];
+  }
+  return data;
 }
 
 export async function listFreeRecordStorage(playerId: string): Promise<any[]> {
@@ -261,8 +293,9 @@ export async function loadTeamStandings(playerId: string): Promise<Record<string
   return boardsFromPlayers(players);
 }
 
-export async function loadAthleteStandings(): Promise<Record<string, { id: string; name: string; value: number }[]>> {
-  const result = await cloud.httpsCallable("getTeamLeaderboard")({});
+/** `playerId` only for a parent viewing that child; an owner's request stays `{}`. */
+export async function loadAthleteStandings(playerId?: string | null): Promise<Record<string, { id: string; name: string; value: number }[]>> {
+  const result = await cloud.httpsCallable("getTeamLeaderboard")(actingPlayerScope(auth.currentUser?.uid, playerId));
   const team: any = (result && result.data) || {};
   const players = (team.athletes || []).map((athlete: any) => ({
     id: athlete.id,

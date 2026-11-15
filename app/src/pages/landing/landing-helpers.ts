@@ -3,7 +3,7 @@
 // admission-callable payloads and the ?returnTo= allowlist. No Firebase, no
 // DOM — everything here is covered by landing-helpers.test.ts.
 
-export type SignupTab = "playerCode" | "organization" | "independent";
+export type SignupTab = "playerCode" | "parentCode" | "organization" | "independent";
 export type OrganizationRole = "player" | "coach";
 export type CoachOrgAction = "create" | "join";
 export interface CoachOrgChoice {
@@ -63,6 +63,12 @@ export interface PlayerCodeSignupFields {
 
 export function validatePlayerCodeSignup(fields: PlayerCodeSignupFields): string | null {
   if (!fields.code) return "Enter your player code";
+  if (fields.password !== fields.confirmPassword) return "Passwords don't match";
+  return null;
+}
+
+export function validateParentCodeSignup(fields: PlayerCodeSignupFields): string | null {
+  if (!fields.code) return "Enter your parent code";
   if (fields.password !== fields.confirmPassword) return "Passwords don't match";
   return null;
 }
@@ -169,6 +175,7 @@ const RETURN_TO_ALLOWED_PATHS = new Set([
   "/feedback.html",
   "/feed",
   "/athlete",
+  "/family",
   "/roster",
   "/drills/broad-jump",
   "/drills/change-of-direction",

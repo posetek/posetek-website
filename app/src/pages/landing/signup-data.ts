@@ -12,6 +12,8 @@ import {
   redeemPlayerSignupCodePayload,
 } from "./landing-helpers";
 import type { OrganizationRole } from "./landing-helpers";
+import { guardianInvitationCheck } from "./parent-invitation-link";
+import type { GuardianInvitationCheck } from "./parent-invitation-link";
 
 // Create coach document in Firestore (the Coach tab still writes this directly)
 export async function createCoachDocument(
@@ -59,6 +61,23 @@ export async function discardFailedSignup(user: any): Promise<void> {
 /** Binds an unclaimed, freshly invited player document to the caller. */
 export function redeemPlayerSignupCode(code: string): Promise<any> {
   return cloud.httpsCallable("redeemPlayerSignupCode")(redeemPlayerSignupCodePayload(code));
+}
+
+/**
+ * Preflight for a parent code: `{ valid }` and, while redemption is switched off, `reason:
+ * "redemption-disabled"`; never a child's name (Parent accounts plan §11.3). A server that never
+ * sends `reason` reads as before.
+ */
+export async function checkGuardianInvitation(code: string): Promise<GuardianInvitationCheck> {
+  return guardianInvitationCheck((await cloud.httpsCallable("validateGuardianInvitation")({ code })).data);
+}
+export async function validateGuardianInvitation(code: string): Promise<boolean> {
+  return (await checkGuardianInvitation(code)).valid;
+}
+
+/** Links every child on a parent invitation to the signed-in login; serves sign-up and Add player. */
+export function redeemGuardianInvitation(code: string): Promise<any> {
+  return cloud.httpsCallable("redeemGuardianInvitation")({ code });
 }
 
 /** Adds the caller to an organization by fresh code as a player or coach. */

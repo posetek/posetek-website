@@ -21,7 +21,7 @@ export default defineConfig({
           const url = new URL(request.url || "/", "http://localhost");
           // Mirror Netlify's application fallback during Astro development,
           // without intercepting source modules, generated assets, or marketing.
-          if (/^\/(?:signin|kickai\.html|feed(?:\.html)?|organization|join|roster|coachesview\.html|dashboard|programs|insights|admin(?:\/.*)?|athlete|profile\.html|drills\/.*|broadJumpPage\.html|changeOfDirectionPage\.html|dribblingPage\.html|privacy(?:\.html)?|support)\/?$/.test(url.pathname)) {
+          if (/^\/(?:signin|kickai\.html|feed(?:\.html)?|organization|join|roster|coachesview\.html|dashboard|programs|insights|admin(?:\/.*)?|athlete|family|profile\.html|drills\/.*|broadJumpPage\.html|changeOfDirectionPage\.html|dribblingPage\.html|privacy(?:\.html)?|support)\/?$/.test(url.pathname)) {
             request.url = "/application" + url.search;
           }
           next();

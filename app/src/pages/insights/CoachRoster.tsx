@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import SignupStatus from "../admin/views/SignupStatus";
+import { parentLinkedFrom } from "../../lib/guardians";
 import { TESTING_LABELS } from "./lib/expanded";
 import type { ExpandedInsights, ExpandedPlayer } from "./lib/expanded";
 import { coachFollowUp, coachTestingLabel } from './lib/coachFollowUp';
@@ -38,7 +39,7 @@ export default function CoachRoster({ data, search, page, onSearch, onPrevious, 
           <td data-label="Testing"><span className={`insights-status ${player.testing.status === "fullyTested" ? "full" : player.testing.status === "partiallyTested" ? "partial" : ""}`}>{TESTING_LABELS[player.testing.status] || player.testing.status}</span><span className="insights-subtle">{player.testing.exercisesComplete}/6</span>{player.testing.hasDateUnknownAttempts ? <span className="insights-subtle">Date unknown; needs review</span> : null}</td>
           <td data-label="Training · 14 days">{!player.performance ? "Training unavailable" : !player.performance.activePlan ? "No active plan" : player.performance.sessionsPlanned == null ? "Schedule unavailable" : player.performance.sessionsDone == null ? "Completion unavailable" : `${player.performance.sessionsDone} of ${player.performance.sessionsPlanned}`}</td>
           <td data-label="Workouts completed">{player.workouts.completed}</td>
-          <td data-label="Signup actions" className="coach-roster-signup">{preview ? <span className="insights-subtle">Preview · invitation actions disabled</span> : <SignupStatus playerId={player.id} playerName={name} registered={player.registered} reloadKey={data.generatedAtMillis} variant="club" />}</td>
+          <td data-label="Signup actions" className="coach-roster-signup">{preview ? <span className="insights-subtle">Preview · invitation actions disabled</span> : <SignupStatus playerId={player.id} playerName={name} registered={player.registered} reloadKey={data.generatedAtMillis} variant="club" parentLinked={parentLinkedFrom(player)} />}</td>
         </tr>;
       })}</tbody></table></div> : <p>{search ? "No players match that name. Try another name or clear the search." : "No players match this selection. Check your filters or add a player below."}</p>}
     <div className="insights-pagination"><span>{data.players.length ? `${start}–${end} of ${data.pagination.total}` : "0 players"}{search ? " · Name search only changes this roster; reporting totals stay the same." : ""}</span><div><button type="button" className="quiet-button" disabled={page === 0} onClick={onPrevious}>Previous</button><button type="button" className="quiet-button" disabled={!data.pagination.nextCursor} onClick={onNext}>Next</button></div></div>

@@ -15,6 +15,8 @@ export type RecapPreview = 'loading' | 'failed' | 'empty' | undefined;
 
 type Props = {
   access: string;
+  /** A parent viewing a child: the heading names the child, as for staff. */
+  guardian?: boolean;
   playerName: string;
   playerId: string | null;
   active: boolean;
@@ -27,7 +29,7 @@ type Props = {
 };
 
 /** The app's `AthleteWeekRecap`: the first card on Home. */
-export default function WeekRecap({ access, playerName, playerId, active, preview, previewState, feedUnavailable, report, includePersonal = false }: Props) {
+export default function WeekRecap({ access, guardian = false, playerName, playerId, active, preview, previewState, feedUnavailable, report, includePersonal = false }: Props) {
   const [recent, setRecent] = useState<RecentTraining | null>(() => preview && !previewState ? previewTraining(new Date())
     : preview && previewState === 'empty' ? { logs: [], sessions: [], storedWorkoutTitles: {} } : null);
   const [failed, setFailed] = useState(preview && previewState === 'failed');
@@ -61,7 +63,7 @@ export default function WeekRecap({ access, playerName, playerId, active, previe
 
   return <div className="home-recap">
     <div className="home-recap-header">
-      <p className="home-recap-title"><span className="material-symbols-outlined" aria-hidden="true">calendar_today</span>{weekTitle(access, playerName)}</p>
+      <p className="home-recap-title"><span className="material-symbols-outlined" aria-hidden="true">calendar_today</span>{weekTitle(access, playerName, guardian)}</p>
       <span className="home-caption">Last 7 days</span>
     </div>
     {summary ? <>

@@ -43,9 +43,11 @@ export class UsageQueue {
   private release?: () => void;
   private closed = false;
   private lockHeld = false;
+  /** A parent session's queue: every batch names the child (see validSavedBatch). */
+  private withPlayer: boolean;
   constructor(uid: string, instanceId: string, storage: UsageStorage | undefined,
-              locks: UsageLocks | undefined, now: () => number) {
-    this.uid = uid; this.storage = storage; this.locks = locks; this.now = now;
+              locks: UsageLocks | undefined, now: () => number, withPlayer = false) {
+    this.uid = uid; this.storage = storage; this.locks = locks; this.now = now; this.withPlayer = withPlayer;
     this.key = `${STORE_PREFIX}${uid}:${instanceId}`;
   }
 
@@ -66,7 +68,7 @@ export class UsageQueue {
     try {
       if (!raw || raw.length > 4_000_000) return [];
       const decoded = JSON.parse(raw), rows = Array.isArray(decoded) ? decoded : decoded?.version === 2 ? decoded.batches : [];
-      return Array.isArray(rows) ? rows.filter(row => validSavedBatch(row, this.now())).slice(-MAX_QUEUE) : [];
+      return Array.isArray(rows) ? rows.filter(row => validSavedBatch(row, this.now(), this.withPlayer)).slice(-MAX_QUEUE) : [];
     } catch { return []; }
   }
 
@@ -105,11 +107,11 @@ export class UsageQueue {
 
   append(batch: UsageBatch) {
     if (this.closed) return;
-    this.batches = [...this.batches, batch].filter(b => validSavedBatch(b, this.now())).slice(-MAX_QUEUE);
+    this.batches = [...this.batches, batch].filter(b => validSavedBatch(b, this.now(), this.withPlayer)).slice(-MAX_QUEUE);
     this.persist();
   }
   head() {
-    this.batches = this.batches.filter(b => validSavedBatch(b, this.now()));
+    this.batches = this.batches.filter(b => validSavedBatch(b, this.now(), this.withPlayer));
     return this.batches[0];
   }
   acknowledge(batch: UsageBatch) { this.batches = this.batches.filter(b => identity(b) !== identity(batch)); this.persist(); }

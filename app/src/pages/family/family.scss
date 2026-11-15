@@ -1,0 +1,17 @@
+// The parent's picker reuses the club player list (organization.scss); only the row link and the
+// header are its own.
+.pt-club.family-page {
+  .family-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; }
+  .club-shell { max-width: 640px; }
+  .club-section-title h1 { margin: 0; }
+  .family-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding: 12px 0; border-bottom: 1px solid #264137; color: #f1f8f3; text-decoration: none; }
+  .family-row strong { overflow-wrap: anywhere; }
+  .family-row:hover strong { text-decoration: underline; }
+  .family-row .material-symbols-outlined { color: #b7f34a; flex: none; }
+  .family-row-text { min-width: 0; }
+  .family-time { display: block; font-size: 13px; color: #afc3b7; }
+  .family-add { margin-top: 18px; }
+  @media (max-width: 640px) {
+    .club-section-title { flex-direction: row; align-items: center; }
+  }
+}
