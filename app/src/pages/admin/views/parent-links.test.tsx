@@ -151,6 +151,18 @@ describe("parent links controller", () => {
     await r.controller.confirmCopy(["sibling", "not-offered"]);
     expect(r.calls.ensure).toEqual([["player", "sibling"]]); expect(r.calls.copied).toEqual([CODE]); expect(r.view().choosing).toBeNull();
   });
+  it("names a ticked sibling on the new pending link without another read", async () => {
+    // Found in the local emulator journey: the new row read "another player, Avery Demo".
+    const candidates = [{ playerId: "sibling", firstName: "Sam", lastName: "Synthetic" }];
+    const r = run([guardians({ siblingCandidates: candidates })]);
+    r.value.names = vi.fn(async () => ({}));
+    await r.controller.load(); await r.controller.copy("link");
+    await r.controller.confirmCopy(["sibling"]);
+    expect(r.view().names.sibling).toBe("Sam Synthetic");
+    const html = render({ data: r.view().data, names: r.view().names });
+    expect(html).toContain("Parent link pending · Example Player, Sam Synthetic");
+    expect(html).not.toContain("another player");
+  });
   it("keeps the open link's children when siblings are added", async () => {
     const open = guardians({ invitation: invitation(["player", "sibling"]), siblingCandidates: [{ playerId: "cousin", firstName: "Cam", lastName: "Synthetic" }] });
     const r = run([open]);

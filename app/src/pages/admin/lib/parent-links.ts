@@ -129,7 +129,10 @@ export function parentLinksController(playerId: string, port: ParentLinksPort, p
       if (!alive || !port.isCurrent() || !choosing || view.pending !== null) return;
       const allowed = new Set(choosing.candidates.map(candidate => candidate.playerId));
       const ticket = ++generation;
-      set({ pending: "copying", message: "", error: false });
+      // A ticked sibling is named on the new pending link from its suggestion, with no extra read.
+      const named = Object.fromEntries(choosing.candidates.filter(candidate => selected.includes(candidate.playerId))
+        .map(candidate => [candidate.playerId, `${candidate.firstName} ${candidate.lastName}`.trim()]).filter(([, name]) => name));
+      set({ pending: "copying", message: "", error: false, names: { ...view.names, ...named } });
       await deliver(ticket, choosing.kind, [...new Set([...choosing.fixed, ...selected.filter(id => allowed.has(id))])]);
     },
     cancel() { if (alive) set({ ...closed }); },
