@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve, basename } from "node:path";
-import { composeAstroRelease, parseAstroReleaseArgs, buildPlayerSignIn, playerSignInRouting, PLAYER_SIGNIN_STAMP } from "./build-astro-release.mjs";
+import { spawnSync } from "node:child_process";
+import { composeAstroRelease, parseAstroReleaseArgs, buildPlayerSignIn, playerSignInRouting, playerSignInSourceStamp, PLAYER_SIGNIN_STAMP } from "./build-astro-release.mjs";
 import { sha1, mergeAstroAssets } from "./astro-assets.mjs";
 
 async function fixture(run) {
@@ -393,6 +394,24 @@ test("sign-in replacement requires both preservation modes, a baseline entry and
     });
   }
 });
+
+test("a non-hashed sign-in dependency or a collision with unprotected release output is refused before any output changes", async () => {
+  for (const state of ["unhashed", "output"]) await fixture(async context => {
+    const { root, files } = context;
+    const s = await signInFixture(context, state === "unhashed" ? { rootChunk: "/_astro/PlayerSignInRoot.js" } : {});
+    if (state === "output") await context.put("production-dist" + s.rootChunk, "stale unprotected bytes");
+    await assert.rejects(composeAstroRelease(root, { ...s.options, replacePlayerSignIn: true }), state === "unhashed" ? /unexpected dependency/ : /collides with the release output/);
+    for (const [path, bytes] of files) assert.equal(await readFile(join(root, "production-dist" + path), "utf8"), bytes, `${state}: ${path}`);
+  });
+});
+
+test("the real source stamp refuses uncommitted app/ changes and names the committed app/ tree otherwise", async () => fixture(async ({ root, put }) => {
+  const git = (...args) => { const result = spawnSync("git", ["-C", root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", ...args], { encoding: "utf8" }); assert.equal(result.status, 0, result.stderr); return result.stdout.trim(); };
+  git("init", "-q"); git("add", "app"); git("commit", "-q", "-m", "fixture");
+  assert.equal(playerSignInSourceStamp(root), git("rev-parse", "HEAD:app"));
+  await put("app/player-signin-astro/pages/player-signin.astro", "uncommitted edit");
+  assert.throws(() => playerSignInSourceStamp(root), /app\/ has uncommitted changes/);
+}));
 
 test("the sign-in build is stamped with the committed source it was built from", async () => fixture(async ({ root, put }) => {
   await put("app/player-signin-dist/player-signin.html", "built");

@@ -1,6 +1,7 @@
 // Check the isolated marketing pages, preserved application, deep links, and assets.
 // Authenticated editing/activation requires a separate authorized account pass.
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), assert = require('node:assert/strict');
+const { verifyPreservedFiles } = require('./release-preserved-files.cjs');
 const httpOnly = process.argv.includes('--http-only');
 const applicationRelease = process.argv.includes('--application-release');
 const root = path.resolve(__dirname, '..'), dist = path.join(root, 'production-dist');
@@ -39,29 +40,18 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
       base = 'http://127.0.0.1:' + server.address().port;
     }
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'deployment/homepage-baseline.json'), 'utf8'));
-    let reviewedApplication;
-    if (applicationRelease) {
-      const receipt = JSON.parse(fs.readFileSync(path.join(root, '.netlify/application-release-build.json'), 'utf8'));
-      assert.equal(receipt.baselineDeploymentId, manifest.deploymentId, 'Release receipt belongs to another baseline');
-      reviewedApplication = receipt.application;
-      assert.equal(reviewedApplication?.path, '/application.html', 'Release receipt must name the application document');
-      assert.match(reviewedApplication.sha, /^[a-f0-9]{40}$/, 'Release receipt needs a SHA-1');
-      assert.ok(Number.isSafeInteger(reviewedApplication.size) && reviewedApplication.size > 0, 'Release receipt needs an exact positive size');
-    }
+    const receipt = applicationRelease ? JSON.parse(fs.readFileSync(path.join(root, '.netlify/application-release-build.json'), 'utf8')) : null;
     const applicationPath = manifest.applicationPath ?? '/index.html';
     const preserveApplicationEntry = applicationPath === '/application.html';
     assert.ok(applicationPath === '/index.html' || preserveApplicationEntry, 'Unsupported baseline application path');
     assert.ok(manifest.files.some(file => file.path === applicationPath), 'Baseline application entry missing');
     if (preserveApplicationEntry) assert.ok(!manifest.files.some(file => file.path === '/index.html' || file.path.startsWith('/marketing/assets/')), 'Preservation baseline overlaps marketing output');
     assert.ok(!manifest.files.some(file => file.path === '/coaches' || file.path.startsWith('/coaches/')), 'Preservation baseline overlaps coaches output');
-    const hash = bytes => require('node:crypto').createHash('sha1').update(bytes).digest('hex');
-    for (const file of manifest.files) {
-      const expected = reviewedApplication && file.path === '/application.html' ? reviewedApplication : file;
-      let bytes = fs.readFileSync(path.join(dist, !preserveApplicationEntry && file.path === '/index.html' ? 'application.html' : file.path.slice(1)));
-      if (!preserveApplicationEntry && file.path === '/index.html') bytes = bytes.toString('utf8').replace(/\n<!-- homepage-navigation:start -->[\s\S]*?<!-- homepage-navigation:end -->\n/g, '');
-      assert.equal(typeof bytes === 'string' ? Buffer.byteLength(bytes) : bytes.length, expected.size, 'Verified file size changed: ' + file.path);
-      assert.equal(hash(bytes), expected.sha, 'Verified file changed: ' + file.path);
-    }
+    // /application.html, and /player-signin.html when the release replaced it, are checked against
+    // the receipt; every other baseline file against the baseline.
+    const reviewed = verifyPreservedFiles({ manifest, receipt, read: file => fs.readFileSync(path.join(dist, file.slice(1))) });
+    const reviewedApplication = reviewed.find(record => record.path === '/application.html');
+    const reviewedSignIn = reviewed.find(record => record.path === '/player-signin.html');
     const marketingPages = [
       { routes: ['/', '/index.html'], marker: '<!-- posetek-marketing-entry -->' },
       { routes: ['/coaches', '/coaches/', '/coaches/index.html'], marker: '<!-- posetek-coaches-entry -->' },
@@ -128,7 +118,7 @@ const cases = ['/signin', '/privacy', '/profile.html', '/insights', '/insights?o
       await page.close();
     }
     }
-    const report = { base, homepageRoutes: 2, coachesRoutes: 3, preservedFiles: manifest.files.length - (reviewedApplication ? 1 : 0), ...(reviewedApplication ? { reviewedApplication } : {}), applicationRoutes: cases.length, assets, results, browserChecks: httpOnly ? 'not exercised by this invocation' : 'passed', authenticatedWorkflows: 'not exercised' };
+    const report = { base, homepageRoutes: 2, coachesRoutes: 3, preservedFiles: manifest.files.length - reviewed.length, ...(reviewedApplication ? { reviewedApplication } : {}), ...(reviewedSignIn ? { reviewedSignIn } : {}), applicationRoutes: cases.length, assets, results, browserChecks: httpOnly ? 'not exercised by this invocation' : 'passed', authenticatedWorkflows: 'not exercised' };
     fs.writeFileSync(path.join(out, 'production-entry-test-report.json'), JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify(report, null, 2));
   } finally { await browser?.close(); server?.close(); }

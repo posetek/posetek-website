@@ -65,6 +65,7 @@ async function fixture(mode, options, run) {
     await copyFile(join(source, 'astro-assets.mjs'), join(directory, 'scripts/astro-assets.mjs'));
     await copyFile(join(source, 'website-icons.mjs'), join(directory, 'scripts/website-icons.mjs'));
     await copyFile(join(source, 'test-production-entry.cjs'), join(directory, 'scripts/test-production-entry.cjs'));
+    await copyFile(join(source, 'release-preserved-files.cjs'), join(directory, 'scripts/release-preserved-files.cjs'));
 
     const responses = Object.fromEntries([...files].map(([path, bytes]) => [new URL(path, 'https://pinned.example').href, bytes]));
     responses['https://posetek.net/'] = marketing;
