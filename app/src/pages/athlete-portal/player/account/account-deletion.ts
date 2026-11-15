@@ -7,6 +7,25 @@
 export type DeletionTarget = { kind: "self" } | { kind: "player"; playerId: string; name: string };
 export const DELETE_CONFIRMATION = "DELETE";
 
+/**
+ * THE switch for a parent's two delete actions (per child, and the parent's own account).
+ * Off: production's account-deletion functions are still the older copy, which refuses a
+ * parent's child request and, for a parent's own account, leaves the parent listed on every
+ * child and erases records the parent created, contrary to what the delete page promises.
+ * Set to true once both server halves (requestAccountDeletion with the parent target and the
+ * parent-aware deletion worker) are live. Players, coaches and admins are unaffected.
+ */
+export const PARENT_DELETION_LIVE = false;
+
+/**
+ * Whether a parent session offers its delete actions. Only the local emulator end-to-end mode
+ * (a development server against the new backend code) may show them early; every production
+ * build gets PARENT_DELETION_LIVE.
+ */
+export function parentDeletionEnabled(env: { mode?: string; dev?: boolean } = { mode: import.meta.env?.MODE, dev: import.meta.env?.DEV }): boolean {
+  return PARENT_DELETION_LIVE || (env.mode === "posetek-emulator-e2e" && env.dev === true);
+}
+
 export function deletionTitle(target: DeletionTarget): string {
   return target.kind === "self" ? "Delete parent account" : `Delete ${target.name}'s data`;
 }

@@ -7,7 +7,7 @@ import AISharingControl from '../AISharingControl';
 import PlayerAgeField from '../PlayerAgeField';
 import { useCloseOnHistoryNavigation } from '../PlayerShell';
 import GuardianDeletion from './GuardianDeletion';
-import { deletionTitle } from './account-deletion';
+import { deletionTitle, parentDeletionEnabled } from './account-deletion';
 import type { DeletionTarget } from './account-deletion';
 import './account.css';
 
@@ -16,6 +16,8 @@ type Props = {
   onClose: () => void;
   /** The signed-in account's email; defaults to Firebase Auth's current user. */
   email?: string | null;
+  /** Whether a parent is offered its delete actions; the build's switch unless a test says otherwise. */
+  parentDeletion?: boolean;
 };
 
 type Page = 'root' | 'aiSharing' | { delete: DeletionTarget };
@@ -28,10 +30,14 @@ type Page = 'root' | 'aiSharing' | { delete: DeletionTarget };
  * support answer instead). The age row is website-only and has no place in the app.
  *
  * A parent sees one delete action per linked child and one for the parent account (plan §4.9),
- * each naming what it deletes, in place of the support link.
+ * each naming what it deletes, in place of the support link, but only while the parent deletion
+ * switch (`PARENT_DELETION_LIVE` in account-deletion.ts) is on; until then a parent sees no
+ * delete row at all and the delete page cannot open.
  */
-export default function AccountSettings({ ctx, onClose, email = auth.currentUser?.email ?? null }: Props) {
-  const [page, setPage] = useState<Page>('root');
+export default function AccountSettings({ ctx, onClose, email = auth.currentUser?.email ?? null, parentDeletion = parentDeletionEnabled() }: Props) {
+  const [requested, setPage] = useState<Page>('root');
+  // A delete page is reachable only through the rows below; it never opens for a parent while off.
+  const page: Page = typeof requested === 'object' && !parentDeletion ? 'root' : requested;
   const done = useRef<HTMLButtonElement>(null), back = useRef<HTMLButtonElement>(null);
   const preview = ctx.access === 'preview', own = ctx.access === 'athlete' || preview;
   const children = useGuardianChildren(ctx);
@@ -58,10 +64,10 @@ export default function AccountSettings({ ctx, onClose, email = auth.currentUser
           {email ? <p className="account-row">{email}</p> : null}
           {own && ctx.playerId ? <div className="account-row account-age"><PlayerAgeField playerId={ctx.playerId} athlete={ctx.athlete} editable preview={preview} /></div> : null}
           <button type="button" className="account-row account-link" onClick={() => setPage('aiSharing')}>AI sharing<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
-          {children ? <>
+          {children ? parentDeletion ? <>
             {children.map(child => <button key={child.playerId} type="button" className="account-row account-link account-delete" onClick={() => setPage({ delete: child })}>{deletionTitle(child)}<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>)}
             <button type="button" className="account-row account-link account-delete" onClick={() => setPage({ delete: { kind: 'self' } })}>{deletionTitle({ kind: 'self' })}<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>
-          </> : <a className="account-row account-link" href="/support#delete-account">Delete account<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>}
+          </> : null : <a className="account-row account-link" href="/support#delete-account">Delete account<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>}
         </div>
         <div className="account-list">
           <a className="account-row account-external" href="/privacy">Privacy policy</a>
