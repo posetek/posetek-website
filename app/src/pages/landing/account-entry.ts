@@ -1,11 +1,11 @@
-import { getSafeReturnToUrl, playerHomeRoute } from "./landing-helpers";
+import { getSafeReturnToUrl, playerStatsRoute } from "./landing-helpers";
 
 export type AccountRole = "admin" | "manager" | "coach" | "independent" | "player" | "pending";
 
 /** Routing is a convenience. Destination pages and server membership checks still enforce access. */
 export function accountDestination(role: AccountRole, playerId: string | null, search: string, base: string, origin: string): string {
   const home = role === "admin" ? "/admin" : role === "manager" ? "/organization"
-    : role === "coach" || role === "independent" ? "/insights" : role === "player" && playerId ? playerHomeRoute(playerId) : "/join";
+    : role === "coach" || role === "independent" ? "/insights" : role === "player" && playerId ? playerStatsRoute(playerId) : "/join";
   const target = getSafeReturnToUrl(search, base, origin);
   if (!target) return home;
   const path = new URL(target).pathname;

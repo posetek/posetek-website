@@ -1,0 +1,33 @@
+---
+import PlayerSignInRoot from "../../src/astro/PlayerSignInRoot";
+import WebsiteIcons from "../../astro/components/WebsiteIcons.astro";
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#04130e" />
+    <title>Player account | PoseTek</title>
+    <script is:inline>
+      // Strip the invitation before any import, third-party code or render.
+      const signupUrl = new URL(window.location.href);
+      const signupFragment = new URLSearchParams(signupUrl.hash.slice(1));
+      const signupValues = [...signupUrl.searchParams.getAll("playerCode"), ...signupFragment.getAll("playerCode")];
+      if (signupValues.length) {
+        const normalized = signupValues.map(value => value.trim());
+        window.__posetekPlayerInvitation = { present: true, code: normalized.every(value => value === normalized[0]) && /^[A-Za-z0-9-]{6,64}$/.test(normalized[0]) ? normalized[0] : "" };
+        signupUrl.searchParams.delete("playerCode"); signupFragment.delete("playerCode"); signupUrl.hash = signupFragment.toString();
+        window.history.replaceState(window.history.state, "", signupUrl.href);
+      }
+    </script>
+    <WebsiteIcons />
+  </head>
+  <body>
+    <Fragment set:html={"<!-- posetek-player-signin-entry -->"} />
+    <div id="root"><PlayerSignInRoot client:only="react" /></div>
+    <noscript>Enable JavaScript to create or sign in to your existing player account.</noscript>
+  </body>
+</html>

@@ -99,14 +99,10 @@ export function coachHomeRoute(): string {
   return "/roster?userType=coach";
 }
 
-/** Published player sign-in destination. */
-export function playerHomeRoute(playerId: string): string {
-  return "/athlete?player=" + encodeURIComponent(playerId) + "&userType=player";
-}
-
-/** Published player signup destination, with an optional resolved player ID. */
-export function playerSignupRoute(playerId: string | null | undefined): string {
-  return "/athlete?userType=player" + (playerId ? "&player=" + encodeURIComponent(playerId) : "");
+/** Default player landing. Organization signup resolves ownership in the portal. */
+export function playerStatsRoute(playerId?: string): string {
+  const player = playerId ? "player=" + encodeURIComponent(playerId) + "&" : "";
+  return "/athlete?" + player + "userType=player&view=stats";
 }
 
 // MARK: - Admission callables (functions/admission.js) — payload shapes

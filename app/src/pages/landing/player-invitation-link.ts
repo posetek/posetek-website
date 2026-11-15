@@ -18,6 +18,12 @@ export function readPlayerInvitationLink(href: string): { invitation: PlayerInvi
 }
 
 export function capturePlayerInvitationLink(browser: Pick<Window, "location" | "history">): void {
+  const boot = browser as typeof browser & { __posetekPlayerInvitation?: PlayerInvitationLink };
+  if (boot.__posetekPlayerInvitation) {
+    const value = boot.__posetekPlayerInvitation;
+    captured = { present: value.present === true, code: /^[A-Za-z0-9-]{6,64}$/.test(value.code) ? value.code : "" };
+    delete boot.__posetekPlayerInvitation;
+  }
   const result = readPlayerInvitationLink(browser.location.href);
   if (result.invitation.present) {
     captured = result.invitation;

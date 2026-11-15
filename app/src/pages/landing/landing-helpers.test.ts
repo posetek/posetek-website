@@ -7,9 +7,8 @@ import {
   generateCode,
   getSafeReturnToUrl,
   joinOrganizationPayload,
-  playerHomeRoute,
   playerIdFromRedeemResult,
-  playerSignupRoute,
+  playerStatsRoute,
   redeemPlayerSignupCodePayload,
   validateIndependentSignup,
   validateNameAndPassword,
@@ -134,16 +133,12 @@ describe("post-auth destinations", () => {
     expect(coachHomeRoute()).toBe("/roster?userType=coach");
   });
 
-  it("sends a signed-in player to the feed with the encoded id first", () => {
-    expect(playerHomeRoute("abc123")).toBe("/athlete?player=abc123&userType=player");
-    expect(playerHomeRoute("a b/c")).toBe("/athlete?player=a%20b%2Fc&userType=player");
+  it("opens Stats with the encoded canonical player ID when known", () => {
+    expect(playerStatsRoute("a b/c")).toBe("/athlete?player=a%20b%2Fc&userType=player&view=stats");
   });
 
-  it("builds the signup destination with userType first and an optional player id", () => {
-    expect(playerSignupRoute(null)).toBe("/athlete?userType=player");
-    expect(playerSignupRoute(undefined)).toBe("/athlete?userType=player");
-    expect(playerSignupRoute("")).toBe("/athlete?userType=player");
-    expect(playerSignupRoute("p 1")).toBe("/athlete?userType=player&player=p%201");
+  it("opens Stats through the owned profile lookup after organization signup", () => {
+    expect(playerStatsRoute()).toBe("/athlete?userType=player&view=stats");
   });
 });
 
