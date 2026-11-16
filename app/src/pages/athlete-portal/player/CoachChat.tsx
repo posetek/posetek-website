@@ -39,9 +39,6 @@ type Props = { playerId: string; preview: boolean; capability?: string; context?
 
 type Sheet = '' | 'history' | 'memory' | 'sharing' | 'voice';
 
-/** The refusals that mean AI sharing is off for this account or browser. */
-const SHARING_REFUSALS: unknown[] = ['ai_consent_required', 'ai_consent_unavailable'];
-
 /** The app's `V4LoadingRow`: the pose loader, glowing unless motion is reduced, and a caption. */
 function LoadingRow({ text }: { text: string }) {
   return <div className="coach-loading-row" role="status"><img src={loaderIcon} alt="" width={32} height={32} /><span>{text}</span></div>;
@@ -70,8 +67,6 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const [runnerPass, setRunnerPass] = useState<number | null>(null), [runnerAllowed, setRunnerAllowed] = useState(false);
   const [confirmForgetAll, setConfirmForgetAll] = useState(false);
   const [transcriptError, setTranscriptError] = useState('');
-  // The embedded chat offers AI sharing only after the server refuses a turn because it is off.
-  const [sharingAsk, setSharingAsk] = useState(false);
   const controller = useRef<AbortController | null>(null), conversation = useRef<string | null>(null);
   const historyLoadingRef = useRef(false);
   const turn = useRef(0), messageRoot = useRef<HTMLDivElement>(null), afterPanel = useRef<HTMLDivElement>(null);
@@ -108,11 +103,16 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const hasAfter = !!afterMessages;
   useEffect(() => {
     if (!tab) {
-      const root = messageRoot.current, panel = afterPanel.current;
+      // The page is the embedded chat's scroll view too, with the message box pinned to its bottom edge.
+      const el = section.current, panel = afterPanel.current;
+      if (!el || el.offsetParent === null) return;
       // With a proposal under the reply, show where it begins and the end of the reply above it,
       // not its far end; otherwise follow the conversation to the bottom.
-      if (root && panel) root.scrollTop += panel.getBoundingClientRect().top - root.getBoundingClientRect().top - 72;
-      else root?.scrollTo({ top: root.scrollHeight });
+      if (panel) {
+        const header = el.parentElement?.querySelector(':scope > .v4-header-compact');
+        const covered = Math.max(0, header?.getBoundingClientRect().bottom ?? 0);
+        window.scrollTo({ top: window.scrollY + panel.getBoundingClientRect().top - covered - 72 });
+      } else if (messages.length || answer) window.scrollTo({ top: document.documentElement.scrollHeight });
       return;
     }
     // The page is the Coach tab's scroll view; a hidden tab never moves it.
@@ -136,11 +136,34 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   }, [canPlayRunner, playerId]);
   useEffect(() => {
     // The composer stays on the bottom edge even when the transcript is short.
-    if (!tab || !active) return;
+    if (!active) return;
     const measure = () => { const el = section.current; if (el) el.style.setProperty('--coach-top', `${Math.max(0, el.getBoundingClientRect().top + window.scrollY)}px`); };
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
+  }, [tab, active]);
+  useEffect(() => {
+    // The on-screen keyboard covers the bottom of the layout viewport without resizing it (iOS Safari).
+    // The visual viewport says how much is covered, so the message box can rest directly above it.
+    const viewport = typeof window !== 'undefined' ? window.visualViewport : null, el = section.current;
+    if (!viewport || !el || !active) return;
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const covered = Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop));
+        // Only a keyboard-sized gap counts; a collapsing browser toolbar is far smaller.
+        const keyboard = covered > 120 ? `${covered}px` : '0px';
+        if (el.style.getPropertyValue('--chat-keyboard') === keyboard) return;
+        el.style.setProperty('--chat-keyboard', keyboard);
+        // Keep the latest message in view above the box while the keyboard is up.
+        if (keyboard !== '0px' && el.contains(document.activeElement)) window.scrollTo({ top: document.documentElement.scrollHeight });
+      });
+    };
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    return () => { cancelAnimationFrame(frame); viewport.removeEventListener('resize', update); viewport.removeEventListener('scroll', update); };
   }, [tab, active]);
   useEffect(() => {
     // One to five lines, as the app's composer (`lineLimit(1...5)`).
@@ -154,7 +177,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const reset = () => {
     turn.current++; controller.current?.abort(); controller.current = null;
     historyLoadingRef.current = false; setHistoryLoading(false);
-    conversation.current = null; setMessages([]); setAnswer(''); setSending(false); setError(''); setErrorCode(''); setSharingAsk(false); onDraft?.(null);
+    conversation.current = null; setMessages([]); setAnswer(''); setSending(false); setError(''); setErrorCode(''); onDraft?.(null);
     if (tab) { setErrorRequest(''); setMemoryBusy(false); setHandoffReady(false); setTranscriptError(''); setStatus(''); setDraft(''); }
   };
   const openHistory = async (item: Row) => {
@@ -192,7 +215,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const send = async (text: string, memoryAction?: Row) => {
     if (!canChat || controller.current || historyLoadingRef.current || (!memoryAction && !text.trim())) return;
     const token = ++turn.current;
-    controller.current = new AbortController(); setSending(true); setError(''); setErrorCode(''); setSharingAsk(false); setAnswer(''); onDraft?.(null);
+    controller.current = new AbortController(); setSending(true); setError(''); setErrorCode(''); setAnswer(''); onDraft?.(null);
     const optimistic: Row = { role: 'user', content: text };
     if (tab) {
       setErrorRequest(''); setStatus(''); setTranscriptError('');
@@ -267,7 +290,6 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
         } else {
           setError(stopped ? 'Reply stopped. Check the saved conversation before sending again.' : e.message);
           setErrorCode(typeof e.code === 'string' ? e.code : '');
-          setSharingAsk(SHARING_REFUSALS.includes(e.code));
           if (!memoryAction) setDraft(text);
         }
       }
@@ -279,7 +301,29 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   // Match native: the chat envelope requires text even for code-only memory commands.
   const memoryCommand = (kind: string, extra: Row = {}) => void send('Update coach memory', { kind, ...(kind !== 'list' ? { expectedRevision: memory?.workspace.revision } : {}), ...extra });
 
-  if (!tab) return <section className="player-chat" aria-busy={sending || historyLoading}>
+  // AI sharing off: both layouts show the Coach tab's banner and permission sheet, and resend the
+  // kept words once sharing is allowed and the sheet closes.
+  const sharingOff = errorCode === 'ai_consent_required';
+  const openSharing = (retry: { resend: boolean; memory: boolean }) => { sharingRetry.current = { allowed: false, ...retry }; setSheet('sharing'); };
+  const closeSharing = () => {
+    const retry = sharingRetry.current;
+    sharingRetry.current = { allowed: false, resend: false, memory: false };
+    // The retry runs once the permission sheet is gone (`AISharingOffNotice.resume`).
+    setSheet(retry.allowed && retry.memory ? 'memory' : '');
+    if (!retry.allowed) return;
+    if (sharingOff) clearError();
+    if (retry.memory) memoryCommand('list');
+    else if (retry.resend && draft.trim()) void send(draft.trim());
+  };
+  const sharingBanner = <div className="coach-banner coach-banner-sharing" role="alert">
+    <SharingOffNotice action={draft.trim() ? 'send' : undefined} onTurnOn={() => openSharing({ resend: !!draft.trim(), memory: false })} />
+    <button type="button" className="coach-dismiss" aria-label="Dismiss" onClick={clearError}><span className="material-symbols-outlined" aria-hidden="true">close</span></button>
+  </div>;
+  const sharingSheet = sheet === 'sharing' && <CoachSheet title="AI sharing" onDone={closeSharing}>
+    <AISharingControl preview={preview} onAllowed={() => { sharingRetry.current.allowed = true; }} />
+  </CoachSheet>;
+
+  if (!tab) return <section className="player-chat" ref={section} aria-busy={sending || historyLoading}>
     <div className="player-actions">
       <button type="button" disabled={historyLoading} onClick={() => setShowHistory(v => !v)}>History</button>
       <button type="button" onClick={reset}>New conversation</button>
@@ -302,38 +346,24 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       {sending && <p role="status">{status || 'The PoseTek coach is thinking…'}</p>}
       {historyLoading && <p role="status">Loading your conversation…</p>}
     </div>
-    {error && <div className="player-error" role="alert"><p>{error}</p>{conversation.current && <button type="button" disabled={sending} onClick={() => void openHistory({ id: conversation.current, workoutTarget: context?.workoutRef })}>Load saved conversation</button>}</div>}
+    {error && (sharingOff ? sharingBanner : <div className="player-error" role="alert"><p>{error}</p>{conversation.current && <button type="button" disabled={sending} onClick={() => void openHistory({ id: conversation.current, workoutTarget: context?.workoutRef })}>Load saved conversation</button>}</div>)}
     {!canChat && <p>{config ? 'The PoseTek coach is temporarily unavailable. Your history is still here.' : 'Connecting to the PoseTek coach…'}</p>}
-    {/* Account settings keep the everyday AI sharing control; here it appears only for a refused turn. */}
-    {sharingAsk && <AISharingControl preview={preview} onAllowed={() => {
-      if (SHARING_REFUSALS.includes(errorCode)) { setError(''); setErrorCode(''); }
-    }} />}
+    {/* Nothing sits under the message box: it is the last thing on the page. */}
+    {sending && <button className="text-button" onClick={() => controller.current?.abort()}>Stop reply</button>}
     <form className="chat-composer" onSubmit={e => { e.preventDefault(); void send(draft.trim()); }}>
       <textarea aria-label="Message the PoseTek coach" value={draft} onChange={e => setDraft(e.target.value)} maxLength={capability === 'workout_chat' ? 500 : 2000} placeholder="Message the PoseTek coach…" rows={2} disabled={sending || historyLoading} />
       <button type="submit" disabled={!canChat || sending || historyLoading || !draft.trim()} aria-label="Send message"><span className="material-symbols-outlined">arrow_upward</span></button>
     </form>
-    {sending && <button className="text-button" onClick={() => controller.current?.abort()}>Stop reply</button>}
+    {sharingSheet}
   </section>;
 
   // ---- The Coach tab (AICoachTabView, V4) ----
   const memoryAvailable = workspace && canChat;
   const { proposed } = coachMemories(memory);
-  const sharingOff = errorCode === 'ai_consent_required';
   const shownError = error ? { message: coachErrorMessage(errorCode), refCode: coachRefCode(errorRequest), sharingOff } : null;
   const canSend = canChat && !sending && !historyLoading && !!draft.trim();
   const last = messages.at(-1);
   const handoff = onHandoff && handoffReady && !sending && last?.role === 'assistant' && validHandoff(last.workoutRequest, playerId) ? last.workoutRequest : null;
-  const openSharing = (retry: { resend: boolean; memory: boolean }) => { sharingRetry.current = { allowed: false, ...retry }; setSheet('sharing'); };
-  const closeSharing = () => {
-    const retry = sharingRetry.current;
-    sharingRetry.current = { allowed: false, resend: false, memory: false };
-    // The retry runs once the permission sheet is gone (`AISharingOffNotice.resume`).
-    setSheet(retry.allowed && retry.memory ? 'memory' : '');
-    if (!retry.allowed) return;
-    if (sharingOff) clearError();
-    if (retry.memory) memoryCommand('list');
-    else if (retry.resend && draft.trim()) void send(draft.trim());
-  };
   const submit = () => { if (canSend) { void send(draft.trim()); composerInput.current?.blur(); } };
   const toolRow = <div className="coach-tools">
     <CoachHistoryMenu onHistory={() => setSheet('history')} onNew={reset} />
@@ -374,10 +404,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       <div className="coach-v4-bottom">
         {streaming && status && <p className="coach-tool-row" role="status"><span className="coach-spinner" aria-hidden="true" />{status}</p>}
         {shownError && (shownError.sharingOff
-          ? <div className="coach-banner coach-banner-sharing" role="alert">
-            <SharingOffNotice action={draft.trim() ? 'send' : undefined} onTurnOn={() => openSharing({ resend: !!draft.trim(), memory: false })} />
-            <button type="button" className="coach-dismiss" aria-label="Dismiss" onClick={clearError}><span className="material-symbols-outlined" aria-hidden="true">close</span></button>
-          </div>
+          ? sharingBanner
           : <div className="coach-banner coach-banner-error" role="alert">
             <span className="material-symbols-outlined coach-banner-icon" aria-hidden="true">warning</span>
             <div><p>{shownError.message}</p>{shownError.refCode && <p className="coach-ref" aria-label={`Reference code ${[...shownError.refCode].join(' ')}`}>Ref {shownError.refCode}</p>}</div>
@@ -417,9 +444,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
         confirmingForgetAll={confirmForgetAll} onConfirmForgetAll={setConfirmForgetAll} onCommand={memoryCommand}
         onRefresh={() => { clearError(); memoryCommand('list'); }} onTurnOnSharing={() => openSharing({ resend: false, memory: true })} />
     </CoachSheet>}
-    {sheet === 'sharing' && <CoachSheet title="AI sharing" onDone={closeSharing}>
-      <AISharingControl preview={preview} onAllowed={() => { sharingRetry.current.allowed = true; }} />
-    </CoachSheet>}
+    {sharingSheet}
     {sheet === 'voice' && <CoachSheet title="Voice mode" onDone={() => setSheet('')}>
       <p className="coach-voice-note">Voice mode is available in the PoseTek iPhone app.</p>
     </CoachSheet>}
