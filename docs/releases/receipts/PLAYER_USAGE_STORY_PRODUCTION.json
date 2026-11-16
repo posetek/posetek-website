@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "status": "published-and-verified",
+  "productionDeploy": "6afb675237bfe4f2da0726ba",
+  "publishedAtUtc": "2026-11-16T20:28:04.431Z",
+  "predecessorDeploy": "6af8d52f2fac61a1bf491cc8",
+  "predecessorCapturedAtUtc": "2026-11-16T19:52:17.347Z",
+  "websiteSourcePR": 170,
+  "websiteFoundationPR": 165,
+  "websiteSourceCommit": "891b02b0b753b2a5d559f2284e363155a7767975",
+  "websiteMergeCommit": "529d3022ad94964e37ddafab1b03ec558ca79e1e",
+  "browserTestCorrectionCommit": "903dfd4d1e430fa959b92b2da2be6b3c32dbc6e7",
+  "websiteRuntimeBase": "20574aa496b0d9a6c7a5e14cb0efe8a82db9b75e",
+  "websiteRuntimeCommit": "c3ae5fe11233eb4211a34b9623001ba2b0914b80",
+  "signInRuntimeBase": "c657e986a168bb9cea8af24e6553a68b7b007951",
+  "signInRuntimeCommit": "12b756d7908a46df2b01005b467f082ab7097465",
+  "backendSourcePR": 173,
+  "nativeSourcePR": 148,
+  "artifactManifestSha256": "2c3730066a59ef2406c6d3d21bd62e95013c9995a8e7385b88fce3de3ad78272",
+  "candidate": {
+    "servedFiles": 2971,
+    "providerRecords": 2972,
+    "preservedFiles": 2899,
+    "preservedEncryptedReports": 114,
+    "addedHashedAssets": 70,
+    "removedFiles": 0,
+    "orderedHeaders": 13,
+    "orderedRedirects": 12,
+    "replaced": [
+      { "path": "/application.html", "sha": "7a44561c99678d36f1092b470a5e7c81da5dcd30", "size": 16039 },
+      { "path": "/player-signin.html", "sha": "43d021e36c22f7961c3eac4fcdca00a22156eb5c", "size": 6604 }
+    ],
+    "restoredLazyStylesheet": { "path": "/_astro/HomePage.ZVZ5isRi.css", "sha": "54e77f0fb43c422723120e11e85104091061cd65", "size": 7146 }
+  },
+  "draftVerification": {
+    "deployId": "6afb626912150583fcb04179",
+    "status": "passed",
+    "exactProviderFiles": 2971,
+    "exactHttpFiles": 193,
+    "routeChecks": 10,
+    "sameRouting": true,
+    "sameFunctionBindings": true,
+    "providerCheckedAtUtc": "2026-11-16T20:08:04.020Z",
+    "browsersCheckedAtUtc": "2026-11-16T20:09:47.900Z",
+    "browsers": ["Chromium", "WebKit"],
+    "syntheticOnly": true,
+    "externalWrites": 0
+  },
+  "localVerification": {
+    "applicationAndSignInBuilds": "passed",
+    "focusedRuntimeTests": 102,
+    "runtimeBrowserSuites": "Usage, Journeys, Stats funnel and player collection passed in Chromium and WebKit.",
+    "testCorrectionBrowserRuns": 3,
+    "testCorrectionReview": "Independent review of the exact revision passed with no findings.",
+    "preservationBuild": "passed for all 2969 protected files",
+    "preservationAndEntryTests": 30
+  },
+  "websiteHostedCI": {
+    "status": "failed on source revision",
+    "failure": "WebKit read the previous journey request while starting a filtered request.",
+    "ownerDecision": "Owner explicitly authorized deployment without waiting for hosted CI on November 16, 2026."
+  },
+  "productionVerification": {
+    "exactProviderFiles": 2971,
+    "exactHttpFiles": 193,
+    "routeChecks": 10,
+    "sameRouting": true,
+    "sameFunctionBindings": true,
+    "providerCheckedAtUtc": "2026-11-16T20:28:31.582Z",
+    "browsersCheckedAtUtc": "2026-11-16T20:28:30.254Z",
+    "browsers": ["Chromium", "WebKit"],
+    "browserFixturesOnly": true,
+    "externalWrites": 0,
+    "signedInAdmin": {
+      "status": "passed",
+      "organization": "Vacaville United Soccer Club",
+      "scope": "All teams",
+      "checks": [
+        "Journey follows One-pager tracking, offers all three platforms and retains the Stats funnel.",
+        "Mobile Paths selection survived refresh and browser Back.",
+        "Usage preserved the existing cards and displayed desktop Weekly participation for November 16 week to date against November 9–15 in Pacific time.",
+        "Desktop browser coverage, unsplit legacy web and the mobile phone/tablet distinction were shown.",
+        "iOS correctly showed unavailable comparison coverage and the empty supported-build lists."
+      ],
+      "successfulUsageReadsMillis": [37589, 37290],
+      "consoleErrors": 0
+    }
+  },
+  "protectedBaselineFiles": 2969,
+  "localRecoveryMappings": 37,
+  "backendRelease": {
+    "featureCommit": "ebfc027b6dfecc456a6a3e24df25d0623d37d47e",
+    "canonicalMergedCommit": "cd1f830fb50b898bb7564f961a409b044d7ae011",
+    "hostedCI": "GitHub billing blocked jobs. Owner authorized deployment.",
+    "functionVersions": {
+      "getClubInsightsV2": 16,
+      "recordInsightUsage": 12,
+      "recordPlayerJourney": 1,
+      "getAdminPlayerJourneys": 1,
+      "processAccountDeletion": 9,
+      "retryAccountDeletions": 9
+    },
+    "ttl": {
+      "journeyRetentionDays": 90,
+      "playerJourneySessionsV1": { "field": "expiresAt", "state": "ACTIVE" },
+      "playerJourneyActorsV1": { "field": "expiresAt", "state": "ACTIVE" }
+    },
+    "insightsFocusedTests": 83,
+    "servingDeletionVerification": {
+      "ordinarySyntheticRequestAccepted": true,
+      "ordinaryFirstSweepObserved": false,
+      "resumedWorkerRemovedProfileSessionAndActorBeforeCleanup": true,
+      "resumedWorkerReachedVerifyingWithFirstSweepComplete": true,
+      "syntheticFixturesCleaned": true
+    },
+    "firstSignInDefinition": "First explicit sign-in observed since the current 90-day marker was initialized."
+  },
+  "nativeRelease": {
+    "sourceCommit": "8b0581062387de1ecdab8ef029d561f421051140",
+    "fullAppAndDeviceAcceptance": "pending",
+    "verifiedBuilds": []
+  },
+  "activation": {
+    "verifiedAtUtc": "2026-11-16T20:27:30.335Z",
+    "journeysEnabled": true,
+    "ownUsageEnabled": true,
+    "legacyUsageEnabled": true,
+    "journeySupportedIOSBuilds": [],
+    "usageSupportedIOSBuilds": []
+  }
+}

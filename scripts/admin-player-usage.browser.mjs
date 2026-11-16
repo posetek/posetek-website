@@ -51,11 +51,18 @@ try {
       await journey.getByText('Last observed here: 1 / 4 ended sessions that visited this page', { exact: true }).waitFor();
       await journey.getByRole('link', { name: 'Paths', exact: true }).click();
       await journey.getByRole('table', { name: 'Common player paths' }).getByText('Stats → Workouts', { exact: true }).waitFor();
+      const requestsBeforeFilters = await page.evaluate(() => window.fixturePlayerJourneyRequests.length);
       await journey.getByRole('combobox', { name: 'Player history', exact: true }).selectOption('existing');
       await journey.getByRole('combobox', { name: 'Entry', exact: true }).selectOption('sign_in');
+      // The previous Paths table can still be present while the new request starts.
+      const filteredRequest = await page.waitForFunction(before => {
+        const requests = window.fixturePlayerJourneyRequests;
+        const request = requests.at(-1);
+        return requests.length > before && request?.cohort === 'existing' && request.entryFilter === 'sign_in'
+          && request.clientKind === 'desktop_web' && request;
+      }, requestsBeforeFilters);
       await journey.getByRole('table', { name: 'Common player paths' }).waitFor();
-      const sent = await page.evaluate(() => window.fixturePlayerJourneyRequests.at(-1));
-      assert.equal(sent.cohort, 'existing'); assert.equal(sent.entryFilter, 'sign_in'); assert.equal(sent.clientKind, 'desktop_web');
+      assert.equal((await filteredRequest.jsonValue()).organizationId, 'northfield');
       await page.reload();
       assert.equal(await journey.getByRole('combobox', { name: 'Entry', exact: true }).inputValue(), 'sign_in');
       await journey.getByRole('link', { name: 'Players', exact: true }).click();
