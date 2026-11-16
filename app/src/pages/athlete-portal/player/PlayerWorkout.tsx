@@ -20,6 +20,7 @@ import RestTimerControls from './RestTimerControls';
 import { chosenRest, resizeRestTimer, startRestTimer } from './rest-choice';
 import type { RestChoices, RestKind } from './rest-choice';
 import { savedWorkoutAllowsFeedback } from './feedback-invitation';
+import { reportStatsJourneyOutcome } from './stats/use-stats-journey';
 
 export default function PlayerWorkout({ workout, store, playerId, preview: sample, walkthrough = false, onExit, onCompleted }: {
   workout: Row; store: PlayerWorkoutStore; playerId: string; preview: boolean;
@@ -102,6 +103,8 @@ export default function PlayerWorkout({ workout, store, playerId, preview: sampl
     };
   }, [preview, owner, activitySessionId, workout.source, blocks]);
   useEffect(() => { if (clock.runningSince === null) activity.current?.pause(); }, [clock.runningSince]);
+  // The Stats page journey's "started a workout": this guided workout is now running here.
+  useEffect(() => { if (!sample) reportStatsJourneyOutcome('workout', playerId); }, [sample, playerId]);
   useEffect(() => {
     const report = () => window.dispatchEvent(new CustomEvent('posetek:usage-workout', { detail: { active: document.visibilityState === 'visible' && accountValid && tabActive.current && !painStopped && !!usageElement.current?.getClientRects().length && !preview && !summary && !chat && !log?.endedAt && reconcileClock(clock, Date.now()).runningSince !== null } }));
     report(); const timer = setInterval(report, 500);
