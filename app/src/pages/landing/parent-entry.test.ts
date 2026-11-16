@@ -12,12 +12,14 @@ const route = (playerIds: string[], target = "") => accountDestination("parent",
 const stats = (id: string) => `/athlete?player=${id}&userType=player&view=stats`;
 
 describe("parent destinations", () => {
-  it("opens the one child exactly as that child's own sign-in does, else the picker", () => {
+  it("opens the one child's Stats, else the picker", () => {
     expect(familyDestination([])).toBe("/family");
     expect(familyDestination(["child-a"])).toBe(stats("child-a"));
     expect(familyDestination(["child-a", "child-b", "child-c"])).toBe("/family");
     expect(route([])).toBe("/family");
-    expect(route(["child-a"])).toBe(accountDestination("player", "child-a", "", base, origin));
+    // A parent keeps its Stats landing; the child's own sign-in names no tab (Stats first, then Workouts).
+    expect(route(["child-a"])).toBe(stats("child-a"));
+    expect(accountDestination("player", "child-a", "", base, origin)).toBe("/athlete?player=child-a&userType=player");
     expect(route(["child-a", "child-b", "child-c"])).toBe("/family");
   });
   it("follows a safe player-facing return target and refuses staff, admin, feed and activation targets", () => {

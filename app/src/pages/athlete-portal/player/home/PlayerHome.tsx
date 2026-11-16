@@ -54,7 +54,7 @@ export default function PlayerHome({ ctx, preview, active, athlete, report, pers
   const platformTime = usePlatformTime(ctx.playerId, parentSession);
 
   return <>
-    <PlayerHeader title="Home" />
+    <PlayerHeader title="Social" />
     {!preview && !parentSession && <ConfigProbe key={configAttempt} preview={false} onConfig={setConfig} />}
     <div className="home-stack">
       <WeekRecap key={`${ctx.playerId}:${auth.currentUser?.uid ?? ''}`} access={ctx.access} guardian={ctx.guardian === true} playerName={playerName} playerId={ctx.playerId} active={active}

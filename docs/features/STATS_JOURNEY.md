@@ -1,6 +1,7 @@
 # Stats page journey
 
-The signed-in Stats page (the page a player lands on) records what visitors do there, and
+The signed-in Stats page (where an account's first workspace open lands; later opens land on
+Workouts, `player/landing.ts`) records what visitors do there, and
 the admin **Journey** tab reads it. Numbers only: no session recording, no page addresses,
 no typed text and no third-party analytics. Records live in our own backend.
 

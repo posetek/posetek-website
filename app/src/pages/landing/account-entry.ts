@@ -1,4 +1,4 @@
-import { getSafeReturnToUrl, playerStatsRoute } from "./landing-helpers";
+import { getSafeReturnToUrl, playerStatsRoute, playerWorkspaceRoute } from "./landing-helpers";
 
 export type AccountRole = "admin" | "manager" | "coach" | "independent" | "player" | "parent" | "pending";
 
@@ -13,7 +13,7 @@ export function familyDestination(playerIds: readonly string[]): string {
 /** Routing is a convenience. Destination pages and server membership checks still enforce access. */
 export function accountDestination(role: AccountRole, playerId: string | null, search: string, base: string, origin: string, playerIds: readonly string[] = []): string {
   const home = role === "admin" ? "/admin" : role === "manager" ? "/organization"
-    : role === "coach" || role === "independent" ? "/insights" : role === "player" && playerId ? playerStatsRoute(playerId)
+    : role === "coach" || role === "independent" ? "/insights" : role === "player" && playerId ? playerWorkspaceRoute(playerId)
     : role === "parent" ? familyDestination(playerIds) : "/join";
   const target = getSafeReturnToUrl(search, base, origin);
   if (!target) return home;
