@@ -88,15 +88,22 @@ export function createStatsJourney({ send, env, build = JOURNEY_BUILD }: {
   // if any (an inactive one ends while the page stays shown, and activity starts the next).
   let shown: string | null = null, visit: Visit | null = null, latest: Visit | null = null, previous: JourneyPlace | null = null;
   let disabled = false, inView = false, via: { value: JourneyVia; at: number } | null = null, lastActor: string | null = null;
+  // Account and athlete pairs whose landing the server refused as permission-denied (a linked parent
+  // while the recorder accepts only the athlete and staff, or staff who lost access): asked once per page session.
+  const refused = new Set<string>();
+  const pair = (target: Visit) => JSON.stringify([target.actor, target.playerId]);
   // One sequential queue: a visit's `landed` is answered before any later event of it goes.
   let queue: Promise<void> = Promise.resolve();
   const deliver = (target: Visit, event: JourneyEvent) => {
-    if (disabled || target.dead) return;
+    if (disabled || target.dead || refused.has(pair(target))) return;
     const payload = { schemaVersion: 1, visitId: target.id, playerId: target.playerId, ...event } as JourneyPayload;
     queue = queue.then(async () => {
-      if (disabled || target.dead) return;
+      if (disabled || target.dead || refused.has(pair(target))) return;
       let result: JourneyResponse;
-      try { result = await send(payload, target.actor); } catch { result = null; }
+      try { result = await send(payload, target.actor); } catch (error) {
+        result = null;
+        if (event.event === 'landed' && String((error as { code?: unknown } | null)?.code ?? '').replace(/^functions\//, '') === 'permission-denied') refused.add(pair(target));
+      }
       if (result?.accepted === false && result.reason === 'disabled') disabled = true;
       // A landing that was not accepted (for any reason, or an error) leaves a dead visit: nothing more
       // goes for it. A late refusal means the server takes nothing more for it either.

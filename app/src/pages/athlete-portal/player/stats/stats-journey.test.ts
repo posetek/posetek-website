@@ -467,6 +467,32 @@ describe('Stats page journey: delivery', () => {
     expect(p.sent.map(payload => payload.event)).toEqual(['landed']);
   });
 
+  it('asks once per page session for an account the server refuses for this athlete, and keeps the others', async () => {
+    // A linked parent viewing a child: the recorder refuses the landing as permission-denied.
+    const p = page();
+    p.signIn('parent-account');
+    p.respond(async payload => { if (payload.playerId === 'child-1') throw Object.assign(new Error('You do not have access to this player.'), { code: 'functions/permission-denied' }); return { accepted: true }; });
+    p.show('stats', 'child-1'); p.journey.reach(true); p.advance(40000); p.journey.clicked('plan'); p.show('plan'); p.journey.outcome('plan', 'child-1');
+    for (const place of ['home', 'stats', 'coach', 'stats'] as const) p.show(place, 'child-1');
+    p.emit('pointerdown'); p.advance(60000);
+    await p.journey.settled();
+    expect(p.sent.map(payload => [payload.event, payload.playerId])).toEqual([['landed', 'child-1']]);
+    // Another child the server accepts still records (the refused child's visit leaves unsent).
+    p.show('stats', 'child-2'); p.show('home', 'child-2');
+    await p.journey.settled();
+    expect(p.sent.map(payload => [payload.event, payload.playerId])).toEqual([['landed', 'child-1'], ['landed', 'child-2'], ['reached', 'child-2'], ['left', 'child-2']]);
+    // Another account signed in on this page (the athlete themself) is asked again.
+    p.signIn('athlete-account'); p.respond(async () => ({ accepted: true })); p.show('stats', 'child-1');
+    await p.journey.settled();
+    expect(p.sent.slice(-2).map(payload => [payload.event, payload.playerId])).toEqual([['landed', 'child-1'], ['reached', 'child-1']]);
+    expect(p.accounts.slice(-2)).toEqual(['athlete-account', 'athlete-account']);
+    // Any other failure, an outage for instance, drops only that visit (see above).
+    const q = page();
+    q.respond(async payload => { if (payload.event === 'landed' && q.sent.length === 1) throw Object.assign(new Error('offline'), { code: 'functions/internal' }); return { accepted: true }; });
+    q.show('stats'); q.show('home'); q.show('stats'); q.show('coach');
+    expect((await q.events()).map(event => event.event)).toEqual(['landed', 'landed', 'left']);
+  });
+
   it('swallows a send that throws at once and keeps the page going', async () => {
     const p = page();
     p.respond(() => { throw new Error('boom'); });
