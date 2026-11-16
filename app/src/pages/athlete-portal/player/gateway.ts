@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { auth, db } from '../../../lib/firebase';
 import type { Row } from './execution';
 import { aiSharingError, assertAISharingEnabled } from './ai-sharing';
+import { reportStatsJourneyOutcome } from './stats/use-stats-journey';
 
 export type Frame = { event: string; data: Row };
 export function parseFrame(frame: string): Frame | null {
@@ -35,11 +36,16 @@ export async function streamCoach(body: Row, signal: AbortSignal, onFrame: (fram
   if (!response.body) throw new Error('No reply received. Try again.');
   const reader = response.body.getReader(), decoder = new TextDecoder();
   let buffer = '', completed = false;
+  // The Stats page journey's "messaged the coach" (docs/features/STATS_JOURNEY.md): the gateway took
+  // a Coach-tab message (`pose_chat`, the only capability that tab uses; not a memory command) past
+  // its checks and is answering. Every refusal arrives as an error, which never gets this far.
+  let answering = body.capability !== 'pose_chat' || !!body.context?.memoryAction;
   const apply = (text: string) => {
     const frame = parseFrame(text); if (!frame) return;
     if (frame.event === 'error') throw aiSharingError(frame.data.code, frame.data.message || 'The coach could not finish.');
     if (completed) return;
     if (frame.event === 'done') completed = true;
+    if (!answering && frame.event !== 'start') { answering = true; reportStatsJourneyOutcome('coach', String(body.playerId)); }
     onFrame(frame);
   };
   try {
