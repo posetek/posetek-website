@@ -2,7 +2,7 @@ import { DRILLS } from '../lib/drills';
 import type { PortalContext } from '../views/shared';
 import type { Row } from './execution';
 import type { PersonalWorkoutStore } from './use-personal-workouts';
-import { PLAYER_SUBROUTE_KEYS, canonicalPlayerView } from './PlayerShell';
+import { PLAYER_LANDING_VIEW, PLAYER_SUBROUTE_KEYS, canonicalPlayerView, namedPlayerView } from './PlayerShell';
 import type { PlayerView } from './PlayerShell';
 import type { ReportState } from './report';
 
@@ -30,12 +30,13 @@ const WORKOUT_SCREENS = ['plan', 'saved', 'history', 'tests'];
  * destination that replaced them: `view=training` (report and notification links) opens the
  * workout hub, as the app's report link does; `drill=`/`view=drills` open that test's results
  * inside Workouts; `view=profile` opens Stats; leaderboard and feed links open Home. The hub is
- * the Workouts root, so the retired `screen=workout` and `page=activities` open it too.
+ * the Workouts root, so the retired `screen=workout` and `page=activities` open it too. A link that
+ * names no tab opens `landing`, the workspace's default (`landing.ts`).
  */
-export function playerRoute(search: string): PlayerRoute {
+export function playerRoute(search: string, landing: PlayerView = PLAYER_LANDING_VIEW): PlayerRoute {
   const params = new URLSearchParams(search), raw = params.get('view'), requested = params.get('screen');
   const test = params.has('drill') || raw === 'drills';
-  const view = test ? 'workouts' : canonicalPlayerView(raw);
+  const view = test ? 'workouts' : canonicalPlayerView(raw, landing);
   let screen: PlayerScreen = null;
   if (view === 'workouts') {
     if (test) screen = 'test';
@@ -48,6 +49,12 @@ export function playerRoute(search: string): PlayerRoute {
     session: params.get('session'), rep: params.get('rep'),
     fromStats: screen === 'test' && params.get('from') === 'stats',
   };
+}
+
+/** True when the link itself picks the tab, so the workspace default does not apply. */
+export function linkNamesPlayerTab(search: string): boolean {
+  const params = new URLSearchParams(search), raw = params.get('view');
+  return params.has('drill') || raw === 'drills' || namedPlayerView(raw) !== null;
 }
 
 export type PlayerDestination = {

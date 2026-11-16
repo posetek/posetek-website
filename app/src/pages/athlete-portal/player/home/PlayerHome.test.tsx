@@ -22,7 +22,7 @@ function render(query: string, { access = 'preview', withReport = true, athlete 
 describe('Home (AthleteWorkspaceHome)', () => {
   it('puts the week first, then organization activity with the sample cards and no scope menu', () => {
     const html = render('');
-    expect(html).toContain('<h1>Home</h1>');
+    expect(html).toContain('<h1>Social</h1>');
     for (const text of ['Your week', 'Last 7 days', '3 recorded sessions', 'Previous week: 2 recorded.']) expect(html).toContain(text);
     expect(html.indexOf('Your week')).toBeLessThan(html.indexOf('Organization activity'));
     expect(html).toContain('<h2>Organization activity</h2><p>Summit Demo FC</p>');

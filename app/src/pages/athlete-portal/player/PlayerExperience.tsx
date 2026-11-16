@@ -12,9 +12,10 @@ import { useCoachConfig } from './gateway';
 import { personalDraftLink } from './personal-conversation';
 import { defaultDataset, intakeSnapshot, playerProfile } from './scoring';
 import type { Row } from './execution';
-import PlayerShell, { PlayerHeader, playerInitials } from './PlayerShell';
+import PlayerShell, { PLAYER_LANDING_VIEW, PlayerHeader, playerInitials } from './PlayerShell';
 import type { PlayerView } from './PlayerShell';
-import { playerRoute, playerSearch } from './workspace';
+import { linkNamesPlayerTab, playerRoute, playerSearch } from './workspace';
+import { defaultPlayerView, landingSeen, markLandingSeen } from './landing';
 import type { PlayerDestination, PlayerTabProps } from './workspace';
 import PlayerHome from './home/PlayerHome';
 import PlayerWorkouts from './workouts/PlayerWorkouts';
@@ -30,8 +31,12 @@ export { playerRoute } from './workspace';
 
 /** The same four-tab athlete workspace as the app: Home, Coach, Workouts and Stats. */
 export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalContext; initialReps: Record<string, Row[]> }) {
-  const location = useLocation(), navigate = useNavigate(), navigationType = useNavigationType(), route = playerRoute(location.search);
+  const location = useLocation(), navigate = useNavigate(), navigationType = useNavigationType();
   const preview = ctx.access === 'preview';
+  // Where a link that names no tab lands, decided once for this workspace: Stats the first time this
+  // account opens it in this browser, Workouts after that. (Parent sessions, PR #167, pass `parent: true`.)
+  const [landing] = useState(() => preview ? PLAYER_LANDING_VIEW : defaultPlayerView({ parent: false, seen: landingSeen(auth.currentUser?.uid) }));
+  const route = playerRoute(location.search, landing);
   const coachConfig = useCoachConfig(preview);
   const personal = usePersonalWorkouts(ctx.playerId!, preview, coachConfig);
   const [reps, setReps] = useState(initialReps), [athlete, setAthlete] = useState(ctx.athlete), [dataset, setDataset] = useState(defaultDataset);
@@ -43,6 +48,18 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   // app, so one instance owns every workout in progress.
   const statsPlan = route.view === 'stats' && route.screen === 'plan';
   const workoutsShown = route.view === 'workouts' || statsPlan;
+  // A default Workouts landing names its tab in the address, as a tab tap does, so the usage clock
+  // and a reload see the page that is shown. The tab is already on screen: nothing re-renders.
+  useEffect(() => {
+    if (route.view !== 'workouts' || linkNamesPlayerTab(location.search)) return;
+    const params = new URLSearchParams(location.search);
+    params.set('view', 'workouts');
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+  }, [location.pathname, location.search, navigate, route.view]);
+  // Stats has been shown to this account here: its later opens land on Workouts.
+  useEffect(() => {
+    if (!preview && route.view === 'stats' && !statsPlan) markLandingSeen(auth.currentUser?.uid);
+  }, [preview, route.view, statsPlan]);
   const feedbackContext = useRef({ workoutsShown, playerId: ctx.playerId, access: ctx.access });
   feedbackContext.current = { workoutsShown, playerId: ctx.playerId, access: ctx.access };
   // The workspace pages behind this one in the browser's history, oldest first. The in-app Back

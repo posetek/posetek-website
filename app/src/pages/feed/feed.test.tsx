@@ -62,12 +62,13 @@ describe("feed offline rendering", () => {
     const html = renderPage(`/feed.html?preview=1${panel}`);
     const navigation = html.match(/<nav class="player-bottom-nav"[\s\S]*?<\/nav>/)?.[0] || '';
     expect(navigation.match(/<a /g)).toHaveLength(4);
-    expect(PLAYER_TABS.map(tab => tab.label)).toEqual(['Home', 'Coach', 'Workouts', 'Stats']);
+    expect(PLAYER_TABS.map(tab => tab.label)).toEqual(['Social', 'Coach', 'Workouts', 'Stats']);
+    expect(PLAYER_TABS.map(tab => tab.view)).toEqual(['home', 'coach', 'workouts', 'stats']);
     for (const tab of PLAYER_TABS) expect(navigation).toContain(`>${tab.label}</span>`);
     expect(navigation).not.toContain('>Community</span>');
-    // The feed is the Home destination, as in the app.
+    // The feed is the Home destination (shown as "Social"), as in the app.
     expect(navigation.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(navigation).toMatch(/aria-current="page"[^>]*>.*?>Home<\/span>/);
+    expect(navigation).toMatch(/aria-current="page"[^>]*>.*?>Social<\/span>/);
     expect(html).toContain('aria-label="Community sections"');
     expect(html).toContain('Find people');
     expect(html).toContain('Sharing settings');
