@@ -39,6 +39,9 @@ type Props = { playerId: string; preview: boolean; capability?: string; context?
 
 type Sheet = '' | 'history' | 'memory' | 'sharing' | 'voice';
 
+/** The refusals that mean AI sharing is off for this account or browser. */
+const SHARING_REFUSALS: unknown[] = ['ai_consent_required', 'ai_consent_unavailable'];
+
 /** The app's `V4LoadingRow`: the pose loader, glowing unless motion is reduced, and a caption. */
 function LoadingRow({ text }: { text: string }) {
   return <div className="coach-loading-row" role="status"><img src={loaderIcon} alt="" width={32} height={32} /><span>{text}</span></div>;
@@ -67,6 +70,8 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const [runnerPass, setRunnerPass] = useState<number | null>(null), [runnerAllowed, setRunnerAllowed] = useState(false);
   const [confirmForgetAll, setConfirmForgetAll] = useState(false);
   const [transcriptError, setTranscriptError] = useState('');
+  // The embedded chat offers AI sharing only after the server refuses a turn because it is off.
+  const [sharingAsk, setSharingAsk] = useState(false);
   const controller = useRef<AbortController | null>(null), conversation = useRef<string | null>(null);
   const historyLoadingRef = useRef(false);
   const turn = useRef(0), messageRoot = useRef<HTMLDivElement>(null), afterPanel = useRef<HTMLDivElement>(null);
@@ -149,7 +154,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const reset = () => {
     turn.current++; controller.current?.abort(); controller.current = null;
     historyLoadingRef.current = false; setHistoryLoading(false);
-    conversation.current = null; setMessages([]); setAnswer(''); setSending(false); setError(''); setErrorCode(''); onDraft?.(null);
+    conversation.current = null; setMessages([]); setAnswer(''); setSending(false); setError(''); setErrorCode(''); setSharingAsk(false); onDraft?.(null);
     if (tab) { setErrorRequest(''); setMemoryBusy(false); setHandoffReady(false); setTranscriptError(''); setStatus(''); setDraft(''); }
   };
   const openHistory = async (item: Row) => {
@@ -187,7 +192,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const send = async (text: string, memoryAction?: Row) => {
     if (!canChat || controller.current || historyLoadingRef.current || (!memoryAction && !text.trim())) return;
     const token = ++turn.current;
-    controller.current = new AbortController(); setSending(true); setError(''); setErrorCode(''); setAnswer(''); onDraft?.(null);
+    controller.current = new AbortController(); setSending(true); setError(''); setErrorCode(''); setSharingAsk(false); setAnswer(''); onDraft?.(null);
     const optimistic: Row = { role: 'user', content: text };
     if (tab) {
       setErrorRequest(''); setStatus(''); setTranscriptError('');
@@ -262,6 +267,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
         } else {
           setError(stopped ? 'Reply stopped. Check the saved conversation before sending again.' : e.message);
           setErrorCode(typeof e.code === 'string' ? e.code : '');
+          setSharingAsk(SHARING_REFUSALS.includes(e.code));
           if (!memoryAction) setDraft(text);
         }
       }
@@ -298,9 +304,10 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
     </div>
     {error && <div className="player-error" role="alert"><p>{error}</p>{conversation.current && <button type="button" disabled={sending} onClick={() => void openHistory({ id: conversation.current, workoutTarget: context?.workoutRef })}>Load saved conversation</button>}</div>}
     {!canChat && <p>{config ? 'Your coach is temporarily unavailable. Your history is still here.' : 'Connecting to your coach…'}</p>}
-    <AISharingControl preview={preview} onAllowed={() => {
-      if (['ai_consent_required', 'ai_consent_unavailable'].includes(errorCode)) { setError(''); setErrorCode(''); }
-    }} />
+    {/* Account settings keep the everyday AI sharing control; here it appears only for a refused turn. */}
+    {sharingAsk && <AISharingControl preview={preview} onAllowed={() => {
+      if (SHARING_REFUSALS.includes(errorCode)) { setError(''); setErrorCode(''); }
+    }} />}
     <form className="chat-composer" onSubmit={e => { e.preventDefault(); void send(draft.trim()); }}>
       <textarea aria-label="Message your coach" value={draft} onChange={e => setDraft(e.target.value)} maxLength={capability === 'workout_chat' ? 500 : 2000} placeholder="Message your coach…" rows={2} disabled={sending || historyLoading} />
       <button type="submit" disabled={!canChat || sending || historyLoading || !draft.trim()} aria-label="Send message"><span className="material-symbols-outlined">arrow_upward</span></button>

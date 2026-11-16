@@ -170,14 +170,32 @@ describe('Coach chat history and AI sharing recovery', () => {
     expect(harness.stream).toHaveBeenCalledTimes(1);
   });
 
-  it('does not hide an unrelated coach failure when AI sharing is allowed', async () => {
+  const sharingControl = (tree: ReactElement<any>) => search(tree, element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
+
+  it('shows no AI sharing control under the conversation until a turn is refused for it', () => {
+    expect(sharingControl(render())).toBeUndefined();
+    expect(sharingControl(render({ capability: 'workout_chat', context: { workoutRef: { kind: 'new' } } }))).toBeUndefined();
+  });
+
+  it('does not offer AI sharing for an unrelated coach failure, and keeps that failure shown', async () => {
     harness.stream.mockRejectedValueOnce(Object.assign(new Error('The coach is temporarily unavailable.'), { code: 'unavailable' }));
     submit(render());
     await vi.waitFor(() => expect(render().props['aria-busy']).toBe(false));
-    const control = find(render(), element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
-    control.props.onAllowed();
+    expect(sharingControl(render())).toBeUndefined();
     expect(text(render())).toContain('The coach is temporarily unavailable.');
     expect(harness.stream).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the AI sharing control after it is allowed, until the next send', async () => {
+    harness.stream.mockRejectedValueOnce(Object.assign(new Error('AI sharing is off on this browser.'), { code: 'ai_consent_required' }));
+    submit(render());
+    await vi.waitFor(() => expect(render().props['aria-busy']).toBe(false));
+    sharingControl(render())!.props.onAllowed();
+    expect(sharingControl(render())).toBeTruthy();
+    submit(render());
+    await vi.waitFor(() => expect(harness.stream).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(render().props['aria-busy']).toBe(false));
+    expect(sharingControl(render())).toBeUndefined();
   });
 
   describe('a standalone build the server refuses', () => {
