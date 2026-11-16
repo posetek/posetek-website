@@ -193,7 +193,8 @@ describe('player route and preview rendering', () => {
     expect(html).toContain('Player tabs'); expect(html).not.toContain('Coach view'); expect(html).toContain('no account changes');
     const navigation = html.match(/<nav class="player-bottom-nav"[\s\S]*?<\/nav>/)?.[0] || '';
     expect((navigation.match(/<a /g) || []).length).toBe(4);
-    for (const label of ['Home', 'Coach', 'Workouts', 'Stats']) expect(navigation).toContain(`>${label}</span>`);
+    for (const label of ['Social', 'Coach', 'Workouts', 'Stats']) expect(navigation).toContain(`>${label}</span>`);
+    expect(navigation).not.toContain('>Home</span>');
     for (const removed of ['Profile', 'Results', 'Leaderboards', 'Community']) expect(navigation).not.toContain(removed);
     expect(navigation.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).not.toContain('Open community feed');
@@ -212,6 +213,6 @@ describe('player route and preview rendering', () => {
       expect(html).not.toContain('Overall rating');
       expect(html).not.toContain('Leaderboards');
     }
-    if (view === 'home') { expect(html).toContain('Your week'); expect(html).toContain('>Organization activity</h2>'); }
+    if (view === 'home') { expect(html).toContain('<h1>Social</h1>'); expect(html).toContain('Your week'); expect(html).toContain('>Organization activity</h2>'); }
   });
 });

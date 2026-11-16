@@ -3,9 +3,12 @@ import type { MouseEvent, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import './player.css';
 
-/** The athlete workspace's four destinations, in the mobile dock's order (`WorkspaceTab`). */
+/**
+ * The athlete workspace's four destinations, in the mobile dock's order (`WorkspaceTab`). The first
+ * is shown as "Social" (Nolan, 2026-11-16); its key, URL value and tracker value stay `home`.
+ */
 export const PLAYER_TABS = [
-  { view: 'home', label: 'Home', icon: 'home' },
+  { view: 'home', label: 'Social', icon: 'group' },
   { view: 'coach', label: 'Coach', icon: 'forum' },
   { view: 'workouts', label: 'Workouts', icon: 'directions_run' },
   { view: 'stats', label: 'Stats', icon: 'bar_chart' },
@@ -16,11 +19,18 @@ export type PlayerView = typeof PLAYER_TABS[number]['view'];
 const LEGACY_VIEWS: Record<string, PlayerView> = {
   profile: 'stats', aiCoach: 'coach', training: 'workouts', drills: 'workouts', leaderboards: 'home', feed: 'home',
 };
-/** Where a player lands when a link names no page: their profile, the testing report on Stats. */
+/**
+ * Where a link that names no page lands when nothing else decides: Stats. The workspace passes its
+ * own default instead (`landing.ts`: Stats the first time, then Workouts).
+ */
 export const PLAYER_LANDING_VIEW: PlayerView = 'stats';
-export function canonicalPlayerView(raw: string | null | undefined): PlayerView {
+/** The tab a `view` value names, or null when it names none. */
+export function namedPlayerView(raw: string | null | undefined): PlayerView | null {
   const tab = PLAYER_TABS.find(item => item.view === raw);
-  return tab ? tab.view : LEGACY_VIEWS[raw || ''] || PLAYER_LANDING_VIEW;
+  return tab ? tab.view : LEGACY_VIEWS[raw || ''] || null;
+}
+export function canonicalPlayerView(raw: string | null | undefined, landing: PlayerView = PLAYER_LANDING_VIEW): PlayerView {
+  return namedPlayerView(raw) || landing;
 }
 
 /**

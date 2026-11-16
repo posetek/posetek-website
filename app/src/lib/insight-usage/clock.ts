@@ -61,8 +61,9 @@ export function featureForLocation(path: string, query: string): UsageFeature | 
   if (path !== '/athlete' && path !== '/profile.html') return null;
   // The player workspace's four tabs, with the names links used before them. Tracking runs only
   // for players, so every /athlete location here is that workspace. Home is the week and the
-  // organization feed, as the app records it. Stats is the overview and the page a link with no
-  // view lands on.
+  // organization feed, as the app records it (its tab is shown as Social). Stats is the overview.
+  // The workspace writes the tab it lands on into `view`, so a link with no view is only a moment
+  // before that rewrite.
   const view = q.get('view') || '';
   if (q.has('session') || q.has('drill') || ['drills', 'results'].includes(view)) return 'results';
   if (view === 'workouts' || view === 'training') return 'training';

@@ -105,6 +105,11 @@ export function playerStatsRoute(playerId?: string): string {
   return "/athlete?" + player + "userType=player&view=stats";
 }
 
+/** A player's sign-in: names no tab, so the workspace's own default decides (Stats first, then Workouts). */
+export function playerWorkspaceRoute(playerId: string): string {
+  return "/athlete?player=" + encodeURIComponent(playerId) + "&userType=player";
+}
+
 // MARK: - Admission callables (functions/admission.js) — payload shapes
 
 export function redeemPlayerSignupCodePayload(code: string): { code: string } {
