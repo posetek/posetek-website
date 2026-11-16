@@ -103,11 +103,16 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   const hasAfter = !!afterMessages;
   useEffect(() => {
     if (!tab) {
-      const root = messageRoot.current, panel = afterPanel.current;
+      // The page is the embedded chat's scroll view too, with the message box pinned to its bottom edge.
+      const el = section.current, panel = afterPanel.current;
+      if (!el || el.offsetParent === null) return;
       // With a proposal under the reply, show where it begins and the end of the reply above it,
       // not its far end; otherwise follow the conversation to the bottom.
-      if (root && panel) root.scrollTop += panel.getBoundingClientRect().top - root.getBoundingClientRect().top - 72;
-      else root?.scrollTo({ top: root.scrollHeight });
+      if (panel) {
+        const header = el.parentElement?.querySelector(':scope > .v4-header-compact');
+        const covered = Math.max(0, header?.getBoundingClientRect().bottom ?? 0);
+        window.scrollTo({ top: window.scrollY + panel.getBoundingClientRect().top - covered - 72 });
+      } else if (messages.length || answer) window.scrollTo({ top: document.documentElement.scrollHeight });
       return;
     }
     // The page is the Coach tab's scroll view; a hidden tab never moves it.
@@ -131,11 +136,34 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   }, [canPlayRunner, playerId]);
   useEffect(() => {
     // The composer stays on the bottom edge even when the transcript is short.
-    if (!tab || !active) return;
+    if (!active) return;
     const measure = () => { const el = section.current; if (el) el.style.setProperty('--coach-top', `${Math.max(0, el.getBoundingClientRect().top + window.scrollY)}px`); };
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
+  }, [tab, active]);
+  useEffect(() => {
+    // The on-screen keyboard covers the bottom of the layout viewport without resizing it (iOS Safari).
+    // The visual viewport says how much is covered, so the message box can rest directly above it.
+    const viewport = typeof window !== 'undefined' ? window.visualViewport : null, el = section.current;
+    if (!viewport || !el || !active) return;
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const covered = Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop));
+        // Only a keyboard-sized gap counts; a collapsing browser toolbar is far smaller.
+        const keyboard = covered > 120 ? `${covered}px` : '0px';
+        if (el.style.getPropertyValue('--chat-keyboard') === keyboard) return;
+        el.style.setProperty('--chat-keyboard', keyboard);
+        // Keep the latest message in view above the box while the keyboard is up.
+        if (keyboard !== '0px' && el.contains(document.activeElement)) window.scrollTo({ top: document.documentElement.scrollHeight });
+      });
+    };
+    update();
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    return () => { cancelAnimationFrame(frame); viewport.removeEventListener('resize', update); viewport.removeEventListener('scroll', update); };
   }, [tab, active]);
   useEffect(() => {
     // One to five lines, as the app's composer (`lineLimit(1...5)`).
@@ -273,14 +301,36 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
   // Match native: the chat envelope requires text even for code-only memory commands.
   const memoryCommand = (kind: string, extra: Row = {}) => void send('Update coach memory', { kind, ...(kind !== 'list' ? { expectedRevision: memory?.workspace.revision } : {}), ...extra });
 
-  if (!tab) return <section className="player-chat" aria-busy={sending || historyLoading}>
+  // AI sharing off: both layouts show the Coach tab's banner and permission sheet, and resend the
+  // kept words once sharing is allowed and the sheet closes.
+  const sharingOff = errorCode === 'ai_consent_required';
+  const openSharing = (retry: { resend: boolean; memory: boolean }) => { sharingRetry.current = { allowed: false, ...retry }; setSheet('sharing'); };
+  const closeSharing = () => {
+    const retry = sharingRetry.current;
+    sharingRetry.current = { allowed: false, resend: false, memory: false };
+    // The retry runs once the permission sheet is gone (`AISharingOffNotice.resume`).
+    setSheet(retry.allowed && retry.memory ? 'memory' : '');
+    if (!retry.allowed) return;
+    if (sharingOff) clearError();
+    if (retry.memory) memoryCommand('list');
+    else if (retry.resend && draft.trim()) void send(draft.trim());
+  };
+  const sharingBanner = <div className="coach-banner coach-banner-sharing" role="alert">
+    <SharingOffNotice action={draft.trim() ? 'send' : undefined} onTurnOn={() => openSharing({ resend: !!draft.trim(), memory: false })} />
+    <button type="button" className="coach-dismiss" aria-label="Dismiss" onClick={clearError}><span className="material-symbols-outlined" aria-hidden="true">close</span></button>
+  </div>;
+  const sharingSheet = sheet === 'sharing' && <CoachSheet title="AI sharing" onDone={closeSharing}>
+    <AISharingControl preview={preview} onAllowed={() => { sharingRetry.current.allowed = true; }} />
+  </CoachSheet>;
+
+  if (!tab) return <section className="player-chat" ref={section} aria-busy={sending || historyLoading}>
     <div className="player-actions">
       <button type="button" disabled={historyLoading} onClick={() => setShowHistory(v => !v)}>History</button>
       <button type="button" onClick={reset}>New conversation</button>
       {workspace && <button type="button" disabled={historyLoading} onClick={() => { setShowMemory(v => !v); memoryCommand('list'); }}>Coach memory</button>}
     </div>
     {showHistory && <section className="portal-card"><h2>Conversations</h2>{history.length ? history.map(item => <button className="player-list-button" key={item.id} disabled={historyLoading} onClick={() => void openHistory(item)}>{item.title || 'Conversation'}<small>{dateText(item.lastMessageAt)}</small></button>) : <p>No conversations yet.</p>}</section>}
-    {showMemory && <section className="portal-card"><h2>Coach memory</h2><p>Choose what your coach remembers across conversations.</p>
+    {showMemory && <section className="portal-card"><h2>Coach memory</h2><p>Choose what the PoseTek coach remembers across conversations.</p>
       {!memory ? <p>Loading memory…</p> : <>
         <label><input type="checkbox" checked={memory.workspace.enabled} disabled={sending} onChange={e => memoryCommand('setEnabled', { enabled: e.target.checked })} /> Use coach memory</label>
         {(memory.memories || []).filter((m: Row) => ['active', 'proposed'].includes(m.status) && (!m.expiresAt || new Date(m.expiresAt).getTime() > Date.now())).map((m: Row) => <article key={m.memoryId} className="player-memory"><small>{m.status === 'proposed' ? 'Suggestion' : 'Saved'} · {String(m.category).replaceAll('_', ' ')}</small><p>{m.text}</p>{m.sourceQuote && <blockquote>{m.sourceQuote}</blockquote>}<div className="player-actions">{m.status === 'proposed' && <button disabled={sending} onClick={() => memoryCommand('confirm', { memoryId: m.memoryId })}>Save</button>}<button disabled={sending} onClick={() => memoryCommand('forget', { memoryId: m.memoryId })}>Forget</button></div></article>)}
@@ -293,40 +343,27 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       {messages.map((m, i) => <article key={m.id || i} className={`chat-message ${m.role === 'user' ? 'user' : 'assistant'}`}><MultilineText text={m.content || ''} />{onHandoff && m.role === 'assistant' && validHandoff(m.workoutRequest, playerId) && (m.workoutRequest.destination === 'personal_workout' && personalStore && athlete ? <CoachPersonalWorkout playerId={playerId} athlete={athlete} preview={preview} store={personalStore} config={config} request={{ ...m.workoutRequest, ...(conversation.current && m.id ? { originConversationId: conversation.current, originMessageId: m.id } : {}) }} reference={m.personalWorkoutProposal} active={active && !sending && !error && i === messages.length - 1} onReview={onHandoff} /> : !sending && !error && i === messages.length - 1 && <button className="primary-cta" onClick={() => onHandoff(m.workoutRequest)}>Continue in Training</button>)}</article>)}
       {answer && <article className="chat-message assistant">{error && <small>Interrupted reply · check history for the saved version</small>}<MultilineText text={answer} /></article>}
       {afterMessages && !sending && <div ref={afterPanel}>{afterMessages}</div>}
-      {sending && <p role="status">{status || 'Your coach is thinking…'}</p>}
+      {sending && <p role="status">{status || 'The PoseTek coach is thinking…'}</p>}
       {historyLoading && <p role="status">Loading your conversation…</p>}
     </div>
-    {error && <div className="player-error" role="alert"><p>{error}</p>{conversation.current && <button type="button" disabled={sending} onClick={() => void openHistory({ id: conversation.current, workoutTarget: context?.workoutRef })}>Load saved conversation</button>}</div>}
-    {!canChat && <p>{config ? 'Your coach is temporarily unavailable. Your history is still here.' : 'Connecting to your coach…'}</p>}
-    <AISharingControl preview={preview} onAllowed={() => {
-      if (['ai_consent_required', 'ai_consent_unavailable'].includes(errorCode)) { setError(''); setErrorCode(''); }
-    }} />
+    {error && (sharingOff ? sharingBanner : <div className="player-error" role="alert"><p>{error}</p>{conversation.current && <button type="button" disabled={sending} onClick={() => void openHistory({ id: conversation.current, workoutTarget: context?.workoutRef })}>Load saved conversation</button>}</div>)}
+    {!canChat && <p>{config ? 'The PoseTek coach is temporarily unavailable. Your history is still here.' : 'Connecting to the PoseTek coach…'}</p>}
+    {/* Nothing sits under the message box: it is the last thing on the page. */}
+    {sending && <button className="text-button" onClick={() => controller.current?.abort()}>Stop reply</button>}
     <form className="chat-composer" onSubmit={e => { e.preventDefault(); void send(draft.trim()); }}>
-      <textarea aria-label="Message your coach" value={draft} onChange={e => setDraft(e.target.value)} maxLength={capability === 'workout_chat' ? 500 : 2000} placeholder="Message your coach…" rows={2} disabled={sending || historyLoading} />
+      <textarea aria-label="Message the PoseTek coach" value={draft} onChange={e => setDraft(e.target.value)} maxLength={capability === 'workout_chat' ? 500 : 2000} placeholder="Message the PoseTek coach…" rows={2} disabled={sending || historyLoading} />
       <button type="submit" disabled={!canChat || sending || historyLoading || !draft.trim()} aria-label="Send message"><span className="material-symbols-outlined">arrow_upward</span></button>
     </form>
-    {sending && <button className="text-button" onClick={() => controller.current?.abort()}>Stop reply</button>}
+    {sharingSheet}
   </section>;
 
   // ---- The Coach tab (AICoachTabView, V4) ----
   const memoryAvailable = workspace && canChat;
   const { proposed } = coachMemories(memory);
-  const sharingOff = errorCode === 'ai_consent_required';
   const shownError = error ? { message: coachErrorMessage(errorCode), refCode: coachRefCode(errorRequest), sharingOff } : null;
   const canSend = canChat && !sending && !historyLoading && !!draft.trim();
   const last = messages.at(-1);
   const handoff = onHandoff && handoffReady && !sending && last?.role === 'assistant' && validHandoff(last.workoutRequest, playerId) ? last.workoutRequest : null;
-  const openSharing = (retry: { resend: boolean; memory: boolean }) => { sharingRetry.current = { allowed: false, ...retry }; setSheet('sharing'); };
-  const closeSharing = () => {
-    const retry = sharingRetry.current;
-    sharingRetry.current = { allowed: false, resend: false, memory: false };
-    // The retry runs once the permission sheet is gone (`AISharingOffNotice.resume`).
-    setSheet(retry.allowed && retry.memory ? 'memory' : '');
-    if (!retry.allowed) return;
-    if (sharingOff) clearError();
-    if (retry.memory) memoryCommand('list');
-    else if (retry.resend && draft.trim()) void send(draft.trim());
-  };
   const submit = () => { if (canSend) { void send(draft.trim()); composerInput.current?.blur(); } };
   const toolRow = <div className="coach-tools">
     <CoachHistoryMenu onHistory={() => setSheet('history')} onNew={reset} />
@@ -367,10 +404,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       <div className="coach-v4-bottom">
         {streaming && status && <p className="coach-tool-row" role="status"><span className="coach-spinner" aria-hidden="true" />{status}</p>}
         {shownError && (shownError.sharingOff
-          ? <div className="coach-banner coach-banner-sharing" role="alert">
-            <SharingOffNotice action={draft.trim() ? 'send' : undefined} onTurnOn={() => openSharing({ resend: !!draft.trim(), memory: false })} />
-            <button type="button" className="coach-dismiss" aria-label="Dismiss" onClick={clearError}><span className="material-symbols-outlined" aria-hidden="true">close</span></button>
-          </div>
+          ? sharingBanner
           : <div className="coach-banner coach-banner-error" role="alert">
             <span className="material-symbols-outlined coach-banner-icon" aria-hidden="true">warning</span>
             <div><p>{shownError.message}</p>{shownError.refCode && <p className="coach-ref" aria-label={`Reference code ${[...shownError.refCode].join(' ')}`}>Ref {shownError.refCode}</p>}</div>
@@ -410,9 +444,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
         confirmingForgetAll={confirmForgetAll} onConfirmForgetAll={setConfirmForgetAll} onCommand={memoryCommand}
         onRefresh={() => { clearError(); memoryCommand('list'); }} onTurnOnSharing={() => openSharing({ resend: false, memory: true })} />
     </CoachSheet>}
-    {sheet === 'sharing' && <CoachSheet title="AI sharing" onDone={closeSharing}>
-      <AISharingControl preview={preview} onAllowed={() => { sharingRetry.current.allowed = true; }} />
-    </CoachSheet>}
+    {sharingSheet}
     {sheet === 'voice' && <CoachSheet title="Voice mode" onDone={() => setSheet('')}>
       <p className="coach-voice-note">Voice mode is available in the PoseTek iPhone app.</p>
     </CoachSheet>}

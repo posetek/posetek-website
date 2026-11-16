@@ -10,10 +10,12 @@
   /* The page is the tab's scroll view. A short transcript still puts the composer on the bottom edge:
      the section reaches the composer's resting line, and the negative margin gives back the
      difference between that line and the page's dock padding, so an empty chat does not scroll. */
-  min-height: calc(100dvh - var(--coach-top, 160px) - var(--v4-dock-height) - 16px - env(safe-area-inset-bottom));
-  margin-bottom: -24px;
+  min-height: calc(100dvh - var(--coach-top, 160px) - var(--coach-stick));
+  margin-bottom: calc(var(--coach-stick) - var(--chat-page-pad) - var(--chat-keyboard, 0px));
+  /* While the on-screen keyboard is up, room for the latest message above the lifted composer. */
+  padding-bottom: var(--chat-keyboard, 0px);
 }
-.pt-player:has(.chat-composer :focus) .coach-v4 { --coach-stick: calc(8px + env(safe-area-inset-bottom)); }
+.pt-player:has(.chat-composer :focus) .coach-v4 { --coach-stick: calc(8px + max(env(safe-area-inset-bottom), var(--chat-keyboard, 0px))); }
 
 /* Header: History / Memory / AI sharing, the voice mode button and Technique analysis. */
 .pt-player .coach-v4 .coach-v4-header { display: grid; gap: 8px; padding: 10px 0 12px; }
@@ -65,29 +67,30 @@
   border: 2px solid #ffffff40; border-top-color: #fff; animation: coach-spin .8s linear infinite; }
 .pt-player .coach-v4 .coach-spinner-large { width: 24px; height: 24px; border-top-color: var(--v4-accent); }
 @keyframes coach-spin { to { transform: rotate(360deg); } }
-.pt-player .coach-v4 .coach-banner { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 6px; padding: 10px; border-radius: 12px; }
-.pt-player .coach-v4 .coach-banner > div:not(.coach-sharing-off) { flex: 1; min-width: 0; }
+/* The AI-sharing banner, its notice and the sheets are shared with the embedded chat (.player-chat). */
+.pt-player :is(.coach-v4, .player-chat) .coach-banner { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 6px; padding: 10px; border-radius: 12px; }
+.pt-player :is(.coach-v4, .player-chat) .coach-banner > div:not(.coach-sharing-off) { flex: 1; min-width: 0; }
 .pt-player .coach-v4 .coach-banner-error { background: #ff8c3326; }
 .pt-player .coach-v4 .coach-banner-error p { margin: 0; font-size: 11px; font-weight: 600; line-height: 1.4; color: #fff; }
 .pt-player .coach-v4 .coach-banner-icon { font-size: 14px; color: var(--coach-orange); font-variation-settings: 'FILL' 1; margin-top: 1px; }
-.pt-player .coach-v4 .coach-banner-sharing { background: #ffffff0f; }
-.pt-player .coach-v4 .coach-banner-sharing .coach-sharing-off { flex: 1; min-width: 0; }
-.pt-player .coach-v4 .coach-dismiss { flex: 0 0 44px; width: 44px; min-height: 44px; margin: -10px -10px -10px 0; padding: 0; border: 0; background: none;
+.pt-player :is(.coach-v4, .player-chat) .coach-banner-sharing { background: #ffffff0f; }
+.pt-player :is(.coach-v4, .player-chat) .coach-banner-sharing .coach-sharing-off { flex: 1; min-width: 0; }
+.pt-player :is(.coach-v4, .player-chat) .coach-dismiss { flex: 0 0 44px; width: 44px; min-height: 44px; margin: -10px -10px -10px 0; padding: 0; border: 0; background: none;
   color: #ffffffb3; display: grid; place-items: center; }
-.pt-player .coach-v4 .coach-dismiss .material-symbols-outlined { font-size: 16px; font-variation-settings: 'wght' 700; }
+.pt-player :is(.coach-v4, .player-chat) .coach-dismiss .material-symbols-outlined { font-size: 16px; font-variation-settings: 'wght' 700; }
 .pt-player .coach-v4 .coach-ref { margin: 4px 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 500; color: #ffffff99; }
 .pt-player .coach-v4 .coach-banner-error .coach-ref { color: #ffffff99; font-weight: 500; margin-top: 4px; }
 .pt-player .coach-v4 .coach-transcript-error { margin: 0 0 4px; font-size: 11px; font-weight: 500; color: var(--coach-muted); }
 
 /* AISharingOffNotice. */
-.pt-player .coach-v4 .coach-sharing-off { display: grid; justify-items: start; gap: 8px; }
-.pt-player .coach-v4 .coach-sharing-off p { margin: 0; }
-.pt-player .coach-v4 .coach-sharing-off-title { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #fff; }
-.pt-player .coach-v4 .coach-sharing-off-title .material-symbols-outlined { font-size: 16px; }
-.pt-player .coach-v4 .coach-sharing-off-copy { font-size: 12px; color: var(--coach-muted); line-height: 1.4; }
-.pt-player .coach-v4 .coach-sharing-on { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 10px 14px; border: 0;
+.pt-player :is(.coach-v4, .player-chat) .coach-sharing-off { display: grid; justify-items: start; gap: 8px; }
+.pt-player :is(.coach-v4, .player-chat) .coach-sharing-off p { margin: 0; }
+.pt-player :is(.coach-v4, .player-chat) .coach-sharing-off-title { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #fff; }
+.pt-player :is(.coach-v4, .player-chat) .coach-sharing-off-title .material-symbols-outlined { font-size: 16px; }
+.pt-player :is(.coach-v4, .player-chat) .coach-sharing-off-copy { font-size: 12px; color: var(--coach-muted); line-height: 1.4; }
+.pt-player :is(.coach-v4, .player-chat) .coach-sharing-on { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 10px 14px; border: 0;
   border-radius: 999px; background: var(--v4-accent); color: var(--v4-background); font-size: 13px; font-weight: 700; text-align: left; }
-.pt-player .coach-v4 .coach-sharing-on .material-symbols-outlined { font-size: 16px; }
+.pt-player :is(.coach-v4, .player-chat) .coach-sharing-on .material-symbols-outlined { font-size: 16px; }
 
 /* The composer card, with the runner crossing its top edge. */
 .pt-player .coach-v4 .coach-v4-composer-wrap { position: relative; padding-top: 12px; }
@@ -114,14 +117,14 @@
 .pt-player .coach-v4:has(> .coach-technique-page) > :not(.coach-technique-page) { display: none; }
 
 /* Sheets (History, Coach memory, AI sharing, Voice mode). */
-.pt-player .coach-v4 .coach-sheet-backdrop { position: fixed; z-index: 100; inset: 0; display: flex; align-items: flex-end; background: #0000008c; }
-.pt-player .coach-v4 .coach-sheet { width: 100%; max-width: 720px; margin: 0 auto; height: calc(100dvh - 10px - env(safe-area-inset-top)); display: flex; flex-direction: column;
+.pt-player :is(.coach-v4, .player-chat) .coach-sheet-backdrop { position: fixed; z-index: 100; inset: 0; display: flex; align-items: flex-end; background: #0000008c; }
+.pt-player :is(.coach-v4, .player-chat) .coach-sheet { width: 100%; max-width: 720px; margin: 0 auto; height: calc(100dvh - 10px - env(safe-area-inset-top)); display: flex; flex-direction: column;
   border: 1px solid var(--v4-border); border-bottom: 0; border-radius: 14px 14px 0 0; outline: none;
   background: linear-gradient(135deg, var(--v4-background), var(--v4-background-middle), var(--v4-background-end)); }
-.pt-player .coach-v4 .coach-sheet-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 52px; padding: 0 8px; border-bottom: 1px solid var(--v4-border); }
-.pt-player .coach-v4 .coach-sheet-bar h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: 0; text-align: center; }
-.pt-player .coach-v4 .coach-sheet-done { justify-self: start; min-height: 44px; padding: 0 8px; border: 0; background: none; color: #fff; font-size: 17px; }
-.pt-player .coach-v4 .coach-sheet-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 12px 16px calc(24px + env(safe-area-inset-bottom)); }
+.pt-player :is(.coach-v4, .player-chat) .coach-sheet-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 52px; padding: 0 8px; border-bottom: 1px solid var(--v4-border); }
+.pt-player :is(.coach-v4, .player-chat) .coach-sheet-bar h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: 0; text-align: center; }
+.pt-player :is(.coach-v4, .player-chat) .coach-sheet-done { justify-self: start; min-height: 44px; padding: 0 8px; border: 0; background: none; color: #fff; font-size: 17px; }
+.pt-player :is(.coach-v4, .player-chat) .coach-sheet-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 12px 16px calc(24px + env(safe-area-inset-bottom)); }
 .pt-player .coach-v4 .coach-sheet-center { min-height: 50dvh; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; }
 .pt-player .coach-v4 .coach-history-empty .material-symbols-outlined { font-size: 28px; font-variation-settings: 'wght' 700; color: var(--coach-muted); }
 .pt-player .coach-v4 .coach-history-empty p { margin: 0; font-size: 14px; font-weight: 700; }
@@ -130,7 +133,7 @@
 .pt-player .coach-v4 .coach-history-row strong { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pt-player .coach-v4 .coach-history-row small { font-size: 11px; font-weight: 500; color: var(--coach-muted); }
 .pt-player .coach-v4 .coach-voice-note { font-size: 15px; }
-.pt-player .coach-v4 .ai-sharing-control { margin-top: 0; }
+.pt-player :is(.coach-v4, .player-chat) .coach-sheet .ai-sharing-control { margin-top: 0; }
 
 /* CoachMemoryView. */
 .pt-player .coach-v4 .coach-memory { display: grid; gap: 16px; padding: 8px 4px; }

@@ -4,6 +4,8 @@
   --v4-accent: #7cff18; --v4-background: #041610; --v4-background-middle: #092a20; --v4-background-end: #082417;
   --v4-navigation: #081816; --v4-secondary: #ffffffa6; --v4-card: #ffffff0f; --v4-border: #ffffff1a;
   --v4-dock-height: 70px;
+  /* .player-main's bottom padding; the chats use it to put their message box on the bottom edge. */
+  --chat-page-pad: calc(var(--v4-dock-height) + 40px + env(safe-area-inset-bottom));
   --lime: var(--v4-accent); --player-muted: var(--v4-secondary); color: #fff;
   min-height: 100dvh; background: linear-gradient(135deg, var(--v4-background), var(--v4-background-middle), var(--v4-background-end)) fixed;
   font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.5;
@@ -69,7 +71,7 @@
   .v4-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; margin-top: 18px; padding: 10px 14px; border: 0; border-radius: 14px; background: var(--v4-card); font-size: 17px; font-weight: 600; text-align: left; }
   .v4-row .material-symbols-outlined:first-child { color: var(--v4-accent); font-size: 22px; width: 22px; }
   .v4-row .material-symbols-outlined:last-child { margin-left: auto; color: var(--v4-secondary); font-size: 18px; }
-  .player-main { max-width: 720px; margin: auto; padding: max(8px, env(safe-area-inset-top)) 16px calc(var(--v4-dock-height) + 40px + env(safe-area-inset-bottom)); min-width: 0; }
+  .player-main { max-width: 720px; margin: auto; padding: max(8px, env(safe-area-inset-top)) 16px var(--chat-page-pad); min-width: 0; }
   .player-main h1, .player-main h2 { text-wrap: balance; }
   .player-main p { text-wrap: pretty; }
   /* V4PlayerDock: a floating capsule with four equal buttons; the selected one is accent-colored on an accent-tinted capsule. */
@@ -171,7 +173,8 @@
   /* On a computer the dock becomes a bar across the top, and Stats gets a wider page. */
   @media (min-width: 1000px) {
     --v4-dock-height: 0px;
-    .player-main { padding-top: 88px; padding-bottom: 56px; }
+    --chat-page-pad: 56px;
+    .player-main { padding-top: 88px; padding-bottom: var(--chat-page-pad); }
     .player-main:has(> div:not([hidden]) > .stats-page) { max-width: 920px; }
     .player-bottom-nav { top: 0; bottom: auto; left: 0; right: 0; width: auto; max-width: none; height: 64px; transform: none; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 24px; border-width: 0 0 1px; border-radius: 0; }
     .player-bottom-nav::before { content: 'POSETEK'; position: absolute; left: 24px; top: 50%; transform: translateY(-50%); color: var(--v4-accent); font-size: 15px; font-weight: 750; letter-spacing: 1.8px; }
@@ -213,4 +216,24 @@ body:has(.player-bottom-nav):not(:has(.player-guided)) .user-issue-help { displa
 .ai-sharing-control p { font-size: .95rem; line-height: 1.5; }
 .ai-sharing-control a { color: #b7f34a; text-underline-offset: .15em; }
 .ai-sharing-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+
+/* The embedded chat (Create your workout, workout changes, drill questions), phone first. The page is
+   its scroll view: the conversation and any proposal scroll above the message box, which rests on the
+   bottom edge above the dock, and directly above the on-screen keyboard while that is open
+   (--chat-keyboard, measured from the visual viewport in CoachChat). A short conversation still
+   reaches that line: the section fills the screen below its top (--coach-top) down to the line, and
+   the negative margin gives back the page's bottom padding beyond it, so an empty chat does not scroll.
+   While the keyboard is up, the section's bottom padding gives the latest message room above the box. */
+.pt-player .player-chat:not(.coach-v4) {
+  --chat-stick: calc(var(--v4-dock-height) + 16px + env(safe-area-inset-bottom));
+  --coach-muted: #ffffffa6; /* the AI-sharing banner shared with the Coach tab (coach.css) */
+  display: flex; flex-direction: column; min-width: 0;
+  min-height: calc(100dvh - var(--coach-top, 160px) - var(--chat-stick));
+  padding-bottom: var(--chat-keyboard, 0px);
+  margin-bottom: calc(var(--chat-stick) - var(--chat-page-pad) - var(--chat-keyboard, 0px));
+}
+/* The dock hides while the box has focus, so the box drops to the bottom edge or the keyboard. */
+.pt-player:has(.chat-composer :focus) .player-chat:not(.coach-v4) { --chat-stick: calc(8px + max(env(safe-area-inset-bottom), var(--chat-keyboard, 0px))); }
+.pt-player .player-chat:not(.coach-v4) .player-chat-messages { flex: 1 0 auto; height: auto; min-height: 0; overflow: visible; }
+.pt-player .player-chat:not(.coach-v4) .chat-composer { bottom: var(--chat-stick); margin-top: auto; }
 .ai-sharing-actions button { flex: 1 1 12rem; }

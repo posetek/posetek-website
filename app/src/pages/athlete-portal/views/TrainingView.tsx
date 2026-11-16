@@ -642,7 +642,7 @@ function CreateWorkoutCard({ ctx, plan, weekNumber, store, registerJobUnsub, onB
 
 // MARK: - Today's workout popup (adjust, or proceed)
 
-// The full session sheet, a free-text "tell your coach what to change" rebuild
+// The full session sheet, a free-text "tell the PoseTek coach what to change" rebuild
 // loop, and the start/resume CTA. Adjustments re-run build_workout with
 // adjustmentRequest/previousWorkoutId — every adjustment is a fresh
 // gateway-written doc, and this card swaps to the newest one.
@@ -747,7 +747,7 @@ function WorkoutDetailCard({ ctx, plan, workout, store, registerJobUnsub, onStar
             {ctx.access === "preview" ? (
               <p className="hub-note">
                 <span className="material-symbols-outlined">lock</span>
-                Sign in to tell your coach what to change — "only 20 minutes, no goal today" rebuilds the session around
+                Sign in to tell the PoseTek coach what to change — "only 20 minutes, no goal today" rebuilds the session around
                 your words.
               </p>
             ) : adjusting ? (
@@ -758,7 +758,7 @@ function WorkoutDetailCard({ ctx, plan, workout, store, registerJobUnsub, onStar
                   value={adjustment}
                   maxLength={ADJUSTMENT_MAX_CHARS}
                   rows={2}
-                  placeholder={`Tell your coach what to change — "only 20 minutes, no goal today"`}
+                  placeholder={`Tell the PoseTek coach what to change — "only 20 minutes, no goal today"`}
                   onChange={event => setAdjustment(event.target.value.slice(0, ADJUSTMENT_MAX_CHARS))}
                 />
                 <button type="submit" disabled={!adjustment.trim()} aria-label="Send adjustment">

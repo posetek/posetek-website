@@ -154,30 +154,81 @@ describe('Coach chat history and AI sharing recovery', () => {
     expect(harness.stream.mock.calls[0][0]).not.toHaveProperty('conversationId');
   });
 
-  it('keeps a blocked request available and offers AI sharing review without automatically retrying', async () => {
-    harness.stream.mockRejectedValueOnce(Object.assign(new Error('Review AI sharing before using your coach.'), { code: 'ai_consent_required' }));
-    submit(render());
-    await vi.waitFor(() => expect(render().props['aria-busy']).toBe(false));
-    const blocked = render();
-    expect(text(blocked)).toContain('Review AI sharing before using your coach.');
-    expect(find(blocked, element => element.type === 'textarea').props.value).toBe('Yes, build it.');
-    const control = find(blocked, element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
-    expect(control.props.preview).toBe(false);
-    const review = (control.type as (props: any) => ReactElement<any>)(control.props);
-    button(review, 'Review AI sharing').props.onClick();
-    expect(text(render())).not.toContain('Review AI sharing before using your coach.');
-    expect(find(render(), element => element.type === 'textarea').props.value).toBe('Yes, build it.');
-    expect(harness.stream).toHaveBeenCalledTimes(1);
+  const sharingControl = (tree: ReactElement<any>) => search(tree, element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
+  const notice = (tree: ReactElement<any>) => search(tree, element => element.type === SharingOffNotice);
+  const sheet = (tree: ReactElement<any>) => search(tree, element => element.type === CoachSheet);
+
+  it('shows no AI sharing item under the conversation', () => {
+    expect(sharingControl(render())).toBeUndefined();
+    expect(sharingControl(render({ capability: 'workout_chat', context: { workoutRef: { kind: 'new' } } }))).toBeUndefined();
+    expect(notice(render())).toBeUndefined();
+    expect(text(render())).not.toContain('AI sharing');
   });
 
-  it('does not hide an unrelated coach failure when AI sharing is allowed', async () => {
+  it('shows an unrelated coach failure in the error box, with no AI sharing prompt', async () => {
     harness.stream.mockRejectedValueOnce(Object.assign(new Error('The coach is temporarily unavailable.'), { code: 'unavailable' }));
     submit(render());
     await vi.waitFor(() => expect(render().props['aria-busy']).toBe(false));
-    const control = find(render(), element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
-    control.props.onAllowed();
-    expect(text(render())).toContain('The coach is temporarily unavailable.');
+    expect(sharingControl(render())).toBeUndefined();
+    expect(notice(render())).toBeUndefined();
+    expect(text(find(render(), element => element.props?.role === 'alert'))).toContain('The coach is temporarily unavailable.');
     expect(harness.stream).toHaveBeenCalledTimes(1);
+  });
+
+  describe('a turn refused because AI sharing is off (the Coach tab’s banner and sheet)', () => {
+    const standalone = { kind: 'new', planId: 'standalone', timeAvailableMinutes: 45, energy: 'normal', timezone: 'America/Los_Angeles', equipmentToday: ['ball'] };
+    const surfaces: [string, () => ReactElement<any>][] = [
+      ['the workout builder', () => render({ capability: 'workout_chat', context: { workoutRef: standalone }, onDraft: harness.onDraft })],
+      ['the drill chat', () => render({ capability: 'coaching_chat' })],
+    ];
+    const refuse = async (build: () => ReactElement<any>) => {
+      harness.stream.mockRejectedValueOnce(Object.assign(new Error('AI sharing is off on this browser. Review AI sharing before using AI.'), { code: 'ai_consent_required' }));
+      submit(build());
+      await vi.waitFor(() => expect(build().props['aria-busy']).toBe(false));
+      return build();
+    };
+    for (const [label, build] of surfaces) {
+      it(`${label}: shows the banner, keeps the words, and does not retry on its own`, async () => {
+        const off = await refuse(build);
+        const banner = notice(off)!;
+        expect(banner.props.action).toBe('send');
+        expect(text(SharingOffNotice(banner.props))).toContain('Turn on AI sharing and send');
+        expect(find(off, element => element.type === 'textarea').props.value).toBe('Yes, build it.');
+        // The banner replaces the raw refusal; nothing else offers AI sharing.
+        expect(text(off)).not.toContain('Review AI sharing before using AI.');
+        expect(sharingControl(off)).toBeUndefined();
+        expect(harness.stream).toHaveBeenCalledTimes(1);
+      });
+      it(`${label}: allowing in the sheet and pressing Done resends the kept words once`, async () => {
+        notice(await refuse(build))!.props.onTurnOn();
+        const open = sheet(build())!;
+        expect(open.props.title).toBe('AI sharing');
+        sharingControl(open)!.props.onAllowed();
+        expect(harness.stream).toHaveBeenCalledTimes(1);
+        sheet(build())!.props.onDone();
+        await vi.waitFor(() => expect(harness.stream).toHaveBeenCalledTimes(2));
+        expect(harness.stream.mock.calls[1][0]).toMatchObject({ message: 'Yes, build it.' });
+        expect(sheet(build())).toBeUndefined();
+        await vi.waitFor(() => expect(build().props['aria-busy']).toBe(false));
+        expect(harness.stream).toHaveBeenCalledTimes(2);
+        expect(notice(build())).toBeUndefined();
+      });
+      it(`${label}: closing the sheet without allowing does not resend`, async () => {
+        notice(await refuse(build))!.props.onTurnOn();
+        sheet(build())!.props.onDone();
+        await Promise.resolve();
+        expect(harness.stream).toHaveBeenCalledTimes(1);
+        expect(notice(build())).toBeTruthy();
+      });
+      it(`${label}: dismissing the banner keeps the words in the box`, async () => {
+        const off = await refuse(build);
+        find(off, element => element.type === 'button' && element.props['aria-label'] === 'Dismiss').props.onClick();
+        const after = build();
+        expect(notice(after)).toBeUndefined();
+        expect(find(after, element => element.type === 'textarea').props.value).toBe('Yes, build it.');
+        expect(harness.stream).toHaveBeenCalledTimes(1);
+      });
+    }
   });
 
   describe('a standalone build the server refuses', () => {
@@ -198,19 +249,6 @@ describe('Coach chat history and AI sharing recovery', () => {
       expect(text(alert)).toContain(refusal.message);
       expect(find(failed, element => element.type === 'textarea').props.value).toBe('Yes, build it.');
       // No proposal is offered, so nothing can be saved from the refused turn.
-      expect(harness.onDraft).toHaveBeenLastCalledWith(null);
-    });
-    it('offers AI sharing review when sharing is off, without retrying on its own', async () => {
-      harness.stream.mockRejectedValueOnce(Object.assign(new Error('Review AI sharing before using your coach.'), { code: 'ai_consent_required' }));
-      submit(build());
-      await vi.waitFor(() => expect(build().props['aria-busy']).toBe(false));
-      const blocked = build();
-      expect(text(find(blocked, element => element.props?.role === 'alert'))).toContain('Review AI sharing before using your coach.');
-      const control = find(blocked, element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
-      control.props.onAllowed();
-      expect(text(build())).not.toContain('Review AI sharing before using your coach.');
-      expect(find(build(), element => element.type === 'textarea').props.value).toBe('Yes, build it.');
-      expect(harness.stream).toHaveBeenCalledTimes(1);
       expect(harness.onDraft).toHaveBeenLastCalledWith(null);
     });
   });

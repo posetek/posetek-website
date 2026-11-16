@@ -39,7 +39,7 @@ export default function CoachMemoryPanel({ memory, updating, streaming, notice, 
     </div>
   </article>;
   return <div className="coach-memory">
-    <h3 className="coach-memory-title">Help your coach remember what matters.</h3>
+    <h3 className="coach-memory-title">Help the PoseTek coach remember what matters.</h3>
     <p className="coach-memory-intro">Save the goals and preferences you want used in future chats. Suggestions aren't used as saved memories until you choose Save.</p>
     {!loaded ? <p className="coach-progress" role="status"><span className="coach-spinner" aria-hidden="true" />Loading memory…</p> : <>
       <label className="coach-switch">
@@ -51,7 +51,7 @@ export default function CoachMemoryPanel({ memory, updating, streaming, notice, 
       <h4 className="coach-section-header">Saved ({active.length}/{MEMORY_LIMIT})</h4>
       {!active.length && <Note text="No saved memories yet." />}
       {active.map(card)}
-      <Note text="To correct a detail, forget it and tell your coach the update. Memories expire after 180 days." />
+      <Note text="To correct a detail, forget it and tell the PoseTek coach the update. Memories expire after 180 days." />
       <button type="button" className="coach-destructive coach-forget-all" disabled={!canUpdate} onClick={() => onConfirmForgetAll(true)}>Forget all memories</button>
       <Note text="Forgetting also stops older chats being recalled, so they can't bring the detail back. Your chat history, workouts and test results stay in their own history." />
     </>}
