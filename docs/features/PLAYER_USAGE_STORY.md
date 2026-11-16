@@ -1,11 +1,9 @@
 # Player participation and journeys
 
-Implementation candidate, November 16, 2026. This extends the Stats Journey
-foundation in website PR #165. Source integration and production activation are
-separate. Companion backend and iOS PR links and verification are recorded in
-the delivery PR. On November 16 the owner explicitly authorized deployment
-without waiting for hosted CI. Focused local verification and current-revision
-review still apply; native full-app and physical-device acceptance remain open.
+Website and backend released November 16, 2026. This extends the Stats Journey
+foundation in website PR #165. The release handoff records the exact artifacts,
+activation, companion PRs and verification. Native full-app and physical-device
+acceptance remain open. [Release handoff](../releases/PLAYER_USAGE_STORY.md)
 
 ## What administrators see
 

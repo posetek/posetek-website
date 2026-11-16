@@ -33,14 +33,17 @@ example draft requires exact artifact review and hosted acceptance before the us
 
 # PoseTek website project context
 
-## Player participation and journeys — November 16 candidate
+## Player participation and journeys — November 16 release
 
-The usage-story candidate adds player-account weekly composition and follow-up
-lists plus page/path/named session views in the existing Journey destination.
-Desktop website, mobile website and native iOS remain separate. New collection
-is prospective and legacy coverage is explicit. This is source work, not a
-production release. See [the feature handoff](docs/features/PLAYER_USAGE_STORY.md)
-for cross-repository contracts, retention, verification and release boundaries.
+Deployment `6afb675237bfe4f2da0726ba` adds weekly player participation and
+follow-up in Usage, plus page, path and named session views in Journey. Desktop
+browser, mobile browser and native iOS have separate views. The accepted
+application and isolated sign-in runtimes preserve all 114 encrypted reports.
+Backend collection activation was verified. Verified native build coverage
+remains pending.
+[Feature handoff](docs/features/PLAYER_USAGE_STORY.md) ·
+[Release handoff](docs/releases/PLAYER_USAGE_STORY.md) ·
+[Release receipt](docs/releases/receipts/PLAYER_USAGE_STORY_PRODUCTION.json)
 
 
 ## Admin comparison indicators — November 12, 2026
