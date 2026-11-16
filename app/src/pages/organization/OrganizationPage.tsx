@@ -195,7 +195,7 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
     {notice && <p className="club-message" role="status">{notice}</p>}
     {!context && !error && <p role="status">Loading organization…</p>}
     {context?.role === "none" && <section className="club-card"><h2>No organization linked yet</h2><p>Use the invitation code from your organization or PoseTek administrator.</p><Link className="primary-cta" to="/join">Claim a staff invitation</Link><Link className="quiet-button" to="/roster">Independent coach roster</Link></section>}
-    {context?.role === "player" && <section className="club-card"><p>Your player account is linked to {context.organization?.name}.</p><Link className="primary-cta" to="/athlete">Open your athlete profile</Link></section>}
+    {context?.role === "player" && <section className="club-card"><p>Your player account is linked to {context.organization?.name}.</p><Link className="primary-cta" to="/athlete?view=stats">Open your athlete profile</Link></section>}
     {context && (context.role === "admin" || context.organizations.length > 1) && <section className="club-card">
       <label>Organization<select value={organizationId} disabled={busy} onChange={event => void chooseOrganization(event.target.value)}><option value="">Choose an organization</option>{context.organizations.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</select></label>
       {context.role === "admin" && <form className="club-inline" onSubmit={event => { event.preventDefault(); void mutate(async isCurrent => {

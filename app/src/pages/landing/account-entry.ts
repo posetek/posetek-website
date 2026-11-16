@@ -5,7 +5,10 @@ export type AccountRole = "admin" | "manager" | "coach" | "independent" | "playe
 /** The parent's picker. */
 export const FAMILY_PATH = "/family";
 
-/** One child opens exactly what that child's own sign-in opens; none or several open the picker. */
+/**
+ * One child opens that child's Stats; none or several open the picker. A parent always lands on
+ * Stats, while the child's own sign-in names no tab (the workspace default: Stats first, then Workouts).
+ */
 export function familyDestination(playerIds: readonly string[]): string {
   return playerIds.length === 1 ? playerStatsRoute(playerIds[0]) : FAMILY_PATH;
 }

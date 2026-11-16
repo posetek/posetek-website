@@ -1,4 +1,5 @@
 import type { PlayerView } from './PlayerShell';
+import { linkNamesPlayerTab } from './workspace';
 
 /**
  * The tab a workspace link that names no page opens (Nolan, 2026-11-16): Stats the first time a
@@ -7,6 +8,18 @@ import type { PlayerView } from './PlayerShell';
  */
 export function defaultPlayerView({ parent, seen }: { parent: boolean; seen: boolean }): PlayerView {
   return !parent && seen ? 'workouts' : 'stats';
+}
+
+/**
+ * The query a link that names no tab is replaced with once the default `landing` is shown: the same
+ * parameters, in order, plus `view=<landing>`, so a reload, a restored tab or Back keeps the page
+ * shown. Null (no rewrite) when the link names a tab (`view`, a legacy name, `drill`) or a page (`screen`).
+ */
+export function landingSearch(search: string, landing: PlayerView): string | null {
+  const params = new URLSearchParams(search);
+  if (linkNamesPlayerTab(search) || params.has('screen')) return null;
+  params.set('view', landing);
+  return params.toString();
 }
 
 export type LandingStore = Pick<Storage, 'getItem' | 'setItem'>;

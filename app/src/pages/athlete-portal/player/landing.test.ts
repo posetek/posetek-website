@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultPlayerView, landingSeen, markLandingSeen } from './landing';
+import { defaultPlayerView, landingSearch, landingSeen, markLandingSeen } from './landing';
 import type { LandingStore } from './landing';
 import { linkNamesPlayerTab, playerRoute } from './workspace';
 
@@ -51,6 +51,26 @@ describe('workspace landing tab', () => {
     // Without a default the workspace keeps its Stats landing.
     expect(playerRoute('').view).toBe('stats');
     for (const search of ['?player=p1&workspace=player', '?player=p1&userType=player', '?view=unknown', '']) expect(linkNamesPlayerTab(search)).toBe(false);
+  });
+
+  it('names the default shown in the address, keeping the other parameters in order', () => {
+    const first = defaultPlayerView({ parent: false, seen: false }), later = defaultPlayerView({ parent: false, seen: true });
+    expect(landingSearch('?player=p1&userType=player', first)).toBe('player=p1&userType=player&view=stats');
+    expect(landingSearch('?player=p1&userType=player', later)).toBe('player=p1&userType=player&view=workouts');
+    expect(landingSearch('?workspace=player&player=p1', later)).toBe('workspace=player&player=p1&view=workouts');
+    expect(landingSearch('', first)).toBe('view=stats');
+    expect(landingSearch('?view=unknown&player=p1', later)).toBe('view=workouts&player=p1');
+    // A parent session's default is Stats whatever was seen, so its address names Stats.
+    expect(landingSearch('?player=child', defaultPlayerView({ parent: true, seen: true }))).toBe('player=child&view=stats');
+  });
+
+  it('never rewrites a link that names a tab or a page, so the rewrite cannot repeat', () => {
+    for (const search of ['?view=home', '?view=coach', '?view=stats', '?view=workouts', '?view=feed', '?view=leaderboards', '?view=profile',
+      '?view=training', '?view=aiCoach', '?view=drills', '?drill=sprint&session=s1', '?screen=plan', '?player=p1&screen=saved']) {
+      expect(landingSearch(search, 'workouts')).toBeNull();
+      expect(landingSearch(search, 'stats')).toBeNull();
+    }
+    expect(landingSearch(landingSearch('?player=p1', 'stats')!, 'stats')).toBeNull();
   });
 
   it('lets a link that names a tab win over the default', () => {
