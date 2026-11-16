@@ -35,7 +35,7 @@ function GeneralJourney({ state, choose, organizationId, teamId, unassigned, vie
   const startDate = period.startDate < shiftDate(period.endDate, -89) ? shiftDate(period.endDate, -89) : period.startDate;
   const playerId = view === 'players' ? state.journeyPlayer : undefined;
   const payload: AdminPlayerJourneysRequest = { organizationId, ...(teamId ? { teamId } : {}), ...(unassigned ? { unassigned: true } : {}), startDate, endDate: period.endDate, timeZone: period.timezone,
-    clientKind, ...(playerId ? { playerId } : {}), ...(state.journeyCursor ? { cursor: state.journeyCursor } : {}), pageSize: 20,
+    clientKind, ...(playerId ? { playerId } : {}), ...(state.journeyCursor ? { cursor: state.journeyCursor } : {}), pageSize: playerId ? 10 : 20,
     cohort: state.journeyCohort || 'all', entryFilter: state.journeyEntry || 'all' };
   const key = JSON.stringify(payload);
   const loader = useCallback(async () => {

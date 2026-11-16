@@ -62,6 +62,7 @@ function fixtureJourney(input) {
 function fixturePlayerJourneys(input) {
  const keys=['organizationId','teamId','unassigned','startDate','endDate','timeZone','clientKind','playerId','cursor','pageSize','cohort','entryFilter'];
  if(Object.keys(input).some(key=>!keys.includes(key)))throw Error('Invalid general journey request');
+ if(!Number.isInteger(input.pageSize)||input.pageSize<1||input.pageSize>(input.playerId?10:100))throw Error('Invalid journey page size');
  window.fixturePlayerJourneyRequests=[...(window.fixturePlayerJourneyRequests||[]),input];
  if(window.fixturePlayerJourneyState==='error')throw Error('Synthetic failed read');
  if(window.fixturePlayerJourneyState==='loading')return new Promise(()=>{});

@@ -39,6 +39,7 @@ try {
       await weekly.getByRole('link', { name: 'View journey' }).first().click();
       const journey = page.getByRole('tabpanel', { name: 'Journey', exact: true });
       await journey.getByRole('heading', { name: 'Story Player 1 · recent sessions' }).waitFor();
+      assert.equal(await page.evaluate(() => window.fixturePlayerJourneyRequests.at(-1).pageSize), 10);
       await journey.locator('summary').filter({ hasText: 'After explicit sign-in' }).click();
       await journey.getByRole('list', { name: 'Session activity' }).getByText(/Pressed Start workout on Stats/).waitFor();
       await journey.getByText('Observed outcomes: Workout started (1)', { exact: true }).waitFor();
