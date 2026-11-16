@@ -213,4 +213,24 @@ body:has(.player-bottom-nav):not(:has(.player-guided)) .user-issue-help { displa
 .ai-sharing-control p { font-size: .95rem; line-height: 1.5; }
 .ai-sharing-control a { color: #b7f34a; text-underline-offset: .15em; }
 .ai-sharing-actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+
+/* The embedded chat (Create your workout, workout changes, drill questions), phone first. The page is
+   its scroll view: the conversation and any proposal scroll above the message box, which rests on the
+   bottom edge above the dock, and directly above the on-screen keyboard while that is open
+   (--chat-keyboard, measured from the visual viewport in CoachChat). A short conversation still
+   reaches the bottom edge: the section fills the screen below its top (--coach-top), and the negative
+   margin gives back the difference between the box's resting line and the page's dock padding. */
+.pt-player .player-chat:not(.coach-v4) {
+  --chat-rest: calc(var(--v4-dock-height) + 16px + env(safe-area-inset-bottom));
+  --chat-stick: var(--chat-rest);
+  --coach-muted: #ffffffa6; /* the AI-sharing banner shared with the Coach tab (coach.css) */
+  display: flex; flex-direction: column; min-width: 0;
+  min-height: calc(100dvh - var(--coach-top, 160px) - var(--chat-rest));
+  margin-bottom: -24px;
+  padding-bottom: var(--chat-keyboard, 0px);
+}
+.pt-player:has(.chat-composer :focus) .player-chat:not(.coach-v4) { --chat-stick: calc(8px + max(env(safe-area-inset-bottom), var(--chat-keyboard, 0px))); }
+.pt-player .player-chat:not(.coach-v4) .player-chat-messages { flex: 1 0 auto; height: auto; min-height: 0; overflow: visible; }
+.pt-player .player-chat:not(.coach-v4) .chat-composer { bottom: var(--chat-stick); margin-top: auto; }
+@media (min-width: 1000px) { .pt-player .player-chat:not(.coach-v4) { margin-bottom: -40px; } }
 .ai-sharing-actions button { flex: 1 1 12rem; }
