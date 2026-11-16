@@ -53,11 +53,12 @@ Rules the browser follows:
   account's first landing is `open`. No request is made while signed out.
 
 Parent sessions: a linked parent viewing a child's workspace sends that child's `playerId`
-under the parent's own sign-in. Backend PR #162's `recordStatsJourney` decides the actor
-from the athlete's own bindings and club staff membership only, so it refuses those landings
-(`permission-denied`) and no parent visit is stored. Recording them needs the recorder to
-accept `actsAsAthlete` from `functions/athlete-actor.js` (an owner or a linked parent) and,
-so the report can tell them apart, to store which of athlete, parent or staff the visitor was.
+under the parent's own sign-in. Backend `stats-journey` up to `efd1dc9` decided the actor
+from the athlete's own bindings and club staff membership only, so it refused those landings
+(`permission-denied`) and stored no parent visit. From `e15ea6d` (2026-11-15) the recorder
+uses `functions/athlete-actor.js`: a login in the player's `guardianUIDs` records a visit
+with `actor: 'parent'` (and `staff: false`). Which behavior production has depends on the
+backend commit deployed; the website sends the same events either way.
 
 Known limits of the numbers:
 
