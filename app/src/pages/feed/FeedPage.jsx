@@ -450,7 +450,7 @@ function FeedPage({ embedded = false, organizationId: workspaceOrganizationId, o
           <span>
             {`Make your next rep count.`}
             <strong>
-              {staffOnly ? `Open your organization ↗` : `Ask your AI Coach ↗`}
+              {staffOnly ? `Open your organization ↗` : `Ask the PoseTek coach ↗`}
             </strong>
           </span>
         </Link>

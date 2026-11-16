@@ -18,7 +18,7 @@ export function parseFrame(frame: string): Frame | null {
 // Drafts, memory and handoffs stay tentative until the whole turn completes.
 export async function streamCoach(body: Row, signal: AbortSignal, onFrame: (frame: Frame) => void): Promise<void> {
   const user = auth.currentUser;
-  if (!user) throw new Error('Sign in to speak with your coach.');
+  if (!user) throw new Error('Sign in to speak with the PoseTek coach.');
   assertAISharingEnabled(user.uid);
   const idToken = await user.getIdToken();
   if (auth.currentUser?.uid !== user.uid) throw new Error('Your account changed. Sign in again before sending.');
