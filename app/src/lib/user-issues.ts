@@ -122,7 +122,9 @@ export function captureIssue(error: unknown, operation: string, context: { playe
 }
 export function instrumentIssueCallable<T extends (...args: any[]) => Promise<any>>(name: string, call: T): T {
   // getPlayerGuardians runs once per opened roster row; lib/guardians.ts reports it once per page.
-  if (/UserIssue|UserIssues|WorkoutActivity|WorkoutNotificationStatus|^getPlayerGuardians$/.test(name)) return call;
+  // recordStatsJourney is best-effort measurement (docs/features/STATS_JOURNEY.md): a missing,
+  // switched-off or refusing recorder is expected and never becomes an athlete's error report.
+  if (/UserIssue|UserIssues|WorkoutActivity|WorkoutNotificationStatus|^getPlayerGuardians$|^recordStatsJourney$/.test(name)) return call;
   return (async (...args: Parameters<T>) => {
     const ownerUid = currentOwner();
     const correlated = CORRELATED_CALLABLES.has(name);
