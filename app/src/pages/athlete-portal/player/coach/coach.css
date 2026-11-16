@@ -10,8 +10,8 @@
   /* The page is the tab's scroll view. A short transcript still puts the composer on the bottom edge:
      the section reaches the composer's resting line, and the negative margin gives back the
      difference between that line and the page's dock padding, so an empty chat does not scroll. */
-  min-height: calc(100dvh - var(--coach-top, 160px) - var(--v4-dock-height) - 16px - env(safe-area-inset-bottom));
-  margin-bottom: -24px;
+  min-height: calc(100dvh - var(--coach-top, 160px) - var(--coach-stick));
+  margin-bottom: calc(var(--coach-stick) - var(--chat-page-pad) - var(--chat-keyboard, 0px));
   /* While the on-screen keyboard is up, room for the latest message above the lifted composer. */
   padding-bottom: var(--chat-keyboard, 0px);
 }
