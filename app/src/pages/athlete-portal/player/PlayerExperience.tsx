@@ -20,6 +20,8 @@ import PlayerHome from './home/PlayerHome';
 import PlayerWorkouts from './workouts/PlayerWorkouts';
 import { BUILD_WORKOUT } from './workouts/navigation';
 import PlayerStats from './stats/PlayerStats';
+import { journeyPlace } from './stats/stats-journey';
+import { useStatsJourney } from './stats/use-stats-journey';
 import AccountSettings from './account/AccountSettings';
 import { useAthleteTestReport } from './report';
 import './player.css';
@@ -51,6 +53,8 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const trail = useRef<{ key: string; view: PlayerView }[]>([]);
   const scrollPositions = useRef(new Map<string, number>());
   const report = useAthleteTestReport(ctx.playerId, preview);
+  // The Stats page journey: what is shown now (account settings covers the page it opens over).
+  const journey = useStatsJourney({ access: ctx.access, playerId: ctx.playerId, search: location.search, place: journeyPlace(route, accountSettings) });
   useEffect(() => {
     if (preview) return;
     const hide = () => { if (document.visibilityState !== 'visible') setFeedbackInvitation(false); };
@@ -128,7 +132,7 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   }, [location.key, navigationType, route.view]);
   // A sheet over the workspace pauses the tab under it, as the app's `isActive` does.
   const tab = (view: PlayerView): PlayerTabProps => ({ ctx: playerCtx, route, go, back, active: route.view === view && !accountSettings, preview, athlete, reps, personal, report });
-  return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} initials={playerInitials(athlete?.name)} onNavigate={view => go(view as PlayerView)} hideDock={guided && workoutsShown}
+  return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} initials={playerInitials(athlete?.name)} onNavigate={view => { journey.tabs(); go(view as PlayerView); }} hideDock={guided && workoutsShown}
     onAccountSettings={() => setAccountSettings(true)} onReturnHome={() => go('home')} onSignOut={preview ? undefined : () => { void auth.signOut(); }}>
       {preview && <p className="player-preview-note">Local preview · sample data · no account changes</p>}
       {refreshError && <p className="player-error" role="status">Could not refresh your latest results: {refreshError}</p>}
@@ -136,7 +140,7 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
       {visited.has('coach') && <div hidden={route.view !== 'coach'}><PlayerHeader title="Coach" /><CoachChat playerId={ctx.playerId!} preview={preview} personalStore={personal} athlete={athlete} active={route.view === 'coach' && !accountSettings}
         technique={{ reps: all, onReplay: rep => go('workouts', { drill: 'shooting', session: rep.sessionFolder || `session${rep.sessionNumber}`, rep: rep.id }) }} onHandoff={r => { setRequest(r); if (r.conversationId) navigate({ pathname: location.pathname, search: personalDraftLink(location.search, r.conversationId) }); else go('workouts'); }} /></div>}
       {(visited.has('workouts') || statsPlan) && <div hidden={!workoutsShown}><PlayerWorkouts {...tab('workouts')} active={workoutsShown && !accountSettings} statsProfile={intakeSnapshot(profile)} request={route.view === 'workouts' ? request : null} onAcknowledge={() => setRequest(null)} onCompleted={completedWorkout} feedbackInvitation={feedbackInvitation} onDismissFeedback={() => setFeedbackInvitation(false)} onGuidedChange={setGuided} /></div>}
-      {visited.has('stats') && <div hidden={route.view !== 'stats' || statsPlan}><PlayerStats {...tab('stats')} active={route.view === 'stats' && !statsPlan} profile={profile} dataset={dataset} onStartWorkout={startWorkout} /></div>}
+      {visited.has('stats') && <div hidden={route.view !== 'stats' || statsPlan}><PlayerStats {...tab('stats')} active={route.view === 'stats' && !statsPlan} profile={profile} dataset={dataset} onStartWorkout={startWorkout} journey={journey} /></div>}
       {accountSettings && <AccountSettings ctx={playerCtx} onClose={() => setAccountSettings(false)} />}
   </PlayerShell>;
 }

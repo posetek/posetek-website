@@ -17,6 +17,17 @@ describe("list-first directory presentation", () => {
     expect(adminPlayerReturn(returned.search)).toBe(destination);
     expect(directoryWorkspacePaneOf(selectDirectoryScope(state, { teamId: "other" }))).toBe("list");
   });
+  it("restores the Journey pane for a selected organization or team, never for all organizations", () => {
+    for (const search of ["?orgId=club&directoryPane=journey", "?orgId=club&directoryLevel=people&directoryPane=journey", "?orgId=club&teamId=team&directoryPane=journey", "?orgId=club&directoryLookup=unassigned&directoryPane=journey"]) {
+      const state = parseAdminDirectoryState(search);
+      expect(directoryWorkspacePaneOf(state), search).toBe("journey");
+      expect(parseAdminDirectoryState(adminDirectoryPath(state).split("?")[1])).toEqual(state);
+    }
+    for (const search of ["?directoryPane=journey", "?directoryLevel=people&directoryPane=journey", "?orgId=club&directoryTab=staff&directoryPane=journey"]) {
+      expect(directoryWorkspacePaneOf(parseAdminDirectoryState(search)), search).toBe("list");
+    }
+    expect(legacyAdminWorkspacePath("?orgId=club&directoryPane=journey")).toContain("directoryPane=journey");
+  });
   it("preserves explicit presentation on old directory aliases", () => {
     expect(legacyAdminWorkspacePath("?view=testing&directoryPane=list")).toContain("directoryPane=list");
     expect(legacyOrganizationsPath("?reportView=testing&directoryPane=list")).toContain("directoryPane=list");

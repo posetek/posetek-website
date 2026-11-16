@@ -1,11 +1,9 @@
 import { useEffect } from 'react';
 import { auth, cloud } from '../firebase';
-import { featureForLocation } from './clock';
+import { featureForLocation, WEB_USAGE_BUILD as BUILD } from './clock';
 import { browserUsageLocks, removeOtherActorQueues, UsageQueue } from './queue';
 import type { UsageStorage } from './queue';
 import { createUsageSession } from './session';
-
-const BUILD = 'web-insights-v2';
 
 // Mounted once in the authenticated application's router. Public marketing
 // assets remain unchanged. No UID, URL, or selected player enters a payload.
