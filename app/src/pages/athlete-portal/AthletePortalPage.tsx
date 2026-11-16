@@ -227,7 +227,8 @@ export default function AthletePortalPage() {
   const rosterNavigation = athleteRosterNavigation(access, athlete, params.toString());
 
   // Staff see the player's own workspace when the link asks for it (`workspace=player`), so an
-  // admin, manager or coach can check exactly what that athlete lands on.
+  // admin, manager or coach can check that athlete's tabs. Its default landing follows the staff
+  // member's own account in this browser (Stats the first time, then Workouts), not the athlete's.
   const staffPlayerView = params.get('workspace') === 'player' && !!access && ['admin', 'manager', 'coach'].includes(access);
   if (phase === 'ready' && (access === 'athlete' || access === 'preview' || staffPlayerView)) {
     return <PlayerExperience key={playerId} ctx={ctx} initialReps={reps} />;

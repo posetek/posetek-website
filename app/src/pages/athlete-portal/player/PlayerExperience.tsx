@@ -14,8 +14,8 @@ import { defaultDataset, intakeSnapshot, playerProfile } from './scoring';
 import type { Row } from './execution';
 import PlayerShell, { PLAYER_LANDING_VIEW, PlayerHeader, playerInitials } from './PlayerShell';
 import type { PlayerView } from './PlayerShell';
-import { linkNamesPlayerTab, playerRoute, playerSearch } from './workspace';
-import { defaultPlayerView, landingSeen, markLandingSeen } from './landing';
+import { playerRoute, playerSearch } from './workspace';
+import { defaultPlayerView, landingSearch, landingSeen, markLandingSeen } from './landing';
 import type { PlayerDestination, PlayerTabProps } from './workspace';
 import PlayerHome from './home/PlayerHome';
 import PlayerWorkouts from './workouts/PlayerWorkouts';
@@ -48,14 +48,12 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   // app, so one instance owns every workout in progress.
   const statsPlan = route.view === 'stats' && route.screen === 'plan';
   const workoutsShown = route.view === 'workouts' || statsPlan;
-  // A default Workouts landing names its tab in the address, as a tab tap does, so the usage clock
-  // and a reload see the page that is shown. The tab is already on screen: nothing re-renders.
+  // The default landing names its tab in the address, as a tab tap does, so a reload, a restored tab
+  // or Back stays on the page shown and the usage clock sees it. The tab is already on screen.
   useEffect(() => {
-    if (route.view !== 'workouts' || linkNamesPlayerTab(location.search)) return;
-    const params = new URLSearchParams(location.search);
-    params.set('view', 'workouts');
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-  }, [location.pathname, location.search, navigate, route.view]);
+    const search = landingSearch(location.search, landing);
+    if (search !== null) navigate({ pathname: location.pathname, search, hash: location.hash }, { replace: true });
+  }, [landing, location.hash, location.pathname, location.search, navigate]);
   // Stats has been shown to this account here: its later opens land on Workouts.
   useEffect(() => {
     if (!preview && route.view === 'stats' && !statsPlan) markLandingSeen(auth.currentUser?.uid);
