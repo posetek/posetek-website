@@ -1,3 +1,4 @@
+import type { UsageClient, UsageCohortGroup } from './usageStory';
 import { accountContext, accountQuery } from "./accountHierarchy";
 import type { AccountContext } from "./accountHierarchy";
 import { expandedRequest } from "../../insights/lib/expandedQuery";
@@ -11,6 +12,7 @@ export type PlayerPanel = "results" | "workouts" | "profile" | "ai-incidents";
 export type DirectoryPane = "list" | "report" | "one-pagers" | "journey";
 export type WorkspaceReportView = "overview" | "testing" | "workouts" | "usage";
 export interface WorkspaceReportState {
+  reportUsageClientKind?: UsageClient; reportUsageCohortGroup?: UsageCohortGroup;
   reportAdminFollowUp?: AdminActivityFollowUp; reportAdminSort?: AdminActivitySort;
   reportView?: WorkspaceReportView; reportMode?: "directory" | "attention";
   reportStart?: string; reportEnd?: string; reportWeeks?: number; reportTimezone?: string;
@@ -25,6 +27,9 @@ export interface AdminDirectoryState extends WorkspaceReportState {
   returnTo?: string; preview?: boolean; directoryLookup?: "all" | "unassigned";
   directoryPane?: DirectoryPane;
   onePagerCohort?: string;
+  journeyStatsDays?: 7 | 30 | 90; journeyIncludeStaff?: boolean;
+  journeyView?: "pages" | "paths" | "players" | "stats"; journeyPlayer?: string;
+  journeyCohort?: "all" | "new" | "existing" | "unknown"; journeyEntry?: "all" | "sign_in"; journeyCursor?: string;
 }
 export function supportsOnePagerTracking(state: Partial<AdminDirectoryState>): boolean {
   return Boolean(state.orgId) && !state.teamId && state.directoryLookup !== "unassigned" && state.directoryTab === "players" && state.directoryLevel === "people";
@@ -36,6 +41,7 @@ export function supportsStatsJourney(state: Partial<AdminDirectoryState>): boole
 const validCohortId = (id: string | null | undefined): id is string => typeof id === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(id);
 const queryOf = (search: string | URLSearchParams) => typeof search === "string" ? new URLSearchParams(search) : search;
 const REPORT_FIELDS = {
+  reportUsageClientKind: "usageClientKind", reportUsageCohortGroup: "usageCohortGroup",
   reportAdminFollowUp: "adminFollowUp", reportAdminSort: "adminSort",
   reportView: "view", reportStart: "start", reportEnd: "end", reportWeeks: "weeks", reportTimezone: "timezone",
   reportTestingWindow: "testingWindow", reportSearch: "rosterSearch", reportCursor: "cursor", reportPage: "page",
@@ -74,6 +80,13 @@ export function parseAdminDirectoryState(search: string | URLSearchParams): Admi
     ...(query.get("preview") === "1" ? { preview: true } : {}),
     ...(pane === "list" || pane === "report" || onePagers || journey ? { directoryPane: pane } : {}),
     ...(onePagers && validCohortId(cohortId) ? { onePagerCohort: cohortId } : {}),
+    ...([7, 30, 90].includes(Number(query.get("journeyStatsDays"))) ? { journeyStatsDays: Number(query.get("journeyStatsDays")) as 7 | 30 | 90 } : {}),
+    ...(query.get("journeyIncludeStaff") === "1" ? { journeyIncludeStaff: true } : {}),
+    ...(["pages", "paths", "players", "stats"].includes(query.get("journeyView") || "") ? { journeyView: query.get("journeyView") as AdminDirectoryState["journeyView"] } : {}),
+    ...(validCohortId(query.get("journeyPlayer")) ? { journeyPlayer: query.get("journeyPlayer")! } : {}),
+    ...(["all", "new", "existing", "unknown"].includes(query.get("journeyCohort") || "") ? { journeyCohort: query.get("journeyCohort") as AdminDirectoryState["journeyCohort"] } : {}),
+    ...(["all", "sign_in"].includes(query.get("journeyEntry") || "") ? { journeyEntry: query.get("journeyEntry") as AdminDirectoryState["journeyEntry"] } : {}),
+    ...(query.get("journeyCursor") ? { journeyCursor: query.get("journeyCursor")!.slice(0, 2000) } : {}),
     ...(directoryLevel ? { directoryLevel } : {}),
     ...(query.get("directoryLookup") === "all" || unassigned ? { directoryLookup: query.get("directoryLookup") as "all" | "unassigned" } : {}),
     ...(context.orgId && unassigned ? { reportTeamAssignment: "unassigned", directoryLevel: "people" } : {}),
@@ -93,6 +106,9 @@ export function directoryQuery(state: Partial<AdminDirectoryState> = {}): URLSea
     const value = state[field];
     if (value !== undefined && value !== "" && value !== 0) query.set(field, String(value));
   }
+  if (state.journeyStatsDays) query.set("journeyStatsDays", String(state.journeyStatsDays));
+  if (state.journeyIncludeStaff) query.set("journeyIncludeStaff", "1");
+  for (const key of ["journeyView", "journeyPlayer", "journeyCohort", "journeyEntry", "journeyCursor"] as const) if (state[key]) query.set(key, state[key]);
   if (state.reportMode === "attention") query.set("reportMode", state.reportMode);
   return query;
 }
@@ -112,12 +128,12 @@ export function directoryWorkspacePaneOf(state: Partial<AdminDirectoryState>): D
   return state.directoryPane || (state.reportView && state.reportMode !== "attention" ? "report" : "list");
 }
 
-const COHORT_FIELDS = ["reportAdminFollowUp", "reportAdminSort", "reportSearch", "reportCursor", "reportPage", "reportDivision", "reportAgeBand", "reportTestingStatus", "reportWorkoutStatus", "reportUsageStatus", "reportUsagePlatform", "reportUsageFeature", "reportTeamAssignment"] as const;
+const COHORT_FIELDS = ["reportUsageCohortGroup","reportAdminFollowUp", "reportAdminSort", "reportSearch", "reportCursor", "reportPage", "reportDivision", "reportAgeBand", "reportTestingStatus", "reportWorkoutStatus", "reportUsageStatus", "reportUsagePlatform", "reportUsageFeature", "reportTeamAssignment"] as const;
 export type DirectoryScopePatch = Pick<Partial<AdminDirectoryState>, "orgId" | "teamId" | "coachId" | "directoryLevel" | "directoryLookup">;
 /** A new hierarchy selection keeps the reporting period/view, but starts with its complete roster. */
 export function selectDirectoryScope(state: AdminDirectoryState, patch: DirectoryScopePatch): AdminDirectoryState {
   const next = { ...state, orgId: patch.orgId ?? state.orgId, teamId: undefined, coachId: undefined,
-    directoryLookup: undefined, directoryLevel: undefined, onePagerCohort: undefined, directoryTab: "players" as const,
+    directoryLookup: undefined, directoryLevel: undefined, journeyPlayer: undefined, journeyCursor: undefined, onePagerCohort: undefined, directoryTab: "players" as const,
     search: "", page: 1, reportMode: "directory" as const, directoryPane: "list" as const, ...patch };
   for (const field of COHORT_FIELDS) next[field] = undefined;
   if (next.teamId || next.directoryLookup) next.directoryLevel = "people";

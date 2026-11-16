@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { auth, cloud, db } from '../../../lib/firebase';
 import { visibleAttempts } from '../../../lib/result-values';
 import { parseProvisionalEstimates } from '../../../lib/provisional-estimates';
+import { usePlayerJourney } from '../../../lib/player-journey/use-player-journey';
 import { DRILLS } from '../lib/drills';
 import { accepted, allStatsReps, normalizeRep } from '../lib/metrics';
 import type { PortalContext } from '../views/shared';
@@ -14,7 +15,7 @@ import { defaultDataset, intakeSnapshot, playerProfile } from './scoring';
 import type { Row } from './execution';
 import PlayerShell, { PlayerHeader, playerInitials } from './PlayerShell';
 import type { PlayerView } from './PlayerShell';
-import { playerRoute, playerSearch } from './workspace';
+import { playerRoute, playerSearch, shownJourneyPage } from './workspace';
 import type { PlayerDestination, PlayerTabProps } from './workspace';
 import PlayerHome from './home/PlayerHome';
 import PlayerWorkouts from './workouts/PlayerWorkouts';
@@ -55,6 +56,9 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   const report = useAthleteTestReport(ctx.playerId, preview);
   // The Stats page journey: what is shown now (account settings covers the page it opens over).
   const journey = useStatsJourney({ access: ctx.access, playerId: ctx.playerId, search: location.search, place: journeyPlace(route, accountSettings) });
+  const showingPlayerPage = accountSettings || visited.has(route.view) || statsPlan;
+  const playerJourney = usePlayerJourney({ ownerUid: feedbackOwner.uid, access: ctx.access, playerId: ctx.playerId,
+    search: location.search, page: showingPlayerPage ? shownJourneyPage(route, accountSettings, guided) : null });
   useEffect(() => {
     if (preview) return;
     const hide = () => { if (document.visibilityState !== 'visible') setFeedbackInvitation(false); };
@@ -133,7 +137,8 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
   // A sheet over the workspace pauses the tab under it, as the app's `isActive` does.
   const tab = (view: PlayerView): PlayerTabProps => ({ ctx: playerCtx, route, go, back, active: route.view === view && !accountSettings, preview, athlete, reps, personal, report });
   return <PlayerShell activeView={route.view} search={location.search} pathname={location.pathname} initials={playerInitials(athlete?.name)} onNavigate={view => { journey.tabs(); go(view as PlayerView); }} hideDock={guided && workoutsShown}
-    onAccountSettings={() => setAccountSettings(true)} onReturnHome={() => go('home')} onSignOut={preview ? undefined : () => { void auth.signOut(); }}>
+    onAccountSettings={() => setAccountSettings(true)} onPlayerAction={playerJourney.onClick} onReturnHome={() => go('home')}
+    onSignOut={preview ? undefined : () => { playerJourney.signOut(); void auth.signOut(); }}>
       {preview && <p className="player-preview-note">Local preview · sample data · no account changes</p>}
       {refreshError && <p className="player-error" role="status">Could not refresh your latest results: {refreshError}</p>}
       {visited.has('home') && <div hidden={route.view !== 'home'}><PlayerHome {...tab('home')} /></div>}

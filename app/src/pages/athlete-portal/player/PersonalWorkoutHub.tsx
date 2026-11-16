@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { blockDoseLine } from '../../../lib/contracts/drillV2';
 import { localDayString } from '../../../lib/contracts/planV3';
+import { playerJourneyOutcome } from '../../../lib/player-journey/use-player-journey';
 import TrainingLoadInstructions from '../../../components/TrainingLoadInstructions';
 import type { Row } from './execution';
 import type { PersonalWorkoutStore } from './use-personal-workouts';
@@ -132,7 +133,14 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
       onSelection?.(id); setMode('chat'); setRequestText('');
     } catch (e) { if (mounted.current) fail(e); }
   };
-  const start = async () => { if (selected && access && startPain === 'no') try { setPlaying(await store.start(selected, { equipmentConfirmed: true, painFlag: false, currentAccess: { ...selected.intake, ...access, painFlag: false } })); } catch (e) { fail(e); } };
+  const start = async () => {
+    if (!selected || !access || startPain !== 'no') return;
+    const recordStarted = !preview ? playerJourneyOutcome(playerId, 'workout_started') : undefined;
+    try {
+      setPlaying(await store.start(selected, { equipmentConfirmed: true, painFlag: false, currentAccess: { ...selected.intake, ...access, painFlag: false } }));
+      recordStarted?.();
+    } catch (e) { fail(e); }
+  };
   const notice = <>{store.error && <p className="player-error" role="alert">{store.error}</p>}{store.saving && <p role="status">{store.status || 'Checking your workout…'}</p>}{store.pending && !store.saving && !store.pending.terminalFailed && <section className="portal-card"><p>Your request is saved. Recover its result to continue.</p><button onClick={() => void store.recover()}>Recover saved request</button></section>}</>;
   if (playing) return <>{notice}<PlayerWorkout key={playing.id} workout={playing} store={store.adapter} playerId={playerId} preview={preview} onExit={() => { setPlaying(null); if (!embedded) setMode('list'); }} onCompleted={onCompleted} /></>;
   if (!store.enabled) return <section className="portal-card"><h2>Personal workouts</h2><p>Personal workout tools are not enabled for this account yet.</p><button onClick={onBack}>Back to training</button></section>;
@@ -161,7 +169,7 @@ export default function PersonalWorkoutHub({ store, playerId, athlete, config, p
     {mode === 'saved' && selected && (() => { const log = store.logs[selected.workoutId], snapshot = log?.workoutSnapshot || selected; return <><p className="personal-workout-meta">Saved to Personal workouts · {selected.scheduledDate}</p><PersonalPrescription proposal={snapshot} catalog={store.catalog} />
       {log?.endedAt ? <p className="workout-pause-note">{log.endReason === 'completed' ? 'Completed' : log.endReason === 'pain' ? 'Stopped for pain' : 'Ended early'} · {Math.floor(Number(log.elapsedSeconds || 0) / 60)}:{String(Number(log.elapsedSeconds || 0) % 60).padStart(2, '0')} active. Your completed sets remain in history.</p> : <>
         {setupOpen ? <TrainingSetup value={setup} onChange={setSetup} onConfirm={confirmSetup} disabled={blocked} title={log ? 'Confirm your setup to resume' : 'Your setup for today'} /> : <section className="training-setup-summary"><div><strong>Confirmed for today</strong><p>{setupSummary(setup)}</p></div><button className="hub-secondary" disabled={blocked} onClick={() => setSetupOpen(true)}>Change setup</button></section>}
-        <fieldset className="portal-card" disabled={blocked}><legend>{log ? 'Ready to resume?' : 'Before you start'}</legend><p>We’ll check this prescription against the equipment and space you confirmed. If your setup has changed, ask AI for a suitable revision below.</p><label>Any pain or restriction today?<select value={startPain} onChange={e => setStartPain(e.target.value)}><option value="">Choose an answer</option><option value="no">No</option><option value="yes">Yes — pause training</option></select></label><button className="primary-cta" disabled={!access || startPain !== 'no' || !personalCapabilityEnabled(config, 'start_personal_workout', preview)} onClick={() => void start()}>{log ? 'Resume workout' : 'Start workout'}</button></fieldset>
+        <fieldset className="portal-card" disabled={blocked}><legend>{log ? 'Ready to resume?' : 'Before you start'}</legend><p>We’ll check this prescription against the equipment and space you confirmed. If your setup has changed, ask AI for a suitable revision below.</p><label>Any pain or restriction today?<select value={startPain} onChange={e => setStartPain(e.target.value)}><option value="">Choose an answer</option><option value="no">No</option><option value="yes">Yes — pause training</option></select></label><button className="primary-cta" data-player-journey="start_workout" disabled={!access || startPain !== 'no' || !personalCapabilityEnabled(config, 'start_personal_workout', preview)} onClick={() => void start()}>{log ? 'Resume workout' : 'Start workout'}</button></fieldset>
         {log && <button className="hub-secondary" disabled={blocked} onClick={async () => { try { await store.adapter.finish(`personal_${selected.workoutId}`, 'stopped', log.elapsedSeconds || 0); if (embedded) onBack(); else setMode('list'); } catch (e) { fail(e); } }}>End this session and keep my progress</button>}
       </>}
       <button className="hub-secondary" disabled={blocked} onClick={() => { if (!log && selected.personalConversationId) { void openConversation(selected.personalConversationId, setup); } else begin(snapshot, !!log); }}>{log ? 'Ask AI for a personal copy' : 'Ask AI to change this workout'}</button></>; })()}

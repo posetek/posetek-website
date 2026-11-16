@@ -39,6 +39,7 @@ import { BUILD_REFUSED, RUN_REFUSED, canBuildWorkout, createTarget, defaultMinut
 import { listedWorkouts, shownStoreError, storeKeyFor, workoutStoreScopes } from './workouts/store-scopes';
 import type { StoreKey } from './workouts/store-scopes';
 import AppOnlySheet from './workouts/AppOnlySheet';
+import { playerJourneyOutcome } from '../../../lib/player-journey/use-player-journey';
 import type { AppOnlyKind } from './workouts/AppOnlySheet';
 import { allWorkoutLogs, useAllWorkoutLogs } from './workouts/use-workout-logs';
 import './workouts/workouts.css';
@@ -239,7 +240,8 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     if (personalOpen) closePersonal();
     // The workout stays on the store it starts on until it finishes.
     const key = storeKeyFor(w, scopes);
-    try { const started = await storeOn(key).start(w); setPlayingStore(key); setPlaying(started); setReview(null); setChatTarget(null); setFullOpen(false); }
+    const recordStarted = ctx.access === 'athlete' && ctx.playerId ? playerJourneyOutcome(ctx.playerId, 'workout_started') : undefined;
+    try { const started = await storeOn(key).start(w); setPlayingStore(key); setPlaying(started); setReview(null); setChatTarget(null); setFullOpen(false); recordStarted?.(); }
     catch (e: any) {
       // The main store shows its own failure on every hub screen. The standalone store's is shown
       // only here, where it was used (a start from Saved or the resume banner has no review screen).
@@ -338,7 +340,7 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
     <CoachChat key={JSON.stringify(chatTarget)} playerId={ctx.playerId!} preview={preview} capability="workout_chat" context={{ workoutRef: chatTarget }} initialText={seed} onDraft={setProposal}
       afterMessages={proposal && <section className="wk-card wk-proposal"><Eyebrow>Proposed workout · not saved yet</Eyebrow><h3 className="wk-card-title">{proposal.workout?.title}</h3><p className="wk-muted">{proposal.workout?.intent}</p>
         <ol className="wk-review-blocks">{(proposal.workout?.blocks || []).map((b: Row, i: number) => <li key={b.blockId}><button type="button" className="wk-review-block" onClick={() => openDrill(b.drillId, b.name)}><span className="wk-review-order" aria-hidden="true">{b.order ?? i + 1}</span><strong>{b.name}</strong><small>~{b.estimatedMinutes} min</small></button>{b.whyIncluded && <p className="wk-faint">{b.whyIncluded}</p>}</li>)}</ol>
-        <div className="wk-button-row"><button className="primary-cta" disabled={applying || !capabilityEnabled(config, 'apply_workout_draft')} onClick={() => void apply(false)}>{applying ? 'Saving…' : 'Save workout'}</button><button className="wk-secondary" disabled={applying || !capabilityEnabled(config, 'apply_workout_draft')} onClick={() => void apply(true)}>Save and start</button></div></section>} />
+        <div className="wk-button-row"><button className="primary-cta" disabled={applying || !capabilityEnabled(config, 'apply_workout_draft')} onClick={() => void apply(false)}>{applying ? 'Saving…' : 'Save workout'}</button><button className="wk-secondary" data-player-journey="start_workout" disabled={applying || !capabilityEnabled(config, 'apply_workout_draft')} onClick={() => void apply(true)}>Save and start</button></div></section>} />
   </>);
   if (review && fullOpen) { const log = storeFor(review).logFor(review.id);
     return overlay('Your workout', () => setFullOpen(false), <WorkoutFull workout={log?.workoutSnapshot ? { ...review, workoutSnapshot: log.workoutSnapshot } : review} started={!!log} requestedMinutes={review.source === 'plan' ? Number(plan?.minutesPerSession) || null : Number(review.budgetMinutes) || null} onDrill={openDrill} />); }
@@ -350,7 +352,7 @@ export default function PlayerTraining({ ctx, statsProfile, personal, request, o
       ? <><button type="button" className="primary-cta" disabled><span className="material-symbols-outlined" aria-hidden="true">play_arrow</span>Start workout</button><small className="wk-faint">{RUN_REFUSED}</small></>
       : needsTrainingStartCheck(review)
       ? <TrainingStartConfirmation key={review.id} disabled={disabled} resuming={mode !== 'walkthrough' && Boolean(log)} onStart={confirmation => void start({ ...review, startConfirmation: confirmation })} />
-      : <button type="button" className="primary-cta" disabled={disabled || !(log?.workoutSnapshot || review).blocks?.length} onClick={() => void start(review)}><span className="material-symbols-outlined" aria-hidden="true">{mode === 'walkthrough' ? 'visibility' : 'play_arrow'}</span>{reviewStore.saving ? 'Opening workout…' : mode === 'walkthrough' ? 'Preview workout' : log ? 'Resume workout' : 'Start workout'}</button>;
+      : <button type="button" className="primary-cta" data-player-journey="start_workout" disabled={disabled || !(log?.workoutSnapshot || review).blocks?.length} onClick={() => void start(review)}><span className="material-symbols-outlined" aria-hidden="true">{mode === 'walkthrough' ? 'visibility' : 'play_arrow'}</span>{reviewStore.saving ? 'Opening workout…' : mode === 'walkthrough' ? 'Preview workout' : log ? 'Resume workout' : 'Start workout'}</button>;
     const snapshot = log?.workoutSnapshot || review;
     const copy = personal.enabled ? () => { personal.newConversation(); setPersonalEntry(v => v + 1); setConversationOpen(false); setPersonalHandoff(undefined); setSeed(''); setPersonalSelected(undefined); setPersonalSource({ workout: snapshot, ...(review.source === 'plan' ? { reference: { planId: review.planId, workoutId: review.workoutId, revision: Number(review.workoutRevision || 1) } } : {}) }); setPersonalOpen(true); setReview(null); } : undefined;
     const adjust = review.source !== 'plan' && capabilityEnabled(config, 'workout_chat') ? () => { setSeed(''); setChatTarget({ kind: 'adhoc', plannedWorkoutId: review.workoutId }); setReview(null); } : copy;

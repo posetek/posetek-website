@@ -9,7 +9,7 @@ const vite = await createServer({ root: fileURLToPath(new URL('../app', import.m
   server: { host: '127.0.0.1', port: 0, hmr: false }, logLevel: 'error' });
 await vite.listen();
 const origin = `http://127.0.0.1:${vite.httpServer.address().port}`;
-const url = path => origin + '/admin/accounts?' + path;
+const url = path => origin + '/admin/accounts?journeyView=stats&' + path;
 const club = 'orgId=northfield&directoryLevel=people';
 const vacaville = 'orgId=vacaville-united-soccer-club&directoryLevel=people';
 try {
@@ -54,14 +54,14 @@ try {
       assert.deepEqual(await cardValues('Time on Stats'), { 'All visits': ['40 sec', '7 visits'], 'With a button click': ['1 min 35 sec', '3 visits'], 'Without a click': ['15 sec', '4 visits'] });
       const rows = table => panel.getByRole('table', { name: table }).locator('tbody tr').evaluateAll(nodes => nodes.map(row => [...row.querySelectorAll('td')].map(cell => cell.textContent)));
       assert.deepEqual(await rows('Next stop'), [['Coach', '1', '17%', '1', '0'], ['Workouts', '1', '17%', '1', '0'], ['Home', '1', '17%', '0', '1'],
-        ['Plan', '1', '17%', '1', '0'], ['Other page', '1', '17%', '0', '0'], ['Left the site', '1', '17%', '—', '—']]);
+        ['Plan', '1', '17%', '1', '0'], ['Other page', '1', '17%', '0', '0'], ['Last observed on Stats', '1', '17%', '—', '—']]);
       await panel.getByText('1 visit from the last 30 minutes with no next stop yet is not counted.', { exact: true }).waitFor();
       const players = await rows('Players');
       assert.deepEqual(players.map(row => row[0]), ['Journey Athlete C', 'Journey Athlete E', 'Journey Athlete A', 'Journey Athlete B', 'Journey Athlete D']);
       assert.deepEqual(players[2].filter((_, index) => index !== 3), ['Journey Athlete A', 'Harbor U15', '2', '1 min 55 sec', 'Yes', 'Ask the AI Coach', 'Home', 'Messaged the coach']);
       // Pacific, the One-pager tracking tab's format ("Nov 10, 2026, 1:31 PM"; WebKit writes "at").
       assert.match(players[2][3], /^[A-Z][a-z]{2} \d{1,2}, \d{4},? (at )?\d{1,2}:\d{2}\s[AP]M$/);
-      assert.deepEqual(players[0].slice(1, 3).concat(players[0].slice(4)), ['Summit U17', '2', '15 sec', 'No', 'None', 'Left the site', 'No']);
+      assert.deepEqual(players[0].slice(1, 3).concat(players[0].slice(4)), ['Summit U17', '2', '15 sec', 'No', 'None', 'Last observed on Stats', 'No']);
       assert.deepEqual(players[1].slice(1, 3), ['Unassigned', '1']);
       // A coach message with no click on the Stats page is not a follow-through.
       assert.equal(players[1].at(-1), 'No');
@@ -79,13 +79,14 @@ try {
       // Staff visits count only when asked for, and show in the Visits cell.
       const staff = panel.getByRole('checkbox', { name: 'Include staff' });
       assert.equal(await staff.isChecked(), false);
-      await staff.check();
+      await staff.click();
       await panel.getByText('6 players · 9 visits', { exact: true }).waitFor();
+      assert.equal(await staff.isChecked(), true);
       assert.deepEqual((await cardValues('Funnel'))['Followed through'], ['3', '50% of landed']);
       const withStaff = await rows('Players');
       assert.equal(withStaff.find(row => row[0] === 'Journey Athlete B')[2], '2 (1 staff)');
       assert.equal(withStaff.find(row => row[0] === 'Journey Athlete A')[2], '2');
-      await staff.uncheck();
+      await staff.click();
       await panel.getByText('5 players · 7 visits', { exact: true }).waitFor();
 
       // Phone width: no sideways scroll, and stacked rows use the whole width.

@@ -8,6 +8,7 @@ import AISharingControl from './AISharingControl';
 import { capabilityEnabled, useCoachConfig } from './gateway';
 import { personalAge } from './personal-workouts';
 import { reportStatsJourneyOutcome } from './stats/use-stats-journey';
+import { playerJourneyOutcome } from '../../../lib/player-journey/use-player-journey';
 import type { Row } from './execution';
 
 /**
@@ -122,6 +123,7 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
   const submit = async () => {
     if (submitting.current || jobId || block) return;
     if (mode === 'sample') { onReady(); return; }
+    const recordCreated = playerJourneyOutcome(playerId, 'plan_created');
     submitting.current = true; setBusy(true); setError('');
     try {
       const created = await requestPlan(playerId, answers, athlete, statsProfile);
@@ -129,6 +131,7 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
       // The Stats page journey's "asked for a plan": the plan request now exists. A refused one
       // (AI sharing, permission, validation) throws or returns nothing above.
       reportStatsJourneyOutcome('plan', playerId);
+      recordCreated?.();
       try { localStorage.setItem(key, created); } catch { /* the listener still works */ }
       setStatus(''); setJobId(created);
     } catch (e: any) {
@@ -189,7 +192,7 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
           : <>
             {answers.age !== undefined && block === 'goals' && <p className="wk-muted" role="status">Pick at least one goal.</p>}
             {!enabled && config && <p className="wk-muted">Plan building is paused right now.</p>}
-            <div className="workout-wizard-actions"><button type="submit" className="primary-cta" disabled={!!block || !enabled || busy}>{busy ? 'Sending your answers…' : 'Build my plan'}</button></div>
+            <div className="workout-wizard-actions"><button type="submit" className="primary-cta" data-player-journey="generate_plan" disabled={!!block || !enabled || busy}>{busy ? 'Sending your answers…' : 'Build my plan'}</button></div>
           </>}
         {sharing && <div className="player-intake-sharing">
           {sharing === 'off' && <p className="wk-muted" role="alert">Turn on AI sharing to build your plan.</p>}

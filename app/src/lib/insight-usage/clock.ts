@@ -1,7 +1,11 @@
+import { BROWSER_CLIENT_KINDS } from './browser';
+import type { BrowserClientKind } from './browser';
+
 export const USAGE_FEATURES = ['overview', 'results', 'training', 'workout', 'video', 'feed', 'planner', 'other'] as const;
 export type UsageFeature = typeof USAGE_FEATURES[number];
 export type UsageInterval = { startedAtMillis: number; endedAtMillis: number; feature: UsageFeature };
-export type UsageBatch = { schemaVersion: 1; sessionId: string; sequence: number; platform: 'web'; build: string; intervals: UsageInterval[] };
+export type UsageBatch = { sessionId: string; sequence: number; platform: 'web'; build: string; intervals: UsageInterval[] }
+  & ({ schemaVersion: 1 } | { schemaVersion: 2; clientKind: BrowserClientKind });
 export const IDLE_MS = 120000;
 /** The website build every first-party usage record names (insight usage and the Stats page journey). */
 export const WEB_USAGE_BUILD = 'web-insights-v2';
@@ -48,8 +52,11 @@ export function appendInterval(rows: UsageInterval[], row: UsageInterval): Usage
 }
 export function validSavedBatch(batch: unknown, now: number): batch is UsageBatch {
   const b = batch as UsageBatch;
-  return !!b && Object.keys(b).sort().join(',') === 'build,intervals,platform,schemaVersion,sequence,sessionId'
-    && b.schemaVersion === 1 && b.platform === 'web' && typeof b.sessionId === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(b.sessionId)
+  return !!b && (
+    (b.schemaVersion === 1 && Object.keys(b).sort().join(',') === 'build,intervals,platform,schemaVersion,sequence,sessionId')
+    || (b.schemaVersion === 2 && BROWSER_CLIENT_KINDS.includes(b.clientKind)
+      && Object.keys(b).sort().join(',') === 'build,clientKind,intervals,platform,schemaVersion,sequence,sessionId')
+  ) && b.platform === 'web' && typeof b.sessionId === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(b.sessionId)
     && Number.isSafeInteger(b.sequence) && b.sequence >= 0 && typeof b.build === 'string' && /^[A-Za-z0-9._+()-]{1,64}$/.test(b.build)
     && Array.isArray(b.intervals) && b.intervals.length > 0 && b.intervals.length <= 60 && b.intervals.every(r => r && Object.keys(r).sort().join(',') === 'endedAtMillis,feature,startedAtMillis' && USAGE_FEATURES.includes(r.feature)
       && Number.isSafeInteger(r.startedAtMillis) && Number.isSafeInteger(r.endedAtMillis) && r.startedAtMillis >= now - OFFLINE_MS
@@ -57,7 +64,7 @@ export function validSavedBatch(batch: unknown, now: number): batch is UsageBatc
 }
 export function featureForLocation(path: string, query: string): UsageFeature | null {
   const q = new URLSearchParams(query);
-  if (q.has('preview') || q.has('share') || q.has('viewAs')) return null;
+  if (q.has('preview') || q.has('share') || q.has('viewAs') || q.has('viewAsPlayerId')) return null;
   if (path === '/feed' || path === '/feed.html') return 'feed';
   if (path === '/programs') return 'planner';
   if (path !== '/athlete' && path !== '/profile.html') return null;

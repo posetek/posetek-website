@@ -66,7 +66,7 @@ describe("Stats page journey report", () => {
     expect(stops.finished).toBe(6);
     expect(stops.open).toBe(1);
     expect(stops.rows.map(row => [row.label, row.visits, row.byButton, row.byTabs])).toEqual([
-      ["Coach", 1, 1, 0], ["Workouts", 1, 1, 0], ["Home", 1, 0, 1], ["Plan", 1, 1, 0], ["Other page", 1, 0, 0], ["Left the site", 1, 0, 0],
+      ["Coach", 1, 1, 0], ["Workouts", 1, 1, 0], ["Home", 1, 0, 1], ["Plan", 1, 1, 0], ["Other page", 1, 0, 0], ["Last observed on Stats", 1, 0, 0],
     ]);
     expect(journeyNextStops(everyone, END).rows.map(row => row.visits)).toEqual([2, 1, 1, 2, 1, 1]);
   });

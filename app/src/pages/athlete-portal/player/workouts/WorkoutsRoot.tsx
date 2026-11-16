@@ -13,8 +13,8 @@ export const MEASURED_TESTS = [
 ] as const;
 
 /** `WorkoutActivityCard`: an icon, a title and one line. `prominent` adds the outline Build Workout carries. */
-function ActivityCard({ title, detail, icon, onClick, label, prominent, id }: { title: string; detail: string; icon: string; onClick: () => void; label?: string; prominent?: boolean; id?: string }) {
-  return <button type="button" className={`v4-activity-card wk-activity-card${prominent ? ' prominent' : ''}`} aria-label={label} data-action={id} onClick={onClick}>
+function ActivityCard({ title, detail, icon, onClick, label, prominent, id, journeyTarget }: { title: string; detail: string; icon: string; onClick: () => void; label?: string; prominent?: boolean; id?: string; journeyTarget?: 'start_workout' | 'results' }) {
+  return <button type="button" className={`v4-activity-card wk-activity-card${prominent ? ' prominent' : ''}`} aria-label={label} data-action={id} data-player-journey={journeyTarget} onClick={onClick}>
     <span className="wk-activity-icon"><span className="material-symbols-outlined" aria-hidden="true">{icon}</span></span>
     <strong>{title}</strong><small>{detail}</small>
   </button>;
@@ -22,7 +22,7 @@ function ActivityCard({ title, detail, icon, onClick, label, prominent, id }: { 
 
 /** `TrainingResumeBanner` (V4): an accent line on a capsule. */
 export function ResumeBanner({ text, onClick, disabled }: { text: string; onClick: () => void; disabled?: boolean }) {
-  return <button type="button" className="wk-resume" disabled={disabled} onClick={onClick}><span className="material-symbols-outlined" aria-hidden="true">resume</span><span>{text}</span></button>;
+  return <button type="button" className="wk-resume" data-player-journey="start_workout" disabled={disabled} onClick={onClick}><span className="material-symbols-outlined" aria-hidden="true">resume</span><span>{text}</span></button>;
 }
 
 /** A free session being recorded in the app (`activeFreeSessionBanner`). */
@@ -37,7 +37,7 @@ export function FreeSessionBanner({ session, onClick }: { session: Row; onClick:
 
 /** `MyWorkoutPlanCard` (V4): the label, this week's theme, the schedule line and the next workout. Opens My workout plan. */
 export function PlanSummaryCard({ model, onOpen }: { model: PlanCardModel; onOpen: () => void }) {
-  return <button type="button" className="wk-plan-card" data-action="plan" onClick={onOpen}>
+  return <button type="button" className="wk-plan-card" data-action="plan" data-player-journey="plan" onClick={onOpen}>
     <span className="wk-plan-card-label"><span className="material-symbols-outlined" aria-hidden="true">calendar_month</span>MY WORKOUT PLAN<span className="material-symbols-outlined" aria-hidden="true">arrow_outward</span></span>
     <strong>{model.title}</strong>
     <small>{model.schedule}</small>
@@ -51,7 +51,7 @@ export function PlanInvitationCard({ onCreate }: { onCreate: () => void }) {
     <span className="wk-plan-card-label"><span className="material-symbols-outlined" aria-hidden="true">calendar_month</span>WORKOUT PLAN</span>
     <strong>Build a routine that fits you</strong>
     <small>An AI plan shaped around your goals.</small>
-    <button type="button" className="wk-secondary" data-action="create-plan" onClick={onCreate}><span className="material-symbols-outlined" aria-hidden="true">add</span>Create plan</button>
+    <button type="button" className="wk-secondary" data-action="create-plan" data-player-journey="plan" onClick={onCreate}><span className="material-symbols-outlined" aria-hidden="true">add</span>Create plan</button>
   </section>;
 }
 
@@ -63,7 +63,7 @@ export function WorkoutActions({ onCreate, onCardio }: { onCreate: (() => void) 
   return <section className="wk-actions">
     {onCreate && <div><h2>Create a workout</h2><p>One session, whenever you want.</p></div>}
     <div className="v4-activity-grid">
-      {onCreate && <ActivityCard id="build" title="Build Workout" detail="Choose your focus" icon="auto_awesome" prominent onClick={onCreate} />}
+      {onCreate && <ActivityCard id="build" title="Build Workout" detail="Choose your focus" icon="auto_awesome" prominent journeyTarget="start_workout" onClick={onCreate} />}
       <ActivityCard id="cardio" title="Cardio" detail="Walk, run or ride" icon="favorite" label="Cardio. Walk, run or ride." onClick={onCardio} />
     </div>
   </section>;
@@ -72,16 +72,16 @@ export function WorkoutActions({ onCreate, onCardio }: { onCreate: (() => void) 
 /** `homeFooter` (V4): Saved Workouts, Workout History and Tests grouped in one card. */
 export function HubLinks({ onSaved, onHistory, onTests }: { onSaved: () => void; onHistory: () => void; onTests: () => void }) {
   const rows = [
-    { key: 'saved', title: 'Saved Workouts', icon: 'bookmark', onClick: onSaved },
-    { key: 'history', title: 'Workout History', icon: 'history', onClick: onHistory },
-    { key: 'tests', title: 'Tests', icon: 'straighten', onClick: onTests },
+    { key: 'saved', page: 'saved_workouts', title: 'Saved Workouts', icon: 'bookmark', onClick: onSaved },
+    { key: 'history', page: 'workout_history', title: 'Workout History', icon: 'history', onClick: onHistory },
+    { key: 'tests', page: 'tests', title: 'Tests', icon: 'straighten', onClick: onTests },
   ];
-  return <nav className="wk-links" aria-label="More in Workouts">{rows.map(row => <button type="button" key={row.key} data-action={row.key} onClick={row.onClick}>
+  return <nav className="wk-links" aria-label="More in Workouts">{rows.map(row => <button type="button" key={row.key} data-action={row.key} data-player-journey={row.page} onClick={row.onClick}>
     <span className="material-symbols-outlined" aria-hidden="true">{row.icon}</span>{row.title}<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>
   </button>)}</nav>;
 }
 
 /** The Tests page (`testsPage`): the six measured tests. A card opens that test's results. */
 export function TestsGrid({ onTest }: { onTest: (drill: string) => void }) {
-  return <div className="v4-activity-grid">{MEASURED_TESTS.map(item => <ActivityCard key={item.drill} title={item.title} detail={item.detail} icon={item.icon} label={`${item.title}, ${item.detail}`} onClick={() => onTest(item.drill)} />)}</div>;
+  return <div className="v4-activity-grid">{MEASURED_TESTS.map(item => <ActivityCard key={item.drill} title={item.title} detail={item.detail} icon={item.icon} label={`${item.title}, ${item.detail}`} journeyTarget="results" onClick={() => onTest(item.drill)} />)}</div>;
 }

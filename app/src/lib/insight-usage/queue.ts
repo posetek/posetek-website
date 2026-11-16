@@ -8,21 +8,22 @@ export type UsageStorage = Pick<Storage, 'length' | 'key' | 'getItem' | 'setItem
 export interface UsageLocks {
   run(name: string, availableOnly: boolean, work: (locked: boolean) => Promise<void>): Promise<void>;
 }
-const identity = (batch: UsageBatch) => `${batch.sessionId.toLowerCase()}:${batch.sequence}`;
-const belongsTo = (key: string, uid: string) => key.startsWith(STORE_PREFIX)
-  && key.slice(STORE_PREFIX.length, key.lastIndexOf(':')) === uid;
+type SequencedBatch = { sessionId: string; sequence: number };
+const identity = (batch: SequencedBatch) => `${batch.sessionId.toLowerCase()}:${batch.sequence}`;
+const belongsTo = (key: string, uid: string, prefix: string) => key.startsWith(prefix)
+  && key.slice(prefix.length, key.lastIndexOf(':')) === uid;
 
 export function browserUsageLocks(): UsageLocks | undefined {
   if (!navigator.locks) return undefined;
   return { run: (name, availableOnly, work) => navigator.locks.request(name, { mode: 'exclusive', ifAvailable: availableOnly }, lock => work(!!lock)) };
 }
 
-export function removeOtherActorQueues(storage: UsageStorage | undefined, uid: string | null) {
+export function removeOtherActorQueues(storage: UsageStorage | undefined, uid: string | null, prefix = STORE_PREFIX) {
   try {
     if (!storage) return;
     for (let i = storage.length - 1; i >= 0; i--) {
       const key = storage.key(i);
-      if (key?.startsWith(STORE_PREFIX) && (!uid || !belongsTo(key, uid))) storage.removeItem(key);
+      if (key?.startsWith(prefix) && (!uid || !belongsTo(key, uid, prefix))) storage.removeItem(key);
     }
   } catch { /* Optional browser storage. */ }
 }
@@ -32,21 +33,25 @@ export function removeOtherActorQueues(storage: UsageStorage | undefined, uid: s
 /// saves the destination before deleting a closed writer's source. Without Web
 /// Locks, immutable batches may be copied, but source queues are never deleted:
 /// server idempotence safely handles those duplicates without losing new writes.
-export class UsageQueue {
+export class EngagementQueue<Batch extends SequencedBatch> {
   readonly key: string;
   readonly uid: string;
   private storage: UsageStorage | undefined;
   private locks: UsageLocks | undefined;
   private now: () => number;
-  private batches: UsageBatch[] = [];
+  private prefix: string;
+  private valid: (batch: unknown, now: number) => batch is Batch;
+  private batches: Batch[] = [];
   private adopted = new Set<string>();
   private release?: () => void;
   private closed = false;
   private lockHeld = false;
   constructor(uid: string, instanceId: string, storage: UsageStorage | undefined,
-              locks: UsageLocks | undefined, now: () => number) {
+              locks: UsageLocks | undefined, now: () => number,
+              prefix: string, valid: (batch: unknown, now: number) => batch is Batch) {
     this.uid = uid; this.storage = storage; this.locks = locks; this.now = now;
-    this.key = `${STORE_PREFIX}${uid}:${instanceId}`;
+    this.prefix = prefix; this.valid = valid;
+    this.key = `${prefix}${uid}:${instanceId}`;
   }
 
   async start() {
@@ -62,11 +67,11 @@ export class UsageQueue {
     if (!this.closed) await this.recover();
   }
 
-  private read(raw: string | null): UsageBatch[] {
+  private read(raw: string | null): Batch[] {
     try {
       if (!raw || raw.length > 4_000_000) return [];
       const decoded = JSON.parse(raw), rows = Array.isArray(decoded) ? decoded : decoded?.version === 2 ? decoded.batches : [];
-      return Array.isArray(rows) ? rows.filter(row => validSavedBatch(row, this.now())).slice(-MAX_QUEUE) : [];
+      return Array.isArray(rows) ? rows.filter(row => this.valid(row, this.now())).slice(-MAX_QUEUE) : [];
     } catch { return []; }
   }
 
@@ -76,7 +81,7 @@ export class UsageQueue {
     try {
       for (let i = 0; i < this.storage.length; i++) {
         const key = this.storage.key(i);
-        if (key && belongsTo(key, this.uid) && key !== this.key) keys.push(key);
+        if (key && belongsTo(key, this.uid, this.prefix) && key !== this.key) keys.push(key);
       }
     } catch { return; }
     keys = keys.slice(-MAX_RECOVERY_KEYS);
@@ -103,16 +108,16 @@ export class UsageQueue {
     }
   }
 
-  append(batch: UsageBatch) {
+  append(batch: Batch) {
     if (this.closed) return;
-    this.batches = [...this.batches, batch].filter(b => validSavedBatch(b, this.now())).slice(-MAX_QUEUE);
+    this.batches = [...this.batches, batch].filter(b => this.valid(b, this.now())).slice(-MAX_QUEUE);
     this.persist();
   }
   head() {
-    this.batches = this.batches.filter(b => validSavedBatch(b, this.now()));
+    this.batches = this.batches.filter(b => this.valid(b, this.now()));
     return this.batches[0];
   }
-  acknowledge(batch: UsageBatch) { this.batches = this.batches.filter(b => identity(b) !== identity(batch)); this.persist(); }
+  acknowledge(batch: Batch) { this.batches = this.batches.filter(b => identity(b) !== identity(batch)); this.persist(); }
   clear() { this.batches = []; this.persist(); }
   persist(): boolean {
     if (this.closed || !this.storage) return false;
@@ -126,25 +131,32 @@ export class UsageQueue {
   get ownsLock() { return this.lockHeld; }
 }
 
-export class UsageDelivery {
+export class UsageQueue extends EngagementQueue<UsageBatch> {
+  constructor(uid: string, instanceId: string, storage: UsageStorage | undefined, locks: UsageLocks | undefined, now: () => number) {
+    super(uid, instanceId, storage, locks, now, STORE_PREFIX, validSavedBatch);
+  }
+}
+
+export class UsageDelivery<Batch extends SequencedBatch> {
   active = true;
   disabledUntil = 0;
   nextSend = 0;
   private busy = false;
   private failures = 0;
   private uid: string;
-  private queue: UsageQueue;
+  private queue: EngagementQueue<Batch>;
   private currentUid: () => string | undefined;
   private online: () => boolean;
   private now: () => number;
-  private invoke: (batch: UsageBatch) => Promise<{ accepted?: boolean; reason?: string }>;
+  private invoke: (batch: Batch) => Promise<{ accepted?: boolean; reason?: string }>;
   private clearPending: () => void;
-  constructor(uid: string, queue: UsageQueue, currentUid: () => string | undefined,
+  private terminalRejections: string[];
+  constructor(uid: string, queue: EngagementQueue<Batch>, currentUid: () => string | undefined,
               online: () => boolean, now: () => number,
-              invoke: (batch: UsageBatch) => Promise<{ accepted?: boolean; reason?: string }>,
-              clearPending: () => void) {
+              invoke: (batch: Batch) => Promise<{ accepted?: boolean; reason?: string }>,
+              clearPending: () => void, terminalRejections: string[] = []) {
     this.uid = uid; this.queue = queue; this.currentUid = currentUid; this.online = online;
-    this.now = now; this.invoke = invoke; this.clearPending = clearPending;
+    this.now = now; this.invoke = invoke; this.clearPending = clearPending; this.terminalRejections = terminalRejections;
   }
 
   async send() {
@@ -155,6 +167,7 @@ export class UsageDelivery {
       const result = await this.invoke(head);
       if (!this.active || this.currentUid() !== this.uid) return;
       if (result?.accepted === true) { this.queue.acknowledge(head); this.failures = 0; this.nextSend = this.now() + 6000; }
+      else if (result?.reason && this.terminalRejections.includes(result.reason)) { this.active = false; this.queue.clear(); this.clearPending(); }
       else if (result?.reason === 'disabled') { this.queue.clear(); this.clearPending(); this.disabledUntil = this.now() + 300000; }
       else throw new Error('Unacknowledged usage batch');
     } catch (error: any) {

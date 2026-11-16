@@ -1,3 +1,5 @@
+import { USAGE_CLIENTS, USAGE_COHORT_GROUPS } from '../../admin/lib/usageStory';
+import type { UsageClient, UsageCohortGroup } from '../../admin/lib/usageStory';
 import { accountContext } from "../../admin/lib/accountHierarchy";
 import type { InsightsOrigin } from "./navigation";
 import { ADMIN_ACTIVITY_FOLLOW_UPS, ADMIN_ACTIVITY_SORTS } from "../../admin/lib/adminActivity";
@@ -43,11 +45,14 @@ export function expandedRequest(search: string, now = new Date()) {
     usageStatus: choice(params.get("usageStatus"), ["returning", "active", "inactive", "notCollected"]),
     usagePlatform: choice(params.get("usagePlatform"), ["web", "ios", "both"]), usageFeature: choice(params.get("usageFeature"), USAGE_FEATURES),
     teamAssignment: choice(params.get("teamAssignment"), ["assigned", "unassigned"]),
+    usageClientKind: (choice(params.get("usageClientKind"), USAGE_CLIENTS) || undefined) as UsageClient | undefined,
+    usageCohortGroup: (choice(params.get("usageCohortGroup"), USAGE_COHORT_GROUPS) || undefined) as UsageCohortGroup | undefined,
     adminFollowUp: (choice(params.get("adminFollowUp"), ADMIN_ACTIVITY_FOLLOW_UPS) || undefined) as AdminActivityFollowUp | undefined,
     adminSort: (choice(params.get("adminSort"), ADMIN_ACTIVITY_SORTS) || undefined) as AdminActivitySort | undefined,
   };
 }
-export type ExpandedRequest = Omit<ReturnType<typeof expandedRequest>, "adminFollowUp" | "adminSort"> & {
+export type ExpandedRequest = Omit<ReturnType<typeof expandedRequest>, "adminFollowUp" | "adminSort" | "usageClientKind" | "usageCohortGroup"> & {
+  usageClientKind?: UsageClient; usageCohortGroup?: UsageCohortGroup;
   adminFollowUp?: AdminActivityFollowUp; adminSort?: AdminActivitySort;
 };
 export function expandedQuery(request: ExpandedRequest, patch: Partial<ExpandedRequest> = {}) {
@@ -55,6 +60,8 @@ export function expandedQuery(request: ExpandedRequest, patch: Partial<ExpandedR
   for (const key of ["orgId", "teamId", "coachId", "from", "view", "playerId", "rosterSearch", "cursor", "timezone", "testingWindow", "division", "ageBand", "testingStatus", "workoutStatus", "usageStatus", "usagePlatform", "usageFeature", "teamAssignment"] as const) if (next[key]) query.set(key, next[key]);
   if (next.page) query.set("page", String(next.page));
   if (next.adminFollowUp) query.set("adminFollowUp", next.adminFollowUp);
+  if (next.usageClientKind) query.set("usageClientKind", next.usageClientKind);
+  if (next.usageCohortGroup) query.set("usageCohortGroup", next.usageCohortGroup);
   if (next.adminSort) query.set("adminSort", next.adminSort);
   query.set("weeks", String(next.weeks)); query.set("start", next.startDate); query.set("end", next.endDate);
   return query;

@@ -4,6 +4,12 @@ import type { AthleteTestReport, ReportMetric } from '../report';
 // The rep files, the cache and the team's records are stubbed: only which replays are asked for matters.
 const loadRepReplay = vi.hoisted(() => vi.fn(async () => ({ frames: [], metadata: {}, tracking: null, artifactUrls: {}, mediaUrl: null })));
 const loadTeamComparison = vi.hoisted(() => vi.fn(async (metric: { id: string }) => ({ median: { playerId: 'teammate', rep: { id: `median-${metric.id}` }, value: 1 }, averages: {}, count: 8 })));
+// Staff replay warming also asks Storage for an optional marker file. Keep this
+// fixture credential-free and deterministic when that optional file is absent.
+vi.mock('../../../../lib/firebase', async original => ({
+  ...(await original<typeof import('../../../../lib/firebase')>()),
+  storage: { ref: () => ({ child: () => ({ getDownloadURL: async () => { throw new Error('Synthetic optional file absent'); } }) }) },
+}));
 vi.mock('../../views/SessionView', () => ({ loadRepReplay }));
 vi.mock('../../lib/warm-rep-files', () => ({ warmRepFiles: vi.fn(async () => {}) }));
 vi.mock('../../lib/replay-cache', () => ({ remember: (_key: string, load: () => unknown) => load() }));

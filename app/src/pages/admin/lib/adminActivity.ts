@@ -1,3 +1,4 @@
+import type { PlayerUsageCohort, UsageCohorts, UsageSegmentKey } from './usageStory';
 import type { AdminReportingMetrics } from "./adminReportingMetrics";
 import type { DailyUsageHistory } from "../../insights/lib/dailyUsage";
 import type { UsageFeature } from "../../../lib/insight-usage/clock";
@@ -19,7 +20,7 @@ export interface AdminPlayerWorkout {
 }
 export interface AdminPlayerActivity {
   signIn: { status: "recorded" | "none" | "unlinked" | "unknown"; lastSignInAtMillis: number | null };
-  usage: { lastActivityWindow: {
+  usage: { cohort?: Record<UsageSegmentKey, PlayerUsageCohort>; lastActivityWindow: {
     startMillis: number;
     endMillis: number;
     featureEvidence?: { basis: "latestInterval" | "window"; features: UsageFeature[] };
@@ -38,6 +39,7 @@ export interface AdminActivityTeam {
 }
 export interface AdminActivityReportData {
   dailyUsage?: DailyUsageHistory;
+  usageCohorts?: UsageCohorts;
   metricsV2?: AdminReportingMetrics;
   version: 1; followUp: AdminActivityFollowUp; sort: AdminActivitySort; asOfMillis: number; population: number;
   summary: { noSignIn: number; noActivity: number; unfinishedAssigned: number; noCompletion: number; signInUnknown: number; usageNotCollected: number };

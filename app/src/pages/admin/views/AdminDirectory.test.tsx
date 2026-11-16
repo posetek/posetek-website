@@ -71,7 +71,7 @@ describe("admin directory presentation", () => {
     expect(tabs(render({ kind: "global" }, { orgId: undefined, teamId: undefined }))).not.toContain("Journey");
     // A Journey link outside an organization opens the list instead.
     expect(render({ kind: "global" }, { orgId: undefined, teamId: undefined, directoryPane: "journey" })).toContain('id="workspace-report-panel-list" role="tabpanel"');
-    expect(render({ kind: "team", organizationId: "club", teamId: "team" }, { directoryPane: "journey" })).toContain("Stats page journey");
+    expect(render({ kind: "team", organizationId: "club", teamId: "team" }, { directoryPane: "journey" })).toContain("Player journeys");
   });
   it("keeps one keyboard entry point across list and reporting tabs", () => {
     const html = renderToStaticMarkup(<DirectoryWorkspaceTabs active="list" listLabel="Teams" onChange={() => {}} />);

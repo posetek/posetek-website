@@ -14,12 +14,15 @@ const counted = (value: number, one: string) => `${value.toLocaleString("en-US")
  * Journey: what athletes do on the Stats page they land on, from our own first-party records
  * (docs/features/STATS_JOURNEY.md). The component only renders; `lib/statsJourney` counts.
  */
-export default function StatsJourney({ organizationId, teamId, unassigned = false, teams, roster }: {
-  organizationId: string; teamId?: string; unassigned?: boolean; teams: Team[];
+export default function StatsJourney({ organizationId, teamId, unassigned = false, teams, roster, embedded = false, selectedDays, selectedStaff, onDaysChange, onStaffChange }: {
+  selectedDays?: JourneyDays; selectedStaff?: boolean; onDaysChange?: (days: JourneyDays) => void; onStaffChange?: (value: boolean) => void;
+  embedded?: boolean; organizationId: string; teamId?: string; unassigned?: boolean; teams: Team[];
   /** Current roster membership, which places one-pager reports in a selected team. */
   roster: RosterPlayer[];
 }) {
-  const [days, setDays] = useState<JourneyDays>(30), [includeStaff, setIncludeStaff] = useState(false);
+  const [localDays, setLocalDays] = useState<JourneyDays>(30), [localStaff, setLocalStaff] = useState(false);
+  const days = selectedDays ?? localDays, includeStaff = selectedStaff ?? localStaff;
+  const setDays = onDaysChange || setLocalDays, setIncludeStaff = onStaffChange || setLocalStaff;
   const loadJourney = useCallback(async () => (await cloud.httpsCallable("getStatsJourney")({ organizationId, days })).data as StatsJourneyData, [organizationId, days]);
   const { state, refresh } = useAccountLoad(loadJourney);
   // Every sent report of every cohort, read as the One-pager tracking tab reads them.
@@ -33,7 +36,7 @@ export default function StatsJourney({ organizationId, teamId, unassigned = fals
   const team: JourneyTeamScope = { teamId, unassigned, teamIds: teams.map(row => row.id) };
   const reports = onePager.kind !== "ready" ? [] : team.teamId || team.unassigned
     ? onePager.data.reports.filter(report => roster.some(player => player.id === report.id && inTeamScope(player.teamId, team))) : onePager.data.reports;
-  return <section id="workspace-report-panel-journey" role="tabpanel" aria-labelledby="workspace-report-tab-journey" tabIndex={0}>
+  return <section {...(!embedded ? { id: "workspace-report-panel-journey", role: "tabpanel", "aria-labelledby": "workspace-report-tab-journey", tabIndex: 0 } : { "aria-label": "Stats page details" })}>
     <div className="directory-view-toolbar">
       <div><h3>Stats page journey</h3>
         <div className="stats-journey-controls">

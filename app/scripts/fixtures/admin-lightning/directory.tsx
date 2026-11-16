@@ -1,3 +1,4 @@
+import { usageStoryFixture, usagePlayerFixture, usageFixtureIndexes } from '/src/pages/admin/lib/usageStory.fixture';
 import React, {useMemo,useState} from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom';
@@ -50,7 +51,7 @@ export async function fixtureResults(id,athlete){return {athlete:athlete||{...(a
  }]:[]]))}}
 export async function fixtureIncidents(id){return [normalizeIncident('fixture-incident',{playerId:id,kind:'failure',capability:'generate_personalized_plan',code:'SYNTHETIC_TIMEOUT',message:'Synthetic service timeout; no athlete messages included.',createdAt:new Date('2026-10-20T18:00:00Z'),isTest:true,triage:{state:'new'}})]}
 
-export function useWorkspaceMetrics({scope,search,playerIds,enabled=true}) {
+export function useWorkspaceMetrics({scope,search,playerIds,enabled=true,includeUsageCohorts=false}) {
  const [revision,setRevision]=useState(0);
  const key=JSON.stringify([scope,search,playerIds,enabled,revision]);
  return useMemo(()=>{
@@ -59,6 +60,13 @@ export function useWorkspaceMetrics({scope,search,playerIds,enabled=true}) {
  const reportingError=mode==='error'||mode==='reporting-error-first'&&revision===0;
  const data=enabled&&scope&&!reportingError&&mode!=='loading'?previewInsights(request,0,mode==='empty'?'empty':'longNames'):null;
  if(data){const all=Array.from({length:4},(_,p)=>previewInsights(request,p,'longNames').players).flat();data.rosterMetrics=(playerIds||[]).map(id=>{const player=all.find(p=>p.id===id);return player?{playerId:id,status:'included',player}:{playerId:id,status:'excluded'}});}
+ if(data && includeUsageCohorts && window.fixtureUsageStory) {
+  const usageCohorts=usageStoryFixture(); usageCohorts.windows.current.endDate=request.endDate;
+  data.adminReporting={version:1,asOfMillis:Date.now(),followUp:'all',sort:'lastActivity',population:data.roster.filtered,summary:{noSignIn:0,noActivity:0,unfinishedAssigned:0,noCompletion:0,signInUnknown:0,usageNotCollected:0},topActivePlayers:[],topWorkoutPlayers:[],teams:[],usageCohorts};
+  const candidates=data.players.slice(0,6).map((player,index)=>({...player,firstName:'Story',lastName:`Player ${index+1}`,adminReporting:{signIn:{status:'recorded',lastSignInAtMillis:Date.now()},usage:{lastActivityWindow:null,cohort:usagePlayerFixture(index)},workouts:{latest:null},assigned:{status:'noActivePlan',weekNumber:null,remaining:null,notStarted:null,noEnding:null}}}));
+  data.players=usageFixtureIndexes(request.usageCohortGroup||'active').map(index=>candidates[index]).filter(Boolean);
+  data.pagination={...data.pagination,total:data.players.length,nextCursor:null};
+ }
  return {data,error:reportingError?'Synthetic reporting unavailable.':'',rebuilding:false,loading:mode==='loading',refreshing:mode==='loading',stale:false,checkedAt:Date.now(),refresh:()=>setRevision(x=>x+1)};
  },[key]);
 }
