@@ -286,7 +286,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       {workspace && <button type="button" disabled={historyLoading} onClick={() => { setShowMemory(v => !v); memoryCommand('list'); }}>Coach memory</button>}
     </div>
     {showHistory && <section className="portal-card"><h2>Conversations</h2>{history.length ? history.map(item => <button className="player-list-button" key={item.id} disabled={historyLoading} onClick={() => void openHistory(item)}>{item.title || 'Conversation'}<small>{dateText(item.lastMessageAt)}</small></button>) : <p>No conversations yet.</p>}</section>}
-    {showMemory && <section className="portal-card"><h2>Coach memory</h2><p>Choose what your coach remembers across conversations.</p>
+    {showMemory && <section className="portal-card"><h2>Coach memory</h2><p>Choose what the PoseTek coach remembers across conversations.</p>
       {!memory ? <p>Loading memory…</p> : <>
         <label><input type="checkbox" checked={memory.workspace.enabled} disabled={sending} onChange={e => memoryCommand('setEnabled', { enabled: e.target.checked })} /> Use coach memory</label>
         {(memory.memories || []).filter((m: Row) => ['active', 'proposed'].includes(m.status) && (!m.expiresAt || new Date(m.expiresAt).getTime() > Date.now())).map((m: Row) => <article key={m.memoryId} className="player-memory"><small>{m.status === 'proposed' ? 'Suggestion' : 'Saved'} · {String(m.category).replaceAll('_', ' ')}</small><p>{m.text}</p>{m.sourceQuote && <blockquote>{m.sourceQuote}</blockquote>}<div className="player-actions">{m.status === 'proposed' && <button disabled={sending} onClick={() => memoryCommand('confirm', { memoryId: m.memoryId })}>Save</button>}<button disabled={sending} onClick={() => memoryCommand('forget', { memoryId: m.memoryId })}>Forget</button></div></article>)}
@@ -299,17 +299,17 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       {messages.map((m, i) => <article key={m.id || i} className={`chat-message ${m.role === 'user' ? 'user' : 'assistant'}`}><MultilineText text={m.content || ''} />{onHandoff && m.role === 'assistant' && validHandoff(m.workoutRequest, playerId) && (m.workoutRequest.destination === 'personal_workout' && personalStore && athlete ? <CoachPersonalWorkout playerId={playerId} athlete={athlete} preview={preview} store={personalStore} config={config} request={{ ...m.workoutRequest, ...(conversation.current && m.id ? { originConversationId: conversation.current, originMessageId: m.id } : {}) }} reference={m.personalWorkoutProposal} active={active && !sending && !error && i === messages.length - 1} onReview={onHandoff} /> : !sending && !error && i === messages.length - 1 && <button className="primary-cta" onClick={() => onHandoff(m.workoutRequest)}>Continue in Training</button>)}</article>)}
       {answer && <article className="chat-message assistant">{error && <small>Interrupted reply · check history for the saved version</small>}<MultilineText text={answer} /></article>}
       {afterMessages && !sending && <div ref={afterPanel}>{afterMessages}</div>}
-      {sending && <p role="status">{status || 'Your coach is thinking…'}</p>}
+      {sending && <p role="status">{status || 'The PoseTek coach is thinking…'}</p>}
       {historyLoading && <p role="status">Loading your conversation…</p>}
     </div>
     {error && <div className="player-error" role="alert"><p>{error}</p>{conversation.current && <button type="button" disabled={sending} onClick={() => void openHistory({ id: conversation.current, workoutTarget: context?.workoutRef })}>Load saved conversation</button>}</div>}
-    {!canChat && <p>{config ? 'Your coach is temporarily unavailable. Your history is still here.' : 'Connecting to your coach…'}</p>}
+    {!canChat && <p>{config ? 'The PoseTek coach is temporarily unavailable. Your history is still here.' : 'Connecting to the PoseTek coach…'}</p>}
     {/* Account settings keep the everyday AI sharing control; here it appears only for a refused turn. */}
     {sharingAsk && <AISharingControl preview={preview} onAllowed={() => {
       if (SHARING_REFUSALS.includes(errorCode)) { setError(''); setErrorCode(''); }
     }} />}
     <form className="chat-composer" onSubmit={e => { e.preventDefault(); void send(draft.trim()); }}>
-      <textarea aria-label="Message your coach" value={draft} onChange={e => setDraft(e.target.value)} maxLength={capability === 'workout_chat' ? 500 : 2000} placeholder="Message your coach…" rows={2} disabled={sending || historyLoading} />
+      <textarea aria-label="Message the PoseTek coach" value={draft} onChange={e => setDraft(e.target.value)} maxLength={capability === 'workout_chat' ? 500 : 2000} placeholder="Message the PoseTek coach…" rows={2} disabled={sending || historyLoading} />
       <button type="submit" disabled={!canChat || sending || historyLoading || !draft.trim()} aria-label="Send message"><span className="material-symbols-outlined">arrow_upward</span></button>
     </form>
     {sending && <button className="text-button" onClick={() => controller.current?.abort()}>Stop reply</button>}

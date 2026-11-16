@@ -97,7 +97,7 @@ export function personalRefinementParams(proposal: Row, requestText: string, ove
 }
 
 export function personalPublishParams(proposal: Row, conversation: Row | null, now = Date.now()): Row {
-  if (personalTimestamp(proposal.expiresAt) <= now) throw new Error('This proposal has expired. Ask your AI coach to refresh it before publishing.');
+  if (personalTimestamp(proposal.expiresAt) <= now) throw new Error('This proposal has expired. Ask the PoseTek coach to refresh it before publishing.');
   if (proposal.conversationId && (!conversation || conversation.conversationId !== proposal.conversationId ||
       conversation.latestProposalId !== proposal.proposalId || conversation.proposalRevision !== proposal.proposalRevision)) {
     throw new Error('A newer workout proposal is available. Review it before publishing.');

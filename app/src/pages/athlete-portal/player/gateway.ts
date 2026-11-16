@@ -19,7 +19,7 @@ export function parseFrame(frame: string): Frame | null {
 export async function streamCoach(body: Row, signal: AbortSignal, onFrame: (frame: Frame) => void): Promise<void> {
   signal.throwIfAborted();
   const user = auth.currentUser;
-  if (!user) throw new Error('Sign in to speak with your coach.');
+  if (!user) throw new Error('Sign in to speak with the PoseTek coach.');
   let requestId: string = crypto.randomUUID();
   const current = () => {
     signal.throwIfAborted();

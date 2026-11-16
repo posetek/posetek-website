@@ -155,17 +155,17 @@ describe('Coach chat history and AI sharing recovery', () => {
   });
 
   it('keeps a blocked request available and offers AI sharing review without automatically retrying', async () => {
-    harness.stream.mockRejectedValueOnce(Object.assign(new Error('Review AI sharing before using your coach.'), { code: 'ai_consent_required' }));
+    harness.stream.mockRejectedValueOnce(Object.assign(new Error('Review AI sharing before using the PoseTek coach.'), { code: 'ai_consent_required' }));
     submit(render());
     await vi.waitFor(() => expect(render().props['aria-busy']).toBe(false));
     const blocked = render();
-    expect(text(blocked)).toContain('Review AI sharing before using your coach.');
+    expect(text(blocked)).toContain('Review AI sharing before using the PoseTek coach.');
     expect(find(blocked, element => element.type === 'textarea').props.value).toBe('Yes, build it.');
     const control = find(blocked, element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
     expect(control.props.preview).toBe(false);
     const review = (control.type as (props: any) => ReactElement<any>)(control.props);
     button(review, 'Review AI sharing').props.onClick();
-    expect(text(render())).not.toContain('Review AI sharing before using your coach.');
+    expect(text(render())).not.toContain('Review AI sharing before using the PoseTek coach.');
     expect(find(render(), element => element.type === 'textarea').props.value).toBe('Yes, build it.');
     expect(harness.stream).toHaveBeenCalledTimes(1);
   });
@@ -219,14 +219,14 @@ describe('Coach chat history and AI sharing recovery', () => {
       expect(harness.onDraft).toHaveBeenLastCalledWith(null);
     });
     it('offers AI sharing review when sharing is off, without retrying on its own', async () => {
-      harness.stream.mockRejectedValueOnce(Object.assign(new Error('Review AI sharing before using your coach.'), { code: 'ai_consent_required' }));
+      harness.stream.mockRejectedValueOnce(Object.assign(new Error('Review AI sharing before using the PoseTek coach.'), { code: 'ai_consent_required' }));
       submit(build());
       await vi.waitFor(() => expect(build().props['aria-busy']).toBe(false));
       const blocked = build();
-      expect(text(find(blocked, element => element.props?.role === 'alert'))).toContain('Review AI sharing before using your coach.');
+      expect(text(find(blocked, element => element.props?.role === 'alert'))).toContain('Review AI sharing before using the PoseTek coach.');
       const control = find(blocked, element => typeof element.type === 'function' && element.type.name === 'AISharingControl');
       control.props.onAllowed();
-      expect(text(build())).not.toContain('Review AI sharing before using your coach.');
+      expect(text(build())).not.toContain('Review AI sharing before using the PoseTek coach.');
       expect(find(build(), element => element.type === 'textarea').props.value).toBe('Yes, build it.');
       expect(harness.stream).toHaveBeenCalledTimes(1);
       expect(harness.onDraft).toHaveBeenLastCalledWith(null);
