@@ -108,8 +108,13 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
   useEffect(() => {
     if (!jobId || mode !== 'form') return;
     let stop = () => {}, live = true;
+    const recordCreated = playerJourneyOutcome(playerId, 'plan_created');
     waitForJob(jobId, text => { if (live) setStatus(text); }, unsubscribe => { stop = unsubscribe; })
-      .then(() => { if (!live) return; forget(); setJobId(null); onReady(); })
+      .then(job => {
+        if (!live) return;
+        if (job.status === 'complete' && typeof job.result?.planId === 'string' && job.result.planId.trim()) recordCreated?.();
+        forget(); setJobId(null); onReady();
+      })
       .catch((e: any) => { if (!live) return; forget(); setJobId(null); setBusy(false); setError(e?.message || 'Your plan could not be built.'); });
     return () => { live = false; stop(); };
   }, [jobId, mode]);
@@ -123,7 +128,6 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
   const submit = async () => {
     if (submitting.current || jobId || block) return;
     if (mode === 'sample') { onReady(); return; }
-    const recordCreated = playerJourneyOutcome(playerId, 'plan_created');
     submitting.current = true; setBusy(true); setError('');
     try {
       const created = await requestPlan(playerId, answers, athlete, statsProfile);
@@ -131,7 +135,6 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
       // The Stats page journey's "asked for a plan": the plan request now exists. A refused one
       // (AI sharing, permission, validation) throws or returns nothing above.
       reportStatsJourneyOutcome('plan', playerId);
-      recordCreated?.();
       try { localStorage.setItem(key, created); } catch { /* the listener still works */ }
       setStatus(''); setJobId(created);
     } catch (e: any) {

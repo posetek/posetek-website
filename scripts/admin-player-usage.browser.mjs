@@ -23,6 +23,7 @@ try {
       await weekly.getByText('20% of 5 weekly active players').first().waitFor();
       assert.match(await weekly.textContent(), /Week to date · 2026-11-16 – 2026-11-16/);
       await weekly.getByRole('button', { name: /^Previous repeat users · returned on one day/ }).click();
+      await page.waitForFunction(() => document.querySelector('table[aria-label="Weekly participation players"] tbody')?.children.length === 1);
       await weekly.getByRole('table', { name: 'Weekly participation players' }).getByRole('rowheader', { name: /Story Player 3/ }).waitFor();
       assert.equal(await weekly.getByRole('table').locator('tbody tr').count(), 1);
       assert.equal(new URL(page.url()).searchParams.get('reportUsageCohortGroup'), 'repeat_returned_once');

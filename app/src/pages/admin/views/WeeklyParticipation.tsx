@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { ExpandedInsights, ExpandedReportSummary } from '../../insights/lib/expanded';
 import type { ExpandedRequest } from '../../insights/lib/expandedQuery';
-import { activityDate } from '../lib/adminActivityPresentation';
+import { activityDate, activityWindow } from '../lib/adminActivityPresentation';
 import { USAGE_CLIENTS, USAGE_CLIENT_LABELS, USAGE_GROUP_LABELS, usageChangeSummary, usageShare } from '../lib/usageStory';
 import type { UsageCohortGroup, UsageClient } from '../lib/usageStory';
 import './usage-story.scss';
@@ -37,12 +37,12 @@ export default function WeeklyParticipation({ data, request, busy, onChange, jou
         onClick={() => onChange({ usageCohortGroup: key, cursor: '', page: 0 })}>{USAGE_GROUP_LABELS[key]} <strong>{number(segment.groups[key])}</strong></button>)}</div>
       <h3>{USAGE_GROUP_LABELS[group]}</h3>
       {!exact ? <p role="status">Loading the selected players…</p> : <>
-        {exact.players.length ? <div className="activity-table-wrap"><table className="activity-table" aria-label="Weekly participation players"><thead><tr><th scope="col">Player</th><th scope="col">This week · days</th><th scope="col">Last week · days</th><th scope="col">History</th><th scope="col">Last recorded activity</th><th scope="col">Journey</th></tr></thead>
+        {exact.players.length ? <div className="activity-table-wrap"><table className="activity-table" aria-label="Weekly participation players"><thead><tr><th scope="col">Player</th><th scope="col">This week · days</th><th scope="col">Last week · days</th><th scope="col">History</th><th scope="col">Latest activity window</th><th scope="col">Journey</th></tr></thead>
           <tbody>{exact.players.map(player => { const row = player.adminReporting?.usage.cohort?.[client];
             return <tr key={player.id}><th scope="row">{`${player.firstName} ${player.lastName}`.trim() || 'Player'}<small>{player.teamName || 'Unassigned'}</small></th>
               <td data-label="This week · days">{row?.activeDays ?? 'Unknown'}</td><td data-label="Last week · days">{row?.previousActiveDays ?? 'Unknown'}</td>
               <td data-label="History">{row?.history === 'new' ? 'First recorded use' : row?.history === 'existing' ? 'Previously active' : row?.history === 'inactive' ? 'No recorded activity this week' : 'History unknown'}</td>
-              <td data-label="Last recorded activity">{row?.lastActivityAtMillis ? activityDate(row.lastActivityAtMillis, request.timezone) : 'Not recorded'}</td>
+              <td data-label="Latest activity window">{row?.lastActivityAtMillis ? activityWindow({ startMillis: row.lastActivityAtMillis, endMillis: row.lastActivityAtMillis + 15 * 60_000 }, request.timezone) : 'Not recorded'}</td>
               <td data-label="Journey"><Link to={journeyLink(player.id)}>View journey</Link></td></tr>;
           })}</tbody></table></div> : <p>No players match this participation group in the recorded coverage.</p>}
         <nav className="activity-pagination" aria-label="Participation player pages"><span>{exact.pagination.total} matching players · page {request.page + 1}. Counts cover the full selection.</span><div>
@@ -51,6 +51,7 @@ export default function WeeklyParticipation({ data, request, busy, onChange, jou
         </div></nav>
       </>}
       <details className="activity-method"><summary>Participation definitions</summary><p>Weekly active means positive recorded player activity. Repeat means activity on at least two distinct local days. Multiple visits or devices on one day count as one day.</p>
+        <p>The latest activity window is the 15-minute interval containing the most recent positive activity; it is not an exact visit time.</p>
         <p>First recorded use is across PoseTek, not first use of this platform. Uncertain earlier history stays unknown. A current-week absence is provisional, not confirmed churn. Each platform counts a player once, so platform counts overlap and must not be added.</p>
         <p>Unknown browser type: {number(report.segments.unknown_web.current.activePlayers)} active players. All platforms: {number(report.segments.all.current.activePlayers)} distinct players. These are separate from older unsplit website totals.</p>
       </details>

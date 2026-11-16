@@ -3,8 +3,9 @@
 Implementation candidate, November 16, 2026. This extends the Stats Journey
 foundation in website PR #165. Source integration and production activation are
 separate. Companion backend and iOS PR links and verification are recorded in
-the delivery PR. The owner's CI exception applies only to admin-website-only
-changes; this cross-client collection feature requires its normal checks.
+the delivery PR. On November 16 the owner explicitly authorized deployment
+without waiting for hosted CI. Focused local verification and current-revision
+review still apply; native full-app and physical-device acceptance remain open.
 
 ## What administrators see
 
@@ -22,7 +23,7 @@ first use of a platform. Clickable groups show active in both weeks, added this
 week, first use, returns after a gap, not yet returned, repeat in both weeks,
 previous repeat users returning on one day, previous repeat users with no return,
 and unknown comparison coverage. Each player row shows both weeks' active days,
-last recorded activity, and a Journey link. Missing coverage cannot establish
+latest 15-minute activity window, and a Journey link. Missing coverage cannot establish
 absence. Current-week comparisons are provisional and offline arrivals can
 revise them.
 

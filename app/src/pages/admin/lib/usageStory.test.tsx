@@ -26,6 +26,8 @@ describe('weekly participation evidence', () => {
     expect(result).toContain('2026-11-16 – 2026-11-18');
     expect(result).toContain('2026-11-09 – 2026-11-15');
     expect(result).toContain('Week to date');
+    expect(result).toContain('Latest activity window');
+    expect(result).toContain('12:00 PM – 12:15 PM');
   });
   it('keeps missing and zero distinct and exposes the native coverage boundary', () => {
     expect(usageShare(0, 5)).toBe('0%'); expect(usageShare(null, 5)).toBe('—'); expect(usageShare(0, 0)).toBe('—');
