@@ -5,6 +5,7 @@ import type { PersonalWorkoutStore } from './use-personal-workouts';
 import { PLAYER_SUBROUTE_KEYS, canonicalPlayerView } from './PlayerShell';
 import type { PlayerView } from './PlayerShell';
 import type { ReportState } from './report';
+import type { JourneyPage } from '../../../lib/player-journey/recording';
 
 /**
  * A page pushed inside a tab, mirroring the app's `TrainingHubDestination`. The workout hub is the
@@ -60,6 +61,19 @@ export type PlayerDestination = {
   /** Replace the current history entry, for a correction that Back should not return to. */
   replace?: boolean;
 };
+
+export function shownJourneyPage(route: PlayerRoute, accountSettings: boolean, guided: boolean): JourneyPage {
+  if (accountSettings) return 'settings';
+  if (route.screen === 'test') return route.session && route.rep ? 'video' : 'results';
+  if (guided && (route.view === 'workouts' || route.screen === 'plan')) return 'training';
+  switch (route.screen) {
+    case 'plan': return 'plan';
+    case 'saved': return 'saved_workouts';
+    case 'history': return 'workout_history';
+    case 'tests': return 'tests';
+    default: return route.view;
+  }
+}
 
 /** The canonical query for a destination. Unrelated parameters (preview, player) are kept. */
 export function playerSearch(search: string, view: PlayerView, to: PlayerDestination = {}) {

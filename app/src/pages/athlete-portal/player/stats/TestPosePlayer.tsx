@@ -155,6 +155,6 @@ export default function TestPosePlayer({ metric, report, reps, athlete, access, 
         </>}
       </div>)}
     </div>}
-    {rep && <button type="button" className="stats-text-button stats-pose-all" onClick={onAllAttempts}>All attempts<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>}
+    {rep && <button type="button" className="stats-text-button stats-pose-all" data-player-journey="results" onClick={onAllAttempts}>All attempts<span className="material-symbols-outlined" aria-hidden="true">chevron_right</span></button>}
   </section>;
 }

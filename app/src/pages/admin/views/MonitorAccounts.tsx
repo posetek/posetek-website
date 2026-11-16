@@ -26,7 +26,7 @@ import DirectoryNavigator, { TeamDirectory } from "./DirectoryNavigator";
 import { DirectoryFilters, DirectoryPlayerFilters, DirectoryWorkspaceTabs } from "./DirectoryWorkspaceControls";
 import AdminActivityReport from "./AdminActivityReport";
 import OnePagerTracking from "./OnePagerTracking";
-import StatsJourney from "./StatsJourney";
+import PlayerJourneys from "./PlayerJourneys";
 import AdminTabs from "./AdminTabs";
 import "./admin-directory.scss";
 import "./admin-directory-lightning.scss";
@@ -197,6 +197,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
   const playerIds = pane === "report" || !showPeople || attention ? undefined : supportedWorkspacePlayerIds(visible, scope, canonicalOrganizationIds);
   const metrics = useWorkspaceMetrics({ retain: true, scope, search: workspaceReportSearch(state), playerIds, enabled, readEnabled: directoryReady && !onePagers && !journey,
     adminReporting: !legacy && (pane === "report" || !showPeople && Boolean(state.orgId)),
+    includeUsageCohorts: !legacy && pane === "report" && view === "usage" && Boolean(journeyOrganization),
     includeLastFeatureEvidence: !legacy && pane === "report" && view === "usage",
     includeTestingAnalytics: !legacy && pane === "report" && view === "testing" });
   const report = metrics.data;
@@ -256,7 +257,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
       <DirectoryWorkspaceTabs active={activeView} onePagers={showOnePagers} journey={showJourney} listLabel={showPeople ? "People" : state.orgId ? "Teams" : "Organizations"} onChange={selected => choose({ reportCursor: undefined, reportPage: undefined, reportAdminSort: undefined, reportAdminFollowUp: undefined,
         ...(selected === "list" || selected === "one-pagers" || selected === "journey" ? { directoryPane: selected } : { directoryPane: "report" as const, reportView: selected, reportMode: "directory" as const }) })} />
     </WorkspaceScopeHeader>
-    {journey && journeyOrganization ? <StatsJourney organizationId={journeyOrganization} teamId={scope?.kind === "team" ? scope.teamId : undefined} unassigned={state.directoryLookup === "unassigned"}
+    {journey && journeyOrganization ? <PlayerJourneys state={state} choose={choose} organizationId={journeyOrganization} teamId={scope?.kind === "team" ? scope.teamId : undefined} unassigned={state.directoryLookup === "unassigned"}
       teams={journeyTeams} roster={(roster?.players || []).map(player => ({ id: player.id, teamId: player.teamId || null }))} />
     : onePagers && onePagerOrganization ? <OnePagerTracking organizationId={onePagerOrganization} cohortId={state.onePagerCohort} onCohortChange={onePagerCohort => choose({ onePagerCohort })} /> : <>
     <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : null}</div>
@@ -275,6 +276,7 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
     {pane === "report" && <section id={`workspace-report-panel-${view}`} role="tabpanel" aria-labelledby={`workspace-report-tab-${view}`}>
       {displayReport && activityView && <AdminActivityReport data={displayReport} detailsPending={detailsPending} request={request} view={view as "overview" | "workouts" | "usage"} busy={metrics.refreshing}
         onChange={update} onExplore={patch => { focusActivity.current = true; update(patch); }} onFirstPage={firstPage} onNextPage={nextPage}
+        journeyLink={journeyOrganization ? id => adminDirectoryPath({ ...state, directoryPane: "journey", journeyView: "players", journeyPlayer: id, journeyCursor: undefined, reportUsageClientKind: request.usageClientKind || "desktop_web" }) : undefined}
         playerLink={(id, panel) => adminPlayerPath(id, panel, state)}
         teamLink={(orgId, teamId) => adminDirectoryPath(selectDirectoryScope(state, { orgId, teamId: teamId || undefined, directoryLevel: "people", directoryLookup: teamId ? undefined : "unassigned" }))}>
         <div id="directory-report-graphs" tabIndex={-1} role="region" aria-label="Report graphs"><WorkspaceReportDetails data={displayReport} request={request} onChange={update} hideSummary detailsPending={detailsPending} /></div>

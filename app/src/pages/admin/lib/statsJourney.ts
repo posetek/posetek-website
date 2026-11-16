@@ -29,7 +29,7 @@ export const JOURNEY_BUTTONS = [
   { key: "workout", title: "Start a workout now", outcome: "workoutAt", followed: "Started a workout" },
 ] as const satisfies readonly { key: JourneyButton; title: string; outcome: keyof StatsJourneyVisit; followed: string }[];
 export const JOURNEY_STOPS: readonly [JourneyStop, string][] = [
-  ["coach", "Coach"], ["workouts", "Workouts"], ["home", "Home"], ["plan", "Plan"], ["other", "Other page"], ["left", "Left the site"],
+  ["coach", "Coach"], ["workouts", "Workouts"], ["home", "Home"], ["plan", "Plan"], ["other", "Other page"], ["left", "Last observed on Stats"],
 ];
 /** A visit with no next stop that began this recently may still be open; older, the visitor left the site. */
 export const STILL_OPEN_MS = 30 * 60 * 1000;

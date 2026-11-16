@@ -1,5 +1,6 @@
 import { EngagementClock, appendInterval } from './clock';
 import type { UsageBatch, UsageFeature, UsageInterval } from './clock';
+import type { BrowserClientKind } from './browser';
 import { UsageDelivery, UsageQueue } from './queue';
 
 type Signal = { isTrusted?: boolean; detail?: { active?: boolean } };
@@ -19,10 +20,10 @@ export interface UsageEnvironment {
 // close() is available before asynchronous queue recovery, so an auth switch
 // cannot install late listeners or persist an old actor's acknowledged queue.
 export function createUsageSession(options: {
-  uid: string; sessionId: string; build: string; queue: UsageQueue; environment: UsageEnvironment;
+  uid: string; sessionId: string; build: string; clientKind?: BrowserClientKind; queue: UsageQueue; environment: UsageEnvironment;
   invoke(batch: UsageBatch): Promise<{ accepted?: boolean; reason?: string }>;
 }) {
-  const { uid, sessionId, build, queue, environment: env, invoke } = options;
+  const { uid, sessionId, build, clientKind, queue, environment: env, invoke } = options;
   const clock = new EngagementClock(env.mono(), env.wall());
   let pending: UsageInterval[] = [], sequence = 0, closed = false;
   const stops: (() => void)[] = [];
@@ -30,7 +31,8 @@ export function createUsageSession(options: {
   const eligible = () => !closed && delivery.active && env.currentUid() === uid;
   const enqueue = () => {
     if (!eligible() || !pending.length) return;
-    queue.append({ schemaVersion: 1, sessionId, sequence: sequence++, platform: 'web', build, intervals: pending });
+    const batch = { sessionId, sequence: sequence++, platform: 'web' as const, build, intervals: pending };
+    queue.append(clientKind ? { ...batch, schemaVersion: 2, clientKind } : { ...batch, schemaVersion: 1 });
     pending = [];
   };
   const sample = () => {

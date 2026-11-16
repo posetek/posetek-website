@@ -28,6 +28,7 @@ import {
 } from "./report-player-entry";
 import { accountDestination, accountError } from "./account-entry";
 import type { AccountRole } from "./account-entry";
+import { rememberPlayerJourneyEntry } from "../../lib/player-journey/entry";
 import {
   coachHomeRoute,
   coachOrgInputError,
@@ -220,7 +221,11 @@ export default function LandingPage() {
         const isCurrent = () => loginMounted.current && authEpoch.current === revision && auth.currentUser?.uid === user.uid;
         setContinueLoading(true); setSignupOpen(false);
         void initialReportPlayerDestination(requestedEntry, user, loadAccountAccess, isCurrent)
-          .then(destination => { if (destination && isCurrent()) navigate(destination); })
+          .then(destination => {
+            if (!destination || !isCurrent()) return;
+            rememberPlayerJourneyEntry(user.uid, requestedEntry.view === "stats" ? "report_stats" : "report_workouts");
+            navigate(destination);
+          })
           .catch(error => {
             if (!isCurrent()) return;
             setLoginError(error instanceof ReportPlayerEntryError ? error.message : accountError(error, "We could not confirm this player's account. Try Continue again, or use a different account."));
@@ -375,6 +380,10 @@ export default function LandingPage() {
       await db.collection("players").doc(access.playerId).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
     }
     if (isCurrent()) {
+      if (access.role === "player") {
+        const entry = passwordSignIn ? "sign_in" : reportDestination ? (reportEntry.view === "stats" ? "report_stats" : "report_workouts") : "continue";
+        rememberPlayerJourneyEntry(user.uid, entry);
+      }
       if (reportDestination) navigate(reportDestination);
       else redirectAfterAuth(access.role, access.playerId || null);
     }
@@ -494,6 +503,7 @@ export default function LandingPage() {
 
       if (userTypeVal === "player") {
         await joinOrganization(orgCodeVal, "player", firstNameVal, lastNameVal);
+        if (auth.currentUser?.uid === user.uid) rememberPlayerJourneyEntry(user.uid, "signup");
         navigate(playerStatsRoute());
       } else {
         // validateOrgSignup only lets "coach" past here, and the modal was confirmed above.
@@ -559,6 +569,7 @@ export default function LandingPage() {
       redirectTimerRef.current = window.setTimeout(() => {
         if (auth.currentUser?.uid !== signupUid) { setPlayerCodeError("Your account was created. Sign in with that account to open your athlete profile."); return; }
         // The trusted redemption response selects the existing canonical profile.
+        rememberPlayerJourneyEntry(signupUid, "signup");
         navigate(reportDestination || playerStatsRoute(playerId));
       }, 1500);
     } catch (error: any) {

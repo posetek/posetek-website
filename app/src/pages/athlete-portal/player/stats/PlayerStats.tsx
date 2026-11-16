@@ -86,7 +86,7 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
     <section className="stats-next" aria-labelledby="stats-next-title" ref={journey?.nextRef}>
       <h2 id="stats-next-title" className="stats-section-title">So what do I do with these results?</h2>
       <div className="stats-next-grid">
-        {NEXT_STEPS.map(step => <button key={step.key} type="button" className="stats-next-card" data-next={step.key} onClick={() => { journey?.clicked(step.key); open[step.key](); }}>
+        {NEXT_STEPS.map(step => <button key={step.key} type="button" className="stats-next-card" data-next={step.key} data-player-journey={step.key === 'workout' ? 'start_workout' : step.key} onClick={() => { journey?.clicked(step.key); open[step.key](); }}>
           <span className="material-symbols-outlined" aria-hidden="true">{step.icon}</span>
           <strong>{step.title}</strong><small>{step.detail}</small>
           <span className="material-symbols-outlined" aria-hidden="true">chevron_right</span>

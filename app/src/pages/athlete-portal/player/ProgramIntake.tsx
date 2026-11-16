@@ -8,6 +8,7 @@ import AISharingControl from './AISharingControl';
 import { capabilityEnabled, useCoachConfig } from './gateway';
 import { personalAge } from './personal-workouts';
 import { reportStatsJourneyOutcome } from './stats/use-stats-journey';
+import { playerJourneyOutcome } from '../../../lib/player-journey/use-player-journey';
 import type { Row } from './execution';
 
 /**
@@ -107,8 +108,13 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
   useEffect(() => {
     if (!jobId || mode !== 'form') return;
     let stop = () => {}, live = true;
+    const recordCreated = playerJourneyOutcome(playerId, 'plan_created');
     waitForJob(jobId, text => { if (live) setStatus(text); }, unsubscribe => { stop = unsubscribe; })
-      .then(() => { if (!live) return; forget(); setJobId(null); onReady(); })
+      .then(job => {
+        if (!live) return;
+        if (job.status === 'complete' && typeof job.result?.planId === 'string' && job.result.planId.trim()) recordCreated?.();
+        forget(); setJobId(null); onReady();
+      })
       .catch((e: any) => { if (!live) return; forget(); setJobId(null); setBusy(false); setError(e?.message || 'Your plan could not be built.'); });
     return () => { live = false; stop(); };
   }, [jobId, mode]);
@@ -189,7 +195,7 @@ export default function ProgramIntake({ playerId, athlete, statsProfile, preview
           : <>
             {answers.age !== undefined && block === 'goals' && <p className="wk-muted" role="status">Pick at least one goal.</p>}
             {!enabled && config && <p className="wk-muted">Plan building is paused right now.</p>}
-            <div className="workout-wizard-actions"><button type="submit" className="primary-cta" disabled={!!block || !enabled || busy}>{busy ? 'Sending your answers…' : 'Build my plan'}</button></div>
+            <div className="workout-wizard-actions"><button type="submit" className="primary-cta" data-player-journey="generate_plan" disabled={!!block || !enabled || busy}>{busy ? 'Sending your answers…' : 'Build my plan'}</button></div>
           </>}
         {sharing && <div className="player-intake-sharing">
           {sharing === 'off' && <p className="wk-muted" role="alert">Turn on AI sharing to build your plan.</p>}

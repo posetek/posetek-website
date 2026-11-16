@@ -155,6 +155,7 @@ export default function DrillDashboard({ drill, reps: rawReps, athlete, onOpenRe
                         type="button"
                         data-rep-id={rep.id}
                         data-session={session.folder}
+                        data-player-journey="open_video"
                         onClick={() => onOpenRep(sessionFolder(rep), rep.id)}
                       >
                         <strong>{attemptLabel(rep, session.items)}</strong>

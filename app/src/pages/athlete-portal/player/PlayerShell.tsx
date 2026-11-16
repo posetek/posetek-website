@@ -86,8 +86,8 @@ function AccountMenu() {
       {initials || <span className="material-symbols-outlined" aria-hidden="true">person</span>}
     </button>
     {open && <div className="v4-account-menu" role="menu">
-      {onAccountSettings && <button type="button" role="menuitem" onClick={choose(onAccountSettings)}><span className="material-symbols-outlined" aria-hidden="true">account_circle</span>Account settings</button>}
-      {onReturnHome && <button type="button" role="menuitem" onClick={choose(onReturnHome)}><span className="material-symbols-outlined" aria-hidden="true">home</span>Return to home</button>}
+      {onAccountSettings && <button type="button" role="menuitem" data-player-journey="settings" onClick={choose(onAccountSettings)}><span className="material-symbols-outlined" aria-hidden="true">account_circle</span>Account settings</button>}
+      {onReturnHome && <button type="button" role="menuitem" data-player-journey="home" onClick={choose(onReturnHome)}><span className="material-symbols-outlined" aria-hidden="true">home</span>Return to home</button>}
       {onSignOut && <button type="button" role="menuitem" onClick={choose(onSignOut)}><span className="material-symbols-outlined" aria-hidden="true">logout</span>Sign out</button>}
     </div>}
   </div>;
@@ -125,6 +125,7 @@ type PlayerShellProps = PlayerChrome & {
   hideDock?: boolean;
   className?: string;
   mainClassName?: string;
+  onPlayerAction?: (event: MouseEvent<HTMLDivElement>) => void;
 };
 
 /** The app's `LogoutConfirmationView`: signing out always asks first. */
@@ -148,7 +149,7 @@ function SignOutConfirmation({ onSignOut, onCancel }: { onSignOut: () => void; o
   </div>;
 }
 
-export default function PlayerShell({ activeView, children, title, search = '', pathname = '/athlete', onNavigate, onSignOut, onAccountSettings, onReturnHome, initials, navigationDisabled = false, hideDock = false, className = '', mainClassName = '' }: PlayerShellProps) {
+export default function PlayerShell({ activeView, children, title, search = '', pathname = '/athlete', onNavigate, onSignOut, onAccountSettings, onReturnHome, initials, navigationDisabled = false, hideDock = false, className = '', mainClassName = '', onPlayerAction }: PlayerShellProps) {
   const active = canonicalPlayerView(activeView);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const askToSignOut = onSignOut ? () => setConfirmingSignOut(true) : undefined;
@@ -159,13 +160,13 @@ export default function PlayerShell({ activeView, children, title, search = '', 
     }
   };
   return <PlayerChromeContext.Provider value={{ initials, onSignOut: askToSignOut, onAccountSettings, onReturnHome }}>
-    <div className={`pt-pose pt-player${className ? ` ${className}` : ''}`}>
+    <div className={`pt-pose pt-player${className ? ` ${className}` : ''}`} onClickCapture={onPlayerAction}>
       <main className={`player-main${mainClassName ? ` ${mainClassName}` : ''}`}>
         {title && <PlayerHeader title={title} />}
         {children}
       </main>
       {!hideDock && <nav className="player-bottom-nav" aria-label="Player tabs">
-        {PLAYER_TABS.map(tab => <Link key={tab.view} to={playerTabPath(tab.view, search, pathname)} aria-current={active === tab.view ? 'page' : undefined} aria-disabled={navigationDisabled || undefined} onClick={event => navigate(event, tab.view)}>
+        {PLAYER_TABS.map(tab => <Link key={tab.view} to={playerTabPath(tab.view, search, pathname)} data-player-journey={tab.view} aria-current={active === tab.view ? 'page' : undefined} aria-disabled={navigationDisabled || undefined} onClick={event => navigate(event, tab.view)}>
           <span className="material-symbols-outlined" aria-hidden="true">{tab.icon}</span><span>{tab.label}</span>
         </Link>)}
       </nav>}

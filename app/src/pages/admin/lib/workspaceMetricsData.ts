@@ -1,3 +1,5 @@
+import { USAGE_COHORT_GROUPS } from './usageStory';
+import type { UsageClient, UsageCohortGroup } from './usageStory';
 import { inFlightRequests } from "../../../lib/inflightRequests";
 import { USAGE_FEATURES } from "../../../lib/insight-usage/clock";
 import { completeReport, retryableReportError } from "../../insights/lib/completeReport";
@@ -8,12 +10,12 @@ import { adminActivitySelection } from "./adminActivity";
 import type { AdminActivityReportData, AdminActivityRequest, AdminPlayerWorkout } from "./adminActivity";
 
 export type WorkspaceReportPayload = ReturnType<typeof reportPayload> & {
-  rosterPlayerIds?: string[]; adminReporting?: AdminActivityRequest; includeLastFeatureEvidence?: true; includeTestingAnalytics?: true;
+  rosterPlayerIds?: string[]; adminReporting?: AdminActivityRequest; includeLastFeatureEvidence?: true; includeTestingAnalytics?: true; includeUsageCohorts?: true; usageCohortFilter?: { clientKind: UsageClient; followUp: UsageCohortGroup };
 };
 export type WorkspaceReportReader = (payload: WorkspaceReportPayload) => Promise<ExpandedInsights>;
 const invalid = (message: string) => Object.assign(new Error(message), { code: "failed-precondition" });
 
-export function workspaceMetricsPayload(search: string, scope: InsightScope, playerIds?: string[], now = new Date(), adminReporting = false, includeLastFeatureEvidence = false, includeTestingAnalytics = false): WorkspaceReportPayload {
+export function workspaceMetricsPayload(search: string, scope: InsightScope, playerIds?: string[], now = new Date(), adminReporting = false, includeLastFeatureEvidence = false, includeTestingAnalytics = false, includeUsageCohorts = false): WorkspaceReportPayload {
   const request = expandedRequest(search, now);
   const ids = playerIds?.length ? [...playerIds].sort() : undefined;
   if (ids && (ids.length > 20 || new Set(ids).size !== ids.length || ids.some(id => typeof id !== "string" || !id || id.includes("/")))) {
@@ -21,6 +23,7 @@ export function workspaceMetricsPayload(search: string, scope: InsightScope, pla
   }
   return { ...reportPayload(request, scope, request.cursor), pageSize: 20, ...(ids ? { rosterPlayerIds: ids } : {}),
     ...(adminReporting ? { adminReporting: adminActivitySelection(request.view, request.adminFollowUp, request.adminSort) } : {}),
+    ...(adminReporting && includeUsageCohorts && request.view === "usage" ? { includeUsageCohorts: true as const, usageCohortFilter: { clientKind: request.usageClientKind || "desktop_web", followUp: request.usageCohortGroup || "active" } } : {}),
     ...(adminReporting && includeTestingAnalytics && request.view === "testing" ? { includeTestingAnalytics: true } : {}),
     ...(adminReporting && includeLastFeatureEvidence && request.view === "usage" ? { includeLastFeatureEvidence: true } : {}) };
 }
@@ -66,6 +69,20 @@ export function assertAdminActivity(data: ExpandedInsights, payload: WorkspaceRe
     || !stamp(report.asOfMillis) || report.asOfMillis === null || report.population !== data.roster.filtered
     || !report.summary || ![report.summary.noSignIn, report.summary.noActivity, report.summary.unfinishedAssigned, report.summary.noCompletion, report.summary.signInUnknown, report.summary.usageNotCollected].every(value => count(value) && value <= report.population)
     || !Array.isArray(report.topActivePlayers) || !Array.isArray(report.topWorkoutPlayers) || !Array.isArray(report.teams)) throw invalid("Activity reporting no longer matches this selection. Refresh reporting.");
+  const cohorts = report.usageCohorts;
+  if (cohorts) {
+    if (!payload.includeUsageCohorts || cohorts.version !== 1 || !stamp(cohorts.coverageStartedAtMillis)
+      || !cohorts.windows || cohorts.windows.current.endDate !== payload.endDate) throw invalid("Participation reporting no longer matches this period.");
+    for (const client of ['all', 'desktop_web', 'mobile_web', 'ios', 'unknown_web'] as const) {
+      const segment = cohorts.segments?.[client];
+      if (!segment || !USAGE_COHORT_GROUPS.every(group => segment.groups?.[group] === null || count(segment.groups?.[group]))) throw invalid("Participation groups are incomplete.");
+      for (const week of [segment.current, segment.previous]) {
+        if (!week || !['available', 'partial', 'unavailable'].includes(week.status)
+          || ![week.activePlayers, week.repeatPlayers, week.newPlayers, week.existingPlayers, week.unknownHistoryPlayers].every(value => value === null || count(value))
+          || !(week.activeMinutes === null || minutes(week.activeMinutes))) throw invalid("Participation coverage is incomplete.");
+      }
+    }
+  }
   for (const row of report.topActivePlayers) if (!row.id || typeof row.name !== "string" || !minutes(row.activeMinutes)) throw invalid("Activity rankings are unavailable.");
   for (const row of report.topWorkoutPlayers) if (!row.id || typeof row.name !== "string" || !minutes(row.timerMinutes)) throw invalid("Workout rankings are unavailable.");
   const scope = payload.scope;
@@ -119,7 +136,7 @@ export interface WorkspaceSummaryObservation { data: WorkspaceSummaryData; check
 export function workspaceSummaryKey(payload: WorkspaceReportPayload) {
   if (!payload.adminReporting) return '';
   return JSON.stringify([payload.scope, payload.timeZone, payload.startDate, payload.endDate, payload.testingMode,
-    Object.entries(payload.filters).sort(([a], [b]) => a.localeCompare(b))]);
+    Object.entries(payload.filters).sort(([a], [b]) => a.localeCompare(b)), Boolean(payload.includeUsageCohorts)]);
 }
 function summaryData(data: ExpandedInsights): WorkspaceSummaryData | null {
   if (!data.adminReporting) return null;
