@@ -4,6 +4,8 @@ export type UsageInterval = { startedAtMillis: number; endedAtMillis: number; fe
 /** `playerId` only in a parent session: the child whose profile the time was spent in (plan §4.6). */
 export type UsageBatch = { schemaVersion: 1; sessionId: string; sequence: number; platform: 'web'; build: string; intervals: UsageInterval[]; playerId?: string };
 export const IDLE_MS = 120000;
+/** The website build every first-party usage record names (insight usage and the Stats page journey). */
+export const WEB_USAGE_BUILD = 'web-insights-v2';
 export const OFFLINE_MS = 72 * 3600000;
 
 export class EngagementClock {

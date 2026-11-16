@@ -163,3 +163,16 @@ it("keeps the captured account, event, request and occurrence time unchanged aft
     requestId: original.input.requestId, occurredAtMillis: original.input.occurredAtMillis });
   expect((await storedInputs())[0].status).toBe("received");
 });
+it("never files an automatic report for the Stats page journey recorder, whatever it answers", async () => {
+  const transport = vi.fn(async (_data: any) => { throw { code: "functions/internal" }; });
+  // Missing (not deployed), refused (a parent, a removed coach) or failing: the page's measurement only.
+  expect(instrumentIssueCallable("recordStatsJourney", transport)).toBe(transport);
+  for (const code of ["functions/not-found", "functions/internal", "functions/permission-denied", "functions/resource-exhausted"]) {
+    const call = instrumentIssueCallable("recordStatsJourney", async (_data: any) => { throw { code }; });
+    await expect(call({ event: "landed", playerId: "player-doc" })).rejects.toMatchObject({ code });
+  }
+  // A real reported failure still lands, so the empty store is not an accident of the test.
+  await expect(instrumentIssueCallable("getSocialFeed", transport)({})).rejects.toMatchObject({ code: "functions/internal" });
+  await vi.waitFor(async () => { expect(await storedInputs()).toHaveLength(1); });
+  expect((await storedInputs())[0].input.operation).toBe("getSocialFeed");
+});
