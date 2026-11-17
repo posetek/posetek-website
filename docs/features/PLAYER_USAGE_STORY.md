@@ -66,6 +66,16 @@ First activity and explicit successful
 sign-in are different evidence. Signup, restored sessions, Continue and report
 or deep-link entries remain distinct; authentication restoration is not login.
 
+The admin presentation keeps positive current-week activity visible even when
+previous-week coverage is unavailable. It does not infer returns or absences from
+that missing comparison. For native iOS, an empty Journey result with no verified
+supported build shows a pending-build explanation and links to the same scope,
+platform and period in Usage. It does not display zero journey totals in that
+state. Existing recorded sessions remain visible even if the supported-build
+list has not been configured. A supported empty result and a failed load retain
+their distinct states. Older native usage intervals can support participation
+without containing the page events required for Journeys.
+
 Web collection belongs to the player's actual resolved and displayed workspace,
 including its separate sign-in document. Visible, focused active time uses the
 existing two-minute idle threshold and progressing workout/video signals. A

@@ -48,6 +48,10 @@ function GeneralJourney({ state, choose, organizationId, teamId, unassigned, vie
   const { state: loaded, refresh } = useAccountLoad(loader);
   const data = loaded.kind === 'ready' ? loaded.data : null;
   const segment = data?.view === 'overview' ? data.segments.find(row => row.clientKind === clientKind) : null;
+  const awaitingIOSBuild = data && clientKind === 'ios' && !data.supportedIOSBuilds?.length
+    && (data.view === 'player' ? data.sessions.length === 0 : !segment?.sessionCount);
+  const usageHref = href({ directoryPane: 'report', reportView: 'usage', reportUsageCohortGroup: 'active',
+    reportPage: 0, reportCursor: undefined, journeyPlayer: undefined });
   return <>
     <div className="usage-story-controls">
       <label>Platform<select aria-label="Journey platform" value={clientKind} onChange={event => choose({ reportUsageClientKind: event.target.value as UsageClient })}>{USAGE_CLIENTS.map(key => <option key={key} value={key}>{USAGE_CLIENT_LABELS[key]}</option>)}</select></label>
@@ -63,8 +67,9 @@ function GeneralJourney({ state, choose, organizationId, teamId, unassigned, vie
     {loaded.kind === 'error' && <p role="alert" className="form-message">Could not load player journeys. Refresh journeys to retry. No zero activity is inferred.</p>}
     {data && <>
       <p className="admin-note">Collection coverage start: {data.coverageStartedAtMillis === null ? 'not confirmed for this selection' : activityDate(data.coverageStartedAtMillis, period.timezone)}. {clientKind === 'ios' ? `Verified iOS builds for journeys: ${data.supportedIOSBuilds?.length ? data.supportedIOSBuilds.join(', ') : 'none recorded yet'}. Only installed instrumented builds contribute.` : 'Historical website records cannot be split into desktop and mobile browsers.'}</p>
+      {awaitingIOSBuild && <div role="status" className="form-message"><strong>Native iOS journeys need a supported app build.</strong><p>Existing iOS activity can appear in Usage. Page visits, navigation paths and button actions require an app build that records journeys; none is verified yet. This does not mean players have not used the app.</p><Link to={usageHref}>View recorded iOS usage</Link></div>}
       {!data.complete && <p role="alert" className="form-message">Incomplete report. The available records are shown, but totals, rates and paths are partial and should not be compared with complete periods.</p>}
-      {data.view === 'overview' && <>
+      {data.view === 'overview' && !awaitingIOSBuild && <>
         <p className="admin-note">{segment?.playerCount ?? 0} recorded players · {segment?.sessionCount ?? 0} sessions · {segment?.ongoingSessions ?? 0} ongoing · {segment?.incompleteSessions ?? 0} incomplete.</p>
         {!segment?.sessionCount ? <p role="status">No journeys recorded for this platform in this period. Coverage gaps and older installs are unmeasured.</p> : view === 'pages' ? <PageActivity pages={segment.pages} /> : view === 'paths' ? <>
           <h4>Common recorded paths</h4><p className="admin-note">Ordered pages within each tab or app scene. Separate devices and tabs are never stitched into one path.</p>
@@ -75,7 +80,7 @@ function GeneralJourney({ state, choose, organizationId, teamId, unassigned, vie
       </>}
       {data.view === 'player' && <>
         <Link to={href({ journeyPlayer: undefined })}>All players in this selection</Link><h4>{data.player.name || 'Player'} · recent sessions</h4>
-        {!data.sessions.length && <p>No retained sessions match these filters. Older history may have expired.</p>}
+        {!data.sessions.length && !awaitingIOSBuild && <p>No retained sessions match these filters. Older history may have expired.</p>}
         {data.sessions.map((session, index) => <Session key={`${session.startedAtMillis}:${index}`} session={session} timezone={period.timezone} />)}
       </>}
       {view === 'players' && <nav className="activity-pagination" aria-label="Journey pages"><Link className="quiet-button" to={href({ journeyView: 'players' })}>First page</Link>{data.nextCursor && <Link className="quiet-button" to={adminDirectoryPath({ ...state, journeyCursor: data.nextCursor })}>Next</Link>}</nav>}
