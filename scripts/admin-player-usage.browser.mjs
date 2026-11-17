@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium, webkit } from '../app/node_modules/playwright/index.mjs';
 import { createServer } from '../app/node_modules/vite/dist/node/index.js';
 import { installDirectoryFixture } from '../app/scripts/admin-lightning-fixture.mjs';
+import { installPersistenceFixture } from '../app/scripts/admin-persistence-fixtures/install.mjs';
 
 const vite = await createServer({ root: fileURLToPath(new URL('../app', import.meta.url)), server: { host: '127.0.0.1', port: 0, hmr: false }, logLevel: 'error' });
 await vite.listen();
@@ -11,6 +12,51 @@ const origin = `http://127.0.0.1:${vite.httpServer.address().port}`;
 const base = `${origin}/admin/accounts?orgId=northfield&directoryLevel=people&reportStart=2026-11-09&reportEnd=2026-11-16`;
 const evidence = process.env.USAGE_STORY_SCREENSHOTS;
 if (evidence) await mkdir(evidence, { recursive: true });
+
+// The visual fixture above replaces the reporting hook. This separate context
+// exercises the actual directory, report hook, validation and retained transport.
+async function verifyUsageRequestReuse(browser, engineName) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block' });
+  const network = await installPersistenceFixture(context, origin);
+  await context.addInitScript(() => { window.__adminActivityOptions = { holdInitialReport: true }; });
+  const page = await context.newPage(), errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const requests = () => page.evaluate(() => window.__adminActivity.requests.filter(row => row.kind === 'getClubInsightsV2'));
+  try {
+    await page.goto(base + '&directoryPane=report&reportView=usage');
+    await page.waitForFunction(() => window.__adminActivity?.pending.length === 1);
+    await page.getByText('Loading activity reporting…', { exact: true }).waitFor();
+    const pending = await requests();
+    assert.equal(pending.length, 1, 'Initial Usage issues one report request while the server is pending.');
+    assert.equal(pending[0].input.includeUsageCohorts, true);
+    assert.equal(pending[0].input.includeLastFeatureEvidence, true);
+    await page.evaluate(() => window.__adminActivity.releaseReports());
+    await page.getByText(/^Report checked /).waitFor();
+    assert.equal((await requests()).length, 1, 'Finishing the first Usage response does not start a second report.');
+    const observation = await page.getByText(/^Report checked /).innerText();
+    const tabs = page.getByRole('tablist', { name: 'Directory and reporting views' });
+    await tabs.getByRole('tab', { name: 'Overview', exact: true }).click();
+    await page.waitForFunction(() => {
+      const reports = window.__adminActivity.requests.filter(row => row.kind === 'getClubInsightsV2');
+      return reports.length === 2 && reports.every(row => row.state === 'resolved')
+        && document.querySelector('.admin-activity-report')?.getAttribute('aria-busy') === 'false'
+        && ![...document.querySelectorAll('[role="status"]')].some(node => /Loading activity reporting|Updating activity/.test(node.textContent || ''));
+    });
+    await page.evaluate(() => window.__adminPersistence.observeLoading());
+    await tabs.getByRole('tab', { name: 'Usage', exact: true }).click();
+    await tabs.getByRole('tab', { name: 'Usage', exact: true, selected: true }).waitFor();
+    // A click can finish before React commits the restored tab. Require the
+    // retained observation itself, rather than assuming two frames are enough.
+    await page.getByText(observation, { exact: true }).waitFor();
+    assert.equal((await requests()).length, 2, 'Returning to fresh Usage reuses its exact observation.');
+    assert.equal(await page.getByText(/^Report checked /).innerText(), observation, 'Reuse keeps the original observation time.');
+    assert.deepEqual(await page.evaluate(() => window.__adminPersistence.flashes), [], 'A fresh Usage tab return does not show loading again.');
+    assert.deepEqual(errors, []);
+    assert.deepEqual(network.writesBlocked, []);
+    assert.deepEqual(network.unexpected, []);
+    console.log(`${engineName}: actual Usage hooks issue one initial request, show pending feedback and reuse a fresh tab return`);
+  } finally { await context.close(); }
+}
 try {
   for (const [engineName, engine] of [['Chromium', chromium], ['WebKit', webkit]]) {
     const browser = await engine.launch();
@@ -85,7 +131,24 @@ try {
       if (evidence) await journey.screenshot({ path: `${evidence}/${engineName.toLowerCase()}-journey-desktop.png`, animations: 'disabled' });
       await page.setViewportSize({ width: 390, height: 844 });
       await page.waitForFunction(() => document.querySelector('#admin-navigation')?.inert === true);
-      assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Journey fits narrow viewport');
+      const narrowLayout = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
+      if (narrowLayout.scrollWidth > narrowLayout.width + 1) {
+        // Keep the original strict measurement; report only structural fixture
+        // geometry so a hosted-only failure can be diagnosed without a retry.
+        console.error('Journey narrow layout:', await page.evaluate(() => ({
+          width: innerWidth, scrollWidth: document.documentElement.scrollWidth, fonts: document.fonts.status,
+          animations: document.getAnimations().map(animation => ({ state: animation.playState, target: animation.effect?.target?.className })),
+          overflow: [...document.querySelectorAll('body *')].map(element => {
+            const rect = element.getBoundingClientRect(), style = getComputedStyle(element);
+            return { tag: element.tagName, className: element.className, left: rect.left, right: rect.right, width: rect.width,
+              scrollWidth: element.scrollWidth, clientWidth: element.clientWidth, parent: element.parentElement?.className,
+              overflowX: style.overflowX, clipPath: style.clipPath, visibility: style.visibility, position: style.position };
+          }).filter(element => element.right > innerWidth + 1 || element.scrollWidth > element.clientWidth + 1).slice(0, 40),
+        })));
+        await page.waitForFunction(() => !document.querySelector('#admin-navigation')?.getAnimations().some(animation => animation.playState === 'running'), null, { timeout: 2000 });
+        console.error('Journey after rail transition:', await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth })));
+      }
+      assert(narrowLayout.scrollWidth <= narrowLayout.width + 1, `Journey fits narrow viewport: ${JSON.stringify(narrowLayout)}`);
       if (evidence) await page.screenshot({ path: `${evidence}/${engineName.toLowerCase()}-journey-mobile.png`, fullPage: true, animations: 'disabled' });
       await page.goto(base + '&teamId=harbor&directoryPane=journey&journeyView=pages');
       await journey.getByRole('table', { name: 'Page activity' }).waitFor();
@@ -100,6 +163,7 @@ try {
       if (evidence) await page.screenshot({ path: `${evidence}/${engineName.toLowerCase()}-participation-mobile.png`, fullPage: true, animations: 'disabled' });
       assert.deepEqual(errors, []);
       console.log(`${engineName}: participation, platform separation, named paths, periods, persistence, coverage, error, scope and narrow layout passed`);
+      await verifyUsageRequestReuse(browser, engineName);
     } finally { await browser.close(); }
   }
 } finally { await vite.close(); }

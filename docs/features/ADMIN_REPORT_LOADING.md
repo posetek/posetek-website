@@ -1,5 +1,44 @@
 # Admin directory and reporting loading review
 
+
+## Backend performance release — November 16, 2026
+
+[Backend PR #175](https://github.com/posetek/posetek-backend/pull/175) first
+deployed bounded request batching as `getClubInsightsV2` version 17. It reduces
+sequential source reads without changing the response contract, periods, filters
+or full totals. A 300-player synthetic handler benchmark reduced sequential
+network turns from 311 to 97 and SDK calls from 4,929 to 2,256; these are not
+billed-read savings. Fourteen full-response parity cases passed, including dense
+history fixtures. [Backend PR #176](https://github.com/posetek/posetek-backend/pull/176)
+then reused date formatters within each calculation, preserving identical output.
+Only `getClubInsightsV2` was deployed, now at version 18.
+
+The same live Usage selection took 39.996 seconds before these changes. Version
+17 measured 28.676, 24.184 and 23.466 seconds; version 18 measured 20.413 and
+19.143 seconds. Displayed card totals were unchanged. These are a few observed
+requests, not a latency percentile or SLA; loading time is still material. One
+overlapping version 17 request took 36.102 seconds but could not be attributed
+to that selection. The
+[production receipt](../releases/receipts/ADMIN_USAGE_PERFORMANCE_PRODUCTION.json)
+preserves both releases' source archives, configuration and verification evidence.
+The website deployment pointer is unchanged; there was no website publication.
+Client retention remains the bounded 60-second behavior described below. Website
+[PR #172](https://github.com/posetek/posetek-website/pull/172) exercises the actual
+report hook with synthetic boundaries: one initial request, visible pending
+feedback and a fresh tab return with the original observation and no new request.
+
+Website test qualification has one recorded limitation: the existing narrow
+Journey layout check fails in hosted Linux WebKit. At a 390-pixel viewport, two
+control labels retain 196- and 229-pixel scroll widths inside 174-pixel boxes;
+the root remains 429 pixels wide after the rail transition. This is persistent
+control overflow, not a loading race. Chromium and the full local WebKit suite
+pass. The strict assertion remains; no CSS change or website publication is
+included. The owner authorized CI bypass for integration, with the failure
+recorded in the receipt.
+
+The November 4–5 investigation and release details below are historical.
+
+
 Reviewed November 4, 2026; client persistence published November 5.
 Deployment `6aec430f45bc0d0841566ba7` was published at
 `2026-11-05T09:00:17.782Z` with runtime `6ea75c7`. Source

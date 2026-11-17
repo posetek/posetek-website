@@ -33,6 +33,23 @@ example draft requires exact artifact review and hosted acceptance before the us
 
 # PoseTek website project context
 
+
+## Admin Usage performance — November 16, 2026
+
+Backend [PR #175](https://github.com/posetek/posetek-backend/pull/175) and
+[PR #176](https://github.com/posetek/posetek-backend/pull/176) are live as
+`getClubInsightsV2` version 18. The same Usage report measured 40.0 seconds before
+the changes, then 20.4 and 19.1 seconds after the final release, with unchanged
+displayed card totals. These few observations are not a latency guarantee, and
+loading time remains material. The website stays on `6afb675237bfe4f2da0726ba`;
+no website files or reports were published or replaced. Website
+[PR #172](https://github.com/posetek/posetek-website/pull/172) adds regression
+checks for one initial request and reuse of a fresh report. The
+[production receipt](docs/releases/receipts/ADMIN_USAGE_PERFORMANCE_PRODUCTION.json)
+records both the version 17 batching checkpoint and the version 18 follow-up,
+scoped source verification and the known hosted browser-test failure.
+
+
 ## Player participation and journeys — November 16 release
 
 Deployment `6afb675237bfe4f2da0726ba` adds weekly player participation and
