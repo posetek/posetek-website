@@ -141,9 +141,12 @@ try {
           overflow: [...document.querySelectorAll('body *')].map(element => {
             const rect = element.getBoundingClientRect(), style = getComputedStyle(element);
             return { tag: element.tagName, className: element.className, left: rect.left, right: rect.right, width: rect.width,
-              overflowX: style.overflowX, position: style.position };
-          }).filter(element => element.right > innerWidth + 1).slice(0, 20),
+              scrollWidth: element.scrollWidth, clientWidth: element.clientWidth, parent: element.parentElement?.className,
+              overflowX: style.overflowX, clipPath: style.clipPath, visibility: style.visibility, position: style.position };
+          }).filter(element => element.right > innerWidth + 1 || element.scrollWidth > element.clientWidth + 1).slice(0, 40),
         })));
+        await page.waitForFunction(() => !document.querySelector('#admin-navigation')?.getAnimations().some(animation => animation.playState === 'running'), null, { timeout: 2000 });
+        console.error('Journey after rail transition:', await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth })));
       }
       assert(narrowLayout.scrollWidth <= narrowLayout.width + 1, `Journey fits narrow viewport: ${JSON.stringify(narrowLayout)}`);
       if (evidence) await page.screenshot({ path: `${evidence}/${engineName.toLowerCase()}-journey-mobile.png`, fullPage: true, animations: 'disabled' });
