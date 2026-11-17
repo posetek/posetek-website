@@ -15,6 +15,15 @@ const signIn = await vite.transformIndexHtml('/player-signin.html', `<!doctype h
 </script></body></html>`);
 const playerId = 'synthetic-journey-player';
 const ownerUid = 'synthetic-journey-actor';
+const focusBoundary = await vite.transformIndexHtml('/__focus-boundary.html', `<!doctype html><html><body>
+  <input aria-label="First control"><input aria-label="Second control"><script type="module">
+  import { browserEngagementEnvironment } from '/src/lib/insight-usage/browser.ts';
+  const environment = browserEngagementEnvironment(() => 'synthetic-focus-owner');
+  window.fixtureFocusChanges = []; window.fixtureInputs = 0;
+  const stops = ['focus', 'blur'].map(name => environment.on(name, () => window.fixtureFocusChanges.push(name)));
+  stops.push(environment.on('keydown', () => window.fixtureInputs++));
+  window.fixtureStopFocus = () => stops.forEach(stop => stop());
+</script></body></html>`);
 const planOutcome = await vite.transformIndexHtml('/__plan-outcome.html', `<!doctype html><html><body><div id="root"></div><script type="module">
   import { createElement, useState } from 'react';
   import { createRoot } from 'react-dom/client';
@@ -79,9 +88,36 @@ async function install(context) {
     if (url.origin !== origin) return route.abort();
     if (url.pathname === '/src/lib/firebase.ts') return route.fulfill({ contentType: 'text/javascript', body: firebase });
     if (url.pathname === '/player-signin.html') return route.fulfill({ contentType: 'text/html', body: signIn });
+    if (url.pathname === '/__focus-boundary.html') return route.fulfill({ contentType: 'text/html', body: focusBoundary });
     if (url.pathname === '/__plan-outcome.html') return route.fulfill({ contentType: 'text/html', body: planOutcome });
     return route.continue();
   });
+}
+
+async function checkFocusBoundary(browser, options) {
+  const context = await browser.newContext({ ...options, serviceWorkers: 'block' });
+  try {
+    await install(context);
+    const page = await context.newPage();
+    await page.goto(`${origin}/__focus-boundary.html`);
+    await page.waitForFunction(() => typeof window.fixtureStopFocus === 'function');
+    await page.getByRole('textbox', { name: 'First control' }).focus();
+    await page.keyboard.press('Tab');
+    await page.getByRole('textbox', { name: 'Second control' }).focus();
+    assert.equal(await page.evaluate(() => window.fixtureInputs), 1, 'Keyboard activity remains observed.');
+    assert.deepEqual(await page.evaluate(() => window.fixtureFocusChanges), [], 'Moving focus between controls must not flush page-foreground batches.');
+    await page.evaluate(() => {
+      window.dispatchEvent(new FocusEvent('blur'));
+      window.dispatchEvent(new FocusEvent('focus'));
+    });
+    assert.deepEqual(await page.evaluate(() => window.fixtureFocusChanges), ['blur', 'focus'], 'Window foreground transitions remain observed.');
+    await page.evaluate(() => {
+      window.fixtureStopFocus();
+      window.dispatchEvent(new FocusEvent('blur'));
+      window.dispatchEvent(new FocusEvent('focus'));
+    });
+    assert.deepEqual(await page.evaluate(() => window.fixtureFocusChanges), ['blur', 'focus'], 'Disposal removes foreground listeners.');
+  } finally { await context.close(); }
 }
 
 async function checkPlanOutcome(browser, options, completed) {
@@ -123,6 +159,7 @@ try {
   ]) {
     const browser = await engine.launch();
     try {
+      await checkFocusBoundary(browser, options);
       const context = await browser.newContext({ ...options, serviceWorkers: 'block' });
       await install(context);
       const page = await context.newPage();

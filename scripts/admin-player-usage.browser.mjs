@@ -57,6 +57,78 @@ async function verifyUsageRequestReuse(browser, engineName) {
     console.log(`${engineName}: actual Usage hooks issue one initial request, show pending feedback and reuse a fresh tab return`);
   } finally { await context.close(); }
 }
+
+async function verifyResponsiveReports(browser, engineName) {
+  let page;
+  const atWidth = async width => {
+    await page?.close();
+    // Each viewport starts with its own navigation history and saved positions.
+    page = await browser.newPage({ viewport: { width, height: 1000 } });
+    await installDirectoryFixture(page, { usageStory: true, journey: true });
+  };
+  const routes = [
+    ['usage', '&directoryPane=report&reportView=usage', 'Weekly participation players'],
+    ['pages', '&directoryPane=journey&journeyView=pages', 'Page activity'],
+    ['paths', '&directoryPane=journey&journeyView=paths', 'Common player paths'],
+    ['players', '&directoryPane=journey&journeyView=players', 'Journey players'],
+  ];
+  const assertContained = async label => {
+    const size = await page.evaluate(() => ({ viewport: innerWidth, document: document.documentElement.scrollWidth,
+      reports: [...document.querySelectorAll('.usage-story')].map(element => ({ width: element.clientWidth, content: element.scrollWidth })) }));
+    assert(size.document <= size.viewport + 1 && size.reports.every(report => report.content <= report.width + 1), `${label}: ${JSON.stringify(size)}`);
+  };
+  try {
+    for (const width of [1440, 768, 390, 320]) {
+      await atWidth(width);
+      for (const [view, query, table] of routes) {
+        // Mount at this width so unrelated asynchronous chart resize work is not
+        // mistaken for a persistent report-layout failure.
+        await page.goto(base + query + '&journeyEntry=sign_in');
+        await page.getByRole('table', { name: table }).waitFor();
+        await page.waitForFunction(() => [...document.querySelectorAll('.insights-bars canvas, .insights-chart canvas')]
+          .every(canvas => canvas.getBoundingClientRect().width <= canvas.parentElement.clientWidth + 1));
+        await assertContained(`${engineName} ${view} at ${width}px`);
+        if (evidence && ['usage', 'pages'].includes(view) && [768, 320].includes(width)) {
+          await page.screenshot({ path: `${evidence}/${engineName.toLowerCase()}-${view}-${width}.png`, fullPage: true, animations: 'disabled' });
+        }
+        if (width === 768 && view === 'pages') {
+          const scrollArea = page.getByRole('region', { name: 'Page activity table', exact: true });
+          await scrollArea.focus();
+          assert(await scrollArea.evaluate(element => element === document.activeElement));
+          // WebKit cancels native smooth scrolling if keyup arrives before the
+          // first frame. Hold the arrow until scrolling is observed, then release.
+          await page.keyboard.down('ArrowRight');
+          try {
+            await page.waitForFunction(() => document.querySelector('[aria-label="Page activity table"]')?.scrollLeft > 0, null, { timeout: 3000 });
+          } finally { await page.keyboard.up('ArrowRight'); }
+          await assertContained('Keyboard scrolling stays inside the Page activity table');
+        }
+        if (width === 320 && view === 'usage') {
+          await page.getByRole('button', { name: /^Previous repeat users · returned on one day/ }).focus();
+          await page.keyboard.press('Enter');
+          await page.waitForFunction(() => document.querySelector('table[aria-label="Weekly participation players"] tbody')?.children.length === 1);
+          await page.getByRole('table', { name: table }).getByRole('rowheader', { name: /Story Player 3/ }).waitFor();
+          assert.equal(await page.getByRole('table', { name: table }).locator('tbody tr').count(), 1);
+          await assertContained('Keyboard-selected participation group stays contained');
+        }
+      }
+    }
+    await atWidth(390);
+    await page.goto(base + '&directoryPane=journey&journeyView=pages&journeyEntry=sign_in');
+    await page.getByRole('table', { name: 'Page activity' }).waitFor();
+    // Native select text metrics differ between macOS and Linux WebKit. Larger
+    // text reproduces the same overflowing selected-value box on both hosts.
+    await page.addStyleTag({ content: '.usage-story-controls select { font-size: 20px !important; }' });
+    await assertContained(`${engineName} native controls with enlarged text`);
+    const journey = page.getByRole('tabpanel', { name: 'Journey', exact: true });
+    await journey.getByRole('link', { name: 'Paths', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await journey.getByRole('table', { name: 'Common player paths' }).waitFor();
+    assert.equal(await journey.getByRole('link', { name: 'Paths', exact: true }).getAttribute('aria-current'), 'page');
+    await assertContained('Keyboard Journey navigation keeps the enlarged controls contained');
+    console.log(`${engineName}: Usage and Journey fit desktop, tablet and phone containers; table scrolling and report actions work by keyboard`);
+  } finally { await page?.close(); }
+}
 try {
   for (const [engineName, engine] of [['Chromium', chromium], ['WebKit', webkit]]) {
     const browser = await engine.launch();
@@ -78,7 +150,7 @@ try {
       await weekly.getByRole('combobox', { name: 'Participation platform' }).selectOption('mobile_web');
       await weekly.getByText('100% of 2 weekly active players').waitFor();
       await weekly.getByRole('combobox', { name: 'Participation platform' }).selectOption('ios');
-      await weekly.getByText('A weekly comparison is not yet available for this platform.').waitFor();
+      await weekly.getByText(/^A weekly comparison is not yet available for this platform\./).waitFor();
       await weekly.getByText(/Verified iOS builds for this breakdown: none recorded yet/).waitFor();
       await page.goBack();
       await weekly.getByText('100% of 2 weekly active players').waitFor();
@@ -123,7 +195,9 @@ try {
       await journey.getByRole('button', { name: 'Refresh journeys' }).click();
       await journey.getByRole('alert').getByText(/Incomplete report/).waitFor();
       await journey.getByRole('combobox', { name: 'Journey platform' }).selectOption('ios');
-      await journey.getByText(/No journeys recorded for this platform/).waitFor();
+      await journey.getByText('Native iOS journeys need a supported app build.', { exact: true }).waitFor();
+      assert.equal(await journey.getByText(/0 recorded players/).count(), 0);
+      assert.equal(await journey.getByText(/No journeys recorded for this platform/).count(), 0);
       await journey.getByText(/Verified iOS builds for journeys: none recorded yet/).waitFor();
       await page.evaluate(() => { window.fixturePlayerJourneyState = 'normal'; });
       await journey.getByRole('combobox', { name: 'Journey platform' }).selectOption('mobile_web');
@@ -135,24 +209,40 @@ try {
       if (narrowLayout.scrollWidth > narrowLayout.width + 1) {
         // Keep the original strict measurement; report only structural fixture
         // geometry so a hosted-only failure can be diagnosed without a retry.
-        console.error('Journey narrow layout:', await page.evaluate(() => ({
+        console.error('Journey narrow layout:', JSON.stringify(await page.evaluate(() => ({
           width: innerWidth, scrollWidth: document.documentElement.scrollWidth, fonts: document.fonts.status,
           animations: document.getAnimations().map(animation => ({ state: animation.playState, target: animation.effect?.target?.className })),
           overflow: [...document.querySelectorAll('body *')].map(element => {
             const rect = element.getBoundingClientRect(), style = getComputedStyle(element);
             return { tag: element.tagName, className: element.className, left: rect.left, right: rect.right, width: rect.width,
               scrollWidth: element.scrollWidth, clientWidth: element.clientWidth, parent: element.parentElement?.className,
-              overflowX: style.overflowX, clipPath: style.clipPath, visibility: style.visibility, position: style.position };
+              overflowX: style.overflowX, clipPath: style.clipPath, visibility: style.visibility, position: style.position,
+              gridTemplateColumns: style.gridTemplateColumns, minWidth: style.minWidth,
+              control: element.matches('label') ? (() => {
+                const control = element.querySelector('input, select');
+                return control && { name: control.getAttribute('aria-label') || element.firstChild?.textContent?.trim(),
+                  type: control.type, width: control.getBoundingClientRect().width, minWidth: getComputedStyle(control).minWidth };
+              })() : null };
           }).filter(element => element.right > innerWidth + 1 || element.scrollWidth > element.clientWidth + 1).slice(0, 40),
-        })));
+        }))));
         await page.waitForFunction(() => !document.querySelector('#admin-navigation')?.getAnimations().some(animation => animation.playState === 'running'), null, { timeout: 2000 });
-        console.error('Journey after rail transition:', await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth })));
+        console.error('Journey after rail transition:', JSON.stringify(await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }))));
       }
       assert(narrowLayout.scrollWidth <= narrowLayout.width + 1, `Journey fits narrow viewport: ${JSON.stringify(narrowLayout)}`);
       if (evidence) await page.screenshot({ path: `${evidence}/${engineName.toLowerCase()}-journey-mobile.png`, fullPage: true, animations: 'disabled' });
       await page.goto(base + '&teamId=harbor&directoryPane=journey&journeyView=pages');
       await journey.getByRole('table', { name: 'Page activity' }).waitFor();
       assert.equal(await page.evaluate(() => window.fixturePlayerJourneyRequests.at(-1).teamId), 'harbor');
+      await journey.getByRole('combobox', { name: 'Journey platform' }).selectOption('ios');
+      await journey.getByText('Native iOS journeys need a supported app build.', { exact: true }).waitFor();
+      await journey.getByRole('link', { name: 'View recorded iOS usage' }).click();
+      await weekly.getByRole('combobox', { name: 'Participation platform' }).waitFor();
+      const usageParams = new URL(page.url()).searchParams;
+      for (const [key, value] of Object.entries({ orgId: 'northfield', teamId: 'harbor', directoryPane: 'report', reportView: 'usage',
+        reportUsageClientKind: 'ios', reportUsageCohortGroup: 'active', reportStart: '2026-11-09', reportEnd: '2026-11-16' })) {
+        assert.equal(usageParams.get(key), value, `Pending-build Usage link preserves ${key}`);
+      }
+      assert.equal(await weekly.getByRole('combobox', { name: 'Participation platform' }).inputValue(), 'ios');
       const tabs = page.getByRole('tablist', { name: 'Directory and reporting views' });
       await tabs.getByRole('tab', { name: 'Usage', exact: true }).focus();
       await page.keyboard.press('End');
@@ -161,9 +251,15 @@ try {
       await weekly.getByRole('table', { name: 'Weekly participation players' }).waitFor();
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Participation fits narrow viewport');
       if (evidence) await page.screenshot({ path: `${evidence}/${engineName.toLowerCase()}-participation-mobile.png`, fullPage: true, animations: 'disabled' });
+      await page.evaluate(() => { window.fixtureState = 'usage-current-only'; });
+      await weekly.getByRole('combobox', { name: 'Participation platform' }).selectOption('mobile_web');
+      await weekly.getByRole('combobox', { name: 'Participation platform' }).selectOption('desktop_web');
+      await weekly.getByText('5 players with recorded activity this week. Previous-week coverage is unavailable, so returns and absences cannot yet be compared.', { exact: true }).waitFor();
+      assert.equal(await weekly.getByText(/^A weekly comparison is not yet available/).count(), 0);
       assert.deepEqual(errors, []);
       console.log(`${engineName}: participation, platform separation, named paths, periods, persistence, coverage, error, scope and narrow layout passed`);
       await verifyUsageRequestReuse(browser, engineName);
+      await verifyResponsiveReports(browser, engineName);
     } finally { await browser.close(); }
   }
 } finally { await vite.close(); }

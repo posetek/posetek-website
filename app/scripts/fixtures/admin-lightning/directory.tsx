@@ -62,6 +62,7 @@ export function useWorkspaceMetrics({scope,search,playerIds,enabled=true,include
  if(data){const all=Array.from({length:4},(_,p)=>previewInsights(request,p,'longNames').players).flat();data.rosterMetrics=(playerIds||[]).map(id=>{const player=all.find(p=>p.id===id);return player?{playerId:id,status:'included',player}:{playerId:id,status:'excluded'}});}
  if(data && includeUsageCohorts && window.fixtureUsageStory) {
   const usageCohorts=usageStoryFixture(); usageCohorts.windows.current.endDate=request.endDate;
+  if(mode==='usage-current-only') usageCohorts.segments.desktop_web.previous={...usageCohorts.segments.ios.previous};
   data.adminReporting={version:1,asOfMillis:Date.now(),followUp:'all',sort:'lastActivity',population:data.roster.filtered,summary:{noSignIn:0,noActivity:0,unfinishedAssigned:0,noCompletion:0,signInUnknown:0,usageNotCollected:0},topActivePlayers:[],topWorkoutPlayers:[],teams:[],usageCohorts};
   const candidates=data.players.slice(0,6).map((player,index)=>({...player,firstName:'Story',lastName:`Player ${index+1}`,adminReporting:{signIn:{status:'recorded',lastSignInAtMillis:Date.now()},usage:{lastActivityWindow:null,cohort:usagePlayerFixture(index)},workouts:{latest:null},assigned:{status:'noActivePlan',weekNumber:null,remaining:null,notStarted:null,noEnding:null}}}));
   data.players=usageFixtureIndexes(request.usageCohortGroup||'active').map(index=>candidates[index]).filter(Boolean);

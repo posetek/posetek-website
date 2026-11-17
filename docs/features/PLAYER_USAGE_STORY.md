@@ -66,10 +66,24 @@ First activity and explicit successful
 sign-in are different evidence. Signup, restored sessions, Continue and report
 or deep-link entries remain distinct; authentication restoration is not login.
 
+The admin presentation keeps positive current-week activity visible even when
+previous-week coverage is unavailable. It does not infer returns or absences from
+that missing comparison. For native iOS, an empty Journey result with no verified
+supported build shows a pending-build explanation and links to the same scope,
+platform and period in Usage. It does not display zero journey totals in that
+state. Existing recorded sessions remain visible even if the supported-build
+list has not been configured. A supported empty result and a failed load retain
+their distinct states. Older native usage intervals can support participation
+without containing the page events required for Journeys.
+
 Web collection belongs to the player's actual resolved and displayed workspace,
 including its separate sign-in document. Visible, focused active time uses the
 existing two-minute idle threshold and progressing workout/video signals. A
-visit belongs to one tab or native scene and ends after 30 inactive minutes.
+focus move between controls does not background the browser window or flush a
+new delivery batch. The shared browser adapter observes window-target focus and
+blur separately from captured keyboard/pointer activity; this avoids a queue
+backlog during keyboard navigation while retaining real foreground transitions.
+A visit belongs to one tab or native scene and ends after 30 inactive minutes.
 Ordered deduplicated retries last at most 72 hours and cannot replay under a
 different account. Collection never delays navigation. Fixed page and action
 identifiers exclude typed text, raw addresses, query strings and contact data.
@@ -82,7 +96,16 @@ counts overlap and must not be summed.
 Focused unit tests cover unavailable/zero distinctions, composition denominators,
 follow-up presentation, navigation persistence and opt-in request construction.
 `scripts/admin-player-usage.browser.mjs` exercises real components with synthetic
-transports in Chromium and WebKit, desktop and 390px. The Stats browser suite
+transports in Chromium and WebKit at 1440, 768, 390 and 320px. It checks report
+and document bounds, enlarged native-select text, keyboard table scrolling and
+report navigation, plus pending iOS coverage and the scope-preserving Usage link.
+Report controls have a 15rem preferred width and use full-width rows on phones
+to contain native WebKit select text.
+Long participation group labels wrap within the card, and the Pages table scrolls
+inside a focusable region
+when its columns exceed the report width. The original regression measured a
+554px table inside a 490px column, expanding a 768px document to 808px. No document
+width tolerance was relaxed. The Stats browser suite
 retains the original funnel acceptance. Collector lifecycle tests and canonical
 backend/emulator tests cover writes, retries, identity and access separately.
 Synthetic browser fixtures do not prove production collection or native install

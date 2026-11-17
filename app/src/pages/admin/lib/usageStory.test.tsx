@@ -42,6 +42,15 @@ describe('weekly participation evidence', () => {
     expect(result).toContain('View journey'); expect(result).toContain('Missing coverage is reported separately');
     expect(usageChangeSummary(usageStoryFixture().segments.desktop_web)).toContain('2 active in both weeks, 2 added');
   });
+  it('describes known positive activity when the previous week is unmeasured', () => {
+    const segment = usageStoryFixture().segments.ios;
+    segment.current = { activePlayers: 2, repeatPlayers: 0, newPlayers: 0, existingPlayers: 0,
+      unknownHistoryPlayers: 2, activeMinutes: 3, status: 'partial' };
+    const summary = usageChangeSummary(segment);
+    expect(summary).toContain('2 players with recorded activity this week');
+    expect(summary).toContain('Previous-week coverage is unavailable');
+    expect(summary).not.toContain('not yet returned');
+  });
   it('round-trips platform, group, named journey, dates, filters and view', () => {
     const initial = parseAdminDirectoryState('?orgId=club&teamId=team&directoryPane=journey&journeyView=players&journeyPlayer=player-1&journeyCohort=existing&journeyEntry=sign_in&reportUsageClientKind=mobile_web&reportUsageCohortGroup=repeat_returned_once&reportStart=2026-11-09&reportEnd=2026-11-18');
     expect(parseAdminDirectoryState(adminDirectoryPath(initial).split('?')[1])).toEqual(initial);

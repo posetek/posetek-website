@@ -44,7 +44,11 @@ export function browserEngagementEnvironment(currentUid: () => string | undefine
     visible: focusedPage,
     progressingVideo: videoProgress(),
     on(name: string, listener: (event: { isTrusted?: boolean; detail?: { active?: boolean } }) => void) {
-      const callback = (event: Event) => listener({ isTrusted: event.isTrusted, detail: (event as CustomEvent).detail });
+      const callback = (event: Event) => {
+        // Control focus changes do not mean the browser window lost foreground.
+        if ((name === 'blur' || name === 'focus') && event.target !== window) return;
+        listener({ isTrusted: event.isTrusted, detail: (event as CustomEvent).detail });
+      };
       const target = name === 'visibilitychange' ? document : window;
       target.addEventListener(name, callback, { passive: true, capture: true });
       return () => target.removeEventListener(name, callback, true);

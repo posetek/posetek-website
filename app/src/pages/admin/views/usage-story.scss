@@ -1,25 +1,31 @@
 .usage-story {
   margin-block: 1.25rem;
   min-width: 0;
-  .usage-story-platform, .usage-story-controls label { display: grid; gap: .35rem; font-weight: 600; }
-  select, input { max-width: 100%; min-height: 2.75rem; border: 1px solid #bacbc4; border-radius: .5rem; padding: .5rem .75rem; background: #fff; color: #163d30; }
+  // Native form controls must fit the assigned flex item, not an auto-sized grid track.
+  .usage-story-platform, .usage-story-controls label { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: .35rem; font-weight: 600; }
+  select, input { min-width: 0; max-width: 100%; min-height: 2.75rem; border: 1px solid #bacbc4; border-radius: .5rem; padding: .5rem .75rem; background: #fff; color: #163d30; }
+  // WebKit can include a native select's full value in its parent's scroll area.
+  select { overflow: hidden; text-overflow: ellipsis; }
   .usage-story-platform { max-width: 23rem; }
   .usage-story-period { line-height: 1.7; }
   .usage-story-composition { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
   .usage-story-composition-card { display: grid; gap: .4rem; padding: 1rem; text-align: left; background: #f6f9f7; border: 1px solid #d2dfd8; border-radius: .75rem; color: #183e30; cursor: pointer; strong { font-size: 1.9rem; } }
   [aria-pressed="true"], .usage-story-view[aria-current="page"] { background: #e9f4d7; border-color: #26734e; box-shadow: inset 0 -2px #26734e; }
   .usage-story-groups, .usage-story-controls, .usage-story-views { display: flex; gap: .65rem; flex-wrap: wrap; margin-block: 1rem; align-items: end; }
-  .usage-story-groups button { text-align: left; white-space: normal; strong { margin-left: .45rem; } }
-  .usage-story-controls label { flex: 1 1 10rem; }
+  .usage-story-groups button { max-width: 100%; min-width: 0; overflow-wrap: anywhere; text-align: left; white-space: normal; strong { margin-left: .45rem; } }
+  .usage-story-controls label { flex: 1 1 15rem; }
   .usage-story-controls input, .usage-story-controls select { width: 100%; box-sizing: border-box; }
   .usage-story-explanation { border-left: 3px solid #26734e; padding: .75rem 1rem; background: #f1f6f3; }
   .usage-story-session { border-top: 1px solid #d2dfd8; padding: 1rem 0; summary { cursor: pointer; line-height: 1.6; } li { margin-block: .5rem; overflow-wrap: anywhere; } }
   .usage-story-path { overflow-wrap: anywhere; }
+  .activity-table-wrap { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
   table { width: 100%; border-collapse: collapse; th, td { text-align: left; padding: .8rem; border-bottom: 1px solid #d2dfd8; vertical-align: top; } small { display: block; margin-top: .3rem; } }
   .usage-story-views a { text-decoration: none; padding: .65rem .9rem; border: 1px solid #bacbc4; border-radius: .5rem; color: #18563e; }
-  :is(button, a, input, select):focus-visible { outline: 3px solid #26734e; outline-offset: 3px; }
+  .activity-table-wrap:focus-visible, :is(button, a, input, select):focus-visible { outline: 3px solid #26734e; outline-offset: 3px; }
   @media (max-width: 650px) {
     .usage-story-composition { grid-template-columns: 1fr; } .usage-story-controls { align-items: stretch; }
+    // Native WebKit select text can exceed a half-width control on phones.
+    .usage-story-controls label { flex-basis: 100%; }
     table, tbody, tr, th, td { display: block; width: auto; }
     thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     tr { margin-block: .75rem; border: 1px solid #d2dfd8; border-radius: .5rem; }
