@@ -44,7 +44,10 @@ async function verifyUsageRequestReuse(browser, engineName) {
     });
     await page.evaluate(() => window.__adminPersistence.observeLoading());
     await tabs.getByRole('tab', { name: 'Usage', exact: true }).click();
-    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await tabs.getByRole('tab', { name: 'Usage', exact: true, selected: true }).waitFor();
+    // A click can finish before React commits the restored tab. Require the
+    // retained observation itself, rather than assuming two frames are enough.
+    await page.getByText(observation, { exact: true }).waitFor();
     assert.equal((await requests()).length, 2, 'Returning to fresh Usage reuses its exact observation.');
     assert.equal(await page.getByText(/^Report checked /).innerText(), observation, 'Reuse keeps the original observation time.');
     assert.deepEqual(await page.evaluate(() => window.__adminPersistence.flashes), [], 'A fresh Usage tab return does not show loading again.');
