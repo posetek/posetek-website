@@ -79,7 +79,11 @@ without containing the page events required for Journeys.
 Web collection belongs to the player's actual resolved and displayed workspace,
 including its separate sign-in document. Visible, focused active time uses the
 existing two-minute idle threshold and progressing workout/video signals. A
-visit belongs to one tab or native scene and ends after 30 inactive minutes.
+focus move between controls does not background the browser window or flush a
+new delivery batch. The shared browser adapter observes window-target focus and
+blur separately from captured keyboard/pointer activity; this avoids a queue
+backlog during keyboard navigation while retaining real foreground transitions.
+A visit belongs to one tab or native scene and ends after 30 inactive minutes.
 Ordered deduplicated retries last at most 72 hours and cannot replay under a
 different account. Collection never delays navigation. Fixed page and action
 identifiers exclude typed text, raw addresses, query strings and contact data.
