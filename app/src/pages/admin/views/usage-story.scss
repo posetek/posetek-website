@@ -1,8 +1,9 @@
 .usage-story {
   margin-block: 1.25rem;
   min-width: 0;
-  .usage-story-platform, .usage-story-controls label { display: grid; gap: .35rem; font-weight: 600; }
-  select, input { max-width: 100%; min-height: 2.75rem; border: 1px solid #bacbc4; border-radius: .5rem; padding: .5rem .75rem; background: #fff; color: #163d30; }
+  // Native form controls must fit the assigned flex item, not an auto-sized grid track.
+  .usage-story-platform, .usage-story-controls label { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: .35rem; font-weight: 600; }
+  select, input { min-width: 0; max-width: 100%; min-height: 2.75rem; border: 1px solid #bacbc4; border-radius: .5rem; padding: .5rem .75rem; background: #fff; color: #163d30; }
   // WebKit can include a native select's full value in its parent's scroll area.
   select { overflow: hidden; text-overflow: ellipsis; }
   .usage-story-platform { max-width: 23rem; }

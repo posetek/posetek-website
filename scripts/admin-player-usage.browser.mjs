@@ -216,7 +216,13 @@ try {
             const rect = element.getBoundingClientRect(), style = getComputedStyle(element);
             return { tag: element.tagName, className: element.className, left: rect.left, right: rect.right, width: rect.width,
               scrollWidth: element.scrollWidth, clientWidth: element.clientWidth, parent: element.parentElement?.className,
-              overflowX: style.overflowX, clipPath: style.clipPath, visibility: style.visibility, position: style.position };
+              overflowX: style.overflowX, clipPath: style.clipPath, visibility: style.visibility, position: style.position,
+              gridTemplateColumns: style.gridTemplateColumns, minWidth: style.minWidth,
+              control: element.matches('label') ? (() => {
+                const control = element.querySelector('input, select');
+                return control && { name: control.getAttribute('aria-label') || element.firstChild?.textContent?.trim(),
+                  type: control.type, width: control.getBoundingClientRect().width, minWidth: getComputedStyle(control).minWidth };
+              })() : null };
           }).filter(element => element.right > innerWidth + 1 || element.scrollWidth > element.clientWidth + 1).slice(0, 40),
         })));
         await page.waitForFunction(() => !document.querySelector('#admin-navigation')?.getAnimations().some(animation => animation.playState === 'running'), null, { timeout: 2000 });
