@@ -22,10 +22,32 @@ switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.m
 Check Netlify's currently published deploy before assembling a whole-site
 artifact. Capture that deploy's inventory and preserve the files and routing
 outside the approved change. The
-[production receipt](docs/releases/receipts/PLAYER_USAGE_STORY_PRODUCTION.json)
-pins the protected baseline and both runtime commits. One-pager releases
+[production receipt](docs/releases/receipts/ADMIN_USAGE_JOURNEY_FIXES_PRODUCTION.json)
+pins the current protected baseline, application runtime and preserved sign-in
+runtime. One-pager releases
 also use the current published deploy to carry forward the app and sign-in
 entry. Keep `[skip netlify]` on every source and receipt merge.
+
+## Usage and Journey fixes — November 17, 2026
+
+Deployment `6afc9a00df67a95b26d453b0` was published at
+`2026-11-17T18:16:34.788Z` from runtime `7e49414`, with source PR #173 merged as
+`108eda5`. Normal CI and current-revision reviews passed. The release contains
+only the four approved application files over accepted runtime `c3ae5fe`.
+
+Usage/Journey controls and tables remain contained on phones. Known weekly
+activity stays visible when prior coverage is missing; native Journey shows
+pending app-build coverage instead of zero activity. Control focus changes no
+longer generate redundant foreground delivery batches. Native page journeys
+still require an instrumented app build; no native or backend release is included.
+
+The artifact has 2,999 served files. It preserves 2,970 predecessor files,
+including all 114 encrypted reports, the exact `score-cards-v2` reader and the
+isolated sign-in entry. Only `/application.html` is replaced, with 28 hashed
+assets added. The reconciled baseline protects 2,997 files and retains all
+37 local recovery mappings. Keep `[skip netlify]` on source and receipt merges.
+[Release handoff](docs/releases/ADMIN_USAGE_JOURNEY_FIXES.md) ·
+[Production receipt](docs/releases/receipts/ADMIN_USAGE_JOURNEY_FIXES_PRODUCTION.json)
 
 ## Player Stats landing — November 12, 2026
 

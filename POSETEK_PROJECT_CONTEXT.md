@@ -34,6 +34,23 @@ example draft requires exact artifact review and hosted acceptance before the us
 # PoseTek website project context
 
 
+## Usage and Journey follow-up — November 17, 2026
+
+Deployment `6afc9a00df67a95b26d453b0` contains the layout, coverage-message and
+browser focus fixes from [PR #173](https://github.com/posetek/posetek-website/pull/173).
+All normal CI lanes and current-revision reviews passed. Phone controls use full
+rows and wide Pages tables scroll within their report. Known current-week
+activity remains visible without prior-week coverage; native Journey explains
+pending instrumented-build coverage. Moving focus between controls no longer
+creates redundant foreground delivery batches.
+
+The website artifact preserves all 114 encrypted reports, their reader, the
+isolated sign-in page and existing routing. The current baseline protects 2,997
+files with all 37 recovery mappings. Native page journeys still require an
+instrumented app build; this release changes no backend or native deployment.
+[Release handoff](docs/releases/ADMIN_USAGE_JOURNEY_FIXES.md) ·
+[Production receipt](docs/releases/receipts/ADMIN_USAGE_JOURNEY_FIXES_PRODUCTION.json)
+
 ## Admin Usage performance — November 16, 2026
 
 Backend [PR #175](https://github.com/posetek/posetek-backend/pull/175) and

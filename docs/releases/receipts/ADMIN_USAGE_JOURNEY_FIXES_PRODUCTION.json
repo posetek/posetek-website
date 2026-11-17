@@ -1,0 +1,582 @@
+{
+  "schemaVersion": 1,
+  "status": "published-and-verified",
+  "source": {
+    "pr": "https://github.com/posetek/posetek-website/pull/173",
+    "head": "af9f879219db0141ff49482918c5c483219a5af9",
+    "mergeCommit": "108eda515a8ed5888b50f30ce09aba288eda3120",
+    "runtimeBase": "c3ae5fe11233eb4211a34b9623001ba2b0914b80",
+    "runtimeCommit": "7e49414b45eaeba712787770419f61d87ae58953",
+    "runtimeFiles": [
+      "app/src/pages/admin/views/usage-story.scss",
+      "app/src/pages/admin/views/PlayerJourneys.tsx",
+      "app/src/pages/admin/lib/usageStory.ts",
+      "app/src/lib/insight-usage/browser.ts"
+    ],
+    "sourceAndReceiptMergeMarker": "[skip netlify]",
+    "runtimeFileSha256": [
+      {
+        "path": "app/src/lib/insight-usage/browser.ts",
+        "sha256": "54dcbe78d453a142a0510ecafaca1e6ea4fb66475449dd47fcf068cfac6086d3"
+      },
+      {
+        "path": "app/src/pages/admin/lib/usageStory.ts",
+        "sha256": "ba0ed5d55306e09c0efd672b035228c53c346acde1413bf979df56d04546a009"
+      },
+      {
+        "path": "app/src/pages/admin/views/PlayerJourneys.tsx",
+        "sha256": "1213438addd05ac45c9510080fbba3d2f88bf387d520970cd8af1401d15f5e28"
+      },
+      {
+        "path": "app/src/pages/admin/views/usage-story.scss",
+        "sha256": "632bd4cf6c8a27693d0703082cee0938ef9b5c8c62442219d1cfa83a7f8c18cc"
+      }
+    ],
+    "mergedAtUtc": "2026-11-17T18:11:22Z"
+  },
+  "predecessor": {
+    "deploymentId": "6afb675237bfe4f2da0726ba",
+    "publishedAtUtc": "2026-11-16T20:28:04.431Z",
+    "servedFiles": 2971,
+    "encryptedReports": 114,
+    "capturedAtUtc": "2026-11-17T18:06:21.244Z",
+    "signInRuntimePreserved": "12b756d7908a46df2b01005b467f082ab7097465"
+  },
+  "production": {
+    "deploymentId": "6afc9a00df67a95b26d453b0",
+    "publishedAtUtc": "2026-11-17T18:16:34.788Z",
+    "artifactManifestSha256": "7f6644b2b0c83b2a4dace4cf4309731944cc439353c08c3335bfea8ae37bd41b",
+    "exactProviderVerification": {
+      "files": 2999,
+      "providerRecords": 3000,
+      "checkedAtUtc": "2026-11-17T18:17:47.346Z"
+    },
+    "exactHttpVerification": {
+      "files": 151,
+      "routeChecks": 10
+    },
+    "routingAndFunctionBindingsPreserved": true,
+    "signedInAdminVerification": {
+      "status": "passed",
+      "syntheticReadback": {
+        "status": "passed",
+        "method": "Parent agent observed the live admin UI after full reload and then navigated away from the synthetic organization",
+        "observedDate": "2026-11-17",
+        "desktop_web": {
+          "players": 1,
+          "sessions": 4,
+          "statsVisits": 6,
+          "workoutsVisits": 3
+        },
+        "mobile_web": {
+          "players": 1,
+          "sessions": 3,
+          "statsVisits": 5,
+          "workoutsVisits": 3
+        },
+        "platformsSeparated": true,
+        "storedSessionTotalsMatched": true,
+        "observedAtUtc": "2026-11-17T18:22:11.964Z"
+      },
+      "existingClubCoverageUI": {
+        "iosPendingBuildBanner": true,
+        "misleadingZeroJourneySummaryAbsent": true,
+        "usageLinkPreservesScope": true,
+        "positiveCurrentParticipationShown": true,
+        "previousWeekCoverageUnavailableExplicit": true,
+        "unknownHistoryExplicit": true
+      }
+    },
+    "headers": 13,
+    "redirects": 12,
+    "browserVerification": {
+      "mode": "production",
+      "deployId": "6afc9a00df67a95b26d453b0",
+      "artifactManifestSha256": "7f6644b2b0c83b2a4dace4cf4309731944cc439353c08c3335bfea8ae37bd41b",
+      "passed": true,
+      "syntheticOnly": true,
+      "externalWrites": 0,
+      "blockedWriteAttempts": 0,
+      "checkedAtUtc": "2026-11-17T18:18:05.554Z",
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "widths": [
+        390,
+        1440
+      ],
+      "checks": [
+        "public routes",
+        "all sign-in variants",
+        "signed-out admin denial",
+        "privacy-to-marketing navigation"
+      ]
+    },
+    "evidenceSha256": {
+      "production-deploy.json": "9540dc01f4112dc7cd383c8ecc7d0ae00c22334a750b3a390ebd6515e90809c4",
+      "production-verification.json": "d32573e36485ed7649dce730a2e148883732531255e7e3822aab8ead86e3dbfb",
+      "production-browser-verification.json": "6b834eebbf29db241642305e1734b8ed11a685c0ee8119c8eb77ede30e3b60c2"
+    }
+  },
+  "candidate": {
+    "draftDeploymentId": "6afc9927ec11c4fd192919ce",
+    "draftVerification": {
+      "mode": "draft",
+      "deployId": "6afc9927ec11c4fd192919ce",
+      "artifactManifestSha256": "7f6644b2b0c83b2a4dace4cf4309731944cc439353c08c3335bfea8ae37bd41b",
+      "exactFiles": 2999,
+      "providerRecords": 3000,
+      "preservedReports": 114,
+      "exactHttpFiles": 151,
+      "sameRouting": true,
+      "headers": 13,
+      "redirects": 12,
+      "sameFunctions": true,
+      "routes": 10,
+      "checkedAtUtc": "2026-11-17T18:13:45.808Z"
+    },
+    "servedFiles": 2999,
+    "providerRecords": 3000,
+    "preservedFiles": 2970,
+    "preservedEncryptedReports": 114,
+    "addedHashedAssets": 28,
+    "removedFiles": 0,
+    "replacedFiles": [
+      {
+        "path": "/application.html",
+        "sha": "aa682f7db437d2961a801eebcd03cfe1d9171012",
+        "size": 16041
+      }
+    ],
+    "isolatedSignInPreserved": true,
+    "reportReaderAndPayloadsPreserved": true,
+    "ordinaryPreservationBuild": "passed for all 2997 protected files",
+    "status": "published-and-inventory-verified",
+    "artifactManifestSha256": "7f6644b2b0c83b2a4dace4cf4309731944cc439353c08c3335bfea8ae37bd41b",
+    "proofBuildMatchingArtifacts": 180,
+    "applicationClosureFiles": 159,
+    "localBrowsers": {
+      "status": "passed",
+      "checkedAtUtc": "2026-11-17T18:07:50.546Z",
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "widths": [
+        1440,
+        390
+      ],
+      "externalWrites": 0,
+      "localWriteAttempts": 0,
+      "checks": [
+        "public routes",
+        "sign-in flows",
+        "signed-out admin denial",
+        "privacy and marketing navigation",
+        "lazy Home fallback stylesheet"
+      ]
+    },
+    "evidenceSha256": {
+      "artifact-summary.json": "06be4b610e79873e2a3498a4b6ffa96f8ca55a519b0a21339146cb3359f8c647",
+      "candidate.json": "833b9c03b4bb1c9c0b717af095a57f3c31e38e4c4feb146926384df8bb4aded8",
+      "standards-review.json": "8a68fe224b1f559988af78a4b5f5b82baada9618535790606f5b203639b09a21",
+      "application-closure.json": "0407da81d15c565b891b6817a789dd6a3de9e9280830f9df9cbdf5bae3cac952",
+      "local-browser-verification.json": "029b5018dab92c38941d2b3b9c56281c4defa1c4d5ca31cefb66d17929c9e306",
+      "draft-verification.json": "62a5e5f2326d1db2d67bfbf6470c1436fb8290ee2626bfd5fb9478ad845442ef",
+      "draft-browser-verification.json": "2eeb58d0b0cd9d462f4c968828ff126a5879a8b19a6e88242b99d99042d1c2cd"
+    },
+    "preservationAndEntryTests": {
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0,
+      "initialSandboxLimitation": "Three fixtures could not listen on 127.0.0.1; the unchanged command passed with approved localhost access."
+    },
+    "draftBrowserVerification": {
+      "mode": "draft",
+      "deployId": "6afc9927ec11c4fd192919ce",
+      "artifactManifestSha256": "7f6644b2b0c83b2a4dace4cf4309731944cc439353c08c3335bfea8ae37bd41b",
+      "passed": true,
+      "syntheticOnly": true,
+      "externalWrites": 0,
+      "blockedWriteAttempts": 0,
+      "checkedAtUtc": "2026-11-17T18:14:58.821Z",
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "widths": [
+        390,
+        1440
+      ],
+      "checks": [
+        "public routes",
+        "all sign-in variants",
+        "signed-out admin denial",
+        "privacy-to-marketing navigation"
+      ]
+    }
+  },
+  "behavior": {
+    "layout": "Report controls have a 15rem preferred width and full-width phone rows. Long participation labels stay within their card. Wide Pages tables scroll in a named keyboard-focusable region.",
+    "coverage": "Positive current-week activity remains visible when prior coverage is unavailable. Empty native journeys without supported builds show pending collection and a scoped Usage link, not zero activity.",
+    "focusBoundary": "Only window-target focus and blur change page foreground state. Descendant control focus no longer flushes redundant delivery batches. Real window focus and visibility behavior remain supported."
+  },
+  "sourceQualification": {
+    "reportingUnitTestsPassed": 10,
+    "collectionUnitTestsPassed": 37,
+    "typecheck": "passed",
+    "reportingBrowsers": {
+      "status": "passed",
+      "engines": [
+        "Chromium",
+        "WebKit"
+      ],
+      "widths": [
+        1440,
+        768,
+        390,
+        320
+      ],
+      "checks": [
+        "report and document bounds",
+        "enlarged native-select text",
+        "keyboard table scroll",
+        "keyboard navigation and group activation",
+        "pending iOS coverage and filter-preserving Usage link",
+        "positive current use with unavailable previous coverage"
+      ]
+    },
+    "collectionBrowsers": {
+      "status": "passed",
+      "engines": [
+        "Chromium desktop",
+        "WebKit iPhone"
+      ],
+      "regression": "Captured descendant focus/blur originally reached the foreground adapter; the boundary test was red before the guard and green afterward."
+    },
+    "lint": "exit 0 with existing repository warnings",
+    "currentRevisionReviews": {
+      "head": "af9f879219db0141ff49482918c5c483219a5af9",
+      "standards": "PASS, no findings reported",
+      "specification": "PASS, no findings reported"
+    },
+    "hostedCI": {
+      "run": "https://github.com/posetek/posetek-website/actions/runs/44143867945",
+      "sourceHead": "af9f879219db0141ff49482918c5c483219a5af9",
+      "status": "success",
+      "completedAtUtc": "2026-11-17T18:09:56Z",
+      "passedLanes": [
+        "policy",
+        "unit",
+        "dependencies",
+        "server",
+        "build",
+        "ci"
+      ],
+      "overrideUsed": false,
+      "linuxUsageJourneyMatrix": "passed at 1440, 768, 390 and 320px with unchanged strict overflow assertion",
+      "linuxPlayerCollection": "passed",
+      "receiptSha256": "56ed5e37d5134c269689579fd7d94a1bf85a89acd94de4cbdd895fd64275ec2e"
+    },
+    "nativeControlDiagnosis": {
+      "originalViewportPixels": 390,
+      "originalDocumentPixels": 429,
+      "offendingLabels": [
+        "Timezone",
+        "Entry"
+      ],
+      "labelPixels": 173.8125,
+      "labelScrollPixels": [
+        196,
+        229
+      ],
+      "fullWidthPhoneProbeDocumentPixels": 390,
+      "restoredDocumentPixels": 429,
+      "selectAppearanceNoneAlsoResolved": true,
+      "inputClippingAndFlexColumnDidNotResolve": true,
+      "temporaryExperimentsRemoved": true,
+      "strictAssertionUnchanged": true,
+      "evidenceSha256": "037ef9a14bd2aa0215d98e6481eb9af981da5c6d094ad96519051fc2a1ddd991"
+    }
+  },
+  "preReleaseRealCollection": {
+    "deploymentId": "6afb675237bfe4f2da0726ba",
+    "syntheticOnly": true,
+    "realCollectors": true,
+    "platforms": {
+      "desktop_web": {
+        "browser": "Chromium desktop",
+        "startedAtUtc": "2026-11-17T17:36:38.832Z",
+        "endedAtUtc": "2026-11-17T17:37:50.703Z",
+        "collectors": {
+          "recordPlayerJourney": {
+            "responses": 10,
+            "allHttp200": true,
+            "allAccepted": true
+          },
+          "recordInsightUsage": {
+            "responses": 5,
+            "allHttp200": true,
+            "allAccepted": true
+          }
+        },
+        "queueDrained": true,
+        "genericPageErrors": 0
+      },
+      "mobile_web": {
+        "browser": "WebKit mobile-browser emulation",
+        "startedAtUtc": "2026-11-17T17:38:05.340Z",
+        "endedAtUtc": "2026-11-17T17:39:03.843Z",
+        "collectors": {
+          "recordPlayerJourney": {
+            "responses": 6,
+            "allHttp200": true,
+            "allAccepted": true
+          },
+          "recordInsightUsage": {
+            "responses": 1,
+            "allHttp200": true,
+            "allAccepted": true
+          }
+        },
+        "queueDrained": true,
+        "genericPageErrors": 4
+      }
+    },
+    "storedObservation": {
+      "checkedAtUtc": "2026-11-17T17:39:25.730Z",
+      "browserSessions": 5,
+      "observedPages": [
+        "stats",
+        "workouts"
+      ],
+      "ownActorMarkerMatches": true,
+      "ownBrowserMillis": 131810
+    },
+    "adminReadback": {
+      "method": "Parent agent observed the live admin UI after real collector writes",
+      "observedAtUtc": "2026-11-17T17:41:15.319Z",
+      "desktop_web": {
+        "players": 1,
+        "sessions": 3,
+        "statsVisits": 4,
+        "workoutsVisits": 2
+      },
+      "mobile_web": {
+        "players": 1,
+        "sessions": 2,
+        "statsVisits": 3,
+        "workoutsVisits": 2
+      },
+      "platformsSeparated": true
+    },
+    "limitations": [
+      "Pre-release verification proves real collector acceptance and readback, not the final focus fix.",
+      "Desktop and mobile-browser emulation are separate from native iOS coverage.",
+      "WebKit reported four generic Fetch errors without endpoint attribution; all observed Journey and Usage collector responses were HTTP 200 and accepted.",
+      "The synthetic fixture was retained for post-release verification, then removed; final cleanup is recorded below."
+    ],
+    "evidenceSha256": {
+      "browser-controlled-desktop-result.json": "90f34b79ed80b6d01f2b033f6a3dec65114de3b980029088e7f2d421a15ac3ff",
+      "browser-controlled-mobile-result.json": "a0109fdae7207bb745ebf99788370e713e9152b9c14795210059fb1463abb7ad",
+      "browser-probe-observation.json": "8425ad18003777688dfc583163338d647526cf18f62df667bb95a5d43b1f6df2",
+      "browser-probe-receipt.json": "9970a3aefbec966591b94d0f2239f24b38dcc0f3d884885f841c2d3d9195f5c6"
+    }
+  },
+  "postReleaseRealCollection": {
+    "status": "passed",
+    "deploymentId": "6afc9a00df67a95b26d453b0",
+    "desktop": {
+      "startedAtUtc": "2026-11-17T18:17:43.036Z",
+      "endedAtUtc": "2026-11-17T18:19:29.952Z",
+      "collectors": {
+        "recordPlayerJourney": {
+          "responses": 12,
+          "allHttp200": true,
+          "allAccepted": true
+        },
+        "recordInsightUsage": {
+          "responses": 6,
+          "allHttp200": true,
+          "allAccepted": true
+        }
+      },
+      "maxQueuedBatches": 2,
+      "finalQueuedBatches": 0,
+      "genericPageErrors": 0
+    },
+    "mobileBrowser": {
+      "startedAtUtc": "2026-11-17T18:19:43.879Z",
+      "endedAtUtc": "2026-11-17T18:20:42.463Z",
+      "collectors": {
+        "recordPlayerJourney": {
+          "responses": 6,
+          "allHttp200": true,
+          "allAccepted": true
+        },
+        "recordInsightUsage": {
+          "responses": 1,
+          "allHttp200": true,
+          "allAccepted": true
+        }
+      },
+      "maxQueuedBatches": 1,
+      "finalQueuedBatches": 0,
+      "genericPageErrors": 4
+    },
+    "keyboardFocusBatching": {
+      "sameKeyboardNavigationScenario": true,
+      "beforeMaxQueuedBatches": 22,
+      "afterMaxQueuedBatches": 2,
+      "beforeFinalQueuedBatches": 21,
+      "afterFinalQueuedBatches": 0,
+      "sampleLimit": "One controlled synthetic before/after comparison, not a production performance distribution."
+    },
+    "adminReadback": {
+      "status": "passed",
+      "method": "Parent agent observed the live admin UI after full reload and then navigated away from the synthetic organization",
+      "observedDate": "2026-11-17",
+      "desktop_web": {
+        "players": 1,
+        "sessions": 4,
+        "statsVisits": 6,
+        "workoutsVisits": 3
+      },
+      "mobile_web": {
+        "players": 1,
+        "sessions": 3,
+        "statsVisits": 5,
+        "workoutsVisits": 3
+      },
+      "platformsSeparated": true,
+      "storedSessionTotalsMatched": true,
+      "observedAtUtc": "2026-11-17T18:22:11.964Z"
+    },
+    "storedObservation": {
+      "checkedAtUtc": "2026-11-17T18:21:02.115Z",
+      "platforms": [
+        {
+          "clientKind": "desktop_web",
+          "pageSequence": [
+            "stats",
+            "workouts",
+            "stats"
+          ],
+          "persistedBatchCount": 12,
+          "ownBrowserMillis": 77971,
+          "release": "6afc9a00df67a95b26d453b0",
+          "collectorRequestsAccepted": true
+        },
+        {
+          "clientKind": "mobile_web",
+          "pageSequence": [
+            "stats",
+            "workouts",
+            "stats"
+          ],
+          "persistedBatchCount": 6,
+          "ownBrowserMillis": 29150,
+          "release": "6afc9a00df67a95b26d453b0",
+          "collectorRequestsAccepted": true
+        }
+      ]
+    },
+    "freshEntryVerification": {
+      "release": "6afc9a00df67a95b26d453b0",
+      "freshChromiumEntryVerified": true,
+      "entry": "/_astro/ApplicationRoot.BqhCx_z-.js",
+      "expectedSha1": "27b13e11738fac352700e1e1c69d220ce4f003b0",
+      "actualSha1": "27b13e11738fac352700e1e1c69d220ce4f003b0",
+      "applicationHtmlSha1": "aa682f7db437d2961a801eebcd03cfe1d9171012",
+      "status": 200,
+      "signedIn": false
+    },
+    "limitations": [
+      "Mobile WebKit reported four Fetch errors during sign-in, correlated to firestore.googleapis.com; the exact read-query/cause was not collected. Both observed analytics collector endpoints accepted every request.",
+      "Mobile-browser emulation does not establish native iOS build coverage."
+    ],
+    "evidenceSha256": {
+      "browser-after-keyboard-desktop-result.json": "a0a8e367f21432c8673086e03ec8b117abe44f4512f6c477f14a143922f011a6",
+      "browser-after-mobile-mobile-result.json": "3b0cde155dae35469bfcc8fbd912af2050590e6464f7daf28c572b8e5d7bb653",
+      "browser-after-entry.json": "aff89f6d00dd9272658a09670f8b74acc543d1dabef583edcb527192d389f404",
+      "browser-probe-after-observation.json": "63d2a3ced7113c79acbfaf006dcfa861f69f073bb51f1da69e52486046e0e0ba",
+      "browser-probe-after-receipt.json": "afef602bde3e4c968f3e46d0203df5c1334415720277ebda0ba29f216a23e37b",
+      "browser-probe-cleanup.json": "7ac87b67962f57652788f75e495edf668c7c14d8fbe5f5f74e1c5280e5950e5e"
+    },
+    "cleanupVerified": true
+  },
+  "syntheticCleanup": {
+    "status": "passed",
+    "verifiedAtUtc": "2026-11-17T18:24:41.058Z",
+    "authAccountRemoved": true,
+    "scopedDocumentsRemoved": true,
+    "remainingOwnedRecords": 0,
+    "includes": [
+      "synthetic Auth account",
+      "synthetic player/profile tree and user/legal records",
+      "synthetic organization and team",
+      "scoped Usage/Journey/Stats Journey records and actor markers",
+      "scoped social preferences/activities and signup entries"
+    ],
+    "realPlayerActivityGenerated": false,
+    "cleanupPasses": 2,
+    "lateInsightSummaryChildReconciled": true,
+    "nestedAbsenceRechecked": true,
+    "authDeletionHookObserved": true,
+    "privateIdentityManifestDeleted": true,
+    "receiptSha256": "7ac87b67962f57652788f75e495edf668c7c14d8fbe5f5f74e1c5280e5950e5e"
+  },
+  "nativeCoverage": {
+    "newNativeBuildReleased": false,
+    "journeySupportedIOSBuilds": [],
+    "instrumentedNativeBuildRequired": true,
+    "olderOwnPlayerUsageCanContributeToParticipation": true
+  },
+  "backendRelease": {
+    "newDeployment": false,
+    "configurationChanged": false
+  },
+  "recovery": {
+    "rollbackDeploymentId": "6afb675237bfe4f2da0726ba",
+    "preserveCurrentInventoryBeforeAnyLaterRelease": true,
+    "sourceMergeIsNotDeployment": true
+  },
+  "baselineReconciliation": {
+    "status": "passed",
+    "deploymentId": "6afc9a00df67a95b26d453b0",
+    "protectedFiles": 2997,
+    "localRecoveryMappingsBefore": 37,
+    "localRecoveryMappingsAfter": 37,
+    "scoreCardsV2Preserved": true,
+    "scoreCardsV2ExpectedFiles": [
+      {
+        "path": "/report/render.mjs",
+        "sha": "53be8fe3b9da7da0a1ef8836619b77f562e7c26e",
+        "size": 51714
+      },
+      {
+        "path": "/report/report.css",
+        "sha": "a671eaf00a90778ec535f290fb360028ff7f0079",
+        "size": 17976
+      }
+    ],
+    "previousBaselineSha256": "c01b4f771fa87c07247f71d2dd52bfba7903c2737ecb82adf9d55a33a8a6430f",
+    "reconciledBaselineSha256": "a7e15a01d8e4b923b97a0db64262ff642b2d0787a3297f701e234623488a93d9",
+    "ordinaryPreservationBuild": {
+      "status": "passed",
+      "protectedFilesVerified": 2997,
+      "logSha256": "cf48773c44d3ebbe29337fc7e5bbb606b88b07c2834ae5299cb2c7c2bdb9bf15"
+    },
+    "httpOnlyEntryCheck": {
+      "status": "passed",
+      "preservedFiles": 2997,
+      "applicationRoutes": 25,
+      "assets": 2761,
+      "homepageRoutes": 2,
+      "coachesRoutes": 3,
+      "authenticatedWorkflows": "not exercised by this static check",
+      "logSha256": "dd880db1f7f3a56b0cf99043bdb0d8ee04a6703f2aa51e199b1144b9f45f2689"
+    }
+  }
+}
