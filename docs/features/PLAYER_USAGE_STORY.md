@@ -99,8 +99,10 @@ follow-up presentation, navigation persistence and opt-in request construction.
 transports in Chromium and WebKit at 1440, 768, 390 and 320px. It checks report
 and document bounds, enlarged native-select text, keyboard table scrolling and
 report navigation, plus pending iOS coverage and the scope-preserving Usage link.
-Native select values are clipped within their controls, long participation group
-labels wrap within the card, and the Pages table scrolls inside a focusable region
+Report controls have a 15rem preferred width and use full-width rows on phones
+to contain native WebKit select text.
+Long participation group labels wrap within the card, and the Pages table scrolls
+inside a focusable region
 when its columns exceed the report width. The original regression measured a
 554px table inside a 490px column, expanding a 768px document to 808px. No document
 width tolerance was relaxed. The Stats browser suite

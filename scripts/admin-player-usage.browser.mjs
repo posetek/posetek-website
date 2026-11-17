@@ -58,41 +58,6 @@ async function verifyUsageRequestReuse(browser, engineName) {
   } finally { await context.close(); }
 }
 
-// Temporary, failure-only native-control probe. Each variant is removed before
-// measuring the next one, and the caller still asserts its original measurement.
-async function diagnoseNativeControlOverflow(page) {
-  const geometry = () => page.evaluate(() => {
-    const box = element => {
-      const rect = element.getBoundingClientRect(), style = getComputedStyle(element);
-      return { width: rect.width, left: rect.left, right: rect.right,
-        clientWidth: element.clientWidth, scrollWidth: element.scrollWidth,
-        display: style.display, gridTemplateColumns: style.gridTemplateColumns,
-        minWidth: style.minWidth, overflowX: style.overflowX, appearance: style.appearance,
-        font: style.font, boxSizing: style.boxSizing };
-    };
-    return { viewport: innerWidth, document: document.documentElement.scrollWidth,
-      labels: [...document.querySelectorAll('.usage-story-controls label')].map(label => {
-        const control = label.querySelector('input, select');
-        return { label: label.firstChild?.textContent?.trim(), ...box(label),
-          control: control && { tag: control.tagName, type: control.type, value: control.value,
-            name: control.getAttribute('aria-label'), ...box(control) } };
-      }) };
-  });
-  console.error('Native control original:', JSON.stringify(await geometry()));
-  for (const [name, css] of [
-    ['select-appearance-none', '.usage-story-controls select { appearance: none !important; -webkit-appearance: none !important; }'],
-    ['input-overflow-hidden', '.usage-story-controls input { overflow: hidden !important; }'],
-    ['controls-appearance-none', '.usage-story-controls select, .usage-story-controls input { appearance: none !important; -webkit-appearance: none !important; }'],
-    ['labels-flex-column', '.usage-story .usage-story-controls label { display: flex !important; flex-direction: column !important; }'],
-    ['mobile-labels-full-width', '@media (max-width: 650px) { .usage-story .usage-story-controls label { flex-basis: 100% !important; } }'],
-  ]) {
-    const style = await page.addStyleTag({ content: css });
-    try { console.error(`Native control ${name}:`, JSON.stringify(await geometry())); }
-    finally { await style.evaluate(element => element.remove()); }
-    console.error(`Native control restored after ${name}:`, JSON.stringify(await geometry()));
-  }
-}
-
 async function verifyResponsiveReports(browser, engineName) {
   let page;
   const atWidth = async width => {
@@ -262,7 +227,6 @@ try {
         }))));
         await page.waitForFunction(() => !document.querySelector('#admin-navigation')?.getAnimations().some(animation => animation.playState === 'running'), null, { timeout: 2000 });
         console.error('Journey after rail transition:', JSON.stringify(await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }))));
-        await diagnoseNativeControlOverflow(page);
       }
       assert(narrowLayout.scrollWidth <= narrowLayout.width + 1, `Journey fits narrow viewport: ${JSON.stringify(narrowLayout)}`);
       if (evidence) await page.screenshot({ path: `${evidence}/${engineName.toLowerCase()}-journey-mobile.png`, fullPage: true, animations: 'disabled' });
