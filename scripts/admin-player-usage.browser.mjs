@@ -131,7 +131,21 @@ try {
       if (evidence) await journey.screenshot({ path: `${evidence}/${engineName.toLowerCase()}-journey-desktop.png`, animations: 'disabled' });
       await page.setViewportSize({ width: 390, height: 844 });
       await page.waitForFunction(() => document.querySelector('#admin-navigation')?.inert === true);
-      assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Journey fits narrow viewport');
+      const narrowLayout = await page.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth }));
+      if (narrowLayout.scrollWidth > narrowLayout.width + 1) {
+        // Keep the original strict measurement; report only structural fixture
+        // geometry so a hosted-only failure can be diagnosed without a retry.
+        console.error('Journey narrow layout:', await page.evaluate(() => ({
+          width: innerWidth, scrollWidth: document.documentElement.scrollWidth, fonts: document.fonts.status,
+          animations: document.getAnimations().map(animation => ({ state: animation.playState, target: animation.effect?.target?.className })),
+          overflow: [...document.querySelectorAll('body *')].map(element => {
+            const rect = element.getBoundingClientRect(), style = getComputedStyle(element);
+            return { tag: element.tagName, className: element.className, left: rect.left, right: rect.right, width: rect.width,
+              overflowX: style.overflowX, position: style.position };
+          }).filter(element => element.right > innerWidth + 1).slice(0, 20),
+        })));
+      }
+      assert(narrowLayout.scrollWidth <= narrowLayout.width + 1, `Journey fits narrow viewport: ${JSON.stringify(narrowLayout)}`);
       if (evidence) await page.screenshot({ path: `${evidence}/${engineName.toLowerCase()}-journey-mobile.png`, fullPage: true, animations: 'disabled' });
       await page.goto(base + '&teamId=harbor&directoryPane=journey&journeyView=pages');
       await journey.getByRole('table', { name: 'Page activity' }).waitFor();
