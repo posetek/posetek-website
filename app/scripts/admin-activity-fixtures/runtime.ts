@@ -9,7 +9,7 @@ export const AS_OF = Date.parse('2026-11-03T18:00:00Z');
 const options = window.__adminActivityOptions || {};
 const listeners = new Set();
 const requests = [], pending = [];
-let sequence = 0, hold = false, reportMode = options.reportMode || 'normal';
+let sequence = 0, hold = Boolean(options.holdInitialReport), reportMode = options.reportMode || 'normal';
 const account = uid => uid ? { uid, email: `${uid}@example.test`, emailVerified: true, isAnonymous: false } : null;
 export const auth = {
   currentUser: account('synthetic-admin-one'),
