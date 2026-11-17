@@ -1,5 +1,30 @@
 # Admin directory and reporting loading review
 
+
+## Backend request batching — November 16, 2026
+
+[Backend PR #175](https://github.com/posetek/posetek-backend/pull/175) deployed only
+`getClubInsightsV2`, now version 17. Bounded batching reduces sequential source
+reads without changing the response contract, periods, filters or full totals.
+A 300-player synthetic handler benchmark reduced sequential network turns from
+311 to 97 and SDK calls from 4,929 to 2,256; these are not billed-read savings.
+Fourteen full-response parity cases passed, including dense history fixtures.
+
+The same live Usage selection took 39.996 seconds before release and 28.676,
+24.184 and 23.466 seconds afterward. Displayed card totals were unchanged. This
+small sample is not a latency percentile or SLA; one overlapping request took
+36.102 seconds but could not be attributed to that selection. The
+[production receipt](../releases/receipts/ADMIN_USAGE_PERFORMANCE_PRODUCTION.json)
+pins the source archive, configuration and verification evidence. The existing
+website deployment pointer is unchanged; there was no website publication. Client retention is
+still the bounded 60-second behavior described below. Website
+[PR #172](https://github.com/posetek/posetek-website/pull/172) exercises the actual
+report hook with synthetic boundaries: one initial request, visible pending
+feedback and a fresh tab return with the original observation and no new request.
+
+The November 4–5 investigation and release details below are historical.
+
+
 Reviewed November 4, 2026; client persistence published November 5.
 Deployment `6aec430f45bc0d0841566ba7` was published at
 `2026-11-05T09:00:17.782Z` with runtime `6ea75c7`. Source

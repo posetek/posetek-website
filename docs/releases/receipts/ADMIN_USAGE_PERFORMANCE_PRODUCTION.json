@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "status": "backend-published-and-verified",
+  "websitePR": "https://github.com/posetek/posetek-website/pull/172",
+  "sourcePr": "https://github.com/posetek/posetek-backend/pull/175",
+  "sourceHead": "dd3fc7794996e9a0ed7cf404ed6a27da41fef809",
+  "mergeCommit": "892bfab1163aa5ed205c77b4af7a5d955712e445",
+  "function": {
+    "archiveSha256": "c19e87ab5ddc0b6b72bc693a09fc572a1220f363431dd0f857353fe9fb55e980",
+    "configurationPreserved": true,
+    "endpoint": "getClubInsightsV2",
+    "iamPreserved": true,
+    "previousVersion": "16",
+    "sourceMatch": true,
+    "unrelatedPreserved": true,
+    "version": "17"
+  },
+  "deployedAt": "2026-11-17T01:06:29.078Z",
+  "measurement": {
+    "source": "Cloud Functions completion logs matched to three observed admin UI refresh windows; same club, scope, period and Usage view",
+    "beforeMillis": 39996,
+    "afterFirstMillis": 28676,
+    "afterRepeatMillis": [
+      24184,
+      23466
+    ],
+    "beforeCompletedAt": "2026-11-17T00:54:14.512717532Z",
+    "afterCompletedAt": [
+      "2026-11-17T01:07:31.472207962Z",
+      "2026-11-17T01:08:24.228506073Z",
+      "2026-11-17T01:09:54.757835924Z"
+    ],
+    "allHttpStatus": 200,
+    "sampleLimit": "Small observed sample; not a latency SLA or percentile. A separate overlapping request took36102ms; no scope attribution available for that request.",
+    "displayedCardTotalsUnchanged": true
+  },
+  "website": {
+    "deploymentId": "6afb675237bfe4f2da0726ba",
+    "publishedAt": "2026-11-16T20:28:04.431Z",
+    "pointerUnchanged": true,
+    "newPublication": false
+  },
+  "qualification": {
+    "sourceCommit": "dd3fc7794996e9a0ed7cf404ed6a27da41fef809",
+    "manifestSha256": "8299219dd25441a64dd09c88b69ce8f9d8196ebbaa7fce7f1f9e3a2c3cea4ec3",
+    "qualification": {
+      "currentRevisionReview": "PASS; no unresolved findings",
+      "stagedTests": {
+        "pass": 204,
+        "fail": 0,
+        "skipped": 3
+      },
+      "sourceTests": {
+        "pass": 1772,
+        "fail": 0,
+        "skipped": 4
+      },
+      "completeResponseParityCases": 14,
+      "policyTestsPassed": 125,
+      "scopedPackagingTestsPassed": 27,
+      "realFunctionsSdkDiscovery": "getClubInsightsV2, gcfv1, preserved production dependencies",
+      "firestoreSdk": "7.11.6",
+      "sdkBatchMethods": "Firestore.getAll and Transaction.getAll present",
+      "hostedCI": "Could not start due to GitHub billing/spending limit; user authorized bypass",
+      "changedRuntimeFiles": 4,
+      "endpointScope": [
+        "getClubInsightsV2"
+      ]
+    }
+  }
+}
