@@ -1,0 +1,38 @@
+.cv-page {
+  .cv-demo { margin: 0 0 0 auto; }
+  .portal-header .quiet-button { margin-left: 0; }
+  .cv-chart { position: relative; height: 320px; }
+  .cv-split > .insights-card { margin-top: 0; }
+  .cv-split { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .cv-top { color: var(--lime); }
+  .cv-bottom { color: var(--danger); }
+  .cv-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .cv-table th { text-align: right; color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 800; padding: 8px 6px; }
+  .cv-table td { text-align: right; padding: 11px 6px; border-top: 1px solid var(--line); }
+  .cv-table th:first-child, .cv-table td:first-child { text-align: left; font-weight: 700; }
+
+  .cv-attention { position: relative; }
+  .cv-nav { display: flex; align-items: center; gap: 10px; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cv-message { display: grid; gap: 12px; animation: cv-in .25s ease; }
+  .cv-who { display: flex; align-items: center; gap: 12px; }
+  .cv-who strong { display: block; font-size: 17px; }
+  .cv-reason { color: var(--amber); font-size: 13px; }
+  .cv-to { color: var(--muted); font-size: 12px; font-weight: 700; }
+  textarea { width: 100%; min-height: 120px; resize: vertical; font: inherit; line-height: 1.5; color: var(--text); background: rgba(0, 0, 0, .2); border: 1px solid var(--line); border-radius: 14px; padding: 14px; outline: 0; }
+  textarea:focus { border-color: var(--lime); }
+  .cv-send, .cv-message .status-chip { justify-self: start; }
+  .cv-send { min-width: 140px; }
+  .cv-done { color: var(--muted); text-align: center; padding: 32px 0; margin: 0; }
+
+  .cv-toast {
+    position: fixed; left: 50%; top: 50%; z-index: 100; transform: translate(-50%, -50%) scale(.96);
+    padding: 18px 34px; border-radius: 16px; background: var(--lime); color: #092115; font-weight: 900; font-size: 20px;
+    box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity .45s, transform .45s;
+  }
+  .cv-toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); transition: none; }
+
+  @media (max-width: 720px) { .cv-split { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { .cv-message { animation: none; } }
+}
+
+@keyframes cv-in { from { opacity: 0; transform: translateY(6px); } }
