@@ -10,7 +10,7 @@ import "../../styles/pose-portal.css";
 import "../../styles/admin-theme.scss";
 import "../insights/insights.scss";
 import "./coach-view.scss";
-import { CoachFollowUp } from "./CoachFollowUp";
+import { athleteCheckIn, CoachFollowUp } from "./CoachFollowUp";
 import { CoachStandings } from "./CoachStandings";
 
 import { CoachRoster, type RosterAthlete } from "./CoachRoster";
@@ -151,12 +151,12 @@ function SnapshotResults({ snapshot: { athletes } }: { snapshot: TeamSnapshot })
     <>
       <CoachStandings athletes={athletes} />
       <CoachRoster athletes={athletes} />
-      <CoachFollowUp items={athletes.map(a => ({
-        name: a.name, recipient: a.name, reason: a.activeDays7d === 0 && a.workouts7d === 0
+      <CoachFollowUp items={athletes.map(a => athleteCheckIn(
+        a.name,
+        a.activeDays7d === 0 && a.workouts7d === 0
           ? "No app activity or completed workout recorded in the seven-day window."
           : `${a.activeDays7d} app days · ${a.workouts7d} completed workouts in the seven-day window.`,
-        message: `Hi ${a.name.split(" ")[0]}, checking in after our last session. How has practice been going? Let me know if you need help finding your next workout.`,
-      }))} />
+      ))} />
     </>
   );
 }

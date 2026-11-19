@@ -2,6 +2,16 @@ import { useEffect, useRef, useState } from "react";
 
 type Recipient = { name: string; message: string; recipient: string; reason: string };
 
+export function athleteCheckIn(name: string, reason: string): Recipient {
+  const firstName = name.split(" ")[0];
+  return {
+    name,
+    recipient: name,
+    reason,
+    message: `Hi ${firstName}, checking in after our last session. How has practice been going? Let me know if you need help finding your next workout.`,
+  };
+}
+
 export function CoachFollowUp({ items }: { items: Recipient[] }) {
   const [index, setIndex] = useState(0);
   const [group, setGroup] = useState(false);
@@ -37,9 +47,9 @@ export function CoachFollowUp({ items }: { items: Recipient[] }) {
       if (pending >= 0) setIndex(pending);
     }, 1000);
   }
-  if (!person) return <section className="insights-card"><h2>Needs attention</h2><p>No follow-ups available.</p></section>;
+  if (!person) return <section className="insights-card"><h2 id="team-follow-up" tabIndex={-1}>Needs attention</h2><p>No follow-ups available.</p></section>;
   return <section className="insights-card cv-attention">
-    <div className="card-heading"><div><h2>Needs attention</h2><p>{notified} of {total} notified · Simulated sending</p></div>
+    <div className="card-heading"><div><h2 id="team-follow-up" tabIndex={-1}>Needs attention</h2><p>{notified} of {total} notified · Demo messages stay in this tab.</p></div>
       <button className="quiet-button cv-group" aria-pressed={group} onClick={() => select(index,true)}>Send to all</button>
     </div>
     <div className="cv-recipients" role="group" aria-label="Select an athlete">

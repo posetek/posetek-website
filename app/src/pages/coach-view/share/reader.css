@@ -159,8 +159,37 @@ summary {
   scrollbar-width: thin;
 }
 
-.cv-who p:last-child {
-  color: var(--text);
+#team-follow-up {
+  scroll-margin-top: 6rem;
+}
+
+.cv-group, .cv-send {
+  cursor: pointer;
+}
+
+.cv-send {
+  padding: 12px 24px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--lime);
+  color: #092114;
+  font: inherit;
+  font-weight: 750;
+}
+
+.cv-send:disabled {
+  cursor: default;
+}
+
+.player-avatar {
+  display: grid;
+  place-items: center;
+  min-width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #244232;
+  color: var(--lime);
+  font-weight: 750;
 }
 
 .locked {
