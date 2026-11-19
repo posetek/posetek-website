@@ -34,6 +34,7 @@ export default function AISharingControl({ preview, onAllowed }: { preview: bool
     {open && <div className="portal-card">
       <h2>Your choice about AI sharing</h2>
       <p>AI coaching and workout creation can send your messages, relevant profile details, test results, training history and selected exercise information to Google Vertex AI or Anthropic to prepare a response.</p>
+      <p>For voice commands in the PoseTek app, transcripts and relevant training context are sent to TypeSafe (Jev). For live spoken responses, the text to be spoken is sent to OpenAI to generate audio. That text may include training information and coaching responses. Playing bundled voice recordings does not send your information to OpenAI.</p>
       <p>Allow sharing only for your own signed-in account. You can decline or turn it off here or from Profile at any time. Turning it off blocks new AI requests on this browser; requests already sent may finish. It does not delete previous conversations or saved workouts.</p>
       <p><a href="/privacy#ai-and-automated-processing" target="_blank" rel="noreferrer">Read the privacy policy</a></p>
       <div className="ai-sharing-actions">

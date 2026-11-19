@@ -79,6 +79,8 @@ describe('AI sharing explicit choice control', () => {
     tree = open();
     expect(button(tree, 'Review AI sharing').props['aria-expanded']).toBe(true);
     expect(text(tree)).toContain('Google Vertex AI or Anthropic');
+    expect(text(tree)).toContain('TypeSafe (Jev)');
+    expect(text(tree)).toContain('the text to be spoken is sent to OpenAI to generate audio');
     expect(button(tree, 'Allow AI sharing').props.disabled).toBe(false);
     expect(button(tree, 'Keep AI sharing off').props.disabled).toBe(false);
     button(tree, 'Review AI sharing').props.onClick();

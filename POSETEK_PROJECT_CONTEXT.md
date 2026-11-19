@@ -33,6 +33,14 @@ example draft requires exact artifact review and hosted acceptance before the us
 
 # PoseTek website project context
 
+## AI consent version 2 — local source, November 19, 2026
+
+The web consent control now discloses native voice providers and saves version 2
+to match the coordinated App Store consent fix. Previous browser withdrawals
+stay effective. The owner approved source push to `worktree-app-store-fixes`; policy, hosted
+acceptance and production publication remain held. See the
+[implementation handoff](docs/releases/AI_CONSENT_V2.md). Keep `[skip netlify]`.
+
 
 ## Usage and Journey follow-up — November 17, 2026
 
