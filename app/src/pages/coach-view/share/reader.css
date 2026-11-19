@@ -1,0 +1,212 @@
+:root {
+  color-scheme: dark;
+  --text:#f1f6f3;
+  --text-primary:var(--text);
+  --muted:#a9bdb2;
+  --text-muted:var(--muted);
+  --lime:#b7f34a;
+  --accent:var(--lime);
+  --amber:#edc26e;
+  --line:#2b4439;
+  --surface:#10241b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #07160f;
+  color: var(--text);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+
+.portal-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 64px;
+  padding: 12px clamp(16px, 3vw, 38px);
+  background: rgba(7, 22, 15, 0.9607843137);
+  border-bottom: 1px solid var(--line);
+}
+
+.portal-header > span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.portal-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.portal-brand-mark {
+  background: var(--lime);
+  color: #092114;
+  display: grid;
+  place-items: center;
+  width: 33px;
+  height: 33px;
+  border-radius: 10px;
+  letter-spacing: 0;
+  font-size: 22px;
+}
+
+.insights-shell {
+  max-width: 1180px;
+  margin: auto;
+  padding: clamp(18px, 3vw, 34px) clamp(12px, 2vw, 22px) 64px;
+}
+
+.insights-heading {
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  font-size: 0.77rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lime);
+  font-weight: 750;
+}
+
+.insights-heading h1 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.22;
+  letter-spacing: -0.03em;
+  margin: 0.32rem 0;
+}
+
+.insights-heading p, .card-heading p, .cv-who p {
+  margin: 0.3rem 0;
+  color: var(--muted);
+}
+
+.insights-heading p.eyebrow {
+  color: var(--lime);
+}
+
+.insights-card {
+  min-width: 0;
+  background: #0e2018;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: clamp(14px, 2vw, 22px);
+  margin-top: 16px;
+}
+
+.card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.card-heading h2 {
+  margin: 0;
+}
+
+.card-heading p {
+  font-size: 0.88rem;
+}
+
+.card-heading > span {
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.cv-player-report p {
+  color: var(--muted);
+}
+
+.cv-column-fill b {
+  white-space: nowrap;
+}
+
+.cv-test-select select {
+  min-width: 9.5rem;
+}
+
+summary {
+  cursor: pointer;
+}
+
+.cv-notes {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.cv-notes li + li {
+  margin-top: 6px;
+}
+
+.cv-roster-scroll {
+  overscroll-behavior-y: auto;
+}
+
+.cv-recipients {
+  scrollbar-width: thin;
+}
+
+#team-follow-up {
+  scroll-margin-top: 6rem;
+}
+
+.cv-group, .cv-send {
+  cursor: pointer;
+}
+
+.cv-send {
+  padding: 12px 24px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--lime);
+  color: #092114;
+  font: inherit;
+  font-weight: 750;
+}
+
+.cv-send:disabled {
+  cursor: default;
+}
+
+.player-avatar {
+  display: grid;
+  place-items: center;
+  min-width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #244232;
+  color: var(--lime);
+  font-weight: 750;
+}
+
+.locked {
+  max-width: 38rem;
+  margin: 12vh auto;
+  padding: 24px;
+}
+
+.locked p {
+  color: var(--muted);
+}
+
+@media (max-width: 550px) {
+  .card-heading {
+    flex-wrap: wrap;
+  }
+  .portal-header {
+    min-height: 52px;
+  }
+}
