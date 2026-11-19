@@ -1,7 +1,7 @@
 // Coach View prototype: one condensed page per team for coaches.
-// Dummy data only (coachViewData.ts); Send is not wired to any messaging yet.
+// The example uses demo data. The development preview can load a local team snapshot.
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { auth } from "../../lib/firebase";
 import Chart from "chart.js/auto";
 import { CHART_AXIS, CHART_THEME } from "../insights/chartTheme";
@@ -10,38 +10,53 @@ import "../../styles/pose-portal.css";
 import "../../styles/admin-theme.scss";
 import "../insights/insights.scss";
 import "./coach-view.scss";
+import { CoachFollowUp } from "./CoachFollowUp";
+import { CoachStandings } from "./CoachStandings";
+
+import { CoachRoster, type RosterAthlete } from "./CoachRoster";
+
+type ChartPoint = { name: string; value: number; color: string };
+type SnapshotAthlete = RosterAthlete & { activeDays: number; activeDays7d: number; workouts7d: number };
+type TeamSnapshot = { team: string; club: string; asOf: string; athletes: SnapshotAthlete[] };
 
 const topIds = new Set(TOP.map(a => a.id)), bottomIds = new Set(BOTTOM.map(a => a.id));
 
-function PerformanceChart() {
+const samplePoints = ATHLETES.map(a => ({
+  name: a.name,
+  value: a.performance,
+  color: topIds.has(a.id) ? CHART_THEME.accent : bottomIds.has(a.id) ? CHART_THEME.danger : CHART_THEME.neutral,
+}));
+
+function PerformanceChart({ points = samplePoints, metric = "Performance", max = 100 }: {
+  points?: ChartPoint[]; metric?: string; max?: number;
+}) {
   const canvas = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     if (!canvas.current) return;
-    const color = (a: Athlete) => topIds.has(a.id) ? CHART_THEME.accent : bottomIds.has(a.id) ? CHART_THEME.danger : CHART_THEME.neutral;
     const chart = new Chart(canvas.current, {
       type: "line",
       data: {
-        labels: ATHLETES.map(a => a.name.split(" ")[0]),
+        labels: points.map(a => a.name),
         datasets: [{
-          data: ATHLETES.map(a => a.performance),
-          showLine: false,
+          data: points.map(a => a.value),
+          showLine: false, clip: false,
           pointRadius: 6, pointHoverRadius: 8,
-          pointBackgroundColor: ATHLETES.map(color),
+          pointBackgroundColor: points.map(a => a.color),
           pointBorderColor: CHART_THEME.surface, pointBorderWidth: 2,
         }],
       },
       options: {
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { title: items => ATHLETES[items[0].dataIndex].name, label: item => `Performance ${item.parsed.y}` } } },
+        maintainAspectRatio: false, layout: { padding: { top: 12, right: 10, bottom: 4 } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { title: items => points[items[0].dataIndex].name, label: item => `${metric}: ${item.parsed.y}` } } },
         scales: {
-          x: { ...CHART_AXIS, grid: { display: false }, ticks: { ...CHART_AXIS.ticks, autoSkip: false, maxRotation: 60 } },
-          y: { ...CHART_AXIS, min: 0, max: 100, title: { display: true, text: "Performance", color: CHART_THEME.text } },
+          x: { ...CHART_AXIS, offset: true, grid: { display: false }, ticks: { ...CHART_AXIS.ticks, autoSkip: false, maxRotation: 60 } },
+          y: { ...CHART_AXIS, min: 0, max, title: { display: true, text: metric, color: CHART_THEME.text }, ticks: { ...CHART_AXIS.ticks, precision: 0 } },
         },
       },
     });
     return () => chart.destroy();
-  }, []);
-  return <div className="cv-chart"><canvas ref={canvas} aria-label="Performance by athlete" role="img" /></div>;
+  }, [points, metric, max]);
+  return <div className="cv-chart-scroll" tabIndex={0} aria-label={`${metric} chart, scroll horizontally for more athletes`}><div className="cv-chart" style={{ minWidth: points.length * 67 + 50 }}><canvas ref={canvas} aria-label={`${metric} by athlete`} role="img" /></div></div>;
 }
 
 function AthleteTable({ title, tone, athletes }: { title: string; tone: "top" | "bottom"; athletes: Athlete[] }) {
@@ -58,58 +73,103 @@ function AthleteTable({ title, tone, athletes }: { title: string; tone: "top" | 
   );
 }
 
-function NeedsAttention() {
-  const [index, setIndex] = useState(0);
-  const [drafts, setDrafts] = useState(() => NEEDS_ATTENTION.map(item => item.message));
-  const [sent, setSent] = useState<Set<number>>(new Set());
-  const [toast, setToast] = useState(false);
-  const total = NEEDS_ATTENTION.length, item = NEEDS_ATTENTION[index], athlete = byId(item.athleteId);
-  const allSent = sent.size === total;
+const demoAttention = NEEDS_ATTENTION.map(item => ({ ...item, name: byId(item.athleteId).name }));
+const exampleTeam: TeamSnapshot = {
+  team: "Varsity squad", club: "Example team", asOf: "Nov 15, 2026",
+  athletes: ATHLETES.map((a, i) => ({
+    name: a.name, activeDays: i % 8, activeDays7d: i % 3, workouts: a.workouts, workouts7d: i % 3, testingAttempts: 3,
+    report: {
+      date: "Nov 10, 2026", comparisonLabel: "Example average",
+      metrics: [
+        { label: "Left dribble", result: `${(6 + i / 20).toFixed(2)} s`, average: "6.65 s" },
+        { label: "Right dribble", result: `${(6.8 - i / 40).toFixed(2)} s`, average: "6.52 s" },
+        { label: "Vertical jump", result: `${32 + i % 9} cm`, average: "35 cm" },
+      ],
+      notes: [],
+    },
+  })),
+};
 
-  function send() {
-    // TODO: wire to messaging. For now this only records the send locally.
-    const next = new Set(sent).add(index);
-    setSent(next);
-    setToast(true);
-    window.setTimeout(() => setToast(false), 1000);
-    window.setTimeout(() => {
-      const following = Array.from({ length: total }, (_, k) => (index + 1 + k) % total).find(k => !next.has(k));
-      if (following !== undefined) setIndex(following);
-    }, 1300);
+// Midpoint rank keeps tied measurements together in the fictional team.
+for (const athlete of exampleTeam.athletes) {
+  for (const metric of athlete.report!.metrics) {
+    const results = exampleTeam.athletes.map(peer =>
+      parseFloat(peer.report!.metrics.find(m => m.label === metric.label)!.result!)
+    );
+    const result = parseFloat(metric.result!);
+    const behind = results.filter(value => metric.label === "Vertical jump" ? value < result : value > result).length;
+    const ties = results.filter(value => value === result).length;
+    const rank = (behind + ties / 2) / results.length;
+    metric.percentile = Math.round(rank * 100);
+    metric.band = rank >= 0.75 ? "strong" : rank < 0.25 ? "practice" : "middle";
+    const unit = metric.result!.split(" ").pop();
+    const mean = results.reduce((sum,value) => sum + value, 0) / results.length;
+    metric.average = `${mean.toFixed(2)} ${unit}`;
+    metric.count = results.length;
   }
+}
+
+function LocalTeamPreview({ example = false }: { example?: boolean }) {
+  const [snapshot, setSnapshot] = useState<TeamSnapshot | undefined>(example ? exampleTeam : undefined);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (example || !import.meta.env.DEV) return;
+    const request = new AbortController();
+    void fetch("/__coach-view/local-snapshot", { signal: request.signal, cache: "no-store" })
+      .then(async response => {
+        if (!response.ok) throw new Error("Snapshot unavailable");
+        setSnapshot(await response.json());
+      })
+      .catch(() => {
+        if (!request.signal.aborted) setFailed(true);
+      });
+    return () => request.abort();
+  }, [example]);
 
   return (
-    <section className="insights-card cv-attention">
-      <div className="card-heading">
-        <div><h2>Needs attention</h2><p>{total - sent.size} of {total} texts ready to send</p></div>
-        <div className="cv-nav">
-          <button className="icon-button" aria-label="Previous athlete" onClick={() => setIndex((index - 1 + total) % total)}><span className="material-symbols-outlined">chevron_left</span></button>
-          <span>{index + 1} / {total}</span>
-          <button className="icon-button" aria-label="Next athlete" onClick={() => setIndex((index + 1) % total)}><span className="material-symbols-outlined">chevron_right</span></button>
-        </div>
-      </div>
-      {allSent ? <p className="cv-done">All caught up. Every text is sent.</p> : (
-        <div className="cv-message" key={index}>
-          <div className="cv-who">
-            <div className="player-avatar">{athlete.name.split(" ").map(p => p[0]).join("")}</div>
-            <div><strong>{athlete.name}</strong><span className="cv-reason">{item.reason}</span></div>
-          </div>
-          <label className="cv-to" htmlFor={`cv-draft-${index}`}>To: {item.recipient}</label>
-          <textarea id={`cv-draft-${index}`} value={drafts[index]} disabled={sent.has(index)}
-            onChange={e => setDrafts(d => d.map((m, k) => k === index ? e.target.value : m))} />
-          {sent.has(index)
-            ? <span className="status-chip active">Sent</span>
-            : <button className="primary-cta cv-send" onClick={send}><span className="material-symbols-outlined">send</span>Send</button>}
-        </div>
-      )}
-      <div className={`cv-toast${toast ? " show" : ""}`} role="status" aria-live="polite">{toast ? "Text sent" : ""}</div>
-    </section>
+    <div className="pt-pose portal-body pt-insights is-coach-workspace cv-page">
+      <header className="portal-header">
+        <Link className="portal-brand" to="/" aria-label="PoseTek home"><span className="portal-brand-mark">P</span>POSETEK</Link>
+        <span className="insights-note cv-demo">{example ? "Coach example · fictional data" : "Private local preview"}</span>
+      </header>
+      <main className="insights-shell">
+        <section className="insights-heading">
+          <p className="eyebrow">Coach View</p>
+          <h1>{snapshot?.team ?? "Local team snapshot"}</h1>
+          {snapshot && <p>{snapshot.club} · {snapshot.athletes.length} athletes · Snapshot {snapshot.asOf}</p>}
+        </section>
+        {snapshot ? <SnapshotResults snapshot={snapshot} /> :
+          <p role="status">{failed ? "The local team snapshot is unavailable." : "Loading team snapshot…"}</p>}
+      </main>
+    </div>
+  );
+}
+
+function SnapshotResults({ snapshot: { athletes } }: { snapshot: TeamSnapshot }) {
+  return (
+    <>
+      <CoachStandings athletes={athletes} />
+      <CoachRoster athletes={athletes} />
+      <CoachFollowUp items={athletes.map(a => ({
+        name: a.name, recipient: a.name, reason: a.activeDays7d === 0 && a.workouts7d === 0
+          ? "No app activity or completed workout recorded in the seven-day window."
+          : `${a.activeDays7d} app days · ${a.workouts7d} completed workouts in the seven-day window.`,
+        message: `Hi ${a.name.split(" ")[0]}, checking in after our last session. How has practice been going? Let me know if you need help finding your next workout.`,
+      }))} />
+    </>
   );
 }
 
 export default function CoachViewPage() {
-  const navigate = useNavigate();
+  const [params] = useSearchParams();
   useEffect(() => { document.title = "Coach View | PoseTek"; }, []);
+  if (params.get("example") === "1") return <LocalTeamPreview key="example" example />;
+  return import.meta.env.DEV && params.get("snapshot") === "local" ? <LocalTeamPreview /> : <DemoCoachView />;
+}
+
+function DemoCoachView() {
+  const navigate = useNavigate();
   // Same shell as the signed-in coach workspace (InsightsPage): portal header,
   // insights-shell main column and insights cards. The brand returns to the public homepage.
   return (
@@ -133,7 +193,7 @@ export default function CoachViewPage() {
           <AthleteTable title="Top 3" tone="top" athletes={TOP} />
           <AthleteTable title="Bottom 3" tone="bottom" athletes={BOTTOM} />
         </div>
-        <NeedsAttention />
+        <CoachFollowUp items={demoAttention} />
       </main>
     </div>
   );

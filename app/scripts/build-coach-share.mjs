@@ -1,0 +1,43 @@
+import { createCipheriv, randomBytes } from "node:crypto";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { build } from "vite";
+
+// One private input file per team. Only fields displayed by the share reader are sealed.
+function selectAthlete({ name, workouts, testingAttempts, followUp, report }) {
+  if (typeof followUp !== "boolean") throw new Error("Each roster entry needs a followUp flag.");
+  const athlete = { name, workouts, testingAttempts, followUp };
+  if (report) {
+    const { date, comparisonLabel, notes, metrics } = report;
+    athlete.report = {
+      date, comparisonLabel, notes,
+      metrics: metrics.map(({ label, result, average, count, percentile, band }) =>
+        ({ label, result, average, count, percentile, band })),
+    };
+  }
+  return athlete;
+}
+
+const input = process.argv[2];
+if (!input || process.argv.length !== 3) throw new Error("Usage: node scripts/build-coach-share.mjs <prepared-team.json>");
+const { team, club, asOf, athletes } = JSON.parse(await readFile(input, "utf8"));
+const snapshot = JSON.stringify({ team, club, asOf, athletes: athletes.map(selectAthlete) });
+const privateDir = await mkdtemp(join(tmpdir(), "coach-share-"));
+const publishDir = join(privateDir, "publish");
+await build({
+  root: fileURLToPath(new URL("../src/pages/coach-view/share/", import.meta.url)),
+  configFile: false,
+  base: "./",
+  build: { outDir: publishDir, target: "es2020", sourcemap: false },
+});
+
+const key = randomBytes(32);
+const nonce = randomBytes(12);
+const cipher = createCipheriv("aes-256-gcm", key, nonce);
+const encrypted = Buffer.concat([nonce, cipher.update(snapshot, "utf8"), cipher.final(), cipher.getAuthTag()]);
+await writeFile(join(publishDir, "view.bin"), encrypted, { flag: "wx" });
+await writeFile(join(privateDir, "fragment.key"), key.toString("base64url"), { mode: 0o600, flag: "wx" });
+console.log("Viewer and encrypted snapshot:", publishDir);
+console.log("Private URL fragment key:", join(privateDir, "fragment.key"));
