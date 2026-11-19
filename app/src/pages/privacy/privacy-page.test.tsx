@@ -41,7 +41,7 @@ describe("privacy policy page", () => {
   });
 
   it("discloses prospective account attribution, anonymous shared visits and unchanged historical anonymity", () => {
-    expect(POLICY_LAST_UPDATED).toBe("October 14, 2026");
+    expect(POLICY_LAST_UPDATED).toBe("November 19, 2026");
     const section = html.match(/<section id="app-feedback"[\s\S]*?<\/section>/)?.[0] ?? "";
     expect(section).toContain("before you answer");
     expect(section).toContain("requires a signed-in account");
@@ -72,7 +72,7 @@ describe("privacy policy page", () => {
   });
   it("explains native provider permission, withdrawal limits and separate media choices", () => {
     const ai = html.match(/<section id="ai-and-automated-processing"[\s\S]*?<\/section>/)?.[0] ?? "";
-    for (const text of ["Google Vertex AI", "Anthropic", "TypeSafe (Jev)", "Account settings → AI sharing",
+    for (const text of ["Google Vertex AI", "Anthropic", "TypeSafe (Jev)", "OpenAI", "Account settings → AI sharing",
       "microphone and speech-recognition", "recording remains available", "another account or device",
       "requests already sent may finish", "does not delete existing conversations", "asks you to retry",
       "athlete or guardian authority"]) expect(ai).toContain(text);

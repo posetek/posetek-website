@@ -33,6 +33,14 @@ example draft requires exact artifact review and hosted acceptance before the us
 
 # PoseTek website project context
 
+## App Store privacy policy — local candidate, November 19, 2026
+
+Item 2 updates AI provider/purpose descriptions and Support, distinguishes
+provider retention from training, and describes local GPS routes, submitted
+body-scan photos and optional PostHog sharing. It is not published. Provider
+agreements/settings and remaining authority, retention and analytics blockers
+must be verified before release. [Evidence and gates](docs/releases/APP_STORE_PRIVACY_POLICY.md).
+
 ## AI consent version 2 — local source, November 19, 2026
 
 The web consent control now discloses native voice providers and saves version 2
