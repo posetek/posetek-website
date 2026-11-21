@@ -41,7 +41,7 @@ describe("privacy policy page", () => {
   });
 
   it("discloses prospective account attribution, anonymous shared visits and unchanged historical anonymity", () => {
-    expect(POLICY_LAST_UPDATED).toBe("November 19, 2026");
+    expect(POLICY_LAST_UPDATED).toBe("November 20, 2026");
     const section = html.match(/<section id="app-feedback"[\s\S]*?<\/section>/)?.[0] ?? "";
     expect(section).toContain("before you answer");
     expect(section).toContain("requires a signed-in account");
@@ -91,7 +91,7 @@ describe("privacy policy page", () => {
 
   it("describes the App Store submission's deletion route, scope and timing", () => {
     const choices = html.match(/<section id="your-choices-and-rights"[\s\S]*?<\/section>/)?.[0] ?? "";
-    for (const text of ["Profile → Account settings → Delete account", "recordings and training videos",
+    for (const text of ["Account menu (the initials button) → Account settings → Delete account", "recordings and training videos",
       "workout logs", "AI conversations, reports and AI coach memories, and your AI-sharing permission",
       "community feed activity, comments, kudos and connections", "about a day after you confirm",
       "always within 30 days", "statistics that can no longer be linked to you may remain",
