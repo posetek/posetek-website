@@ -20,8 +20,41 @@ Twenty-six focused policy/support/control tests pass, with full TypeScript and
 scoped lint validation (two pre-existing effect-ref warnings). This copy must ship
 with matching native/gateway/scoped-rules enforcement; it must not describe a
 restriction as live before that coordinated release. No publication is authorized.
-Provider settings, child-account permission basis and actual public readback still
-need verification. The earlier approved pushes do not approve this new push.
+The owner subsequently approved and pushed this restriction as `d77ff3c`; it is
+still undeployed. Provider settings, child-account permission basis and actual
+public readback remain unverified.
+
+## November 21 review-data reuse follow-up — local, push pending
+
+The backend review exporter included athlete identifiers, original inputs/tool
+and pose evidence, annotations and private review notes based on an administrator's
+approval alone. The new backend candidate rejects approval/export before athlete
+reads, including historical approvals. This website candidate removes both export
+buttons and the training/evaluation approval checkbox, always saves
+`datasetApproved: false`, and labels historical approvals as export unavailable.
+Ordinary review/source validation and athlete feedback remain available.
+
+The privacy candidate distinguishes the requested AI feature's permission from
+reuse of individual analysis reviews for model training/evaluation and describes
+the temporary hold. Its broader existing aggregate model/benchmark statement still
+requires actual dataset/purpose/retention/deletion evidence. No claim is made that
+old exports were deleted, all other reuse paths were inventoried or the hold is live.
+The server callable must be qualified and released with this UI/policy later;
+removing a web button alone does not secure old clients. No deployment is authorized.
+
+Backend `release/APP_STORE_DATA_USE_2026-11-21.md` records the inventory and
+provider evidence. Some source routes use direct Anthropic, so checking only
+Vertex does not establish all provider protections. Child-account AI permission
+remains unverified; the owner is unsure whether the process exists, and liability
+acceptance does not supply that evidence.
+
+Validation: 31 focused analysis-review/privacy/support tests and full TypeScript
+pass. Scoped lint passes with four existing effect-state warnings reproduced on
+the HEAD baseline. Backend reports 15 review tests and 473 migration checks passing.
+No full-site assembly, native/device test, live request or production readback ran.
+
+This new batch requires its own push-only approval. Keep `[skip netlify]` on the
+commit. No merge, publication, App Store change, upload or submission is approved.
 
 ## Changes prepared
 

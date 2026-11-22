@@ -1,12 +1,22 @@
-## App Store AI restriction — November 21, 2026 (local candidate)
+## App Store review-data reuse hold — November 21, 2026 (local candidate)
+
+The admin review workflow no longer offers training/evaluation approval or export;
+ordinary review and athlete feedback remain available. The matching backend
+candidate rejects both new approval and legacy export calls before athlete reads.
+Policy copy now separates individual review reuse from requested AI processing.
+[Evidence and limits](docs/releases/APP_STORE_PRIVACY_POLICY.md#november-21-review-data-reuse-follow-up--local-push-pending)
+record the remaining dataset, provider and youth-permission gates. This new batch
+awaits per-item push approval; it does not change production. Keep `[skip netlify]`.
+
+## App Store AI restriction — November 21, 2026 (pushed, undeployed)
 
 The owner approved keeping PostHog off in Release and temporarily blocking staff
 and linked-guardian AI for other athletes. Account consent and privacy summary/detail
 copy now match the canonical-owner requirement in the mobile/backend candidates.
 See [consent scope](docs/releases/AI_CONSENT_V2.md) and
 [policy release notes](docs/releases/APP_STORE_PRIVACY_POLICY.md). Local checks
-passed; new source push awaits per-item approval. Preserve `[skip netlify]` on this
-candidate. No deployment, listing edit, upload or review submission is authorized.
+passed; the owner approved and pushed `d77ff3c`. Preserve `[skip netlify]` on
+App Store source commits. No deployment, listing edit, upload or review submission is authorized.
 The production receipts and protected served-file inventory below remain unchanged.
 
 ## November 7 private report action order — local only

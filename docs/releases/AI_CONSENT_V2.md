@@ -11,7 +11,7 @@ Current web checks: 26 consent/privacy/support tests passed; TypeScript passed;
 scoped lint has only the two existing effect-ref warnings. Public summary and
 detailed policy sections both remove the earlier staff exception. These are local
 source checks, not hosted acceptance. PostHog remains disabled in App Store and
-TestFlight builds. New source push requires per-item approval; no deployment,
+TestFlight builds. The owner approved and pushed `d77ff3c`; no deployment,
 App Store field change, upload or submission is authorized.
 
 The following version-2 implementation notes and counts describe the earlier
