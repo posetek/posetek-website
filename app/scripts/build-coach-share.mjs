@@ -22,8 +22,22 @@ function selectAthlete({ name, workouts, testingAttempts, followUp, report }) {
 
 const input = process.argv[2];
 if (!input || process.argv.length !== 3) throw new Error("Usage: node scripts/build-coach-share.mjs <prepared-team.json>");
-const { team, club, asOf, athletes } = JSON.parse(await readFile(input, "utf8"));
-const snapshot = JSON.stringify({ team, club, asOf, athletes: athletes.map(selectAthlete) });
+function selectTeam({ team, club, asOf, athletes }) {
+  if (!team || !club || !asOf || !Array.isArray(athletes)) throw new Error("Incomplete team snapshot.");
+  return { team, club, asOf, athletes: athletes.map(selectAthlete) };
+}
+
+const data = JSON.parse(await readFile(input, "utf8"));
+let selected;
+if (Array.isArray(data.teams)) {
+  if (!data.teams.length || new Set(data.teams.map(t => t.team)).size !== data.teams.length) {
+    throw new Error("The coach bundle must contain distinct teams.");
+  }
+  selected = { teams: data.teams.map(selectTeam) };
+} else {
+  selected = selectTeam(data);
+}
+const snapshot = JSON.stringify(selected);
 const privateDir = await mkdtemp(join(tmpdir(), "coach-share-"));
 const publishDir = join(privateDir, "publish");
 await build({

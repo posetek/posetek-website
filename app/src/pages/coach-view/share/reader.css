@@ -159,7 +159,7 @@ summary {
   scrollbar-width: thin;
 }
 
-#team-follow-up {
+[id^="team-follow-up"] {
   scroll-margin-top: 6rem;
 }
 
@@ -210,3 +210,10 @@ summary {
     min-height: 52px;
   }
 }
+
+.cv-team-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.cv-team-tabs button { padding: 10px 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; font-weight: 650; cursor: pointer; }
+.cv-team-tabs button[aria-selected="true"] { background: var(--lime); color: #092114; border-color: var(--lime); }
+.cv-team-tabs button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+.cv-usage-note { color: var(--muted); font-size: 0.82rem; margin: 0 0 14px; }

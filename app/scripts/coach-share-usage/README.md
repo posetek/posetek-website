@@ -1,0 +1,7 @@
+# Coach demo usage
+
+The share builder accepts one prepared team or an object with a `teams` array for the same coach. In a multi-team bundle, the reader keeps a separate roster, standings selection, and simulated message state for each tab.
+
+Usage reporting is optional. Build the reader with `VITE_COACH_DEMO_USAGE=1` to enable it. To prepare its accompanying Netlify function, run `node prepare-function.mjs <demo-hostname> <fragment-file> <team-count> <new-private-function-dir>` from this directory. Install the declared dependency in that private directory and deploy its `functions` directory alongside the static reader. Keep the fragment file outside both deployment directories. When updating an existing link, preserve its alias, fragment and encrypted payload.
+
+After decryption and foreground display, the reader records an open. Each page load has a new random visit ID. Subsequent events report the team tab and a fixed action name. Recognized browser privacy signals disable collection. Each encrypted link has a separate write proof derived in the browser. The server validates the proof, host, team range, action and sequence before writing to the private `coach-demo-usage-v1` Blobs store. The handler exposes no read route. Operator reporting reads the store with authenticated Netlify access and excludes recorded QA visit IDs. Counts describe use of the shared link. Message delivery, earlier visits and individual identity require separate evidence.
