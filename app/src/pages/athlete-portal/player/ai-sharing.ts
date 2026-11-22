@@ -1,6 +1,7 @@
 import { auth } from '../../../lib/firebase';
 
 const disabled = new Set<string>();
+// Keep earlier withdrawals effective across disclosure upgrades.
 const storageKey = (uid: string) => `posetek:ai-sharing-off:v1:${uid}`;
 
 export function aiSharingError(code: string | undefined, message: string): Error & { code?: string } {
@@ -98,11 +99,11 @@ async function saveChoice(user: NonNullable<typeof auth.currentUser>, allowed: b
       const response = await fetch('/api/ai-consent', {
         method: 'POST', signal: controller.signal, cache: 'no-store', credentials: 'omit',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ version: 1, allowed }),
+        body: JSON.stringify({ version: 2, allowed }),
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) throw aiSharingError(result?.error?.code, result?.error?.message || 'Permission could not be confirmed. Try again.');
-      if (result?.version !== 1 || result?.allowed !== allowed) throw new Error('Permission could not be confirmed. Try again.');
+      if (result?.version !== 2 || result?.allowed !== allowed) throw new Error('Permission could not be confirmed. Try again.');
       if (controller.signal.aborted) return;
       assertCurrentChoice();
       if (auth.currentUser?.uid !== uid) throw new Error('Your account changed. Review AI sharing for the signed-in account.');

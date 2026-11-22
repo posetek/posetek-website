@@ -79,20 +79,7 @@ export async function generateAnalysis(playerId: string, capability: "kick_analy
     const timeout = setTimeout(() => { unsubscribe(); reject(new Error(`Still processing. Reload saved analyses later. Job: ${ref.id}`)); }, 12 * 60 * 1000);
   });
 }
-export interface SaveReviewInput { playerId: string; targetType: "single" | "comparison"; targetId: string; sourceJobId: string | null; baseRevision: number; feedback: ReviewFeedback; annotations: TechniqueAnnotation[]; notes: ReviewNotes; datasetApproved: boolean; publish: boolean; observedSources: Record<string, ObservedSource>; resetManualSource: boolean }
+export interface SaveReviewInput { playerId: string; targetType: "single" | "comparison"; targetId: string; sourceJobId: string | null; baseRevision: number; feedback: ReviewFeedback; annotations: TechniqueAnnotation[]; notes: ReviewNotes; datasetApproved: false; publish: boolean; observedSources: Record<string, ObservedSource>; resetManualSource: boolean }
 export async function saveAnalysisReview(payload: SaveReviewInput): Promise<any> {
   return (await cloud.httpsCallable("adminSaveAnalysisReview", { timeout: 120000 })(payload)).data;
-}
-export async function exportAnalysisReviews(playerIds: string[]): Promise<number> {
-  let cursor: string | null = null;
-  const rows: any[] = [];
-  do {
-    const result: any = (await cloud.httpsCallable("adminExportAnalysisReviews", { timeout: 120000 })({ playerIds, cursor })).data;
-    rows.push(...result.examples); cursor = result.nextCursor;
-  } while (cursor);
-  const blob = new Blob([rows.map(row => JSON.stringify(row)).join("\n") + (rows.length ? "\n" : "")], { type: "application/x-ndjson" });
-  const url = URL.createObjectURL(blob), link = document.createElement("a");
-  link.href = url; link.download = `kick-reviews-${new Date().toISOString().slice(0, 10)}.jsonl`; link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return rows.length;
 }

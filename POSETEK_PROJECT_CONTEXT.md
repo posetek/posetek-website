@@ -1,3 +1,24 @@
+## App Store review-data reuse hold — November 21, 2026 (local candidate)
+
+The admin review workflow no longer offers training/evaluation approval or export;
+ordinary review and athlete feedback remain available. The matching backend
+candidate rejects both new approval and legacy export calls before athlete reads.
+Policy copy now separates individual review reuse from requested AI processing.
+[Evidence and limits](docs/releases/APP_STORE_PRIVACY_POLICY.md#november-21-review-data-reuse-follow-up--local-push-pending)
+record the remaining dataset, provider and youth-permission gates. This new batch
+awaits per-item push approval; it does not change production. Keep `[skip netlify]`.
+
+## App Store AI restriction — November 21, 2026 (pushed, undeployed)
+
+The owner approved keeping PostHog off in Release and temporarily blocking staff
+and linked-guardian AI for other athletes. Account consent and privacy summary/detail
+copy now match the canonical-owner requirement in the mobile/backend candidates.
+See [consent scope](docs/releases/AI_CONSENT_V2.md) and
+[policy release notes](docs/releases/APP_STORE_PRIVACY_POLICY.md). Local checks
+passed; the owner approved and pushed `d77ff3c`. Preserve `[skip netlify]` on
+App Store source commits. No deployment, listing edit, upload or review submission is authorized.
+The production receipts and protected served-file inventory below remain unchanged.
+
 ## November 7 private report action order — local only
 
 ## Local signup-first report candidate — November 7, 2026
@@ -32,6 +53,24 @@ No source push, merge, production promotion, family send or native build is incl
 example draft requires exact artifact review and hosted acceptance before the user tests it.
 
 # PoseTek website project context
+
+## App Store privacy policy — local candidate, November 19, 2026
+
+Item 2 updates AI provider/purpose descriptions and Support, distinguishes
+provider retention from training, and describes local GPS routes, submitted
+body-scan photos and optional PostHog sharing. The November 20 copy follow-up
+matches the native Account menu route and the Release PostHog hold; the owner
+approved its source push. It is not published. Provider agreements/settings and remaining
+authority, retention and analytics blockers
+must be verified before release. [Evidence and gates](docs/releases/APP_STORE_PRIVACY_POLICY.md).
+
+## AI consent version 2 — local source, November 19, 2026
+
+The web consent control now discloses native voice providers and saves version 2
+to match the coordinated App Store consent fix. Previous browser withdrawals
+stay effective. The owner approved source push to `worktree-app-store-fixes`; policy, hosted
+acceptance and production publication remain held. See the
+[implementation handoff](docs/releases/AI_CONSENT_V2.md). Keep `[skip netlify]`.
 
 
 ## Usage and Journey follow-up — November 17, 2026
