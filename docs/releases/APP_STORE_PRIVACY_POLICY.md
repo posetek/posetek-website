@@ -7,6 +7,22 @@ changes described here were prepared afterward. The owner explicitly approved
 pushing this candidate to the same branch before continuing account deletion.
 No production publication is approved. Keep `[skip netlify]` on integration.
 
+## November 21 restriction follow-up — unpublished
+
+The owner's latest instruction supersedes the earlier staff/guardian deferral.
+Both the summary and detailed AI section now limit consent to the caller's own
+athlete profile. Staff and linked parents/guardians cannot use AI for another
+athlete while the authority workflow is unresolved. Account controls explain the
+same restriction and retain withdrawal directions under Account settings. Policy
+revision date is November 21. PostHog's existing App Store/TestFlight hold remains.
+
+Twenty-six focused policy/support/control tests pass, with full TypeScript and
+scoped lint validation (two pre-existing effect-ref warnings). This copy must ship
+with matching native/gateway/scoped-rules enforcement; it must not describe a
+restriction as live before that coordinated release. No publication is authorized.
+Provider settings, child-account permission basis and actual public readback still
+need verification. The earlier approved pushes do not approve this new push.
+
 ## Changes prepared
 
 - Name OpenAI and the text-to-audio purpose in both provider lists and Support;

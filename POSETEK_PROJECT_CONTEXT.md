@@ -1,3 +1,14 @@
+## App Store AI restriction — November 21, 2026 (local candidate)
+
+The owner approved keeping PostHog off in Release and temporarily blocking staff
+and linked-guardian AI for other athletes. Account consent and privacy summary/detail
+copy now match the canonical-owner requirement in the mobile/backend candidates.
+See [consent scope](docs/releases/AI_CONSENT_V2.md) and
+[policy release notes](docs/releases/APP_STORE_PRIVACY_POLICY.md). Local checks
+passed; new source push awaits per-item approval. Preserve `[skip netlify]` on this
+candidate. No deployment, listing edit, upload or review submission is authorized.
+The production receipts and protected served-file inventory below remain unchanged.
+
 ## November 7 private report action order — local only
 
 ## Local signup-first report candidate — November 7, 2026
