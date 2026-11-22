@@ -44,4 +44,11 @@ describe("support page", () => {
       "does not delete their players’ accounts or recordings"]) expect(html).toContain(text);
   });
 
+  it("describes the owner-only AI restriction without a staff exception", () => {
+    const answer = html.slice(html.indexOf('id="ai-sharing"'), html.indexOf('id="diagnostic-media"'));
+    expect(answer).toContain("AI-sharing permission covers your own athlete profile only.");
+    expect(answer).toContain("AI for another athlete is temporarily unavailable to coaches, club administrators, PoseTek staff and linked parents or guardians.");
+    expect(answer).not.toContain("Verified PoseTek staff administrators may use AI features");
+  });
+
 });
