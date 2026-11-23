@@ -12,7 +12,7 @@ export function athleteCheckIn(name: string, reason: string): Recipient {
   };
 }
 
-export function CoachFollowUp({ items, idSuffix = "" }: { items: Recipient[]; idSuffix?: string }) {
+export function CoachFollowUp({ items, idSuffix = "", heading = "Needs attention" }: { items: Recipient[]; idSuffix?: string; heading?: string }) {
   const [index, setIndex] = useState(0);
   const [group, setGroup] = useState(false);
   const [drafts, setDrafts] = useState(() => items.map(item => item.message));
@@ -47,9 +47,9 @@ export function CoachFollowUp({ items, idSuffix = "" }: { items: Recipient[]; id
       if (pending >= 0) setIndex(pending);
     }, 1000);
   }
-  if (!person) return <section className="insights-card"><h2 id={`team-follow-up${idSuffix}`} tabIndex={-1}>Needs attention</h2><p>No follow-ups available.</p></section>;
+  if (!person) return <section className="insights-card"><h2 id={`team-follow-up${idSuffix}`} tabIndex={-1}>{heading}</h2><p>No follow-ups available.</p></section>;
   return <section className="insights-card cv-attention">
-    <div className="card-heading"><div><h2 id={`team-follow-up${idSuffix}`} tabIndex={-1}>Needs attention</h2><p>{notified} of {total} notified · Demo messages stay in this tab.</p></div>
+    <div className="card-heading"><div><h2 id={`team-follow-up${idSuffix}`} tabIndex={-1}>{heading}</h2><p>{notified} of {total} notified · Demo messages stay in this tab.</p></div>
       <button className="quiet-button cv-group" aria-pressed={group} onClick={() => select(index,true)}>Send to all</button>
     </div>
     <div className="cv-recipients" role="group" aria-label="Select an athlete">

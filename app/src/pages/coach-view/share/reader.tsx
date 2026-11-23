@@ -1,11 +1,14 @@
-import { useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { athleteCheckIn, CoachFollowUp } from "../CoachFollowUp";
 import { CoachStandings } from "../CoachStandings";
 import { CoachRoster, type RosterAthlete } from "../CoachRoster";
 import { clickedAction, createUsage, usageEnabled } from "./usage";
+import { CoachInput } from "./CoachInput";
+import { coachNotesEnabled, createCoachNotes, type CoachNote } from "./coachNotes";
 import "./reader.css";
 import "../coach-view.scss";
+import "./team-report.css";
 
 type SharedAthlete = RosterAthlete & { followUp: boolean };
 type SharedTeam = { team: string; club: string; asOf: string; athletes: SharedAthlete[] };
@@ -17,6 +20,8 @@ function focusFollowUp(idSuffix: string) {
 }
 
 function TeamPanel({ team, suffix }: { team: SharedTeam; suffix: string }) {
+  const [teamLabel, coachLabel] = team.team.split(" — ");
+  const reportCount = team.athletes.filter(athlete => athlete.report).length;
   const recipients = team.athletes.map(athlete => athleteCheckIn(
     athlete.name,
     athlete.followUp
@@ -25,15 +30,61 @@ function TeamPanel({ team, suffix }: { team: SharedTeam; suffix: string }) {
   ));
 
   return <>
-      <section className="insights-heading"><p className="eyebrow">Coach View · Demo</p><h1>{team.team}</h1><p>{team.club} · {team.athletes.length} roster entries · Snapshot {team.asOf}</p></section>
+      <section className="insights-heading cv-team-heading">
+        <div><p className="eyebrow">{team.club}</p><h1>{teamLabel}</h1>
+          <p className="cv-team-byline">{coachLabel && <span>{coachLabel}</span>}<span>Snapshot {team.asOf}</span></p>
+        </div>
+        <dl className="cv-report-totals">
+          <div><dt>Players</dt><dd>{team.athletes.length}</dd></div>
+          <div><dt>One-pagers</dt><dd>{reportCount}</dd></div>
+        </dl>
+      </section>
       <CoachStandings athletes={team.athletes}/>
-      <CoachRoster athletes={team.athletes} groupName={`coach-roster${suffix}`}/>
-      <CoachFollowUp items={recipients} idSuffix={suffix}/>
+      <div className="cv-report-details">
+        <CoachRoster athletes={team.athletes} groupName={`coach-roster${suffix}`}/>
+        <CoachFollowUp items={recipients} idSuffix={suffix} heading="Athlete follow-up"/>
+      </div>
   </>;
 }
 
-function TeamView({ teams, record }: { teams: SharedTeam[]; record: Awaited<ReturnType<typeof createUsage>> }) {
+type NotesClient = Awaited<ReturnType<typeof createCoachNotes>>;
+
+function TeamInput({ team, teamIndex, client, onClose }: {
+  team: SharedTeam; teamIndex: number; client: NotesClient; onClose: () => void;
+}) {
+  const [notes, setNotes] = useState<CoachNote[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const pending = useRef<CoachNote | null>(null);
+  useEffect(() => {
+    let active = true;
+    client.list(teamIndex).then(saved => {
+      if (active) setNotes(saved.filter(note => note.player >= 0 && note.player < team.athletes.length));
+    }).catch(() => {
+      if (active) setLoadError("Couldn’t load saved input. Close and reopen Coaches input to try again.");
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [client, teamIndex, team]);
+
+  async function saveNote(input: Pick<CoachNote, "player" | "category" | "detail">) {
+    let note = pending.current;
+    if (!note || note.player !== input.player || note.category !== input.category || note.detail !== input.detail) {
+      note = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+      pending.current = note;
+    }
+    await client.save(teamIndex, note);
+    const saved = note;
+    setNotes(previous => [saved, ...previous.filter(item => item.id !== saved.id)]);
+    pending.current = null;
+  }
+  return <CoachInput teamName={team.team.split(" — ")[0]} players={team.athletes.map(athlete => athlete.name)}
+    notes={notes} loading={loading} loadError={loadError} saveNote={saveNote} onClose={onClose}/>;
+}
+
+function TeamView({ teams, record, client }: { teams: SharedTeam[]; client: NotesClient | null; record: Awaited<ReturnType<typeof createUsage>> }) {
   const [active, setActive] = useState(0);
+  const [inputOpen, setInputOpen] = useState(Boolean(client));
+  const trigger = useRef<HTMLButtonElement>(null);
   const multiple = teams.length > 1;
   const suffix = (index: number) => multiple ? `-${index}` : "";
   function selectTeam(i: number) {
@@ -58,8 +109,16 @@ function TeamView({ teams, record }: { teams: SharedTeam[]; record: Awaited<Retu
       if (e.target instanceof HTMLSelectElement && e.target.closest(".cv-test-select")) record("standings-test", active);
     }}>
     <header className="portal-header">
-      <strong className="portal-brand"><span className="portal-brand-mark">P</span> POSETEK</strong>
-      <button className="cv-group" onClick={() => focusFollowUp(suffix(active))}>Message athletes</button>
+      <div className="cv-header-inner">
+        <strong className="portal-brand"><span aria-hidden="true" className="portal-brand-mark">P</span> POSETEK</strong>
+        <div className="cv-header-actions">
+          <button className="cv-group cv-message-jump" aria-label="Message athletes" onClick={() => focusFollowUp(suffix(active))}>
+            <span className="cv-label-wide">Message athletes</span><span className="cv-label-small">Messages</span>
+          </button>
+          {client && <button className="cv-input-trigger" ref={trigger} aria-haspopup="dialog"
+            onClick={() => setInputOpen(true)}>Coaches input</button>}
+        </div>
+      </div>
     </header>
     <main className="insights-shell">
       {usageEnabled && <p className="cv-usage-note">PoseTek records demo opens and which controls are used. Player details and message text stay private.</p>}
@@ -73,6 +132,8 @@ function TeamView({ teams, record }: { teams: SharedTeam[]; record: Awaited<Retu
         <TeamPanel team={team} suffix={suffix(i)}/>
       </div>)}
     </main>
+    {client && inputOpen && <TeamInput key={active} team={teams[active]} teamIndex={active} client={client}
+      onClose={() => { setInputOpen(false); requestAnimationFrame(() => trigger.current?.focus({ preventScroll: true })); }}/>}
   </div>;
 }
 
@@ -86,6 +147,7 @@ async function openView() {
   const ciphertext = new Uint8Array(await response.arrayBuffer());
   const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv:ciphertext.subarray(0,12)}, key, ciphertext.subarray(12));
   const data: SharedTeam | { teams: SharedTeam[] } = JSON.parse(new TextDecoder().decode(plain));
+  const client = coachNotesEnabled ? await createCoachNotes(keyText) : null;
   const record = await createUsage(keyText).catch(() => () => {});
   const recordOpen = () => {
     if (document.visibilityState !== "visible") return;
@@ -94,7 +156,7 @@ async function openView() {
   };
   document.addEventListener("visibilitychange", recordOpen);
   recordOpen();
-  createRoot(document.getElementById("root")!).render(<TeamView record={record} teams={"teams" in data ? data.teams : [data]}/>);
+  createRoot(document.getElementById("root")!).render(<TeamView client={client} record={record} teams={"teams" in data ? data.teams : [data]}/>);
 }
 openView().catch(() => {
   document.getElementById("status")!.textContent = "Open the complete private link shared with you to view your team.";

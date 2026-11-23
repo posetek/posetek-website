@@ -55,3 +55,14 @@ await writeFile(join(publishDir, "view.bin"), encrypted, { flag: "wx" });
 await writeFile(join(privateDir, "fragment.key"), key.toString("base64url"), { mode: 0o600, flag: "wx" });
 console.log("Viewer and encrypted snapshot:", publishDir);
 console.log("Private URL fragment key:", join(privateDir, "fragment.key"));
+
+if (process.env.VITE_COACH_NOTES === "1") {
+  const { prepareCoachNotes } = await import("./coach-share-functions/prepare-notes.mjs");
+  await prepareCoachNotes({
+    privateDir,
+    fragment: key.toString("base64url"),
+    teamCount: selected.teams?.length ?? 1,
+    host: process.env.COACH_NOTES_HOST,
+    modules: process.env.COACH_NOTES_NODE_MODULES,
+  });
+}

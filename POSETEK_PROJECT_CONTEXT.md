@@ -2727,3 +2727,11 @@ unverified. This work does not change the recorded production release or authori
 ## Phone processing dashboard (2026-10-03)
 
 The admin phone overview and session analytics use backend-derived summaries from existing diagnostic manifests. See [docs/features/DEVICE_PROCESSING_DASHBOARD.md](docs/features/DEVICE_PROCESSING_DASHBOARD.md) for schema, comparison semantics and exact verification/release status. Current-algorithm baseline is explicitly pinned to native source e279f408 / 1.1 (31). No new TestFlight build is required for already-recorded fields.
+
+## Shared Coach View input preview
+
+Build the standalone team reader with `VITE_COACH_NOTES=1` to enable Coaches Attention. The dialog opens on entry. The coach selects a roster player, chooses a training focus and saves an observation. Coaches input reopens saved observations from the team header.
+
+Run `npm ci --prefix app/scripts/coach-share-functions` for the optional function bundler. From `app/`, run `VITE_COACH_NOTES=1 COACH_NOTES_HOST=<preview-alias-host> node scripts/build-coach-share.mjs <private-snapshot.json>`. The output contains a public viewer directory, a sibling functions directory for the same draft deploy, and a private fragment key. Keep the key outside both deployment directories. Each snapshot has its own roster ordering, key and notes namespace. Preserve the deployed link for later reads. A fresh build generates a new key and a separate notes history.
+
+The browser encrypts notes before saving. Anyone with the complete team link can add notes and view its saved history across devices. This capability is separate from simulated athlete messages. Scoped handler checks run with `node --test app/scripts/coach-share-functions/notes.test.mjs`.

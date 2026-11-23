@@ -1,0 +1,85 @@
+.cv-page {
+  --line: #33483c;
+  --muted: #b4c3b9;
+  --surface: #162d21;
+}
+.cv-page .portal-header { padding: 0 clamp(14px, 3.5vw, 48px); }
+.cv-header-inner {
+  width: min(100%, 1160px);
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 12px;
+}
+.cv-header-actions { display: flex; align-items: center; gap: 12px; }
+.cv-header-actions .cv-group { background: transparent; color: var(--muted); border: 0; padding-inline: 6px; }
+.cv-input-trigger {
+  font: inherit;
+  font-weight: 750;
+  padding: 0 16px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--lime);
+  color: #0a2115;
+  cursor: pointer;
+}
+.cv-input-trigger:hover { background: #c7fc73; }
+.cv-page .insights-shell { max-width: 1256px; padding: clamp(20px,4vw,52px) clamp(16px,3.5vw,48px) 64px; }
+.cv-team-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: clamp(18px,3vw,32px);
+  border-bottom: 2px solid #658056;
+}
+.cv-team-heading .eyebrow { font-size: .74rem; letter-spacing: .135em; }
+.cv-team-heading h1 { margin: .3rem 0 .6rem; font-size: clamp(2.15rem,4.5vw,3.75rem); line-height: 1.02; font-weight: 800; }
+.cv-team-byline { display: flex; flex-wrap: wrap; column-gap: 14px; row-gap: 3px; }
+.cv-team-byline span + span { border-left: 1px solid var(--line); padding-left: 14px; }
+.cv-report-totals {
+  display: flex;
+  gap: clamp(22px,3vw,40px);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.cv-report-totals div { display: flex; flex-direction: column-reverse; }
+.cv-report-totals dt { color: var(--muted); font-size: .82rem; font-weight: 600; }
+.cv-report-totals dd { color: var(--lime); margin: 0; font-size: 2.15rem; font-weight: 730; letter-spacing: -.055em; line-height: 1.1; }
+.cv-page .insights-card { padding: clamp(16px,2.5vw,30px); background: #10221a; border-radius: 12px; }
+.cv-page .card-heading h2 { font-weight: 780; line-height: 1.2; letter-spacing: -.035em; }
+.cv-page .cv-legend { border-top: 1px solid var(--line); padding-top: 12px; }
+.cv-page .cv-column-fill b, .cv-page .cv-score-title b { font-variant-numeric: tabular-nums; }
+.cv-report-details { display: grid; grid-template-columns: minmax(0,1.12fr) minmax(0,1fr); align-items: start; gap: 16px; }
+.cv-page .cv-report-details .cv-roster-scroll > details > summary { padding-inline: 2px 8px; min-height: 52px; }
+.cv-page .cv-report-details .cv-roster-scroll > details[open] > summary { padding-left: 8px; }
+.cv-page .cv-report-details .cv-scores { grid-template-columns: 1fr; }
+@media(max-width: 800px) {
+  .cv-report-details { grid-template-columns: minmax(0,1fr); gap: 0; }
+}
+@media(max-width: 600px) {
+  .cv-team-heading { flex-direction: column; align-items: flex-start; }
+  .cv-report-totals div { align-items: baseline; flex-direction: row-reverse; gap: 6px; }
+  .cv-report-totals dd { font-size: 1.45rem; }
+  .cv-header-actions { gap: 6px; }
+  .cv-header-actions button { font-size: .82rem; }
+  .cv-page .portal-header { min-height: 60px; }
+  .cv-page .portal-brand { font-size: .8rem; letter-spacing: .07em; gap: 5px; }
+  .cv-page .portal-brand-mark { width: 28px; height: 28px; border-radius: 7px; }
+}
+@media(max-width: 380px) {
+  .cv-header-inner { column-gap: 5px; }
+  .cv-header-actions { gap: 3px; }
+  .cv-header-actions .cv-group { padding-inline: 3px; }
+  .cv-input-trigger { padding-inline: 8px; }
+}
+
+.cv-label-small { display: none; }
+.cv-header-actions button { white-space: nowrap; }
+@media(max-width: 600px) {
+  .cv-label-wide { display: none; }
+  .cv-label-small { display: inline; }
+  .cv-page .cv-header-actions button { font-size: .82rem; }
+}

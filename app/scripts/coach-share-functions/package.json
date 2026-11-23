@@ -1,0 +1,9 @@
+{
+  "name": "posetek-coach-share-functions",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "11.1.7",
+    "esbuild": "0.28.1"
+  }
+}
