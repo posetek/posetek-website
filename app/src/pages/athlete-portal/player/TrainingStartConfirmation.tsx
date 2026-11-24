@@ -11,6 +11,6 @@ export default function TrainingStartConfirmation({ disabled, resuming, onStart 
     <label>Do you have pain or a restriction that affects this session?<select value={pain} onChange={e => setPain(e.target.value as typeof pain)}><option value="">Choose an answer</option><option value="no">No</option><option value="yes">Yes — I need a review</option></select></label>
     {pain === "yes" && <p role="status">Pause training and ask your parent or coach for a review.</p>}
     <p>Independent exercise requires your reviewer’s approval. Your plan and current clearance are checked before the session opens.</p>
-    <button type="button" className="primary-cta" disabled={!equipment || !supervision || pain !== "no"} onClick={() => supervision && onStart({ equipmentConfirmed: equipment, supervision, painFlag: pain === "yes" })}>{disabled ? "Checking…" : resuming ? "Check and resume workout" : "Check and start workout"}</button>
+    <button type="button" className="primary-cta" data-player-journey="start_workout" disabled={!equipment || !supervision || pain !== "no"} onClick={() => supervision && onStart({ equipmentConfirmed: equipment, supervision, painFlag: pain === "yes" })}>{disabled ? "Checking…" : resuming ? "Check and resume workout" : "Check and start workout"}</button>
   </fieldset></section>;
 }

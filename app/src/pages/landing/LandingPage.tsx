@@ -18,6 +18,7 @@ import { refreshAdminIdentity, upsertAdminProfile } from "../admin/lib/identity"
 import { capturePlayerInvitationLink, createInvitedPlayer, forgetPlayerInvitationLink, initialPlayerInvitationLink, readPlayerInvitationLink, unavailablePlayerInvitation } from "./player-invitation-link";
 import { accountDestination, accountError } from "./account-entry";
 import type { AccountRole } from "./account-entry";
+import { rememberPlayerJourneyEntry } from "../../lib/player-journey/entry";
 import {
   coachHomeRoute,
   coachOrgInputError,
@@ -325,7 +326,10 @@ export default function LandingPage() {
       } else if (access.role === "player" && access.playerId) {
         await db.collection("players").doc(access.playerId).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
       }
-      if (isCurrent()) redirectAfterAuth(access.role, access.playerId || null);
+      if (isCurrent()) {
+        if (access.role === "player") rememberPlayerJourneyEntry(user.uid, "sign_in");
+        redirectAfterAuth(access.role, access.playerId || null);
+      }
     } catch (error: any) {
       if (isCurrent()) setLoginError(accountError(error, "We could not load your account access. Your sign-in has been kept; try again, or use your staff invitation to finish activation."));
     } finally {
@@ -391,6 +395,7 @@ export default function LandingPage() {
 
       if (userTypeVal === "player") {
         await joinOrganization(orgCodeVal, "player", firstNameVal, lastNameVal);
+        if (auth.currentUser?.uid === user.uid) rememberPlayerJourneyEntry(user.uid, "signup");
         navigate(playerSignupRoute(null)); // legacy: profile.html?userType=player
       } else {
         // validateOrgSignup only lets "coach" past here, and the modal was confirmed above.
@@ -454,6 +459,7 @@ export default function LandingPage() {
       redirectTimerRef.current = window.setTimeout(() => {
         if (auth.currentUser?.uid !== signupUid) { setPlayerCodeError("Your account was created. Sign in with that account to open your athlete profile."); return; }
         // The trusted redemption response selects the existing canonical profile.
+        rememberPlayerJourneyEntry(signupUid, "signup");
         navigate(invitationLink.present ? `/athlete?player=${encodeURIComponent(playerId)}` : playerSignupRoute(playerId));
       }, 1500);
     } catch (error: any) {

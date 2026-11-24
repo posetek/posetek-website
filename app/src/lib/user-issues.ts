@@ -121,7 +121,7 @@ export function captureIssue(error: unknown, operation: string, context: { playe
   } catch { /* Reporting is never load-bearing. */ }
 }
 export function instrumentIssueCallable<T extends (...args: any[]) => Promise<any>>(name: string, call: T): T {
-  if (/UserIssue|UserIssues|WorkoutActivity|WorkoutNotificationStatus/.test(name)) return call;
+  if (/UserIssue|UserIssues|WorkoutActivity|WorkoutNotificationStatus/.test(name) || name === 'recordPlayerJourney' || name === 'recordInsightUsage') return call;
   return (async (...args: Parameters<T>) => {
     const ownerUid = currentOwner();
     const correlated = CORRELATED_CALLABLES.has(name);

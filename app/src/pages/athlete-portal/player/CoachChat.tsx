@@ -19,6 +19,7 @@ import { coachErrorMessage, coachRefCode } from './coach/coach-errors';
 import { coachMemories } from './coach/coach-memory';
 import { MemoryIcon, SendIcon, SharingIcon } from './coach/coach-icons';
 import { reportStatsJourneyOutcome } from './stats/use-stats-journey';
+import { playerJourneyOutcome } from '../../../lib/player-journey/use-player-journey';
 import loaderIcon from './coach/v4-loader.svg';
 import './coach/coach.css';
 
@@ -187,6 +188,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
 
   const send = async (text: string, memoryAction?: Row) => {
     if (!canChat || controller.current || historyLoadingRef.current || (!memoryAction && !text.trim())) return;
+    const recordSent = !memoryAction && !preview ? playerJourneyOutcome(playerId, 'message_sent') : undefined;
     const token = ++turn.current;
     controller.current = new AbortController(); setSending(true); setError(''); setErrorCode(''); setAnswer(''); onDraft?.(null);
     const optimistic: Row = { role: 'user', content: text };
@@ -229,7 +231,11 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
         // The Stats page journey's "messaged the coach": the gateway took a Coach-tab message past its
         // checks (AI sharing before the stream, the allowance after `start`) and is answering. Every
         // refusal arrives as an error, which never reaches this callback.
-        if (tab && !memoryAction && !issued && frame.event !== 'start') { issued = true; reportStatsJourneyOutcome('coach', playerId); }
+        if (!memoryAction && !issued && frame.event !== 'start') {
+          issued = true;
+          recordSent?.();
+          if (tab) reportStatsJourneyOutcome('coach', playerId);
+        }
         if (frame.event === 'delta') { full += frame.data.text || ''; setAnswer(full); if (tab) setStatus(''); }
         if (frame.event === 'tool') setStatus(tab ? (frame.data.status === 'finished' ? '' : coachToolPhrase(frame.data.name))
           : coachToolStatus(frame.data.name, frame.data.status === 'finished'));
@@ -308,7 +314,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
     }} />
     <form className="chat-composer" onSubmit={e => { e.preventDefault(); void send(draft.trim()); }}>
       <textarea aria-label="Message your coach" value={draft} onChange={e => setDraft(e.target.value)} maxLength={capability === 'workout_chat' ? 500 : 2000} placeholder="Message your coach…" rows={2} disabled={sending || historyLoading} />
-      <button type="submit" disabled={!canChat || sending || historyLoading || !draft.trim()} aria-label="Send message"><span className="material-symbols-outlined">arrow_upward</span></button>
+      <button type="submit" disabled={!canChat || sending || historyLoading || !draft.trim()} aria-label="Send message" data-player-journey="send_message"><span className="material-symbols-outlined">arrow_upward</span></button>
     </form>
     {sending && <button className="text-button" onClick={() => controller.current?.abort()}>Stop reply</button>}
   </section>;
@@ -393,7 +399,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
             </button>}
             {streaming
               ? <button type="button" className="coach-send" aria-label="Stop" onClick={() => controller.current?.abort()}><span className="material-symbols-outlined coach-stop" aria-hidden="true">stop</span></button>
-              : <button type="submit" className="coach-send" aria-label="Send" disabled={!canSend}><SendIcon /></button>}
+              : <button type="submit" className="coach-send" aria-label="Send" data-player-journey="send_message" disabled={!canSend}><SendIcon /></button>}
           </form>
         </div>
       </div>

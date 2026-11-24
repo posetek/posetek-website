@@ -33,6 +33,9 @@ describe("privacy policy page", () => {
 
   it("keeps the first-party usage measurement disclosure the Insights release relies on", () => {
     expect(html).toContain("estimated active time and feature categories");
+    expect(html).toContain("selected buttons");
+    expect(html).toContain("Detailed named journeys expire after 90 days");
+    expect(html).toContain("phone or tablet browsers");
     expect(html).toContain("do not contain page addresses, typed text, or screen recordings");
     expect(html).toContain("Detailed active-use records are retained for 90 days and daily usage summaries for 24 months");
   });

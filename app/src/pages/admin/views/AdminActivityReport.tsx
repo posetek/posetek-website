@@ -7,6 +7,7 @@ import type { ExpandedRequest } from '../../insights/lib/expandedQuery';
 import { adminActivitySelection } from '../lib/adminActivity';
 import type { AdminActivityFollowUp, AdminActivityReportData, AdminActivitySort, AdminPlayerActivity, AdminPlayerWorkout } from '../lib/adminActivity';
 import { activityDate, activityWindow, exactWorkoutLink } from '../lib/adminActivityPresentation';
+import WeeklyParticipation from './WeeklyParticipation';
 import AdminReportingCards from './AdminReportingCards';
 import './admin-activity-report.scss';
 
@@ -16,7 +17,7 @@ export interface AdminActivityReportProps {
   data: ExpandedInsights | ExpandedReportSummary; request: ExpandedRequest; view: View; busy?: boolean; children?: ReactNode; detailsPending?: boolean;
   onChange(patch: Partial<ExpandedRequest>): void; onFirstPage(): void; onNextPage(): void;
   onExplore?(patch: Partial<ExpandedRequest>): void;
-  playerLink: PlayerLink; teamLink(organizationId: string, teamId: string | null): string;
+  journeyLink?: (playerId: string) => string; playerLink: PlayerLink; teamLink(organizationId: string, teamId: string | null): string;
 }
 const GROUPS: { key: Exclude<AdminActivityFollowUp, 'all' | 'active'>; title: string; note: string }[] = [
   { key: 'noSignIn', title: 'No recorded sign-in', note: 'Current account evidence' },
@@ -137,7 +138,7 @@ function PlayerRows({ data, view, playerLink }: { data: ExpandedInsights; view: 
         <RecentHistory key={player.id} playerId={player.id} /></section></td></tr>}</Fragment>;
     })}</tbody></table></div>;
 }
-export default function AdminActivityReport({ data, request, view, busy, onChange, onFirstPage, onNextPage, playerLink, children, detailsPending = false }: AdminActivityReportProps) {
+export default function AdminActivityReport({ data, request, view, busy, onChange, onFirstPage, onNextPage, playerLink, journeyLink, children, detailsPending = false }: AdminActivityReportProps) {
   const selection = adminActivitySelection(view, request.adminFollowUp, request.adminSort);
   const [searchDraft, setSearchDraft] = useState({ source: request.rosterSearch, value: request.rosterSearch });
   const search = searchDraft.source === request.rosterSearch ? searchDraft.value : request.rosterSearch;
@@ -149,6 +150,7 @@ export default function AdminActivityReport({ data, request, view, busy, onChang
   return <div className="admin-activity-report" aria-label="Admin activity report" aria-busy={busy || false}>
     {!report && <p className="form-message" role="status">Detailed account activity is unavailable in this report. Existing period totals remain available below; refresh reporting to retry.</p>}
     {view === 'workouts' ? <dl className="activity-summary"><Stat title="Workouts started" value={data.workouts.started} note="Saved logs and phone sessions started in the selected period" /><Stat title="Workouts completed" value={data.workouts.completed} note="Saved completions and phone sessions with recorded work" /><Stat title="Recorded timer duration" value={workoutDurationText(data.workouts.timerMinutes, data.workouts.timerRecords)} note="Saved active timer time; pauses excluded" /></dl> : <AdminReportingCards metrics={report?.metricsV2} />}
+    {view === 'usage' && journeyLink && <WeeklyParticipation data={data} request={request} busy={busy} onChange={onChange} journeyLink={journeyLink} onFirstPage={onFirstPage} onNextPage={onNextPage} />}
     {view === 'overview' && report && <Rankings report={report} playerLink={playerLink} />}
     {children}
     <details className="activity-method"><summary>How this is measured</summary><p className="activity-note">Workout records and rankings cover {data.period.startDate} through {data.period.endDate}, in {data.period.timeZone}. Participation and usage cards use the cutoffs and weekly windows in Metric definitions. All summaries cover the complete reporting selection before name search and pagination. Workout timers and elapsed estimates remain separate.</p>
