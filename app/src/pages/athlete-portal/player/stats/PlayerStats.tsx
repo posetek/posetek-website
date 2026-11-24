@@ -61,7 +61,7 @@ export default function PlayerStats({ ctx, go, profile, athlete, report, reps, p
   const repCount = Object.values(reps).reduce((sum, list) => sum + (list?.length ?? 0), 0);
   useEffect(() => {
     if (!report.report || preview || !ctx.playerId) return;
-    void warmStatsReplays(report.report, reps, athlete, ctx.access, ctx.playerId);
+    void warmStatsReplays(report.report, reps, ctx.access, ctx.playerId);
     // Once per report and rep list: `reps` is replaced on every refresh, and whatever is kept is reused.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report.report?.playerId, report.report?.testDateMillis, repCount, preview, ctx.playerId, ctx.access]);

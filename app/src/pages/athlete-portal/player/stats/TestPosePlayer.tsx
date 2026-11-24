@@ -4,7 +4,6 @@ import { elapsedSeconds, lastFrameIndex, phaseChipText, phaseForFrame, timerText
 import type { PoseDemoData, PoseReference } from '../../../home/pose-demo';
 import { createPoseDemoController } from '../../../home/use-pose-demo';
 import type { PoseDemoController, PoseDemoOptions, PoseShadow } from '../../../home/use-pose-demo';
-import { metricValue } from '../../../../lib/result-values';
 import { drillByKey } from '../../lib/drills';
 import type { Access } from '../../lib/loaders';
 import { averageText, valueText } from '../report';
@@ -12,9 +11,9 @@ import type { AthleteTestReport, ReportMetric } from '../report';
 import type { Row } from '../execution';
 import { PEAK_HOLD_MS, alignShadow, reportAverageMeters, shadowClock, stageAspect, teamReference } from './rep-sequence';
 import type { RepReplay } from './rep-sequence';
-import { METRIC_TESTS, SPLITS, bestRep, loadTeamComparison, splitRow } from './test-comparison';
+import { METRIC_TESTS, bestRep, comparisonRows, loadTeamComparison } from './test-comparison';
 import type { TeamComparison } from './test-comparison';
-import { STAFF, repReplay, teamShadow } from './test-replay';
+import { medianReplay, repReplay, teamShadow } from './test-replay';
 
 type StageProps = { replay: RepReplay; shadow: PoseShadow | null; reference: PoseReference | null; hold: PoseDemoOptions['hold']; label: string };
 
@@ -90,7 +89,9 @@ type Props = {
 export default function TestPosePlayer({ reps, ...props }: Props) {
   const { metric, report, playerId, access } = props;
   const rep = useMemo(() => bestRep(metric, reps, report.testDateMillis), [metric, reps, report.testDateMillis]);
-  return <RepDetail key={JSON.stringify([playerId, access, metric.id, rep?.id, rep?.resultStatus?.revisionId])}
+  if (report.playerId !== playerId) return null;
+  return <RepDetail key={JSON.stringify([playerId, access, props.athlete?.organizationId, props.athlete?.teamId, report.kind, report.testDateMillis,
+    metric.id, metric.status, metric.recordedAtMillis, metric.result, metric.count, metric.average, rep?.id, rep?.resultStatus?.revisionId])}
     {...props} rep={rep} />;
 }
 
@@ -98,7 +99,7 @@ function RepDetail({ metric, report, rep, athlete, access, playerId, onAllAttemp
   const test = METRIC_TESTS[metric.id], drill = drillByKey(test?.drill);
   // undefined while loading; null when the rep has nothing to replay.
   const [own, setOwn] = useState<RepReplay | null | undefined>(undefined), [error, setError] = useState(false);
-  const [team, setTeam] = useState<TeamComparison | null>(null), [shadow, setShadow] = useState<RepReplay | null>(null);
+  const [team, setTeam] = useState<TeamComparison | null>(null);
   const repId = rep ? String(rep.id) : null, event = report.kind === 'event', shadowed = teamShadow(drill.key);
   useEffect(() => {
     if (!rep || !playerId) return;
@@ -109,20 +110,18 @@ function RepDetail({ metric, report, rep, athlete, access, playerId, onAllAttemp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repId, drill.key, access, playerId]);
   useEffect(() => {
-    // The team's median and averages come from the team's own records, which only staff may read today.
-    if (!repId || !event || !playerId || !STAFF.includes(access)) return;
+    // Vertical jump uses only the reported headline average, already on its card.
+    if (!event || !playerId || drill.key === 'jump' || access === 'shared' || access === 'preview') return;
     let alive = true;
-    void loadTeamComparison(metric, athlete, playerId, report.testDateMillis).then(async comparison => {
-      if (!alive || !comparison) return;
-      setTeam(comparison);
-      // The jumps draw no team figure, so their median's replay is never loaded.
-      if (!comparison.median || !shadowed) return;
-      const replay = await repReplay(drill, comparison.median.rep, access, comparison.median.playerId);
-      if (alive && replay) setShadow(replay);
-    }).catch(() => { /* The athlete's own replay stays usable without the comparison. */ });
+    void loadTeamComparison(metric, report, athlete, playerId).then(comparison => {
+      if (alive) setTeam(comparison);
+    }).catch(() => { /* The scorecard comparison is available independently. */ });
     return () => { alive = false; };
+    // Report/athlete records can refresh without changing this detail's scope or chosen result.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [metric.id, repId, event, access, playerId, athlete?.teamId, report.testDateMillis]);
+  }, [playerId, access, event, drill.key, metric.id, metric.status, metric.recordedAtMillis, metric.result, metric.average,
+    metric.count, report.testDateMillis, athlete?.organizationId, athlete?.teamId]);
+  const shadow = useMemo(() => own ? medianReplay(drill, team?.median ?? null) : null, [drill, own, team]);
   const ghost = useMemo<PoseShadow | null>(() => shadowed && own && shadow ? { sequence: alignShadow(own, shadow), frameFor: shadowClock(own, shadow) } : null, [shadowed, own, shadow]);
   const headlineAverage = event && (metric.count ?? 0) >= 5 ? averageText(metric) : null;
   // The jumps: the same report average as the table's headline row, as a line on the replay.
@@ -131,19 +130,12 @@ function RepDetail({ metric, report, rep, athlete, access, playerId, onAllAttemp
     [own, event, headlineAverage, metric.average, metric.count]);
   const hold = useMemo(() => drill.key === 'jump' && own?.peak !== undefined && own?.peak !== null ? { frame: own.peak, ms: PEAK_HOLD_MS } : null, [drill.key, own]);
   const cardValue = valueText(metric);
-  const rows = (SPLITS[drill.key] || []).flatMap(split => {
-    const headline = split.field === test.field;
-    if (!rep) return headline && cardValue ? [{ ...splitRow(split, null, null), mine: cardValue }] : [];
-    const mine = headline && metric.status === 'estimate' ? rep.reviewedResult?.value
-      : metricValue(rep, split.field, own?.metadata || {}, split.fallbacks || []);
-    const row = splitRow(split, mine, team?.averages[split.field], headline ? headlineAverage : null);
-    return row.mine || row.average ? [row] : [];
-  });
+  const rows = comparisonRows(metric, rep, own?.metadata ?? {}, team, headlineAverage);
   const compared = rows.some(row => row.average);
   return <section className="stats-pose" aria-label={`${metric.label} replay`} data-metric={metric.id}>
     <div className="stats-pose-head">
       <h3>{metric.label}</h3>
-      {ghost && <span className="stats-pose-key"><i className="you" />You<i className="median" />Team median</span>}
+      {ghost && <span className="stats-pose-key"><i className="you" />You<i className="median" />{team?.median?.status === 'estimate' ? 'Team median (estimate)' : 'Team median'}</span>}
     </div>
     {!rep ? <p className="stats-subheadline">{cardValue ? 'Replay unavailable for this result.' : 'No recorded attempt for this test yet.'}</p>
       : error ? <p className="stats-subheadline">This attempt could not be opened.</p>

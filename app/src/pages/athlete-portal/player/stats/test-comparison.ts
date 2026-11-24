@@ -1,26 +1,26 @@
-import { db } from '../../../../lib/firebase';
-import { metricValue, visibleAttempts } from '../../../../lib/result-values';
-import { drillByKey } from '../../lib/drills';
-import { accepted, createdMillis, normalizeRep } from '../../lib/metrics';
+import { cloud } from '../../../../lib/firebase';
+import { metricValue } from '../../../../lib/result-values';
+import { createdMillis } from '../../lib/metrics';
 import { remember } from '../../lib/replay-cache';
-import type { ReportMetric } from '../report';
+import { valueText } from '../report';
+import type { AthleteTestReport, ReportMetric } from '../report';
 import type { Row } from '../execution';
 
-type MetricTest = { drill: string; field: string; scale: number; digits: number; higher: boolean; side?: 'left' | 'right' };
+type MetricTest = { drill: string; field: string; scale: number; digits: number; side?: 'left' | 'right' };
 
 /**
  * The test behind each report metric, as the endpoint defines it (`TESTS` in the backend's
  * athlete-test-report.js): the drill whose reps hold it, the rep field, the scale from the stored
  * value to the reported one (jump heights are stored in metres and reported in centimetres), the
- * reported decimals, and whether a larger value is the better one.
+ * reported decimals and the dribbling side.
  */
 export const METRIC_TESTS: Record<string, MetricTest> = {
-  dribbleLeft: { drill: 'dribbling', field: 'totalTime', scale: 1, digits: 2, higher: false, side: 'left' },
-  dribbleRight: { drill: 'dribbling', field: 'totalTime', scale: 1, digits: 2, higher: false, side: 'right' },
-  sprint: { drill: 'sprint', field: 'totalTime', scale: 1, digits: 2, higher: false },
-  changeOfDirection: { drill: 'changeOfDirection', field: 'totalTime', scale: 1, digits: 2, higher: false },
-  jump: { drill: 'jump', field: 'jumpHeight', scale: 100, digits: 1, higher: true },
-  broadJump: { drill: 'broadJump', field: 'broadJumpDistance', scale: 1, digits: 2, higher: true },
+  dribbleLeft: { drill: 'dribbling', field: 'totalTime', scale: 1, digits: 2, side: 'left' },
+  dribbleRight: { drill: 'dribbling', field: 'totalTime', scale: 1, digits: 2, side: 'right' },
+  sprint: { drill: 'sprint', field: 'totalTime', scale: 1, digits: 2 },
+  changeOfDirection: { drill: 'changeOfDirection', field: 'totalTime', scale: 1, digits: 2 },
+  jump: { drill: 'jump', field: 'jumpHeight', scale: 100, digits: 1 },
+  broadJump: { drill: 'broadJump', field: 'broadJumpDistance', scale: 1, digits: 2 },
 };
 
 /** One number under the replay; `higher` says whether a larger value is the better one. */
@@ -69,41 +69,54 @@ export function versusTeam(mine: number, team: number, split: Pick<Split, 'digit
 
 export type SplitRow = { label: string; mine: string | null; average: string | null; standing: Standing | null; difference: string | null };
 
-/**
- * One row of the table: the athlete's value, the team's (the report's own average text for the
- * headline number, in shown units; else the team's records), and how they compare. A row without
- * both values, or whose report average is in another unit, is not compared.
- */
-export function splitRow(split: Split, mine: number | null | undefined, team: number | null | undefined, reportAverage: string | null = null): SplitRow {
-  const mineText = splitText(mine, split);
-  const [reportValue, reportUnit] = reportAverage ? reportAverage.trim().split(/\s+/) : [];
-  const teamShown = reportAverage ? (reportUnit === split.unit && Number.isFinite(Number(reportValue)) ? Number(reportValue) : null)
-    : team === null || team === undefined ? null : team * split.scale;
-  const base = { label: split.label, mine: mineText, average: reportAverage ?? splitText(team, split), standing: null, difference: null };
-  if (mine === null || mine === undefined || teamShown === null) return base;
-  const { standing, difference } = versusTeam(mine * split.scale, teamShown, split);
+/** Compare the numbers exactly as displayed, including the report's rounding and unit conversion. */
+export function shownSplitRow(split: Split, mine: string | null, average: string | null): SplitRow {
+  const base = { label: split.label, mine, average, standing: null, difference: null };
+  const shownNumber = (text: string | null) => {
+    if (!text) return null;
+    const [value, unit, ...rest] = text.trim().split(/\s+/);
+    return unit === split.unit && !rest.length && Number.isFinite(Number(value)) ? Number(value) : null;
+  };
+  const ownValue = shownNumber(mine), teamValue = shownNumber(average);
+  if (ownValue === null || teamValue === null) return base;
+  const { standing, difference } = versusTeam(ownValue, teamValue, split);
   const sign = difference > 0 ? '+' : difference < 0 ? '−' : '';
   return { ...base, standing, difference: `${sign}${Math.abs(difference).toFixed(split.digits)} ${split.unit}` };
 }
 
-/** A testing day's reps: recorded within a day and a half of the report's test date. */
-const DAY_WINDOW = 36 * 3_600_000;
-type Scored = { rep: Row; value: number };
-const scored = (test: MetricTest, reps: Row[]): Scored[] => reps
-  .filter(rep => !test.side || rep.protocolSide === test.side)
-  .map(rep => ({ rep, value: metricValue(rep, test.field) }))
-  .filter((item): item is Scored => item.value !== null);
-const best = (test: MetricTest, items: Scored[]): Scored => items.reduce((top, item) => (test.higher ? item.value > top.value : item.value < top.value) ? item : top);
-const onDay = (items: Scored[], testDateMillis: number) => items.filter(item => Math.abs(createdMillis(item.rep) - testDateMillis) <= DAY_WINDOW);
+export function splitRow(split: Split, mine: number | null | undefined, team: number | null | undefined): SplitRow {
+  return shownSplitRow(split, splitText(mine, split), splitText(team, split));
+}
 
-/** The report's timestamp identifies the capture even when an older effective row omits protocolSide. */
-function reportedRep(metric: ReportMetric, test: MetricTest, reps: Row[], testDateMillis: number, target: number): Row | null {
-  if (!Number.isFinite(target) || (metric.status !== 'measured' && metric.status !== 'estimate')) return null;
-  const tolerance = 0.5 / 10 ** test.digits + 1e-9;
-  const matches = reps.filter(rep => {
+/** A team's measured splits remain available when the athlete has only a reviewed total or no matching replay. */
+export function comparisonRows(metric: ReportMetric, rep: Row | null, metadata: Row, team: TeamComparison | null, headlineAverage: string | null): SplitRow[] {
+  const test = METRIC_TESTS[metric.id];
+  const result = valueText(metric);
+  if (!test || !result) return [];
+  return SPLITS[test.drill].flatMap(split => {
+    if (split.field === test.field) return [shownSplitRow(split, result, headlineAverage)];
+    const mine = rep && metric.status === 'measured' ? metricValue(rep, split.field, metadata, split.fallbacks || []) : null;
+    const row = splitRow(split, mine, team?.averages[split.field]);
+    return row.mine || row.average ? [row] : [];
+  });
+}
+
+/** Older reports may identify a capture by its value and testing day alone. */
+const DAY_WINDOW = 36 * 3_600_000;
+
+/** A replay or split must belong to the result the scorecard retained. Its timestamp also identifies older rows without a side. */
+export function bestRep(metric: ReportMetric, reps: Record<string, Row[]>, testDateMillis: number): Row | null {
+  const test = METRIC_TESTS[metric.id];
+  if (!test || !metric.result || (metric.status !== 'measured' && metric.status !== 'estimate')) return null;
+  const precision = 10 ** test.digits;
+  const target = Math.round(Number(metric.result.split(' ')[0]) * precision);
+  const candidates = reps[test.drill] || [];
+  const matches = candidates.filter(rep => {
     if (rep.resultStatus?.duplicate) return false;
     const review = rep.reviewedResult;
+    if (metric.status === 'measured' && review) return false;
     if (metric.status === 'estimate' && (review?.status !== 'estimate' || review.metric !== test.field ||
+      review.unit !== (test.field === 'totalTime' ? 's' : 'm') || (test.side && review.protocolSide && review.protocolSide !== test.side) ||
       !review.revisionId || review.revisionId !== rep.resultStatus?.revisionId)) return false;
     const side = rep.protocolSide ?? review?.protocolSide;
     if (test.side && side && side !== test.side) return false;
@@ -112,87 +125,55 @@ function reportedRep(metric: ReportMetric, test: MetricTest, reps: Row[], testDa
       if (recorded !== metric.recordedAtMillis) return false;
     } else if ((test.side && side !== test.side) || Math.abs(recorded - testDateMillis) > DAY_WINDOW) return false;
     const value = metric.status === 'estimate' ? review.value : metricValue(rep, test.field);
-    return typeof value === 'number' && Math.abs(value * test.scale - target) <= tolerance;
+    if (typeof value !== 'number' || !Number.isFinite(value)) return false;
+    const scaled = value * test.scale;
+    // The report rounds each result to an integer before it compares or prints scores.
+    return Math.round((scaled + Number.EPSILON * scaled) * precision) === target;
   });
   return matches.length === 1 ? matches[0] : null;
 }
 
-/**
- * Course-specific and reviewed results need a matching capture. Other tests retain their existing
- * best-rep fallback.
- */
-export function bestRep(metric: ReportMetric, reps: Record<string, Row[]>, testDateMillis: number): Row | null {
-  const test = METRIC_TESTS[metric.id];
-  if (!test) return null;
-  const candidates = reps[test.drill] || [];
-  const target = metric.result ? Number(metric.result.split(' ')[0]) : NaN;
-  if (test.side || metric.status === 'estimate') return reportedRep(metric, test, candidates, testDateMillis, target);
-  const all = scored(test, candidates);
-  if (!all.length) return null;
-  if (Number.isFinite(target)) {
-    const tolerance = 0.5 / 10 ** test.digits + 1e-9;
-    const exact = all.filter(item => Math.abs(item.value * test.scale - target) <= tolerance);
-    if (exact.length) return exact.reduce((newest, item) => createdMillis(item.rep) > createdMillis(newest.rep) ? item : newest).rep;
-  }
-  const day = onDay(all, testDateMillis);
-  return best(test, day.length ? day : all).rep;
-}
+export type AnonymousMedian = { status: 'measured' | 'estimate'; rep: Row; artifacts: Record<string, unknown> };
+export type TeamComparison = { averages: Record<string, number>; median: AnonymousMedian | null };
 
-export type TeamComparison = {
-  /** The teammate whose best result is the middle one of the others on the team, or null. */
-  median: { playerId: string; rep: Row; value: number } | null;
-  /** The team's mean for each split field (stored units), where at least five athletes have it. */
+type ComparisonResponse = {
+  version: number;
+  playerId: string;
+  metricId: string;
+  testDateMillis: number | null;
+  selectedResult: Pick<ReportMetric, 'result' | 'status' | 'recordedAtMillis'> | null;
+  comparisonState: string;
+  count: number | null;
   averages: Record<string, number>;
-  /** Athletes on the team with a result for this test that day. */
-  count: number;
+  median: AnonymousMedian | null;
 };
 
-/** From each team member's reps: the median athlete (never the athlete being viewed) and the split averages. */
-export function teamComparison(metricId: string, team: { playerId: string; reps: Row[] }[], ownPlayerId: string, testDateMillis: number): TeamComparison | null {
-  const test = METRIC_TESTS[metricId];
-  if (!test) return null;
-  const bests = team.flatMap(member => {
-    const day = onDay(scored(test, member.reps), testDateMillis);
-    return day.length ? [{ playerId: member.playerId, ...best(test, day) }] : [];
-  });
-  const others = bests.filter(item => item.playerId !== ownPlayerId).sort((a, b) => a.value - b.value);
-  const averages: Record<string, number> = {};
-  for (const split of SPLITS[test.drill] || []) {
-    const values = bests.map(item => metricValue(item.rep, split.field, {}, split.fallbacks || [])).filter((value): value is number => value !== null);
-    if (values.length >= 5) averages[split.field] = values.reduce((sum, value) => sum + value, 0) / values.length;
-  }
-  return { median: others.length ? others[Math.floor((others.length - 1) / 2)] : null, averages, count: bests.length };
-}
-
-const TEAM_MEMORY_MS = 5 * 60_000;
-
-/**
- * STAFF ONLY: every rep the team recorded around the test day, one sweep of the roster (about
- * twenty Firestore reads) kept in memory and shared by all six tests. Cached rows are read-only.
- */
-function teamReps(athlete: Row, testDateMillis: number): Promise<{ playerId: string; reps: Row[] }[]> {
-  return remember(`team-reps:${athlete.organizationId}:${athlete.teamId}:${testDateMillis}`, async () => {
-    const roster = await db.collection('players').where('organizationId', '==', athlete.organizationId).where('teamId', '==', athlete.teamId).limit(40).get();
-    const from = new Date(testDateMillis - DAY_WINDOW), to = new Date(testDateMillis + DAY_WINDOW);
-    return Promise.all(roster.docs.map(async (doc: any) => {
-      const snapshot = await doc.ref.collection('reps').where('createdAt', '>=', from).where('createdAt', '<=', to).get().catch(() => null);
-      return { playerId: doc.id as string, reps: snapshot ? visibleAttempts(snapshot.docs.map(normalizeRep)) : [] };
-    }));
-  }, TEAM_MEMORY_MS);
-}
-
-/**
- * STAFF ONLY, for now. Reads the athlete's team from Firestore, which an admin, manager or coach
- * may do and a player may not. A player's own view needs a backend endpoint that returns the
- * median teammate's pose and the team's split averages without exposing who the teammate is;
- * this one function is what that endpoint replaces. Kept in memory per test, athlete, team and day.
- */
-export function loadTeamComparison(metric: ReportMetric, athlete: Row, ownPlayerId: string, testDateMillis: number): Promise<TeamComparison | null> {
+/** The server qualifies this athlete and cohort. An older card must never borrow a newer event's splits. */
+export function loadTeamComparison(metric: ReportMetric, report: AthleteTestReport, athlete: Row, playerId: string): Promise<TeamComparison | null> {
   const test = METRIC_TESTS[metric.id];
-  if (!test || !athlete?.organizationId || !athlete?.teamId) return Promise.resolve(null);
-  const drill = drillByKey(test.drill);
-  return remember(`team:${metric.id}:${ownPlayerId}:${athlete.teamId}:${testDateMillis}`, async () => {
-    const team = (await teamReps(athlete, testDateMillis)).map(member => ({ playerId: member.playerId, reps: member.reps.filter(rep => accepted(rep, drill)) }));
-    return teamComparison(metric.id, team, ownPlayerId, testDateMillis);
-  }, TEAM_MEMORY_MS);
+  if (!test || report.kind !== 'event' || report.playerId !== playerId || !metric.result || !metric.average || (metric.count ?? 0) < 5 ||
+      !athlete?.organizationId || !athlete?.teamId || !['measured', 'estimate'].includes(metric.status)) return Promise.resolve(null);
+  const key = JSON.stringify([playerId, athlete.organizationId, athlete.teamId, report.testDateMillis, metric.id, metric.recordedAtMillis,
+    metric.status, metric.result, metric.count, metric.average]);
+  return remember(`test-comparison:${key}`, async () => {
+    const { data } = await cloud.httpsCallable('getAthleteTestComparison', { timeout: 120_000 })({ playerId, metricId: metric.id });
+    const response = data as ComparisonResponse | null;
+    const selected = response?.selectedResult;
+    if (!response || response.version !== 1 || response.comparisonState !== 'available' ||
+        response.playerId !== playerId || response.metricId !== metric.id || response.testDateMillis !== report.testDateMillis ||
+        response.count !== metric.count || !selected || selected.recordedAtMillis !== metric.recordedAtMillis ||
+        selected.status !== metric.status || selected.result !== metric.result) return null;
+    // An average can change after a teammate's review even when the count and the athlete's own result stay the same.
+    const primary = response.averages?.[test.field];
+    const reportedAverage = Number(metric.average!.split(' ')[0]);
+    if (!Number.isFinite(primary) || !Number.isFinite(reportedAverage) ||
+        Math.abs(primary * test.scale - reportedAverage) > 0.5 / 10 ** test.digits + 1e-9) return null;
+    const averages: Record<string, number> = {};
+    for (const split of SPLITS[test.drill]) {
+      const amount = response.averages[split.field];
+      if (Number.isFinite(amount) && amount > 0) averages[split.field] = amount;
+    }
+    const median = response.median;
+    return { averages, median: median?.status === 'measured' || median?.status === 'estimate' ? median : null };
+  }, 5 * 60_000, { size: response => response ? JSON.stringify(response).length * 2 : 128 });
 }
