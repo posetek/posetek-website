@@ -40,7 +40,7 @@ export const CATEGORY_STYLE: Record<FocusCategory, { name: string; icon: string;
   core: { name: 'Core', icon: 'sports_gymnastics', color: '#FFA878', order: 4 },
   gym: { name: 'Strength', icon: 'fitness_center', color: '#FF80AD', order: 5 },
   hiit: { name: 'HIIT', icon: 'local_fire_department', color: '#FF6B6B', order: 6 },
-  yoga: { name: 'Yoga', icon: 'self_improvement', color: '#C7ACF7', order: 7 },
+  yoga: { name: 'Mobility', icon: 'self_improvement', color: '#C7ACF7', order: 7 },
   speed: { name: 'Speed/agility', icon: 'bolt', color: '#FFE17B', order: 8 },
   other: { name: 'Other', icon: 'grid_view', color: '#9AA5AE', order: 9 },
 };

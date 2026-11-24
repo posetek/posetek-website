@@ -16,7 +16,7 @@ describe('training focus, as the app folds it', () => {
   });
   it('names the categories as the app does after the category rework', () => {
     expect(CATEGORY_STYLE.soccer.name).toBe('Soccer'); expect(CATEGORY_STYLE.gym.name).toBe('Strength');
-    expect(CATEGORY_STYLE.speed.name).toBe('Speed/agility');
+    expect(CATEGORY_STYLE.speed.name).toBe('Speed/agility'); expect(CATEGORY_STYLE.yoga.name).toBe('Mobility');
   });
   it('files rows under the activity categories', () => {
     expect(focusCategory('dribbling', 'x')).toBe('soccer'); expect(focusCategory('passingReceiving', 'x')).toBe('soccer');
