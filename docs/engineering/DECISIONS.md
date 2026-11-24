@@ -54,6 +54,23 @@ settings are changed by these files.
 | D24 | Existing repo | Dependency update automation, secret/dependency scanning and real CODEOWNERS assignments are not configured; adding placeholder owners or treating every audit warning as a release gate gives false assurance. | Confirm owners and scan tooling; first inventory reachable risks, then enable reviewed update PRs and actionable blocking policy. No automatic dependency upgrades or invented owner handles. |
 | D25 | Existing repo | Backend local remote still uses the former repository name and its test count differs from newer website release receipts. | Reconcile remote identity and current main before publishing; never assume local main is the currently deployed source. Record exact commits in all evidence. |
 
+## Proposed D02 partial supersession — November 23, 2026
+
+Draft for review; privacy/ops and developer lead sign-off remain pending in
+[Backend D-02](https://github.com/posetek/posetek-backend/blob/5f321ab936f5c966827ab0d79d5a88fbb3bfd954/docs/firestore-to-postgres/decisions/D-02.md),
+tracked by [PR #146](https://github.com/posetek/posetek-backend/pull/146).
+
+Supersede **D02** only to allow a read-only Cloud SQL (PostgreSQL) replica for
+analytics and reporting, per the
+[replica design](https://github.com/posetek/posetek-backend/blob/5f321ab936f5c966827ab0d79d5a88fbb3bfd954/docs/superpowers/specs/2026-11-01-firestore-to-cloudsql-replica-design.md).
+Firestore and Storage remain the system of record. No application writes move to
+Postgres; any writer cutover needs its own spec and decision. Retention, deletion,
+encryption and exclusions follow Backend D-02.
+
+D02's other points (Redis, the Go proxy, two-product packages and database
+branching) remain unchanged. This proposal does not activate infrastructure,
+deploy software or authorize production access.
+
 ## External comparison
 
 Reviewed against primary guidance, not a claim that all large companies use one workflow:
