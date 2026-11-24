@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blockSeconds, blockTimes, breakdownHeadline, countedLogs, durationShort, endReasonChip, findResume, focusArcs, focusCategory, focusSlices, focusSummary,
+import { CATEGORY_STYLE, blockSeconds, blockTimes, breakdownHeadline, countedLogs, durationShort, endReasonChip, findResume, focusArcs, focusCategory, focusSlices, focusSummary,
   freeSessionSummary, historyBlockSummary, historyRows, planCardModel, planPagePlan, planSections, resumeBannerText, savedDetailLine, savedEntries, savedWorkouts, weekDrillLine } from './hub';
 import type { Row } from '../execution';
 import { doseLine } from './MyWorkoutPlan';
@@ -13,6 +13,10 @@ describe('training focus, as the app folds it', () => {
   it('formats durations the way the stats row and donut do', () => {
     expect(durationShort(0)).toBe('0m'); expect(durationShort(48 * 60 + 10)).toBe('48m');
     expect(durationShort(2 * 3600)).toBe('2h'); expect(durationShort(14 * 3600 + 20 * 60)).toBe('14h 20m'); expect(durationShort(10, false)).toBe('—');
+  });
+  it('names the categories as the app does after the category rework', () => {
+    expect(CATEGORY_STYLE.soccer.name).toBe('Soccer'); expect(CATEGORY_STYLE.gym.name).toBe('Strength');
+    expect(CATEGORY_STYLE.speed.name).toBe('Speed/agility');
   });
   it('files rows under the activity categories', () => {
     expect(focusCategory('dribbling', 'x')).toBe('soccer'); expect(focusCategory('passingReceiving', 'x')).toBe('soccer');
