@@ -6,6 +6,8 @@ import { adminDirectoryPath, directoryLevelOf, parseAdminDirectoryState, selectD
 import { staffName } from "../lib/accountHierarchy";
 import "./directory-navigator.scss";
 import Icon from "./AdminWorkspaceIcon";
+import { AccountAvatar } from "./PlayerRosterRow";
+import type { AccountLoad } from "../lib/useAccountLoad";
 import { TeamComparison } from "./AdminActivityReport";
 import type { WorkspaceMetricState } from "./WorkspaceReporting";
 
@@ -47,6 +49,36 @@ export default function DirectoryNavigator({ organizations, state, choose, conte
       <button type="button" className={`directory-nav-lookup${!state.orgId && level === "people" ? " selected" : ""}`} aria-current={!state.orgId && level === "people" ? "page" : undefined} onClick={() => { choose({ orgId: undefined, teamId: undefined, coachId: undefined, directoryLevel: "people", directoryTab: "players" }); if (window.innerWidth <= 760) setOpen(false); }}>Player lookup & unassigned accounts</button>
     </nav>
   </details></aside>;
+}
+
+/** Membership supplies the directory. Reporting can finish independently or be unavailable. */
+export function OrganizationDirectory({ organizations, counts, status, retry, choose }: {
+  organizations: OrganizationRow[];
+  counts?: { id: string; count: number }[];
+  status: AccountLoad<OrganizationRow[]>;
+  retry(): void; choose(orgId: string): void;
+}) {
+  if (status.kind === "loading") return <p role="status">Loading organizations…</p>;
+  if (status.kind === "error") return <div><p className="form-message" role="alert">{status.message}</p><button type="button" className="quiet-button" onClick={retry}>Retry organizations</button></div>;
+  if (!organizations.length) return <p className="admin-empty">No organizations yet. Add one in Organization settings.</p>;
+  const players = new Map(counts?.map(row => [row.id, row.count]));
+  const highest = organizations.reduce((max, org) => Math.max(max, players.get(org.id) ?? 0), 1);
+  return <section className="directory-index" aria-label="Organization directory">
+    <div className="directory-index-heading"><h3>{organizations.length.toLocaleString()} {organizations.length === 1 ? "organization" : "organizations"}</h3><span>Players in report</span></div>
+    <ul>{organizations.map((org, index) => {
+      const count = players.get(org.id);
+      const countId = `directory-organization-count-${index}`;
+      return <li key={org.id}><button type="button" aria-label={org.name} aria-describedby={countId} onClick={() => choose(org.id)}>
+        <span className="directory-club-mark">{org.logoUrl ? <img src={org.logoUrl} alt="" /> : <AccountAvatar name={org.name} />}</span>
+        <strong>{org.name}</strong>
+        <span id={countId} className="directory-index-count" aria-label={count === undefined ? "Player count unavailable" : `${count} ${count === 1 ? "player" : "players"} in report`}>
+          {count !== undefined && <i aria-hidden="true"><i style={{ width: `${100 * count / highest}%` }} /></i>}
+          <span>{count === undefined ? "—" : count.toLocaleString()}</span>
+        </span>
+        <Icon name="chevron_right" />
+      </button></li>;
+    })}</ul>
+  </section>;
 }
 
 /** Teams are a navigation destination, separate from membership-management forms. */

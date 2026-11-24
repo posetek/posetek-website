@@ -1,5 +1,5 @@
 // Synthetic, browser-local transport only. No credentials or production data.
-function fixtureTracking(input) {
+export function fixtureTracking(input) {
  const vacaville = 'vacaville-united-soccer-club';
  const original = { id: 'vacaville-2026-11-04-05', startDate: '2026-11-04', endDate: '2026-11-05', total: 33 };
  const next = { id: 'vacaville-2026-11-09', startDate: '2026-11-09', endDate: '2026-11-09', total: 2 };
@@ -24,7 +24,7 @@ function fixtureTracking(input) {
 }
 
 // Synthetic Stats page journeys, relative to now. Invented athletes only; the request must be the contract's.
-function fixtureJourney(input) {
+export function fixtureJourney(input) {
  if (Object.keys(input).sort().join(',') !== 'days,organizationId' || ![7, 30, 90].includes(input.days)) throw Error('Invalid journey request');
  window.fixtureJourneyRequests = [...(window.fixtureJourneyRequests || []), input];
  if (window.fixtureJourneyState === 'error') throw Error('Synthetic unavailable');
@@ -59,7 +59,7 @@ function fixtureJourney(input) {
 }
 
 // General journeys remain entirely synthetic and never contact a real service.
-function fixturePlayerJourneys(input) {
+export function fixturePlayerJourneys(input) {
  const keys=['organizationId','teamId','unassigned','startDate','endDate','timeZone','clientKind','playerId','cursor','pageSize','cohort','entryFilter'];
  if(Object.keys(input).some(key=>!keys.includes(key)))throw Error('Invalid general journey request');
  if(!Number.isInteger(input.pageSize)||input.pageSize<1||input.pageSize>(input.playerId?10:100))throw Error('Invalid journey page size');

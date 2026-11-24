@@ -1,12 +1,12 @@
 // The admin workspace owns these tokens. Shared coach, manager and athlete
 // pages keep their existing theme, including when a planner module is reused.
 .pt-admin.admin-workspace {
-  --surface-0: #eef1f0;
+  --surface-0: #f7f8f6;
   --surface-1: #fff;
-  --surface-2: #f6f8f7;
-  --surface-border: #d7dfdb;
-  --text-primary: #142d25;
-  --text-muted: #586b63;
+  --surface-2: #f1f4f1;
+  --surface-border: #d6ded8;
+  --text-primary: #172a21;
+  --text-muted: #52635a;
   --accent: #185c43;
   --status-good: #237448;
   --status-warning: #8a570f;
@@ -22,7 +22,7 @@
   --admin-accent: var(--accent);
   --admin-warn: var(--status-warning);
   --admin-danger: var(--status-danger);
-  --admin-card-radius: 10px;
+  --admin-card-radius: 8px;
   --admin-field-radius: 6px;
   --lime: var(--accent);
   --green: var(--status-good);
@@ -110,14 +110,14 @@
     .admin-heading h1, .admin-page-heading h1, .personalized-heading h1 { font-size: clamp(26px, 2.4vw, 34px); }
     .admin-heading h2 { font-size: 22px; }
     .admin-heading p, .admin-page-heading p, .personalized-heading p { color: var(--text-muted); max-width: 78ch; }
-    .eyebrow, .admin-eyebrow { color: var(--accent); font-size: 11px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow, .admin-eyebrow { color: var(--accent); font-size: 11px; font-weight: 600; letter-spacing: normal; text-transform: none; }
 
     .admin-card, .admin-editor-main, .admin-picker, .admin-workout, .portal-card, .empty-card,
     .personalized-card, .insights-card, .insights-tile, .dp-tile, .ai-section {
       background: var(--surface-1);
       border: 1px solid var(--surface-border);
       border-radius: var(--admin-card-radius);
-      box-shadow: 0 1px 2px #142d2505;
+      box-shadow: none;
     }
     .admin-card, .personalized-card { padding: 24px; }
     .admin-card h3, .personalized-card h3 { font-size: 18px; }
@@ -326,6 +326,19 @@
     .insights-period-presets button[aria-pressed="true"] { background: #e4f0e9; }
     .insights-tile { padding: 20px; }
     .insights-tile strong { font-size: 30px; letter-spacing: -.035em; }
+    .insights-tiles[aria-label="overview summary"] {
+      gap: 1px;
+      overflow: hidden;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--admin-card-radius);
+      background: var(--surface-border);
+
+      .insights-tile { gap: 8px; border: 0; border-radius: 0; }
+      .insights-tile > span { font-weight: 550; }
+      .insights-tile-value { display: grid; justify-content: stretch; gap: 8px; }
+      .insights-sparkline { width: 100%; max-width: 164px; height: 20px; }
+      .insights-sparkline polyline { stroke: #678976; stroke-width: 1.5; }
+    }
     .insights-custom-period form { box-shadow: 0 8px 28px #142d2518; }
     .insights-card h2 { font-size: 18px; }
     .insights-chart { min-width: 0; }

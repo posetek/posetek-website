@@ -71,7 +71,7 @@ for (const [engine, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
         await page.goto(new URL('/insights?preview=1', base).href);
         await page.getByLabel('Preview role').selectOption('admin');
         await page.getByRole('navigation', { name: 'Overview shortcuts' }).waitFor();
-        await page.locator('.admin-workspace__welcome-mark').evaluate(image => image.decode());
+        check(await page.locator('#admin-main h1').count() === 1 && await page.getByRole('heading', { level: 1, name: 'Club overview' }).isVisible(), 'Overview has one report heading');
         check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Overview has no horizontal overflow');
         await page.screenshot({ path: join(out, `${name}-${width}-overview.png`), fullPage: false });
         await page.getByLabel('Preview role').selectOption('manager');

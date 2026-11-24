@@ -36,6 +36,13 @@ for (const [engine, engineName] of [[chromium, 'chromium'], [webkit, 'webkit']])
    page.on('pageerror', error => pageErrors.push(error.message));
    try {
     await installDirectoryFixture(page);
+    await page.goto(url('/admin/accounts'));
+    const club = page.getByRole('button', { name: 'Northfield FC', exact: true });
+    await club.waitFor();
+    const clubBounds = await club.boundingBox();
+    check(await club.count() === 1 && clubBounds.y + clubBounds.height <= 960, 'a club can be opened directly in the first viewport');
+    await activate(club);
+    await assertQuery(page, 'orgId', 'northfield');
     await page.goto(url(scope));
     await page.locator('.directory-player-name').first().waitFor();
     await settled(page);
@@ -178,7 +185,6 @@ for (const [engine, engineName] of [[chromium, 'chromium'], [webkit, 'webkit']])
       await installDirectoryFixture(page, { state });
       await page.goto(url('/admin/accounts'));
       await page.getByRole('heading', { name: 'People & organizations', exact: true }).waitFor();
-      await openHierarchy(page);
       const text = state === 'loading' ? 'Loading organizations…' : state === 'empty' ? 'No organizations yet. Add one in Organization settings.' : 'Synthetic directory unavailable. Retry this read.';
       await page.getByText(text, { exact: true }).first().waitFor();
       if (!await noOverflow(page) || errors.length) throw new Error(`${engineName} ${width} ${state}: overflow or page errors`);

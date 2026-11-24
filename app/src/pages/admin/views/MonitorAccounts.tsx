@@ -6,6 +6,7 @@ import type { CoachRow, OrganizationRow, PlayerRow } from "../lib/accounts";
 import { hasClubIdentity, legacyCoachGroups, staffName } from "../lib/accountHierarchy";
 import type { AccountContext, HierarchyTeam } from "../lib/accountHierarchy";
 import { useAccountLoad } from "../lib/useAccountLoad";
+import type { AccountLoad } from "../lib/useAccountLoad";
 import { directorySession } from "../lib/directoryRetention";
 import { directoryCoachPath, directoryPage, directoryPlayers, directorySource, unassignedDirectoryPlayers } from "../lib/adminDirectory";
 import type { DirectoryRoster, DirectorySource } from "../lib/adminDirectory";
@@ -22,12 +23,13 @@ import type { ExpandedPlayer, InsightScope } from "../../insights/lib/expanded";
 import { setWorkspaceMetricsScope, useWorkspaceMetrics } from "../lib/workspaceMetrics";
 import { WorkspaceAttention, WorkspaceMetricCells, WorkspaceReportControls, WorkspaceReportDetails, WorkspaceScopeHeader } from "./WorkspaceReporting";
 import type { WorkspaceMetricState, WorkspacePlayerMetric } from "./WorkspaceReporting";
-import DirectoryNavigator, { TeamDirectory } from "./DirectoryNavigator";
+import DirectoryNavigator, { OrganizationDirectory, TeamDirectory } from "./DirectoryNavigator";
 import { DirectoryFilters, DirectoryPlayerFilters, DirectoryWorkspaceTabs } from "./DirectoryWorkspaceControls";
 import AdminActivityReport from "./AdminActivityReport";
 import OnePagerTracking from "./OnePagerTracking";
 import PlayerJourneys from "./PlayerJourneys";
 import AdminTabs from "./AdminTabs";
+import Icon from "./AdminWorkspaceIcon";
 import "./admin-directory.scss";
 import "./admin-directory-lightning.scss";
 
@@ -53,11 +55,17 @@ export default function MonitorAccounts({ source = directorySource }: { source?:
   const available = organizations.kind === "ready" ? organizations.data.filter(org => org.schemaVersion === 2) : [];
   const selected = available.find(org => org.id === state.orgId);
   const navigateScope: ChooseDirectory = patch => choose(selectDirectoryScope(state, patch));
-  const navigator = <DirectoryNavigator organizations={available} state={state} choose={navigateScope} pending={organizations.kind === "loading"} error={organizations.kind === "error" ? organizations.message : ""} retry={refresh} />;
+  const organizationIndex = state.directoryTab === "players" && directoryLevelOf(state) === "organizations" && directoryWorkspacePaneOf(state) === "list";
+  const navigator = !organizationIndex && <DirectoryNavigator organizations={available} state={state} choose={navigateScope} pending={organizations.kind === "loading"} error={organizations.kind === "error" ? organizations.message : ""} retry={refresh} />;
   useEffect(() => { document.title = "People & organizations | PoseTek admin"; }, []);
   return <div className="admin-directory">
-    <section className="admin-heading"><div><h1>People & organizations</h1><p>Find your organization, open a team and work with its people. Reporting stays one tab away.</p></div>
-      <div className="admin-heading-actions"><button className="quiet-button" aria-label="Refresh organizations" onClick={refresh}>Refresh</button></div></section>
+    <section className="admin-heading directory-heading">
+      <h1>People &amp; organizations</h1>
+      <div className="admin-heading-actions">
+        {organizationIndex && <button type="button" className="primary-cta" onClick={() => navigateScope({ directoryLevel: "people" })}><Icon name="search" />Find a player</button>}
+        <button type="button" className="quiet-button directory-refresh" aria-label="Refresh organizations" onClick={refresh}><Icon name="refresh" /><span>Refresh</span></button>
+      </div>
+    </section>
     <DirectoryTabs active={state.directoryTab} onChange={directoryTab => choose({ directoryTab, page: 1 })} />
     {selected && state.directoryTab === "players" ? <OrganizationPlayers key={selected.id} org={selected} organizations={available} state={state} choose={choose} navigateScope={navigateScope} source={source} /> : <DirectoryFrame navigator={navigator} state={state}>
         {state.orgId && organizations.kind === "ready" && !selected ? <p className="form-message" role="alert">That organization is no longer available. Choose a current organization.</p>
@@ -67,7 +75,7 @@ export default function MonitorAccounts({ source = directorySource }: { source?:
             {state.directoryTab !== "players" && selected.schemaVersion === 2 && <DirectoryManagement key={`${selected.id}:${state.directoryTab}`} org={selected} tab={state.directoryTab} state={state} choose={navigateScope} source={source} onOrganizationsChanged={refresh} />}
             {state.directoryTab !== "players" && selected.schemaVersion !== 2 && <LegacyStaff key={selected.id} organization={selected} source={source} state={state} />}
           </> : !state.orgId && <>
-            {state.directoryTab === "players" && <PlayerLookup source={source} state={state} choose={choose} navigateScope={navigateScope} canonicalOrganizationIds={available.filter(org => org.schemaVersion === 2).map(org => org.id)} />}
+            {state.directoryTab === "players" && <PlayerLookup source={source} state={state} choose={choose} organizations={available} directoryStatus={organizations} retryOrganizations={refresh} navigateScope={navigateScope} />}
             {state.directoryTab === "staff" && <IndependentStaff source={source} organizations={available} state={state} />}
             {state.directoryTab === "teams" && <p className="admin-empty">Choose an organization to view its teams.</p>}
             {state.directoryTab === "settings" && <DirectoryManagement tab="settings" state={state} choose={navigateScope} source={source} onOrganizationsChanged={refresh} />}
@@ -78,7 +86,7 @@ export default function MonitorAccounts({ source = directorySource }: { source?:
 }
 
 function DirectoryFrame({ navigator, state, children }: { navigator: ReactNode; state: AdminDirectoryState; children: ReactNode }) {
-  return <div className="directory-layout">{navigator}<section className="directory-content" id={`directory-panel-${state.directoryTab}`} role="tabpanel" aria-labelledby={`directory-tab-${state.directoryTab}`}>{children}</section></div>;
+  return <div className={navigator ? "directory-layout" : "directory-landing"}>{navigator}<section className="directory-content" id={`directory-panel-${state.directoryTab}`} role="tabpanel" aria-labelledby={`directory-tab-${state.directoryTab}`}>{children}</section></div>;
 }
 
 /** In-page section jumps retain this mounted scope, its private reads and browser history. */
@@ -151,7 +159,10 @@ export function DirectoryPlayersTable({ players, roster, state, choose, metrics,
   </>;
 }
 
-function PlayerLookup({ source, state, choose, navigateScope, canonicalOrganizationIds }: { source: DirectorySource; state: AdminDirectoryState; choose: ChooseDirectory; navigateScope: ChooseDirectory; canonicalOrganizationIds: string[] }) {
+function PlayerLookup({ source, state, choose, navigateScope, organizations, directoryStatus, retryOrganizations }: {
+  source: DirectorySource; state: AdminDirectoryState; choose: ChooseDirectory; navigateScope: ChooseDirectory;
+  organizations: OrganizationRow[]; directoryStatus: AccountLoad<OrganizationRow[]>; retryOrganizations(): void;
+}) {
   const people = directoryLevelOf(state) === "people";
   const unassigned = state.directoryLookup === "unassigned";
   const used = people && (state.search.trim().length >= 2 || unassigned);
@@ -165,8 +176,9 @@ function PlayerLookup({ source, state, choose, navigateScope, canonicalOrganizat
   const { state: loaded, refresh } = useAccountLoad(loader);
   const index = used && loaded.kind === "ready" ? loaded.data : null;
   const rows = index ? unassigned ? unassignedDirectoryPlayers(index.players, index.organizations, index.coaches, index.teams) : directoryPlayers(index.players, state.search) : [];
-  return <PlayerReporting state={state} choose={choose} scope={{ kind: "global" }} canonicalOrganizationIds={canonicalOrganizationIds} accountRows={used ? rows.slice(0, 40) : undefined} enabled scopeLabel="All current organizations" showPeople={people}
-    afterGraphs={!people && <section className="directory-team-directory"><h3>Organizations</h3><p className="admin-note">Choose an organization in Browse to view its graphs and teams. Independent coaches are available in Staff.</p><button type="button" className="quiet-button" onClick={() => navigateScope({ orgId: undefined, teamId: undefined, directoryLevel: "people" })}>Find a player</button></section>}
+  return <PlayerReporting state={state} choose={choose} scope={{ kind: "global" }} canonicalOrganizationIds={organizations.map(org => org.id)} accountRows={used ? rows.slice(0, 40) : undefined} enabled scopeLabel="All current organizations" showPeople={people}
+    afterGraphs={!people ? metrics => <OrganizationDirectory organizations={organizations} status={directoryStatus} retry={retryOrganizations}
+      counts={metrics.data?.scopeBreakdown.organizations} choose={orgId => navigateScope({ orgId, directoryLevel: "teams" })} /> : undefined}
     toolbar={<><h3 className="workspace-roster-heading">Find a player</h3><p className="admin-note">Browse an organization for its full roster, or use the bounded name/email lookup below.</p>
       <label className="directory-search"><span>Player lookup</span><input type="search" value={state.search} placeholder="Enter at least two characters" onChange={event => choose({ directoryLookup: undefined, search: event.target.value, page: 1, reportMode: "directory" }, true)} /></label>
       <button className="quiet-button directory-unassigned" aria-pressed={unassigned} onClick={() => choose({ directoryLookup: unassigned ? undefined : "unassigned", search: "", page: 1, reportMode: "directory" })}>Unassigned players in bounded lookup</button>
@@ -247,23 +259,24 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
       document.getElementById("activity-people-title")?.focus();
     }
   }, [activityView, report, metrics.loading, metrics.refreshing, request]);
+  const directoryIndex = activeView === "list" && !showPeople && scope?.kind === "global";
   const filters = <DirectoryFilters summary="Changes apply to this reporting scope. Name/email lookup remains separate from reporting filters.">
         <WorkspaceReportControls request={request} disabled={legacy} onChange={update} />
         {!legacy && <DirectoryPlayerFilters request={request} onChange={update} />}
         {displayReport && <div className="pt-insights"><PlayerFilters data={displayReport} request={request} onChange={update} /></div>}
       </DirectoryFilters>;
   return <>
-    <WorkspaceScopeHeader {...metricState} data={displayReport} accountCount={accountCount} accountScopeIsSubset={state.directoryLookup === "unassigned"} scopeLabel={scopeLabel} request={request} breadcrumb={scopeControl}>
+    <WorkspaceScopeHeader {...metricState} data={displayReport} accountCount={accountCount} accountScopeIsSubset={state.directoryLookup === "unassigned"} scopeLabel={scopeLabel} request={request} breadcrumb={scopeControl} action={directoryIndex ? filters : undefined}>
       <DirectoryWorkspaceTabs active={activeView} onePagers={showOnePagers} journey={showJourney} listLabel={showPeople ? "People" : state.orgId ? "Teams" : "Organizations"} onChange={selected => choose({ reportCursor: undefined, reportPage: undefined, reportAdminSort: undefined, reportAdminFollowUp: undefined,
         ...(selected === "list" || selected === "one-pagers" || selected === "journey" ? { directoryPane: selected } : { directoryPane: "report" as const, reportView: selected, reportMode: "directory" as const }) })} />
     </WorkspaceScopeHeader>
     {journey && journeyOrganization ? <PlayerJourneys state={state} choose={choose} organizationId={journeyOrganization} teamId={scope?.kind === "team" ? scope.teamId : undefined} unassigned={state.directoryLookup === "unassigned"}
       teams={journeyTeams} roster={(roster?.players || []).map(player => ({ id: player.id, teamId: player.teamId || null }))} />
     : onePagers && onePagerOrganization ? <OnePagerTracking organizationId={onePagerOrganization} cohortId={state.onePagerCohort} onCohortChange={onePagerCohort => choose({ onePagerCohort })} /> : <>
-    <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : null}</div>
+    {!directoryIndex && <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : null}</div>
       {filters}
       {pane === "report" && !legacy && <button type="button" className="quiet-button" disabled={metrics.loading || metrics.refreshing} onClick={() => { metrics.refresh(); refreshQueue(); }}>Refresh reporting</button>}
-    </div>
+    </div>}
     {displayReport && hasPlayerFilters(request) && <div className="pt-insights directory-active-filters"><PlayerFilters data={displayReport} request={request} onChange={update} /></div>}
     {pane === "report" && displayReport && <p className="admin-note">Report checked {new Date(displayReport.generatedAtMillis).toLocaleString('en-US', { timeZone: request.timezone, dateStyle: 'medium', timeStyle: 'short' })} · {request.timezone}.</p>}
     {metrics.refreshing && displayReport && <p role="status" className="admin-note">Updating activity… Showing the last successful report.</p>}
