@@ -18,6 +18,7 @@ import { CoachReplyText } from './coach/coach-reply';
 import { coachErrorMessage, coachRefCode } from './coach/coach-errors';
 import { coachMemories } from './coach/coach-memory';
 import { MemoryIcon, SendIcon, SharingIcon } from './coach/coach-icons';
+import { reportStatsJourneyOutcome } from './stats/use-stats-journey';
 import loaderIcon from './coach/v4-loader.svg';
 import './coach/coach.css';
 
@@ -198,7 +199,7 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       }
     }
     if (!memoryAction) { setDraft(''); setMessages(rows => [...rows, optimistic]); }
-    let full = '', proposal: Row | null = null, memorySnapshot: Row | null = null, handoff: Row | null = null;
+    let full = '', proposal: Row | null = null, memorySnapshot: Row | null = null, handoff: Row | null = null, issued = false;
     try {
       if (preview) {
         // The preview never calls the coach. On the Coach tab it pauses like a reply would, so Stop can be tried.
@@ -225,6 +226,10 @@ export default function CoachChat({ playerId, preview, capability = 'pose_chat',
       }, controller.current.signal, frame => {
         if (token !== turn.current) return;
         if (frame.event === 'start' && !memoryAction) conversation.current = frame.data.conversationId;
+        // The Stats page journey's "messaged the coach": the gateway took a Coach-tab message past its
+        // checks (AI sharing before the stream, the allowance after `start`) and is answering. Every
+        // refusal arrives as an error, which never reaches this callback.
+        if (tab && !memoryAction && !issued && frame.event !== 'start') { issued = true; reportStatsJourneyOutcome('coach', playerId); }
         if (frame.event === 'delta') { full += frame.data.text || ''; setAnswer(full); if (tab) setStatus(''); }
         if (frame.event === 'tool') setStatus(tab ? (frame.data.status === 'finished' ? '' : coachToolPhrase(frame.data.name))
           : coachToolStatus(frame.data.name, frame.data.status === 'finished'));

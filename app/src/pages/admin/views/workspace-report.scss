@@ -31,6 +31,32 @@
   .one-pager-chart-data summary { min-height:44px; display:flex; align-items:center; cursor:pointer; }
   .directory-player-table.one-pager-table td:first-child { width:24%; }
   @media(max-width:760px) { .directory-player-table.one-pager-table td:first-child { width:auto; } .directory-player-table.one-pager-table td:last-child::before { display:inline-block; } }
+  .stats-journey-controls { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 16px; }
+  .stats-journey-staff { display:flex; align-items:center; gap:8px; min-height:44px; color:var(--text-muted); font-size:13px; cursor:pointer; }
+  .stats-journey-staff input { width:18px; height:18px; margin:0; accent-color:var(--accent); }
+  .stats-journey-summary { grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); }
+  .stats-journey-split { display:grid; gap:2px; margin:10px 0 0; padding:0; list-style:none; color:var(--text-muted); font-size:11px; line-height:1.6; }
+  .stats-journey-split li { display:flex; justify-content:space-between; gap:8px; }
+  .stats-journey-split b { color:var(--text-primary); font-weight:600; font-variant-numeric:tabular-nums; }
+  .directory-player-table.stats-journey-table td:first-child { width:auto; }
+  // Nine player columns: wrap between words, never inside one.
+  .directory-player-table.stats-journey-table :is(th, td, strong) { overflow-wrap:normal; }
+  .stats-journey-steps { display:flex; flex-wrap:wrap; gap:4px 10px; margin:0 0 24px; padding:0; list-style:none; color:var(--text-muted); font-size:12px; }
+  .stats-journey-steps li + li::before { content:"→"; margin-right:10px; }
+  .stats-journey-steps strong { color:var(--text-primary); font-weight:600; }
+  @media(min-width:761px) { .directory-player-table.stats-journey-table th, .directory-player-table.stats-journey-table td { padding-left:8px; padding-right:8px; } }
+  // As the metrics roster: between phone and desktop the player columns scroll inside the table.
+  @media(max-width:1000px) and (min-width:761px) { .directory-player-table.stats-journey-players { display:block; overflow-x:auto; } }
+  @media(max-width:760px) {
+    .directory-player-table.stats-journey-table td:last-child::before { display:inline-block; }
+    // Five short count columns fit a phone: the next stops stay a table rather than stacking.
+    .directory-player-table.stats-journey-stops { display:table; width:100%; }
+    .directory-player-table.stats-journey-stops thead { position:static; width:auto; height:auto; overflow:visible; clip:auto; display:table-header-group; }
+    .directory-player-table.stats-journey-stops tbody { display:table-row-group; }
+    .directory-player-table.stats-journey-stops tr { display:table-row; padding:0; }
+    .directory-player-table.stats-journey-stops th, .directory-player-table.stats-journey-stops td { display:table-cell; padding:10px 6px; border-bottom:1px solid var(--surface-border); }
+    .directory-player-table.stats-journey-stops td:not(:first-child)::before, .directory-player-table.stats-journey-stops td:last-child::before { display:none; }
+  }
   .one-pager-sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
   .workspace-summary-card { min-width:0; padding:18px 14px; background:var(--surface-1); border:1px solid var(--surface-border); border-radius:var(--radius-sm); }
   .workspace-summary-card > span { color:var(--text-muted); font-size:12px; line-height:1.5; }
