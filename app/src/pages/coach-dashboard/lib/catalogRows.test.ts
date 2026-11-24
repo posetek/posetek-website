@@ -45,7 +45,7 @@ describe('coach drill picker catalog', () => {
   const chips = (rows: any[]) => workoutCategoryGroups(rows, row => workoutCategoryOf(row.drillId, row)).map(g => `${g.label} ${g.count}`);
   // The v1 documents STR-001, STR-007 and VJP-008 store no status and count as published here
   // (the gateway archives VJP-008 by id), so Speed/agility shows 32 rather than the plan's 31.
-  const today = ['Soccer 36', 'Speed/agility 32', 'Core 143', 'Strength 233', 'Mobility/recovery 3'];
+  const today = ['Soccer 36', 'Speed/agility 32', 'Core 143', 'Strength 233', 'Mobility 3'];
 
   it('groups the published catalog by home category before the backfill', () => {
     const rows = coachCatalogRows(fixtureRows.map(([id, row]) => doc(id, { domain: domains[id], status: row.status })));

@@ -16,23 +16,31 @@
 import { domainFromLegacy, normalizeCatalogDrill } from "./drillV2";
 import type { CatalogDrill } from "./drillV2";
 
-export type WorkoutCategoryId = "soccer" | "speedAgility" | "core" | "gym" | "yoga" | "hiit";
+/**
+ * The compiled category ids. `recovery` (yoga composer) holds yoga-library poses
+ * only, never `drillCatalog` rows, so no drill derives to it.
+ */
+export type WorkoutCategoryId = "soccer" | "speedAgility" | "core" | "gym" | "yoga" | "recovery" | "hiit";
 
 export interface WorkoutCategory {
   /** The stable wire value, also the drill's stored `workoutCategory`. */
   id: string;
   label: string;
+  /** Optional builder prompt from the registry; not shown by the drill pickers. */
+  prompt?: string;
 }
 
-/** The compiled registry, in Nolan's order (decision D1). */
+/** The compiled registry, in Nolan's order (decision D1, with Mobility and Recovery as two cards). */
 export const DEFAULT_WORKOUT_CATEGORIES: readonly WorkoutCategory[] = [
   { id: "soccer", label: "Soccer" },
   { id: "speedAgility", label: "Speed/agility" },
   { id: "core", label: "Core" },
   { id: "gym", label: "Strength" },
-  { id: "yoga", label: "Mobility/recovery" },
+  { id: "yoga", label: "Mobility" },
+  { id: "recovery", label: "Recovery" },
   { id: "hiit", label: "HIIT" },
 ];
+const PROMPT_MAX_LENGTH = 120;
 
 const SOCCER_DOMAINS = new Set(["ballMastery", "dribbling", "passing", "receiving", "shooting", "games"]);
 const SPEED_AGILITY_DOMAINS = new Set(["speed", "agility", "plyometrics"]);
@@ -79,8 +87,9 @@ export function categorizedCatalogDrill(id: string, raw: any): CatalogDrill {
 /**
  * The category list from `config/llm` (its `workoutCategories` field), or the
  * compiled defaults when it is missing or rejected. A registry is rejected for
- * a schema other than 1, an empty list, a missing id or label, a duplicate id or
- * an unknown composer, the same checks the app and gateway apply.
+ * a schema other than 1, an empty list, a missing id or label, a duplicate id,
+ * an unknown composer, or a `prompt` that is not a non-empty string of at most
+ * 120 characters. A new id (such as `recovery`) with a known composer is accepted.
  */
 export function workoutCategoryRegistry(config: any): readonly WorkoutCategory[] {
   const registry = config?.workoutCategories;
@@ -92,8 +101,12 @@ export function workoutCategoryRegistry(config: any): readonly WorkoutCategory[]
     if (typeof id !== "string" || !CATEGORY_ID.test(id) || seen.has(id)) return DEFAULT_WORKOUT_CATEGORIES;
     if (typeof label !== "string" || !label.trim()) return DEFAULT_WORKOUT_CATEGORIES;
     if (entry.composer !== undefined && !COMPOSERS.has(entry.composer)) return DEFAULT_WORKOUT_CATEGORIES;
+    const prompt = entry.prompt;
+    if (prompt !== undefined && (typeof prompt !== "string" || !prompt.trim() || prompt.length > PROMPT_MAX_LENGTH)) {
+      return DEFAULT_WORKOUT_CATEGORIES;
+    }
     seen.add(id);
-    categories.push({ id, label: label.trim() });
+    categories.push({ id, label: label.trim(), ...(prompt !== undefined ? { prompt: prompt.trim() } : {}) });
   }
   return categories.length ? categories : DEFAULT_WORKOUT_CATEGORIES;
 }

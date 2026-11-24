@@ -78,8 +78,24 @@ describe("workout category registry", () => {
     }
     expect(DEFAULT_WORKOUT_CATEGORIES).toEqual([
       { id: "soccer", label: "Soccer" }, { id: "speedAgility", label: "Speed/agility" }, { id: "core", label: "Core" },
-      { id: "gym", label: "Strength" }, { id: "yoga", label: "Mobility/recovery" }, { id: "hiit", label: "HIIT" },
+      { id: "gym", label: "Strength" }, { id: "yoga", label: "Mobility" }, { id: "recovery", label: "Recovery" },
+      { id: "hiit", label: "HIIT" },
     ]);
+  });
+
+  it("accepts Recovery and other new ids with a known composer, and keeps a valid prompt", () => {
+    const parsed = workoutCategoryRegistry(registry([
+      { id: "yoga", label: "Mobility", composer: "yoga", prompt: "What should we loosen up today?" },
+      { id: "recovery", label: "Recovery", composer: "yoga", prompt: "  How do you feel after training?  " },
+      { id: "futsal", label: "Futsal", composer: "fieldBuilder" },
+    ]));
+    expect(parsed).toEqual([
+      { id: "yoga", label: "Mobility", prompt: "What should we loosen up today?" },
+      { id: "recovery", label: "Recovery", prompt: "How do you feel after training?" },
+      { id: "futsal", label: "Futsal" },
+    ]);
+    expect(workoutCategoryRegistry(registry([{ id: "recovery", label: "Recovery", composer: "yoga", prompt: "x".repeat(120) }])))
+      .toEqual([{ id: "recovery", label: "Recovery", prompt: "x".repeat(120) }]);
   });
 
   it("takes labels and order from a valid registry", () => {
@@ -99,6 +115,9 @@ describe("workout category registry", () => {
     ["a blank label", registry([{ id: "soccer", label: "  " }])],
     ["a bad id", registry([{ id: "two words", label: "Soccer" }])],
     ["an unknown composer", registry([{ id: "soccer", label: "Soccer", composer: "teleport" }])],
+    ["a blank prompt", registry([{ id: "recovery", label: "Recovery", composer: "yoga", prompt: " " }])],
+    ["a prompt over 120 characters", registry([{ id: "recovery", label: "Recovery", composer: "yoga", prompt: "x".repeat(121) }])],
+    ["a prompt that is not text", registry([{ id: "recovery", label: "Recovery", composer: "yoga", prompt: 7 }])],
   ])("treats a registry with %s as missing", (_, config) => {
     expect(workoutCategoryRegistry(config)).toBe(DEFAULT_WORKOUT_CATEGORIES);
   });
@@ -131,6 +150,19 @@ describe("workout category groups", () => {
     ] } });
     expect(workoutCategoryGroups(drills, of, registry).map(g => `${g.label} ${g.count}`)).toEqual([
       "Futsal 1", "Trunk 2", "Soccer 1", "Speed/agility 2",
+    ]);
+  });
+
+  it("keeps MOB rows in Mobility and never lists Recovery, which holds no catalog drills", () => {
+    const withMobility = [...drills, { drillId: "MOB-001", domain: "strength" }, { drillId: "HIT-001", domain: "strength" }];
+    expect(workoutCategoryOf("MOB-001", { domain: "strength" })).toBe("yoga");
+    expect(workoutCategoryGroups(withMobility, of).map(g => g.id)).toEqual(["soccer", "speedAgility", "core", "yoga", "hiit", "futsal"]);
+    const registry = workoutCategoryRegistry({ workoutCategories: { schemaVersion: 1, categories: [
+      { id: "hiit", label: "HIIT", composer: "composed" }, { id: "recovery", label: "Recovery", composer: "yoga" },
+      { id: "yoga", label: "Mobility", composer: "yoga" }, { id: "soccer", label: "Soccer", composer: "fieldBuilder" },
+    ] } });
+    expect(workoutCategoryGroups(withMobility, of, registry).map(g => g.label)).toEqual([
+      "HIIT", "Mobility", "Soccer", "Speed/agility", "Core", "futsal",
     ]);
   });
 });
