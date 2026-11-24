@@ -37,7 +37,8 @@ export function usageShare(value: number | null, total: number | null) {
 }
 export function usageChangeSummary(segment: UsageCohorts['segments'][UsageSegmentKey]) {
   const { current, previous, groups } = segment;
-  if (current.status === 'unavailable' || previous.status === 'unavailable') return 'A weekly comparison is not yet available for this platform.';
+  if (current.status === 'unavailable' || current.activePlayers === null) return 'A weekly comparison is not yet available for this platform. Supported player-account activity has not established coverage for the selected week. Existing usage totals may include older clients and linked parents.';
+  if (previous.status === 'unavailable' || previous.activePlayers === null) return `${current.activePlayers} ${current.activePlayers === 1 ? 'player' : 'players'} with recorded activity this week. Previous-week coverage is unavailable, so returns and absences cannot yet be compared.`;
   const count = (value: number | null) => value === null ? 'unavailable' : String(value);
   return `${count(current.activePlayers)} players active this week so far; ${count(previous.activePlayers)} last week. `
     + `${count(groups.retained)} active in both weeks, ${count(groups.added)} added to this week’s active group, `
