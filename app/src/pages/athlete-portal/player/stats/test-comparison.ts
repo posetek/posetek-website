@@ -90,22 +90,45 @@ export function splitRow(split: Split, mine: number | null | undefined, team: nu
 const DAY_WINDOW = 36 * 3_600_000;
 type Scored = { rep: Row; value: number };
 const scored = (test: MetricTest, reps: Row[]): Scored[] => reps
-  .filter(rep => !test.side || !rep.protocolSide || rep.protocolSide === test.side)
+  .filter(rep => !test.side || rep.protocolSide === test.side)
   .map(rep => ({ rep, value: metricValue(rep, test.field) }))
   .filter((item): item is Scored => item.value !== null);
 const best = (test: MetricTest, items: Scored[]): Scored => items.reduce((top, item) => (test.higher ? item.value > top.value : item.value < top.value) ? item : top);
 const onDay = (items: Scored[], testDateMillis: number) => items.filter(item => Math.abs(createdMillis(item.rep) - testDateMillis) <= DAY_WINDOW);
 
+/** The report's timestamp identifies the capture even when an older effective row omits protocolSide. */
+function reportedRep(metric: ReportMetric, test: MetricTest, reps: Row[], testDateMillis: number, target: number): Row | null {
+  if (!Number.isFinite(target) || (metric.status !== 'measured' && metric.status !== 'estimate')) return null;
+  const tolerance = 0.5 / 10 ** test.digits + 1e-9;
+  const matches = reps.filter(rep => {
+    if (rep.resultStatus?.duplicate) return false;
+    const review = rep.reviewedResult;
+    if (metric.status === 'estimate' && (review?.status !== 'estimate' || review.metric !== test.field ||
+      !review.revisionId || review.revisionId !== rep.resultStatus?.revisionId)) return false;
+    const side = rep.protocolSide ?? review?.protocolSide;
+    if (test.side && side && side !== test.side) return false;
+    const recorded = createdMillis(rep);
+    if (metric.recordedAtMillis != null) {
+      if (recorded !== metric.recordedAtMillis) return false;
+    } else if ((test.side && side !== test.side) || Math.abs(recorded - testDateMillis) > DAY_WINDOW) return false;
+    const value = metric.status === 'estimate' ? review.value : metricValue(rep, test.field);
+    return typeof value === 'number' && Math.abs(value * test.scale - target) <= tolerance;
+  });
+  return matches.length === 1 ? matches[0] : null;
+}
+
 /**
- * The athlete's rep to replay for one report metric: the rep that carries the reported value; else
- * the best rep of the testing day; else the best rep of the test. Null when none has a value.
+ * Course-specific and reviewed results need a matching capture. Other tests retain their existing
+ * best-rep fallback.
  */
 export function bestRep(metric: ReportMetric, reps: Record<string, Row[]>, testDateMillis: number): Row | null {
   const test = METRIC_TESTS[metric.id];
   if (!test) return null;
-  const all = scored(test, reps[test.drill] || []);
-  if (!all.length) return null;
+  const candidates = reps[test.drill] || [];
   const target = metric.result ? Number(metric.result.split(' ')[0]) : NaN;
+  if (test.side || metric.status === 'estimate') return reportedRep(metric, test, candidates, testDateMillis, target);
+  const all = scored(test, candidates);
+  if (!all.length) return null;
   if (Number.isFinite(target)) {
     const tolerance = 0.5 / 10 ** test.digits + 1e-9;
     const exact = all.filter(item => Math.abs(item.value * test.scale - target) <= tolerance);
