@@ -1,13 +1,18 @@
-// Drill catalog browser: every drill in the catalog, filterable by category
-// (the plan's training domains) and by name search. Picking a drill hands it
-// to the dosage popup — this component never writes anything.
+// Drill catalog browser: every drill in the catalog, filterable by workout
+// category (each drill's one home, `workoutCategory` or its fallback) and by
+// name search. Picking a drill hands it to the dosage popup — this component
+// never writes anything.
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { domainName, domainShortName } from "../../athlete-portal/lib/training";
-import { loadDrillCatalog } from "../lib/data";
+import { domainShortName } from "../../athlete-portal/lib/training";
+import { DEFAULT_WORKOUT_CATEGORIES, workoutCategoryGroups, workoutCategoryOf } from "../../../lib/contracts/workoutCategory";
+import type { WorkoutCategory } from "../../../lib/contracts/workoutCategory";
+import { loadDrillCatalog, loadWorkoutCategories } from "../lib/data";
 import { PREVIEW_CATALOG } from "../lib/preview";
+
+const categoryOf = (drill: any) => workoutCategoryOf(String(drill?.drillId || ""), drill);
 
 interface DrillPickerProps {
   existingDrillIds: string[];
@@ -26,6 +31,14 @@ export default function DrillPicker({ existingDrillIds, preview, onPick, onClose
   const [state, setState] = useState<CatalogState>({ kind: "loading" });
   const [category, setCategory] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [registry, setRegistry] = useState<readonly WorkoutCategory[]>(DEFAULT_WORKOUT_CATEGORIES);
+
+  useEffect(() => {
+    if (preview) return;
+    let live = true;
+    void loadWorkoutCategories().then(categories => { if (live) setRegistry(categories); });
+    return () => { live = false; };
+  }, [preview]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -43,22 +56,16 @@ export default function DrillPicker({ existingDrillIds, preview, onPick, onClose
       .catch(error => setState({ kind: "error", message: error?.message || "The drill catalog could not be loaded." }));
   }, [preview]);
 
-  const categories = useMemo(() => {
-    if (state.kind !== "ready") return [];
-    const seen = new Map<string, number>();
-    for (const drill of state.drills) {
-      const domain = String(drill?.domain || "");
-      if (!domain) continue;
-      seen.set(domain, (seen.get(domain) ?? 0) + 1);
-    }
-    return [...seen.entries()].sort((a, b) => domainName(a[0]).localeCompare(domainName(b[0])));
-  }, [state]);
+  const categories = useMemo(
+    () => state.kind === "ready" ? workoutCategoryGroups(state.drills, categoryOf, registry) : [],
+    [state, registry],
+  );
 
   const shown = useMemo(() => {
     if (state.kind !== "ready") return [];
     const term = search.trim().toLowerCase();
     return state.drills
-      .filter(drill => category === "all" || String(drill?.domain || "") === category)
+      .filter(drill => category === "all" || categoryOf(drill) === category)
       .filter(drill => !term
         || String(drill?.name || "").toLowerCase().includes(term)
         || String(drill?.targetQuality || "").toLowerCase().includes(term))
@@ -93,14 +100,14 @@ export default function DrillPicker({ existingDrillIds, preview, onPick, onClose
           <button type="button" className={`focus-chip toggle ${category === "all" ? "active" : ""}`} onClick={() => setCategory("all")}>
             All
           </button>
-          {categories.map(([domain, count]) => (
+          {categories.map(group => (
             <button
-              key={domain}
+              key={group.id}
               type="button"
-              className={`focus-chip toggle ${category === domain ? "active" : ""}`}
-              onClick={() => setCategory(domain)}
+              className={`focus-chip toggle ${category === group.id ? "active" : ""}`}
+              onClick={() => setCategory(group.id)}
             >
-              {domainShortName(domain)} <span className="dim">{count}</span>
+              {group.label} <span className="dim">{group.count}</span>
             </button>
           ))}
         </div>
