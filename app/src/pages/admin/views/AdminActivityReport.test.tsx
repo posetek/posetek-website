@@ -81,7 +81,10 @@ describe('admin activity reporting presentation', () => {
     data.players[0] = { ...data.players[0], adminReporting: { ...facts, workouts: { latest: phone, recent: [phone, saved] } } };
     const html = render('workouts', data);
     expect(html).toContain('<th scope="col">Latest workout</th>');
-    expect(html).toContain('<strong>Yoga · on the phone</strong>');
+    expect(html).toContain('<strong>Mobility · on the phone</strong>');
+    const recovery = { ...phone, workoutCategory: 'recovery' };
+    data.players[0] = { ...data.players[0], adminReporting: { ...facts, workouts: { latest: recovery, recent: [recovery, saved] } } };
+    expect(render('workouts', data)).toContain('<strong>Recovery · on the phone</strong>');
     expect(html).not.toContain('workoutSource=onDevice');
     // The expanded list is opened by a click; its content is checked through the component's own list.
     expect(html).toContain('Show recent workouts');

@@ -15,6 +15,8 @@ export interface AdminActivityRequest { version: 1; followUp: AdminActivityFollo
  * which has no saved log to open and carries its kind of training in `type`. */
 export interface AdminPlayerWorkout {
   source: "workoutLogs" | "personalWorkoutLogs" | "onDevice"; logId: string | null; title: string; type?: string;
+  /** `recovery` marks a yoga session as Recovery, when the reporting service sends it. */
+  workoutCategory?: string;
   startedAtMillis: number | null; endedAtMillis: number | null; status: string;
   timerMinutes: number | null; estimatedMinutes: number | null; setsCompleted: number;
 }

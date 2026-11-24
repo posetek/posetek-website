@@ -25,7 +25,7 @@ export default function WorkspaceWorkouts({ data, request, onChange }: {
     {workouts.types && (workouts.types.length
       ? <ActivityChart title="Workouts by type" labels={workouts.types.map(row => workoutTypeLabel(row.key))} rowLabel="Type" unit="workouts"
         series={[{ label: "Started", values: workouts.types.map(row => row.started) }, { label: "Completed as logged", values: workouts.types.map(row => row.completed) }]}
-        note="The kind of training for every workout started or completed in this period. A saved workout without a recorded type is field training. Yoga, runs, rides and walks are recorded on the player’s phone." />
+        note="The kind of training for every workout started or completed in this period. A saved workout without a recorded type is field training. Mobility, Recovery, runs, rides and walks are recorded on the player’s phone." />
       : <section className="insights-card"><h2>Workouts by type</h2><p className="insights-note">No workouts in this period.</p></section>)}
     <ActivityChart title="Workout activity by week" labels={weeks.labels} series={[{ label: "Started", values: weeks.values[0] }, { label: "Completed as logged", values: weeks.values[1] }]} unit="logs"
       note="Starts use the recorded start date; completions use the recorded end date. A workout may start before this period and finish within it. These series do not measure workout generation or a completion rate." />
