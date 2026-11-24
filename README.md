@@ -1,5 +1,9 @@
 # PoseTek website
 
+## Player Stats team comparisons — November 23, 2026
+
+Production `6b04fd8896e9795b3e78fca2` serves runtime `acb1e65` from website PR #177 with the backend comparison update from PR #200. Player Stats uses the saved score for the selected side and the report’s authorized team average. Signed-in checks covered six side selections across three players. The protected baseline contains 3,000 files and 37 local recovery mappings. [Production receipt](docs/releases/receipts/PLAYER_STATS_TEAM_COMPARISONS_PRODUCTION.json)
+
 ## Admin tab persistence release — November 5, 2026
 
 Deployment `6aec430f45bc0d0841566ba7` was published at
