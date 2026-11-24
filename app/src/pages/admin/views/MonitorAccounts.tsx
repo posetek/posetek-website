@@ -178,7 +178,7 @@ function PlayerLookup({ source, state, choose, navigateScope, organizations, dir
   const rows = index ? unassigned ? unassignedDirectoryPlayers(index.players, index.organizations, index.coaches, index.teams) : directoryPlayers(index.players, state.search) : [];
   return <PlayerReporting state={state} choose={choose} scope={{ kind: "global" }} canonicalOrganizationIds={organizations.map(org => org.id)} accountRows={used ? rows.slice(0, 40) : undefined} enabled scopeLabel="All current organizations" showPeople={people}
     afterGraphs={!people ? metrics => <OrganizationDirectory organizations={organizations} status={directoryStatus} retry={retryOrganizations}
-      counts={metrics.data?.scopeBreakdown.organizations} choose={orgId => navigateScope({ orgId, directoryLevel: "teams" })} /> : undefined}
+      counts={metrics.data?.scopeBreakdown?.organizations} choose={orgId => navigateScope({ orgId, directoryLevel: "teams" })} /> : undefined}
     toolbar={<><h3 className="workspace-roster-heading">Find a player</h3><p className="admin-note">Browse an organization for its full roster, or use the bounded name/email lookup below.</p>
       <label className="directory-search"><span>Player lookup</span><input type="search" value={state.search} placeholder="Enter at least two characters" onChange={event => choose({ directoryLookup: undefined, search: event.target.value, page: 1, reportMode: "directory" }, true)} /></label>
       <button className="quiet-button directory-unassigned" aria-pressed={unassigned} onClick={() => choose({ directoryLookup: unassigned ? undefined : "unassigned", search: "", page: 1, reportMode: "directory" })}>Unassigned players in bounded lookup</button>
@@ -259,22 +259,25 @@ export function PlayerReporting({ state, choose, scope, canonicalOrganizationIds
       document.getElementById("activity-people-title")?.focus();
     }
   }, [activityView, report, metrics.loading, metrics.refreshing, request]);
-  const directoryIndex = activeView === "list" && !showPeople && scope?.kind === "global";
+  // Filtering the organization index opens the global player queue. Keep its
+  // dialog and trigger mounted in the same place as that selection changes.
+  const filtersInHeader = pane === "list" && scope?.kind === "global";
+  const showPlayerSearch = pane === "list" && showPeople && !attention;
   const filters = <DirectoryFilters summary="Changes apply to this reporting scope. Name/email lookup remains separate from reporting filters.">
         <WorkspaceReportControls request={request} disabled={legacy} onChange={update} />
         {!legacy && <DirectoryPlayerFilters request={request} onChange={update} />}
         {displayReport && <div className="pt-insights"><PlayerFilters data={displayReport} request={request} onChange={update} /></div>}
       </DirectoryFilters>;
   return <>
-    <WorkspaceScopeHeader {...metricState} data={displayReport} accountCount={accountCount} accountScopeIsSubset={state.directoryLookup === "unassigned"} scopeLabel={scopeLabel} request={request} breadcrumb={scopeControl} action={directoryIndex ? filters : undefined}>
+    <WorkspaceScopeHeader {...metricState} data={displayReport} accountCount={accountCount} accountScopeIsSubset={state.directoryLookup === "unassigned"} scopeLabel={scopeLabel} request={request} breadcrumb={scopeControl} action={filtersInHeader ? filters : undefined}>
       <DirectoryWorkspaceTabs active={activeView} onePagers={showOnePagers} journey={showJourney} listLabel={showPeople ? "People" : state.orgId ? "Teams" : "Organizations"} onChange={selected => choose({ reportCursor: undefined, reportPage: undefined, reportAdminSort: undefined, reportAdminFollowUp: undefined,
         ...(selected === "list" || selected === "one-pagers" || selected === "journey" ? { directoryPane: selected } : { directoryPane: "report" as const, reportView: selected, reportMode: "directory" as const }) })} />
     </WorkspaceScopeHeader>
     {journey && journeyOrganization ? <PlayerJourneys state={state} choose={choose} organizationId={journeyOrganization} teamId={scope?.kind === "team" ? scope.teamId : undefined} unassigned={state.directoryLookup === "unassigned"}
       teams={journeyTeams} roster={(roster?.players || []).map(player => ({ id: player.id, teamId: player.teamId || null }))} />
     : onePagers && onePagerOrganization ? <OnePagerTracking organizationId={onePagerOrganization} cohortId={state.onePagerCohort} onCohortChange={onePagerCohort => choose({ onePagerCohort })} /> : <>
-    {!directoryIndex && <div className="directory-view-toolbar"><div className="directory-list-search">{pane === "list" && showPeople && !attention ? toolbar : null}</div>
-      {filters}
+    {(!filtersInHeader || showPlayerSearch) && <div className="directory-view-toolbar"><div className="directory-list-search">{showPlayerSearch ? toolbar : null}</div>
+      {!filtersInHeader && filters}
       {pane === "report" && !legacy && <button type="button" className="quiet-button" disabled={metrics.loading || metrics.refreshing} onClick={() => { metrics.refresh(); refreshQueue(); }}>Refresh reporting</button>}
     </div>}
     {displayReport && hasPlayerFilters(request) && <div className="pt-insights directory-active-filters"><PlayerFilters data={displayReport} request={request} onChange={update} /></div>}

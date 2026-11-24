@@ -41,6 +41,21 @@ for (const [engine, engineName] of [[chromium, 'chromium'], [webkit, 'webkit']])
     await club.waitFor();
     const clubBounds = await club.boundingBox();
     check(await club.count() === 1 && clubBounds.y + clubBounds.height <= 960, 'a club can be opened directly in the first viewport');
+    const indexFilters = page.getByRole('button', { name: 'Filters & period', exact: true });
+    const indexDialog = page.getByRole('dialog', { name: 'Filters & period' });
+    const division = indexDialog.getByRole('combobox', { name: 'Division', exact: true });
+    await activate(indexFilters);
+    await division.focus();
+    await division.selectOption('boys');
+    await assertQuery(page, 'reportMode', 'attention');
+    check(await indexDialog.isVisible() && await division.evaluate(element => element === document.activeElement), 'index filter keeps the sheet and focused field when the player queue opens');
+    await indexDialog.getByLabel('Age', { exact: true }).selectOption('10-12');
+    await assertQuery(page, 'reportAgeBand', '10-12');
+    check(query(page).get('reportDivision') === 'boys', 'a second index filter can be combined with the first');
+    await indexDialog.getByRole('button', { name: 'Done', exact: true }).click();
+    await settled(page);
+    check(await indexFilters.evaluate(element => element === document.activeElement), 'closing index filters restores the player queue trigger');
+    await page.goto(url('/admin/accounts'));
     await activate(club);
     await assertQuery(page, 'orgId', 'northfield');
     await page.goto(url(scope));
@@ -178,15 +193,22 @@ for (const [engine, engineName] of [[chromium, 'chromium'], [webkit, 'webkit']])
     await writeFile(join(out, 'failure.json'), JSON.stringify({ engine: engineName, width, url: page.url(), message: String(error), checks, pageErrors }, null, 2));
     throw error;
    } finally { await context.close(); }
-   for (const state of ['loading', 'empty', 'error']) {
+   for (const state of ['loading', 'empty', 'error', 'missing-breakdown']) {
     const context = await browser.newContext({ viewport: { width, height: 960 } }), page = await context.newPage(), errors = [];
     try {
       page.on('pageerror', error => errors.push(error.message));
       await installDirectoryFixture(page, { state });
       await page.goto(url('/admin/accounts'));
       await page.getByRole('heading', { name: 'People & organizations', exact: true }).waitFor();
-      const text = state === 'loading' ? 'Loading organizations…' : state === 'empty' ? 'No organizations yet. Add one in Organization settings.' : 'Synthetic directory unavailable. Retry this read.';
-      await page.getByText(text, { exact: true }).first().waitFor();
+      if (state === 'missing-breakdown') {
+        const club = page.getByRole('button', { name: 'Northfield FC', exact: true });
+        await club.getByText('—', { exact: true }).waitFor();
+        await club.click();
+        await page.getByRole('heading', { name: 'Teams in Northfield FC' }).waitFor();
+      } else {
+        const text = state === 'loading' ? 'Loading organizations…' : state === 'empty' ? 'No organizations yet. Add one in Organization settings.' : 'Synthetic directory unavailable. Retry this read.';
+        await page.getByText(text, { exact: true }).first().waitFor();
+      }
       if (!await noOverflow(page) || errors.length) throw new Error(`${engineName} ${width} ${state}: overflow or page errors`);
       if (!await tabsFitLabels(page)) throw new Error(`${engineName} ${width} ${state}: tab label overflows its target`);
       await page.screenshot({ path: join(out, `${engineName}-${width}-${state}.png`), fullPage: false });

@@ -108,7 +108,7 @@
   .directory-index-count > span { min-width: 3ch; text-align: right; }
   .directory-index-count > i { display: block; height: 4px; width: clamp(48px, 10vw, 144px); background: var(--surface-border); }
   .directory-index-count > i > i { display: block; height: 100%; background: var(--accent); }
-  .directory-landing .workspace-scope-header .directory-filter-trigger { width: auto; }
+  .workspace-scope-header .directory-filter-trigger { width: auto; }
   .admin-directory .directory-navigator { top: calc(var(--workspace-toolbar-height) + 8px); }
   .directory-navigator details { border-radius: var(--admin-card-radius); }
   .directory-navigator summary > svg { transition: transform .15s; }
@@ -129,9 +129,9 @@
     .directory-navigator summary { min-height: 48px; padding: 8px 12px; }
     .directory-navigator summary > span { display: inline-flex; align-items: baseline; gap: 12px; }
     .directory-navigator summary small { margin: 0; }
-    .directory-landing .workspace-scope-heading { flex-wrap: wrap; }
-    .directory-landing .workspace-scope-heading > div { flex: 1 1 auto; }
-    .directory-landing .workspace-scope-heading .directory-filter-trigger { padding: 8px; }
+    .workspace-scope-heading:has(.directory-filter-trigger) { flex-wrap: wrap; }
+    .workspace-scope-heading:has(.directory-filter-trigger) > div { flex: 1 1 auto; }
+    .workspace-scope-heading .directory-filter-trigger { padding: 8px; }
     .directory-index-heading { padding: 12px 40px 12px 12px; }
     .directory-index li button { grid-template-columns: 36px minmax(0, 1fr) auto 16px; gap: 8px; min-height: 64px; padding: 12px; }
     .directory-index strong { font-size: 14px; }

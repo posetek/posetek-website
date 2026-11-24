@@ -124,7 +124,11 @@
       padding-top: max(12px, env(safe-area-inset-top)); transform: translateX(-100%);
       visibility: hidden; pointer-events: none; transition: transform 160ms ease, visibility 160ms;
     }
-    .admin-workspace__rail.is-open { transform: translateX(0); visibility: visible; pointer-events: auto; }
+    .admin-workspace__rail.is-open {
+      transform: translateX(0); visibility: visible; pointer-events: auto;
+      // The close button needs to receive focus as soon as the drawer opens.
+      transition-property: transform;
+    }
     .admin-workspace__rail-intro {
       display: flex; align-items: center; justify-content: space-between; gap: 16px;
       margin: 0 0 16px; padding: 0 0 8px 12px; border-bottom: 1px solid #355748;
