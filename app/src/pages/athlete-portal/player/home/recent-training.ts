@@ -17,7 +17,7 @@ export type BlockLog = { blockId: string; drillId: string; status: string; setsC
 /** One planned block (`WorkoutBlock`), from a log's `workoutSnapshot.blocks` or `sessionBlocks`. */
 export type PlanBlock = { blockId: string; drillId: string; name: string; sets: number; reps: number; repUnit: string; perSide: boolean };
 /** The parts of `PlanWorkout` these rules read. Null when the app's parser would reject the snapshot. */
-export type WorkoutSnapshot = { title: string; blocks: PlanBlock[]; yoga: boolean };
+export type WorkoutSnapshot = { title: string; blocks: PlanBlock[]; yoga: boolean; recovery?: true };
 export type WorkoutLog = {
   id: string;
   endedAt: Date | null;
@@ -26,6 +26,8 @@ export type WorkoutLog = {
   workoutSnapshot: WorkoutSnapshot | null;
   sessionBlocks: PlanBlock[] | null;
   sessionYoga: boolean;
+  /** Set when the log stores `workoutCategory: "recovery"` (a Recovery yoga session). */
+  recovery?: true;
 };
 export type SessionRef = { drillType: string; addedAt: Date };
 export type TrainingSession = { id: string; endedAt: Date | null; sessionRefs: SessionRef[] };
@@ -87,7 +89,7 @@ export function drillSummaryLine(session: TrainingSession): string {
   return labels.length ? labels.join(' · ') : 'No drills yet';
 }
 
-/** The app's `workoutTitle`: the stored title, else the first completed block's name, else Yoga or Workout. */
+/** The app's `workoutTitle`: the stored title, else the first completed block's name, else Mobility, Recovery or Workout. */
 export function workoutTitle(training: RecentTraining, log: WorkoutLog): string {
   const stored = (training.storedWorkoutTitles[log.id] ?? log.workoutSnapshot?.title)?.trim();
   if (stored && stored !== 'Workout') return stored;
@@ -98,7 +100,7 @@ export function workoutTitle(training: RecentTraining, log: WorkoutLog): string 
       ?? training.catalogNames?.[recorded.drillId];
     if (name?.trim()) return name.trim();
   }
-  if (log.sessionYoga || log.workoutSnapshot?.yoga) return 'Yoga';
+  if (log.sessionYoga || log.workoutSnapshot?.yoga) return log.recovery || log.workoutSnapshot?.recovery ? 'Recovery' : 'Mobility';
   return 'Workout';
 }
 
@@ -185,7 +187,7 @@ export function parseWorkoutSnapshot(raw: unknown): WorkoutSnapshot | null {
     // The app also checks that the yoga plan matches its block projection (`YogaPlan.matchesProjection`).
     if (raw.executionPolicy !== YOGA_POLICY || raw.workoutType !== 'yoga' || !isRecord(raw.yoga)) return null;
   }
-  return { title: str(raw.title, 'Workout'), blocks: blocks as PlanBlock[], yoga };
+  return { title: str(raw.title, 'Workout'), blocks: blocks as PlanBlock[], yoga, ...(raw.workoutCategory === 'recovery' ? { recovery: true as const } : {}) };
 }
 
 /** `WorkoutLog.parse`; null for a log the app skips. */
@@ -201,6 +203,7 @@ export function parseWorkoutLog(id: string, data: Data): WorkoutLog | null {
     workoutSnapshot: parseWorkoutSnapshot(data.workoutSnapshot),
     sessionBlocks: Array.isArray(data.sessionBlocks) ? records(data.sessionBlocks).map(parsePlanBlock).filter((block): block is PlanBlock => !!block) : null,
     sessionYoga: isRecord(data.sessionYoga),
+    ...(data.workoutCategory === 'recovery' ? { recovery: true as const } : {}),
   };
 }
 

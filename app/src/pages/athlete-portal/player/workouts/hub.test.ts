@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CATEGORY_STYLE, blockSeconds, blockTimes, breakdownHeadline, countedLogs, durationShort, endReasonChip, findResume, focusArcs, focusCategory, focusSlices, focusSummary,
+import { CATEGORY_STYLE, WORKOUT_TYPE_LABELS, savedWorkoutType, blockSeconds, blockTimes, breakdownHeadline, countedLogs, durationShort, endReasonChip, findResume, focusArcs, focusCategory, focusSlices, focusSummary,
   freeSessionSummary, historyBlockSummary, historyRows, planCardModel, planPagePlan, planSections, resumeBannerText, savedDetailLine, savedEntries, savedWorkouts, weekDrillLine } from './hub';
 import type { Row } from '../execution';
 import { doseLine } from './MyWorkoutPlan';
@@ -17,6 +17,15 @@ describe('training focus, as the app folds it', () => {
   it('names the categories as the app does after the category rework', () => {
     expect(CATEGORY_STYLE.soccer.name).toBe('Soccer'); expect(CATEGORY_STYLE.gym.name).toBe('Strength');
     expect(CATEGORY_STYLE.speed.name).toBe('Speed/agility'); expect(CATEGORY_STYLE.yoga.name).toBe('Mobility');
+  });
+  it('files a saved yoga workout as Mobility, or as Recovery when its workoutCategory says so', () => {
+    expect(WORKOUT_TYPE_LABELS.yoga).toBe('Mobility'); expect(WORKOUT_TYPE_LABELS.recovery).toBe('Recovery');
+    expect(savedWorkoutType({ workoutType: 'yoga' })).toBe('yoga');
+    expect(savedWorkoutType({ workoutType: 'yoga', workoutCategory: 'recovery' })).toBe('recovery');
+    expect(savedWorkoutType({ workoutSnapshot: { workoutType: 'yoga', workoutCategory: 'recovery' } })).toBe('recovery');
+    expect(savedWorkoutType({ params: { workoutType: 'yoga', workoutCategory: 'recovery' } })).toBe('recovery');
+    expect(savedWorkoutType({ workoutType: 'core', workoutCategory: 'recovery' })).toBe('core');
+    expect(savedWorkoutType({})).toBe('field');
   });
   it('files rows under the activity categories', () => {
     expect(focusCategory('dribbling', 'x')).toBe('soccer'); expect(focusCategory('passingReceiving', 'x')).toBe('soccer');

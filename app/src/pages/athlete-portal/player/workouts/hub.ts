@@ -354,7 +354,15 @@ export function planCardModel(plan: Row, logs: Row[], now = new Date()): PlanCar
 }
 
 export type SavedEntry = { id: string; source: 'adhoc' | 'personal'; workout: Row; inProgress: boolean; unavailableReason: string | null; type: string };
-export const WORKOUT_TYPE_LABELS: Record<string, string> = { field: 'On field', gym: 'Gym', core: 'Core', hiit: 'HIIT', fitness: 'Fitness', yoga: 'Yoga' };
+/** A `yoga` workout stored with `workoutCategory: "recovery"` is a Recovery session; the saved list files it as `recovery`. */
+export const WORKOUT_TYPE_LABELS: Record<string, string> = { field: 'On field', gym: 'Gym', core: 'Core', hiit: 'HIIT', fitness: 'Fitness', yoga: 'Mobility', recovery: 'Recovery' };
+
+/** The saved-workout type: the stored workout type, with Recovery split out of `yoga` by its `workoutCategory`. */
+export function savedWorkoutType(w: Row): string {
+  const type = String(w.workoutSnapshot?.workoutType ?? w.workoutType ?? w.params?.workoutType ?? 'field');
+  const category = w.workoutSnapshot?.workoutCategory ?? w.workoutCategory ?? w.params?.workoutCategory;
+  return type === 'yoga' && category === 'recovery' ? 'recovery' : type;
+}
 
 /**
  * `SavedWorkoutEntry.entries` for the web's two kinds of saved workout: the active plan's ad-hoc
@@ -362,7 +370,7 @@ export const WORKOUT_TYPE_LABELS: Record<string, string> = { field: 'On field', 
  * finished personal workout stays listed so an edited copy can be made, as the app's on-device ones do.
  */
 export function savedEntries(adhoc: Row[], adhocLogs: Record<string, Row>, personal: Row[], personalLogs: Record<string, Row>, plan: Row | null, now = new Date()): SavedEntry[] {
-  const type = (w: Row) => String(w.workoutSnapshot?.workoutType ?? w.workoutType ?? w.params?.workoutType ?? 'field');
+  const type = savedWorkoutType;
   const entries: SavedEntry[] = [];
   for (const w of adhoc) {
     if ((w.source ?? 'adhoc') !== 'adhoc') continue;
