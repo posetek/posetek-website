@@ -1,0 +1,3489 @@
+{
+ "schemaVersion": 1,
+ "source": "drillCatalog snapshot 2026-11-22T2210PST-after-publish (catalog 1.0.103)",
+ "plan": "docs/plans/WORKOUT_CATEGORY_REWORK_PLAN.md (decisions D7-D18)",
+ "categoryCounts": {
+  "core": 143,
+  "gym": 275,
+  "hiit": 56,
+  "soccer": 88,
+  "speedAgility": 72,
+  "yoga": 3
+ },
+ "hiitSlotCounts": {
+  "fullBody": 38,
+  "lower": 31,
+  "trunk": 7
+ },
+ "hiitBorrow": [
+  "GYM-001",
+  "GYM-004",
+  "GYM-019",
+  "GYM-002",
+  "GYM-022",
+  "GYM-028",
+  "GYM-044",
+  "GYM-223",
+  "GYM-029",
+  "GYM-033",
+  "GYM-030",
+  "GYM-014",
+  "GYM-155",
+  "GYM-157",
+  "GYM-158",
+  "GYM-159",
+  "GYM-160",
+  "COR-009",
+  "COR-006",
+  "COR-012"
+ ],
+ "hiitUpperEmphasis": [
+  "GYM-155",
+  "GYM-157",
+  "GYM-158",
+  "GYM-159",
+  "GYM-160",
+  "COR-009",
+  "COR-006",
+  "COR-012",
+  "HIT-008",
+  "HIT-031",
+  "HIT-032",
+  "HIT-033",
+  "HIT-034",
+  "HIT-037",
+  "HIT-038",
+  "HIT-039",
+  "HIT-040",
+  "HIT-041",
+  "HIT-042",
+  "HIT-055",
+  "HIT-056",
+  "GYM-033",
+  "GYM-030"
+ ],
+ "gymJumpsToSpeedAgility": [
+  "GYM-031",
+  "GYM-036",
+  "GYM-038",
+  "GYM-054",
+  "GYM-055",
+  "GYM-056",
+  "GYM-057"
+ ],
+ "rows": {
+  "AGL-501": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "AGL-502": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "AGL-503": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "AGL-504": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "AGL-505": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "AGL-506": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "BM-001": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-002": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-003": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-004": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-005": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-006": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-007": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-008": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-009": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-014": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-017": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-018": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-019": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-025": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-026": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BM-027": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BMA-501": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BMA-502": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BMA-503": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "BMA-504": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "COD-001": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "COD-002": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "COD-003": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "COD-004": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "COD-005": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "COD-006": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "COD-007": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "COD-008": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "COD-009": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "COD-010": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "COD-011": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "COD-012": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "COR-001": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-002": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-003": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-004": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-005": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-006": {
+   "workoutCategory": "core",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "published"
+  },
+  "COR-007": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-008": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-009": {
+   "workoutCategory": "core",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "published"
+  },
+  "COR-010": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-011": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-012": {
+   "workoutCategory": "core",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "published"
+  },
+  "COR-013": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-015": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-016": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-017": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-018": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-019": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-020": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-021": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-022": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-023": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-024": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-025": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-026": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-027": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-028": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-029": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-030": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-031": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-032": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-101": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-102": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-103": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-104": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-105": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-106": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-107": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-108": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-109": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-110": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-111": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-112": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-113": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-114": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-115": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-116": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-117": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-118": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-119": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-120": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-121": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-122": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-123": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-124": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-125": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-126": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-127": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-128": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-129": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-130": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-131": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-132": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-133": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-134": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-135": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-136": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-137": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-138": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-139": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-140": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-141": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-142": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-143": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-144": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-145": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-146": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-147": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-148": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-149": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-150": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-151": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-152": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-153": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-154": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-155": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-156": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-157": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-158": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-159": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-160": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-161": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-162": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-163": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-164": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-165": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-166": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-167": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-168": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-169": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-170": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-171": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-172": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-173": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-174": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-175": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-176": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-177": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-178": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-179": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-180": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-181": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-182": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-183": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-184": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-185": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-186": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-187": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-188": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-189": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-190": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-191": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-192": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-193": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-194": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-195": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-196": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-197": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-198": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-199": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-200": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-201": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-202": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-203": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-204": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-205": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-206": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-207": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-208": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-209": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-210": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-211": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "COR-212": {
+   "workoutCategory": "core",
+   "hiit": null,
+   "status": "published"
+  },
+  "DRB-001": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-002": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-003": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-004": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-005": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "DRB-006": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "DRB-007": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-008": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-009": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-010": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-011": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-012": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-013": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-014": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "DRB-501": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "DRB-502": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "DRB-503": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "DRB-504": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "DRB-505": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "DRB-506": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "DRB-507": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "DRB-508": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-001": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "published"
+  },
+  "GYM-002": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "published"
+  },
+  "GYM-003": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-004": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "published"
+  },
+  "GYM-005": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-006": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-007": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-008": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-009": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-010": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-011": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-012": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-013": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-014": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "published"
+  },
+  "GYM-015": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-016": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-017": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-018": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-019": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "published"
+  },
+  "GYM-020": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-021": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-022": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "published"
+  },
+  "GYM-023": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-024": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-025": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-026": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-027": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-028": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "published"
+  },
+  "GYM-029": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "published"
+  },
+  "GYM-030": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "published"
+  },
+  "GYM-031": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-032": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-033": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "published"
+  },
+  "GYM-034": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-035": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-036": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-037": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-038": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-039": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-040": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-041": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-042": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-043": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-044": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "published"
+  },
+  "GYM-045": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-046": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-047": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-048": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-049": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-050": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-051": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-052": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-053": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-054": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-055": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-056": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-057": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-058": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-059": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-060": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-061": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-062": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-063": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-064": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-065": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-066": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-067": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-068": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-069": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-070": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-071": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-072": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-073": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-074": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-075": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-076": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-077": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-078": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-079": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-080": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-081": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-082": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-083": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-084": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-085": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-086": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-087": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-088": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-089": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-090": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-091": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-092": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-093": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-094": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-095": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-096": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-097": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-098": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-099": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-100": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-101": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-102": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-103": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-104": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-105": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-106": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-107": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-108": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-109": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-110": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-111": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-112": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-113": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-114": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-115": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-116": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-117": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-118": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-119": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-120": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-121": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-122": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-123": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-124": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-125": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-126": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-127": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-128": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-129": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-130": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-131": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-132": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-133": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-134": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-135": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-136": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-137": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-138": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-139": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-140": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-141": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-142": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-143": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-144": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-145": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-146": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-147": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-148": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-149": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-150": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-151": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-152": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-153": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-154": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-155": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "published"
+  },
+  "GYM-156": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-157": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "published"
+  },
+  "GYM-158": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "published"
+  },
+  "GYM-159": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "published"
+  },
+  "GYM-160": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "published"
+  },
+  "GYM-161": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-162": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-163": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-164": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-165": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-166": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-167": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-168": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-169": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-170": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-171": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-172": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-173": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-174": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-175": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-176": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-177": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-178": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-179": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-180": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-181": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-182": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-183": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-184": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-185": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-186": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-187": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-188": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-189": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-190": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-191": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-192": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-193": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-194": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-195": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-196": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-197": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-198": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-199": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-200": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-201": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-202": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-203": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-204": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-205": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-206": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-207": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-208": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-209": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-210": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-211": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-212": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-213": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-214": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-215": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-216": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-217": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-218": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-219": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-220": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-221": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-222": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-223": {
+   "workoutCategory": "gym",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "published"
+  },
+  "GYM-224": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-225": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-226": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-227": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-228": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-229": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "GYM-230": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "HIT-001": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-002": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-003": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-004": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-005": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-006": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-007": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-008": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-009": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-010": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-011": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-012": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-013": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-014": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-015": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-016": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-017": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-018": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-019": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-020": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-021": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-022": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-023": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-024": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-025": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-026": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-027": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-028": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-029": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-030": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "trunk",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-031": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-032": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-033": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-034": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-035": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-036": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-037": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-038": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-039": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-040": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-041": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-042": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-043": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "trunk",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-044": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-045": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-046": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-047": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "lower",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-048": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "trunk",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-049": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "trunk",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-050": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-051": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-052": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "trunk",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-053": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "trunk",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-054": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "trunk",
+    "emphasis": null
+   },
+   "status": "draft"
+  },
+  "HIT-055": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HIT-056": {
+   "workoutCategory": "hiit",
+   "hiit": {
+    "category": "fullBody",
+    "emphasis": "upper"
+   },
+   "status": "draft"
+  },
+  "HJP-001": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "HJP-002": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "HJP-003": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "HJP-004": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "HJP-005": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "HJP-006": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "MOB-001": {
+   "workoutCategory": "yoga",
+   "hiit": null,
+   "status": "published"
+  },
+  "MOB-002": {
+   "workoutCategory": "yoga",
+   "hiit": null,
+   "status": "published"
+  },
+  "MOB-003": {
+   "workoutCategory": "yoga",
+   "hiit": null,
+   "status": "published"
+  },
+  "PAS-001": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "PAS-002": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-003": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-004": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-005": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-006": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-007": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-008": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-009": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-010": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-501": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-502": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-503": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-504": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-505": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PAS-506": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-501": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-502": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-503": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-504": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-505": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-506": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-507": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-508": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-509": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-510": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-511": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-512": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-513": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-514": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-515": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "PLY-516": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "RCV-501": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "RCV-502": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "RCV-503": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-001": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-002": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-003": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "SHT-004": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-005": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-006": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-007": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-008": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-009": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-010": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-011": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-012": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-501": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "SHT-502": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "SHT-503": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "SHT-504": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "SHT-505": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "published"
+  },
+  "SHT-506": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SHT-507": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-001": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-002": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "SPD-003": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "SPD-004": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "SPD-005": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-006": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "SPD-007": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-008": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-009": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "SPD-010": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-501": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "SPD-502": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-503": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-504": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-505": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-506": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SPD-507": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SSG-001": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SSG-002": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SSG-003": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SSG-004": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SSG-005": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SSG-006": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SSG-007": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "SSG-008": {
+   "workoutCategory": "soccer",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-001": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": null
+  },
+  "STR-002": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "STR-003": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "STR-004": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "STR-005": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "STR-006": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "STR-007": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": null
+  },
+  "STR-008": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "STR-009": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-010": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-501": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "STR-502": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "published"
+  },
+  "STR-503": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-504": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-505": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-506": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-507": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-508": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-509": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-510": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-511": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-512": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-513": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-514": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-515": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-516": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-517": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-518": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-519": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-520": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-521": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-522": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-523": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-524": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-525": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-526": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-527": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-528": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-529": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-530": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-531": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-532": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-533": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-534": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-535": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-536": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-537": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-538": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-539": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-540": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-541": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "STR-542": {
+   "workoutCategory": "gym",
+   "hiit": null,
+   "status": "draft"
+  },
+  "VJP-001": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "VJP-002": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "VJP-003": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "VJP-004": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "VJP-005": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "VJP-006": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "VJP-007": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": "published"
+  },
+  "VJP-008": {
+   "workoutCategory": "speedAgility",
+   "hiit": null,
+   "status": null
+  }
+ }
+}
