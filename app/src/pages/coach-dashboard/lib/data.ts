@@ -12,8 +12,6 @@ import { readAccessibleLegacyRoster } from "../../../lib/legacy-roster";
 import { auth, cloud, db } from "../../../lib/firebase";
 import { findCoach as findCoachByUid } from "../../../lib/identity";
 import { normalizeStatus } from "../../../lib/contracts/drillV2";
-import { DEFAULT_WORKOUT_CATEGORIES, workoutCategoryRegistry } from "../../../lib/contracts/workoutCategory";
-import type { WorkoutCategory } from "../../../lib/contracts/workoutCategory";
 import { allStatsReps, normalizeRep, accepted } from "../../athlete-portal/lib/metrics";
 import { DRILLS } from "../../athlete-portal/lib/drills";
 import { submitLlmJob } from "../../athlete-portal/lib/loaders";
@@ -139,23 +137,7 @@ export async function loadDrillCatalog(): Promise<any[]> {
   return catalogCache;
 }
 
-let categoriesCache: readonly WorkoutCategory[] | null = null;
-
-/**
- * The picker's category labels and order: `config/llm.workoutCategories` when
- * it can be read and is valid, else the compiled defaults. A failed read is
- * not cached, so the next picker tries again.
- */
-export async function loadWorkoutCategories(): Promise<readonly WorkoutCategory[]> {
-  if (categoriesCache) return categoriesCache;
-  try {
-    const snapshot = await db.collection("config").doc("llm").get();
-    categoriesCache = workoutCategoryRegistry(snapshot.data());
-    return categoriesCache;
-  } catch {
-    return DEFAULT_WORKOUT_CATEGORIES;
-  }
-}
+export { loadWorkoutCategories } from "../../../lib/workout-category-registry";
 
 // MARK: - Plan writes
 

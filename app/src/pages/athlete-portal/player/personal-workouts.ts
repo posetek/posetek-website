@@ -1,6 +1,5 @@
-import { normalizeCatalogDrill } from '../../../lib/contracts/drillV2';
 import type { CatalogDrill } from '../../../lib/contracts/drillV2';
-import { workoutCategoryOf } from '../../../lib/contracts/workoutCategory';
+import { categorizedCatalogDrill } from '../../../lib/contracts/workoutCategory';
 import { blockEstimatedMinutes, blockInputErrors, workoutEstimatedMinutes } from '../../../lib/contracts/expectedMinutes';
 import { blockFromDrill, doseBoundsFor } from '../../admin/lib/editor';
 import { EQUIPMENT } from '../../../lib/contracts/types';
@@ -24,10 +23,7 @@ export function personalWorkoutsEnabled(config: Row | null, preview = false) {
   return ['save_personal_workout', 'start_personal_workout', 'update_personal_workout_log'].every(c => personalCapabilityEnabled(config, c as PersonalCapability, preview));
 }
 /** A catalog row for personal workouts, with its home category: the stored `workoutCategory`, else the fallback. */
-export function personalCatalogDrill(id: string, raw: Row): CatalogDrill {
-  const drill = normalizeCatalogDrill(id, raw), workoutCategory = workoutCategoryOf(id, raw);
-  return workoutCategory ? { ...drill, workoutCategory } : drill;
-}
+export const personalCatalogDrill = (id: string, raw: Row): CatalogDrill => categorizedCatalogDrill(id, raw);
 export const personalExecutionId = (id: string) => `personal_${id}`;
 export function personalExecution(workout: Row, log: Row): Row {
   return { ...log.workoutSnapshot, id: personalExecutionId(workout.workoutId), workoutId: workout.workoutId,

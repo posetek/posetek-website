@@ -13,7 +13,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { domainFromLegacy } from "./drillV2";
+import { domainFromLegacy, normalizeCatalogDrill } from "./drillV2";
+import type { CatalogDrill } from "./drillV2";
 
 export type WorkoutCategoryId = "soccer" | "speedAgility" | "core" | "gym" | "yoga" | "hiit";
 
@@ -67,6 +68,12 @@ export function workoutCategoryOf(drillId: string, raw: any): string | null {
   const stored = raw?.workoutCategory;
   if (typeof stored === "string" && CATEGORY_ID.test(stored)) return stored;
   return derivedWorkoutCategory(drillId, raw?.domain);
+}
+
+/** `normalizeCatalogDrill` plus the drill's home category, when one applies. Read-only: no write carries it. */
+export function categorizedCatalogDrill(id: string, raw: any): CatalogDrill {
+  const drill = normalizeCatalogDrill(id, raw), workoutCategory = workoutCategoryOf(id, raw);
+  return workoutCategory ? { ...drill, workoutCategory } : drill;
 }
 
 /**
