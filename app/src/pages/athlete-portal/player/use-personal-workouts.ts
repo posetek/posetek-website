@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import firebase, { auth, db } from '../../../lib/firebase';
-import { normalizeCatalogDrill } from '../../../lib/contracts/drillV2';
 import type { CatalogDrill } from '../../../lib/contracts/drillV2';
 import type { Row } from './execution';
 import type { PlayerWorkoutStore } from './use-player-workouts';
-import { addPersonalDrill, eligiblePersonalDrill, ensurePersonalSubmission, latestPersonalRevision, personalCapabilityEnabled, personalDraft, personalEndReason, personalExecution, personalExecutionId, personalGenerationErrors, personalJobKey, personalLogRows, personalWorkoutsEnabled, recomputePersonalDraft, restorePersonalJob } from './personal-workouts';
+import { addPersonalDrill, eligiblePersonalDrill, ensurePersonalSubmission, personalCatalogDrill, latestPersonalRevision, personalCapabilityEnabled, personalDraft, personalEndReason, personalExecution, personalExecutionId, personalGenerationErrors, personalJobKey, personalLogRows, personalWorkoutsEnabled, recomputePersonalDraft, restorePersonalJob } from './personal-workouts';
 import type { PendingPersonalJob, PersonalCapability } from './personal-workouts';
 import { checkedPersonalConversation, checkedPersonalProposal, orderedPersonalMessages, personalProposalWithPublication, personalPublishParams, personalRefinementParams, personalTimestamp, publishedPersonalWorkoutId, readPersonalConversation, restorePersonalSelection } from './personal-workout-conversations';
 import type { PersonalSelection } from './personal-workout-conversations';
@@ -18,7 +17,7 @@ const sampleCatalog = [
   { drillId: 'DRB-005', name: 'Cone maze', domain: 'dribbling', equipment: ['ball', 'cones'] },
   { drillId: 'PAS-001', name: 'Wall pass rhythm', domain: 'passing', equipment: ['ball', 'wall'] },
   { drillId: 'BMA-001', name: 'Close-control touches', domain: 'ballMastery', equipment: ['ball'] },
-].map(d => normalizeCatalogDrill(d.drillId, { ...d, schemaVersion: 2, status: 'published', minAge: 5, maxAge: 80, difficultyLevel: 1, maxFrequencyPerWeek: 7, dose: { setsMin: 1, setsMax: 4, repsMin: 20, repsMax: 90, repUnit: 'seconds', restSecondsMin: 15, restSecondsMax: 60 }, howTo: { setup: 'Use an open, safe space.', steps: ['Keep each repetition controlled.'] } }));
+].map(d => personalCatalogDrill(d.drillId, { ...d, schemaVersion: 2, status: 'published', minAge: 5, maxAge: 80, difficultyLevel: 1, maxFrequencyPerWeek: 7, dose: { setsMin: 1, setsMax: 4, repsMin: 20, repsMax: 90, repUnit: 'seconds', restSecondsMin: 15, restSecondsMax: 60 }, howTo: { setup: 'Use an open, safe space.', steps: ['Keep each repetition controlled.'] } }));
 
 export function usePersonalWorkouts(playerId: string, preview: boolean, config: Row | null) {
   const enabled = personalWorkoutsEnabled(config, preview);
@@ -183,7 +182,7 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
       player.collection('personalWorkouts').onSnapshot(s => { current.current.workouts = s.docs.map(d => latestPersonalRevision(current.current.workouts.find(w => w.workoutId === d.id), { ...d.data(), id: d.id })); setWorkouts(current.current.workouts); setLoaded(true); }, e => setError(e.message)),
       player.collection('personalWorkoutLogs').onSnapshot(s => { current.current.logs = Object.fromEntries(s.docs.map(d => [d.id, latestPersonalRevision(current.current.logs[d.id], { ...d.data(), id: d.id })])); setLogs(current.current.logs); }, e => setError(e.message)),
       player.collection('workoutSchedule').doc('current').onSnapshot(d => { current.current.scheduleRevision = Math.max(current.current.scheduleRevision || 0, Number(d.data()?.revision || 0)); setScheduleRevision(current.current.scheduleRevision); }, e => setError(e.message)),
-      db.collection('drillCatalog').where('status', '==', 'published').onSnapshot(s => setCatalog(s.docs.map(d => normalizeCatalogDrill(d.id, d.data()))), e => setError(e.message)),
+      db.collection('drillCatalog').where('status', '==', 'published').onSnapshot(s => setCatalog(s.docs.map(d => personalCatalogDrill(d.id, d.data()))), e => setError(e.message)),
       player.collection('aiConversations').where('capability', '==', 'generate_personal_workout').where('createdByUid', '==', uid).onSnapshot(s => {
         if (generation.current !== token) return;
         setConversations(s.docs.map(d => ({ ...d.data(), id: d.id, conversationId: d.id })).sort((a: Row, b: Row) => personalTimestamp(b.lastMessageAt) - personalTimestamp(a.lastMessageAt)));

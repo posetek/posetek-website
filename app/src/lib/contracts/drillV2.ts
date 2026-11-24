@@ -57,6 +57,11 @@ export interface CatalogDrill {
    * contract §3.1). Absent means "not required". The web console never writes it.
    */
   validation?: CatalogValidation;
+  /**
+   * The drill's one home category, stored or derived (`workoutCategoryOf`).
+   * `normalizeCatalogDrill` leaves it unset; readers that group by category add it.
+   */
+  workoutCategory?: string;
 }
 
 export interface CatalogValidation {
