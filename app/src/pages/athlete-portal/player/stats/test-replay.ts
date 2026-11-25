@@ -1,8 +1,11 @@
 // Loading for the Stats pose player: one rep's files, its replay built for the homepage demo's
-// controller (rep-sequence.ts), and the team median's, all kept in memory (lib/replay-cache.ts)
+// controller (rep-sequence.ts), kept in memory (lib/replay-cache.ts)
 // so switching cards, or coming back to one, loads nothing twice. Cached replays are shared:
 // read-only (alignment and smoothing build new objects).
 
+import { poseFrames } from '../../../../lib/pose-playback';
+import type { PoseFrame } from '../../../home/pose-demo';
+import { parseTracking } from '../../../../lib/replay-tracking';
 import { storage } from '../../../../lib/firebase';
 import { drillByKey } from '../../lib/drills';
 import type { Drill } from '../../lib/drills';
@@ -14,16 +17,17 @@ import { warmRepFiles } from '../../lib/warm-rep-files';
 import { loadRepReplay } from '../../views/SessionView';
 import type { Row } from '../execution';
 import type { AthleteTestReport } from '../report';
-import { buildRepReplay } from './rep-sequence';
+import { NOMINAL_FPS, buildRepReplay, clipWindow, frameRate, pictureSize } from './rep-sequence';
 import type { RepFiles, RepReplay } from './rep-sequence';
-import { METRIC_TESTS, bestRep, loadTeamComparison } from './test-comparison';
+import type { AnonymousMedian } from './test-comparison';
+import { METRIC_TESTS, bestRep } from './test-comparison';
 
-export const STAFF: Access[] = ['admin', 'manager', 'coach'];
+const STAFF: Access[] = ['admin', 'manager', 'coach'];
 const MEMORY_MS = 5 * 60_000;
 
 /**
  * Whether a drill's replay shows the team median as a faint figure: the runs do; the two jumps show
- * the team average as a reference line instead (Nolan, 2026-11-11), so their median is never loaded.
+ * the team average as a reference line instead (Nolan, 2026-11-11).
  */
 export const teamShadow = (drillKey: string) => drillKey !== 'jump' && drillKey !== 'broadJump';
 
@@ -81,29 +85,53 @@ async function loadRepFiles(drill: Drill, rep: Row, access: Access, playerId: st
 /** A rough size for the memory budget: pose frames dominate. */
 const replaySize = (replay: RepReplay | null) => replay ? 2048 + replay.sequence.frames.length * 33 * 24 + (replay.sequence.centerLine?.length ?? 0) * 40 : 256;
 
-/** One rep's replay, built once and kept: the athlete's own, or the team median's for the shadow. */
+/** The athlete's own replay, built once per revision. */
 export function repReplay(drill: Drill, rep: Row, access: Access, playerId: string): Promise<RepReplay | null> {
   return remember(`replay:${access}:${playerId}:${drill.key}:${rep.id}:${rep.resultStatus?.revisionId ?? ''}`,
     async () => buildRepReplay(await loadRepFiles(drill, rep, access, playerId)), MEMORY_MS, { size: replaySize });
 }
 
-/**
- * Loads every test's replay in the background once the report is there, so the first click on
- * each score card is instant: the rep files first (lib/warm-rep-files.ts, after the browser is
- * idle), then each built replay and, for staff on a testing-event report, the team comparison and
- * (runs only, `teamShadow`) the team median's replay.
- * Never rejects; anything that fails loads again when its card is opened.
- */
-export async function warmStatsReplays(report: AthleteTestReport, reps: Record<string, Row[]>, athlete: Row, access: Access, playerId: string): Promise<void> {
+// COCO's 17 recorded joints, in the MediaPipe order the canvas draws.
+const COCO_TO_MEDIAPIPE = [0, 2, 5, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28];
+
+/** Draw the anonymous payload in memory. Older stations supply pose landmarks instead of tracking boxes. */
+export function medianReplay(drill: Drill, median: AnonymousMedian | null): RepReplay | null {
+  if (!median?.artifacts || !teamShadow(drill.key)) return null;
+  const metadata = { ...(median.artifacts['metadata.json'] as Row | undefined), ...median.rep };
+  const tracking = parseTracking(median.artifacts['tracking.json'], metadata);
+  const files: RepFiles = { drill: drill.key, rep: median.rep, metadata, tracking, frames: [], json: {}, video: null };
+  if (tracking) return buildRepReplay(files);
+  if (metadata.poseComputed === false) return null;
+  const frames = poseFrames(median.artifacts['pose.json'], metadata).map(points => {
+    const frame: PoseFrame = Array(33).fill(null);
+    if (points.length === 17 || points.length === 33) points.forEach(({ x, y }, index) => {
+      if (x !== null && y !== null) frame[points.length === 17 ? COCO_TO_MEDIAPIPE[index] : index] = [x, y];
+    });
+    return frame;
+  });
+  const usable = frames.flatMap((frame, index) => frame[23] && frame[24] ? [index] : []);
+  if (!usable.length) return null;
+  const measured = frameRate(files, frames.length), fps = measured ?? NOMINAL_FPS;
+  const start = median.rep.startFrame ?? null, finish = median.rep.endFrame ?? median.rep.finishFrame ?? null;
+  const [first, last] = clipWindow(usable, fps, start, finish, .5, .75)!;
+  const size = pictureSize(metadata), aspect = size ? size.width / size.height : 16 / 9;
+  const visible = frames.slice(first, last + 1);
+  const opening = visible.find(frame => frame[23] && frame[24]);
+  if (!opening) return null;
+  return {
+    sequence: { key: drill.key, title: '', label: '', metrics: [], markers: {}, fps, sourceAspectRatio: aspect, frames: visible },
+    anchor: start !== null && start >= first && start <= last ? start - first : null, nominalRate: measured === null, metadata,
+    scene: { aspect, groundY: null, metersPerWidth: null, originX: (opening[23]![0] + opening[24]![0]) / 2, direction: null },
+  };
+}
+
+/** Warm the athlete's own replays. An event comparison reads the cohort only when its card is opened. */
+export async function warmStatsReplays(report: AthleteTestReport, reps: Record<string, Row[]>, access: Access, playerId: string): Promise<void> {
+  if (report.playerId !== playerId) return;
   const items = report.metrics.flatMap(metric => {
     const test = METRIC_TESTS[metric.id], rep = test ? bestRep(metric, reps, report.testDateMillis) : null;
-    return test && rep ? [{ metric, drill: drillByKey(test.drill), rep }] : [];
+    return test && rep ? [{ drill: drillByKey(test.drill), rep, playerId, access }] : [];
   });
-  await warmRepFiles(items.map(({ drill, rep }) => ({ drill, rep, playerId, access })));
-  for (const { metric, drill, rep } of items) {
-    await repReplay(drill, rep, access, playerId).catch(() => null);
-    if (report.kind !== 'event' || !STAFF.includes(access)) continue;
-    const team = await loadTeamComparison(metric, athlete, playerId, report.testDateMillis).catch(() => null);
-    if (team?.median && teamShadow(drill.key)) await repReplay(drill, team.median.rep, access, team.median.playerId).catch(() => null);
-  }
+  await warmRepFiles(items);
+  for (const { drill, rep } of items) await repReplay(drill, rep, access, playerId).catch(() => null);
 }

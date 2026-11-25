@@ -59,6 +59,7 @@ export function useWorkspaceMetrics({scope,search,playerIds,enabled=true,include
  const mode=window.fixtureState;
  const reportingError=mode==='error'||mode==='reporting-error-first'&&revision===0;
  const data=enabled&&scope&&!reportingError&&mode!=='loading'?previewInsights(request,0,mode==='empty'?'empty':'longNames'):null;
+ if (data && mode === 'missing-breakdown') delete data.scopeBreakdown;
  if(data){const all=Array.from({length:4},(_,p)=>previewInsights(request,p,'longNames').players).flat();data.rosterMetrics=(playerIds||[]).map(id=>{const player=all.find(p=>p.id===id);return player?{playerId:id,status:'included',player}:{playerId:id,status:'excluded'}});}
  if(data && includeUsageCohorts && window.fixtureUsageStory) {
   const usageCohorts=usageStoryFixture(); usageCohorts.windows.current.endDate=request.endDate;

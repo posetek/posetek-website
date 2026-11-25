@@ -1,0 +1,132 @@
+{
+  "status": "published-and-verified",
+  "source": {
+    "websitePullRequest": "https://github.com/posetek/posetek-website/pull/177",
+    "websiteHead": "f65976aaa071d9be134d2873f06f282960d99572",
+    "websiteMerge": "b71a448c87bde52c68f19f30b6eac2970c507b49",
+    "servicePullRequest": "https://github.com/posetek/posetek-backend/pull/200",
+    "runtimeBranch": "runtime/player-stats-team-comparisons-20261123",
+    "runtimeCommit": "acb1e658cd483e80dbd5d307776b756aa7c3499c",
+    "reconstructedPredecessorRuntimeCommit": "e6379f908ff3c99e9af5063b0344db9f1c3847dd",
+    "previousRuntimeRecordedInReceipt": "7e49414b45eaeba712787770419f61d87ae58953",
+    "prepatchAssetMatches": 179,
+    "prepatchAssetCount": 179,
+    "prepatchEntryEquivalence": "The application document matches the predecessor after normalizing its generated Astro island UID. The published document keeps the exact predecessor UID.",
+    "runtimeCodeFiles": 4,
+    "runtimeTestFiles": 3
+  },
+  "deployment": {
+    "site": "posetek.net",
+    "previous": "6afc9a00df67a95b26d453b0",
+    "preview": "6b04fd259a5db7bbd5fb3186",
+    "production": "6b04fd8896e9795b3e78fca2",
+    "publishedAtUtc": "2026-11-24T02:59:22.371Z",
+    "netlifyTitle": "Player Stats team comparisons • GitHub PR #177 • b71a448c87bde52c68f19f30b6eac2970c507b49",
+    "previousEntrySha256": "f2b1de54832e582d4bcef97061262d360be885a1001da468727480d8a20cf025",
+    "productionEntrySha256": "2bd0d9482d9575cb54189e7a1859a93510aa188e48cae6349c88d59cea5b4297",
+    "runtimeAssetChanges": {
+      "AthletePortalPage.k5QwcqnH.js": "AthletePortalPage.BXt7e9aZ.js",
+      "SupportPage.B6k7mHbH.js": "SupportPage.BkCvzqMN.js",
+      "ApplicationRoot.BqhCx_z-.js": "ApplicationRoot.C0U-7UWF.js"
+    }
+  },
+  "preservation": {
+    "priorServedFiles": 2999,
+    "unchangedPriorServedFiles": 2998,
+    "replacedPriorServedFiles": [
+      "/application.html"
+    ],
+    "addedHashedAssets": [
+      "/_astro/applicationroot.c0u-7uwf.js",
+      "/_astro/athleteportalpage.bxt7e9az.js",
+      "/_astro/supportpage.bkcvzqmn.js"
+    ],
+    "removedFiles": 0,
+    "productionServedFiles": 3002,
+    "providerRecords": 3003,
+    "unchangedEncryptedReports": 114,
+    "unchangedReportReader": true,
+    "unchangedSignInEntry": true,
+    "unchangedFunctionBindings": true,
+    "orderedHeaderRules": 13,
+    "orderedRedirectRules": 12,
+    "unchangedPlatformConfigSha1": "696de7c78bf08055ee4eeba3acd0da89a24f9cab",
+    "sha256InventoryDigestFormat": "Sort provider rows by path in Unicode code-point order. Hash UTF-8 lines consisting of path, tab, SHA-1, tab, decimal size, and LF.",
+    "priorInventorySha256": "647631536be637eed39a03d29c3d393d1ed9c5e34f414da91b1e89947652e04c",
+    "productionInventorySha256": "5be2087af12abd4bf6e18ba517265161760b6e4ac37f9c849bed0746fe422f3f",
+    "baselineFiles": 3000,
+    "localRecoveryMappings": 37
+  },
+  "verification": {
+    "sourceWebsiteTestsPassed": 2974,
+    "servingRuntimeStatsTestsPassed": 173,
+    "preservationTestsPassed": 46,
+    "normalPreservationBuild": "passed",
+    "ordinaryLocalEntryCheck": "passed",
+    "liveRoutingCheck": "The live sign-in route and its isolated document match their predecessor byte for byte. The generic entry probe assumes unified sign-in on a local fallback server.",
+    "verifiedRoutesOnDraftAndProduction": [
+      "/",
+      "/coaches/",
+      "/application.html",
+      "/athlete?userType=player&view=stats",
+      "/admin",
+      "/support",
+      "/signin",
+      "/player-signin.html",
+      "/privacy",
+      "/report/",
+      "/feedback.html",
+      "/coach-join.html"
+    ],
+    "providerInventoryExactOnPreviewAndProduction": true,
+    "browserSmoke": {
+      "routes": [
+        "Player Stats sample account",
+        "Support"
+      ],
+      "browsers": [
+        "desktop Chromium",
+        "mobile WebKit"
+      ],
+      "pageErrors": 0,
+      "externalWritesAllowed": 0
+    },
+    "signedInPlayerPerspective": {
+      "players": 3,
+      "verifiedSideSelections": 6,
+      "matchingFields": [
+        "saved score card",
+        "comparison total",
+        "team average",
+        "signed difference"
+      ],
+      "secondaryTeamSplitsAndMedianVerified": true,
+      "existingScorecardsChecked": 180,
+      "existingPlayerAccountsChecked": 30,
+      "repWrites": 0
+    },
+    "signIn": {
+      "entryRoutes": [
+        "/signin",
+        "/player-signin.html"
+      ],
+      "renderedPredecessorAndProduction": [
+        "desktop Chromium",
+        "mobile WebKit"
+      ],
+      "readback": [
+        "visible email field",
+        "visible password field",
+        "visible sign-in button",
+        "identical isolated runtime script loaded"
+      ],
+      "identicalScript": "/_astro/PlayerSignInRoot.BT-I_chF.js"
+    }
+  },
+  "recovery": {
+    "precedingProductionDeployId": "6afc9a00df67a95b26d453b0",
+    "rebuildBase": "e6379f908ff3c99e9af5063b0344db9f1c3847dd",
+    "releaseRuntime": "acb1e658cd483e80dbd5d307776b756aa7c3499c",
+    "preservationInstruction": "Re-inventory the currently published site before applying a later approved runtime change."
+  }
+}

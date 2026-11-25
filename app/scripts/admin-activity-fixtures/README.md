@@ -59,6 +59,28 @@ A content security policy blocks connections to external data services. This
 preview is source-only, does not log in, and is never a production build input.
 Stop both processes with Ctrl-C when finished.
 
+For an interactive review of the rest of the admin workspace, append
+`--workspace` to the proxy command. Open `/admin/accounts` for the directory
+or `/insights` for the club overview. The sidebar links work in both directions.
+The workspace mode supplies invented organizations, players, drills and an
+incident. Routes with no sample evidence show their empty states. It uses the
+same loopback restrictions and does not persist edits.
+
+Regular tools use Material Symbols Outlined. To preview their icon ligatures
+offline, place the matching WOFF2 and its license under the ignored
+`artifacts/admin-preview-fonts` directory before starting the proxy:
+
+```sh
+revision=10ecc14790612ca8fd164e3f4ffe9c16fc50d5b7
+source_url="https://raw.githubusercontent.com/google/material-design-icons/$revision"
+mkdir -p artifacts/admin-preview-fonts
+curl -fgSL "$source_url/variablefont/MaterialSymbolsOutlined%5BFILL%2CGRAD%2Copsz%2Cwght%5D.woff2" -o artifacts/admin-preview-fonts/material-symbols-outlined.woff2
+curl -fSL "$source_url/LICENSE" -o artifacts/admin-preview-fonts/LICENSE
+```
+
+The workspace proxy verifies the font's SHA-256 digest on startup and serves
+that one file from loopback. Fonts are optional. The proxy never fetches them.
+
 Reports include the full request log, network blocks, screenshots, and original
 failures. Do not silently rerun over a failed evidence directory. This local lane
 never certifies a hosted or production candidate.
