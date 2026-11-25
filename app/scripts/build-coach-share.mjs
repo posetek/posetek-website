@@ -16,9 +16,17 @@ function selectAthlete({ name, workouts, testingAttempts, followUp, report, acti
   if (typeof followUp !== "boolean") throw new Error("Each roster entry needs a followUp flag.");
   const athlete = { name, workouts, testingAttempts, followUp };
   if (activity) {
+    const { timerMinutes, timerRecords } = activity;
+    if ((timerMinutes != null && (!Number.isFinite(timerMinutes) || timerMinutes < 0)) ||
+        (timerRecords != null && (!Number.isSafeInteger(timerRecords) || timerRecords < 0)) ||
+        (timerRecords === 0 && timerMinutes > 0)) {
+      throw new Error("Invalid workout timer minutes or record count.");
+    }
     athlete.activity = {
       signedIn: milestone(activity.signedIn),
       firstWorkoutCompleted: milestone(activity.firstWorkoutCompleted),
+      timerMinutes,
+      timerRecords,
     };
   }
   if (report) {
@@ -34,9 +42,31 @@ function selectAthlete({ name, workouts, testingAttempts, followUp, report, acti
 
 const input = process.argv[2];
 if (!input || process.argv.length !== 3) throw new Error("Usage: node scripts/build-coach-share.mjs <prepared-team.json>");
-function selectTeam({ team, shortName, club, asOf, athletes }) {
+// Each point represents at least five athletes of a recorded age in the same school session.
+function selectPathway(series) {
+  const units = { "Vertical jump": "in", "Broad jump": "ft" };
+  if (!Array.isArray(series)) throw new Error("Expected a list of dated jump comparisons.");
+  return series.map(({ date, test, unit, groups, teamCount, teamMean }) => {
+    if (units[test] !== unit || !Object.hasOwn(units, test) || !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+        !Array.isArray(groups) || !Number.isSafeInteger(teamCount) || teamCount < 0 ||
+        (teamMean !== null && (teamCount < 5 || !Number.isFinite(teamMean) || teamMean <= 0))) {
+      throw new Error("Invalid dated jump comparison.");
+    }
+    const points = groups.map(({ age, count, mean }) => {
+      if (!Number.isSafeInteger(age) || age < 5 || age > 24 || !Number.isSafeInteger(count) ||
+          count < 5 || !Number.isFinite(mean) || mean <= 0) throw new Error("Invalid age comparison group.");
+      return { age, count, mean };
+    }).sort((a, b) => a.age - b.age);
+    if (new Set(points.map(point => point.age)).size !== points.length) throw new Error("Duplicate age in a testing session.");
+    return { date, test, unit, groups: points, teamCount, teamMean };
+  });
+}
+
+function selectTeam({ team, shortName, club, asOf, athletes, pathway }) {
   if (!team || !club || !asOf || !Array.isArray(athletes)) throw new Error("Incomplete team snapshot.");
-  return { team, shortName, club, asOf, athletes: athletes.map(selectAthlete) };
+  const selected = { team, shortName, club, asOf, athletes: athletes.map(selectAthlete) };
+  if (pathway != null) selected.pathway = selectPathway(pathway);
+  return selected;
 }
 
 const data = JSON.parse(await readFile(input, "utf8"));

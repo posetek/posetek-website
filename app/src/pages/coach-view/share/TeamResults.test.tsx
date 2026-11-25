@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { TeamResults, type SharedTeam } from "./TeamResults";
+import { TeamResults } from "./TeamResults";
+import type { SharedTeam } from "./reportData";
 
 const teams: SharedTeam[] = [
   {
@@ -39,8 +40,11 @@ function textContent(html: string) {
 }
 
 describe("combined coach team results", () => {
-  it.each([0, 1])("renders both rosters with active team %i", active => {
+  it.each([0, 1])("renders both rosters and highlights only the selected team %i", active => {
     const html = render(active);
+    expect(html.match(/data-active="true"/g)).toHaveLength(1);
+    expect(html).toContain(`id="cr-team-${active}" data-active="true"`);
+    expect(html).toContain(`aria-label="Jump to ${teams[active].shortName} roster" aria-pressed="true"`);
     for (const team of teams) {
       expect(html).toContain(`aria-label="Jump to ${team.shortName} roster"`);
       for (const athlete of team.athletes) {
@@ -49,9 +53,9 @@ describe("combined coach team results", () => {
     }
   });
 
-  it("keeps the date and estimate attached to each score and the failed test unavailable", () => {
+  it("shows reviewed values and their dates without estimate badges and keeps failed tests unavailable", () => {
     const metrics = Array.from(render().matchAll(/<li class="cr-profile-metric">([\s\S]*?)<\/li>/g), match => textContent(match[1]));
-    expect(metrics).toEqual(["Sprint 4.81 s Nov 23, 2026", "Vertical jump 18 in Estimate Nov 24, 2026", "Right dribble Unavailable"]);
+    expect(metrics).toEqual(["Sprint 4.81 s Nov 23, 2026", "Vertical jump 18 in Nov 24, 2026", "Right dribble Unavailable"]);
   });
 
   it("excludes legacy missing scores from counts, dates, ranks and highlights while showing unranked measurements", () => {
@@ -77,13 +81,11 @@ describe("combined coach team results", () => {
     expect(textContent(html)).toContain("Sprint Unavailable");
   });
 
-  it("separates sign-in from first workout and keeps missing milestones unconfirmed", () => {
+  it("keeps distinct milestones in the expanded profile", () => {
     const html = render();
-    const rows = Array.from(html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/g), match => textContent(match[1]));
-    expect(rows).toContain("Player Signed in First workout completed");
-    expect(rows).toContain("Example Runner Yes Not yet");
-    expect(rows).toContain("Example Legacy Unconfirmed Unconfirmed");
-    expect(rows).toContain("Example Finisher Unconfirmed Yes");
+    const profiles = [...html.matchAll(/<dl class="cr-profile-activity">([\s\S]*?)<\/dl>/g)].map(match => textContent(match[1]));
+    expect(profiles).toContain("Signed in Yes First workout completed Not yet");
+    expect(profiles).toContain("Signed in Unconfirmed First workout completed Yes");
     expect(html).toContain("No reviewed results available.");
   });
 });
