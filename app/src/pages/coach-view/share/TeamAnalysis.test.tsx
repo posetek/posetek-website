@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { TeamAnalysis, type TeamAnalysisMode } from "./TeamAnalysis";
-import type { SharedTeam, TeamAgeSeries } from "./reportData";
+import type { SharedTeam, TeamAgeSeries, TeamTestComparison } from "./reportData";
 
 const earlier = "2026-11-23", later = "2026-11-24";
 function makePlayer(name: string, result: string, percentile: number | null, date?: string, test = "Vertical jump") {
@@ -68,7 +68,7 @@ describe("coach roster graph selection", () => {
     const standings = render("standings", snapshot), pathway = render("pathway", snapshot);
     expect(standings).toContain("No published percentiles");
     expect(standings).toContain("Development pathway");
-    expect(pathway).toContain("No age-group jump averages");
+    expect(pathway).toContain("No age-group averages");
     expect(pathway).not.toContain('class="cr-age-column"');
   });
 });
@@ -106,8 +106,29 @@ describe("combined testing window", () => {
   it("preserves the empty window and gracefully displays a single event date", () => {
     const html = render("pathway", { ...combined, testingWindow: { startDate: earlier, endDate: earlier, pathway: [] } });
     expect(html).toContain("Nov 23, 2026");
-    expect(html).toContain("No age-group jump averages");
+    expect(html).toContain("No age-group averages");
     expect(html).not.toContain("Age 14");
     expect(html).not.toContain('aria-label="Session"');
+  });
+});
+
+describe("development pathway measurements", () => {
+  const cases: { test: TeamTestComparison["test"]; unit: TeamTestComparison["unit"]; axis: string }[] = [
+    { test: "Vertical jump", unit: "in", axis: "Mean jump height (inches) · Higher is better" },
+    { test: "Broad jump", unit: "ft", axis: "Mean jump distance (feet) · Higher is better" },
+    ...(["Left dribble", "Right dribble", "Sprint", "Change of direction"] as const).map(test =>
+      ({ test, unit: "s" as const, axis: "Mean time (seconds) · Lower is faster" })),
+  ];
+
+  it.each(cases)("labels $test with its unit and interpretation", ({ test, unit, axis }) => {
+    const comparison = { test, unit, groups: [{ age: 15, count: 7, mean: 5.12 }], teamMean: 5.24, teamCount: 9 };
+    const html = render("pathway", { ...team, testingWindow: { startDate: earlier, endDate: later, pathway: [comparison] } });
+    for (const label of [test, axis, `5.12 ${unit}`, `5.24 ${unit}`, "7 players", "9 players"]) expect(html).toContain(label);
+  });
+
+  it("offers all six published tests in a single testing window", () => {
+    const pathway = cases.map(({ test, unit }) => ({ test, unit, groups: single.groups, teamMean: 5, teamCount: 9 }));
+    const html = render("pathway", { ...team, testingWindow: { startDate: earlier, endDate: later, pathway } });
+    expect([...html.matchAll(/<option[^>]*>([^<]+)<\/option>/g)].map(match => match[1])).toEqual(cases.map(row => row.test));
   });
 });

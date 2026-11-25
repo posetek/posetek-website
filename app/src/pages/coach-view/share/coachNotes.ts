@@ -1,4 +1,5 @@
-export const coachNotesEnabled = import.meta.env.VITE_COACH_NOTES === "1";
+export const localCoachNotes = import.meta.env.VITE_COACH_NOTES === "local";
+export const coachNotesEnabled = localCoachNotes || import.meta.env.VITE_COACH_NOTES === "1";
 export const categories = ["Technique", "Speed", "Strength", "Fitness"] as const;
 export type Category = (typeof categories)[number];
 export type CoachNote = { id: string; player: number; category: Category; detail: string; createdAt: string };
@@ -31,6 +32,7 @@ export async function createCoachNotes(keyText: string) {
   const proof = base64url(new Uint8Array(await digest("coach-notes-access-v1:" + keyText)));
   const key = await crypto.subtle.importKey("raw", await digest("coach-notes-encryption-v1:" + keyText), "AES-GCM", false, ["encrypt", "decrypt"]);
   const binding = (team: number, id: string) => encoder.encode(`coach-notes-v1/${team}/${id}`);
+  const storagePrefix = (team: number) => `posetek/coach-review/${proof}/${team}/`;
   async function request(team: number, envelope?: Envelope) {
     if (!Number.isSafeInteger(team) || team < 0) throw new Error("Select a team to open its notes.");
     const headers: Record<string, string> = { Authorization: "Bearer " + proof };
@@ -64,8 +66,15 @@ export async function createCoachNotes(keyText: string) {
   }
   return {
     async list(team: number): Promise<CoachNote[]> {
-      const response = await request(team);
-      const rows: Envelope[] = await response.json();
+      let rows: Envelope[];
+      if (localCoachNotes) {
+        const prefix = storagePrefix(team);
+        rows = Object.keys(localStorage).filter(name => name.startsWith(prefix)).map(name => ({
+          id: name.slice(prefix.length), sealed: localStorage.getItem(name) ?? "",
+        }));
+      } else {
+        rows = await (await request(team)).json();
+      }
       const notes = await Promise.all(rows.map(row => open(team, row)));
       return notes.sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id));
     },
@@ -76,9 +85,18 @@ export async function createCoachNotes(keyText: string) {
       const sealed = new Uint8Array(iv.length + encrypted.byteLength);
       sealed.set(iv);
       sealed.set(new Uint8Array(encrypted), iv.length);
-      const response = await request(team, { id: note.id, sealed: base64url(sealed) });
-      if (response.status === 200) {
-        const existing = await open(team, await response.json());
+      const envelope = { id: note.id, sealed: base64url(sealed) };
+      let stored: Envelope | undefined;
+      if (localCoachNotes) {
+        const name = storagePrefix(team) + note.id;
+        if (localStorage.getItem(name) === null) localStorage.setItem(name, envelope.sealed);
+        stored = { id: note.id, sealed: localStorage.getItem(name) ?? "" };
+      } else {
+        const response = await request(team, envelope);
+        if (response.status === 200) stored = await response.json();
+      }
+      if (stored) {
+        const existing = await open(team, stored);
         if (existing.player !== note.player || existing.category !== note.category || existing.detail !== note.detail || existing.createdAt !== note.createdAt) {
           throw new Error("A different note already uses this entry. Reopen Coaches Input and add your note again.");
         }

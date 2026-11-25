@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
+import { pathwayUnits } from "../src/pages/coach-view/share/reportData.ts";
 
 // One private input file per team. Only fields displayed by the share reader are sealed.
 function milestone(value) {
@@ -50,17 +51,16 @@ function isTestDate(value) {
 
 // Each point represents at least five athletes of a recorded age in the same testing group.
 function selectPathway(series, dated) {
-  const units = { "Vertical jump": "in", "Broad jump": "ft" };
-  if (!Array.isArray(series)) throw new Error("Expected a list of jump comparisons.");
+  if (!Array.isArray(series)) throw new Error("Expected a list of test comparisons.");
   const seen = new Set();
   return series.map(({ date, test, unit, groups, teamCount, teamMean }) => {
-    if (units[test] !== unit || !Object.hasOwn(units, test) || (dated ? !isTestDate(date) : date != null) ||
+    if (!Object.hasOwn(pathwayUnits, test) || pathwayUnits[test] !== unit || (dated ? !isTestDate(date) : date != null) ||
         !Array.isArray(groups) || !Number.isSafeInteger(teamCount) || teamCount < 0 ||
         (teamMean !== null && (teamCount < 5 || !Number.isFinite(teamMean) || teamMean <= 0))) {
-      throw new Error("Invalid jump comparison.");
+      throw new Error("Invalid test comparison.");
     }
     const key = dated ? date + "/" + test : test;
-    if (seen.has(key)) throw new Error("Duplicate jump comparison.");
+    if (seen.has(key)) throw new Error("Duplicate test comparison.");
     seen.add(key);
     const points = groups.map(({ age, count, mean }) => {
       if (!Number.isSafeInteger(age) || age < 5 || age > 24 || !Number.isSafeInteger(count) ||
@@ -134,4 +134,7 @@ if (process.env.VITE_COACH_NOTES === "1") {
     host: process.env.COACH_NOTES_HOST,
     modules: process.env.COACH_NOTES_NODE_MODULES,
   });
+} else if (process.env.VITE_COACH_NOTES === "local") {
+  const { writeOfflineReview } = await import("./standalone-coach-review.mjs");
+  await writeOfflineReview(privateDir, publishDir, key, encrypted);
 }

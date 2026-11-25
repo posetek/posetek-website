@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { categories, type Category, type CoachNote } from "./coachNotes";
+import { categories, localCoachNotes, type Category, type CoachNote } from "./coachNotes";
 import "./coach-input.css";
 
 interface CoachInputProps {
@@ -195,7 +195,7 @@ export function CoachInput({
                 }
               }}/>
             {saveError && <p className="coach-input__error" role="alert">{saveError}</p>}
-            <p className="coach-input__privacy">Anyone with this report link can read saved notes.</p>
+            <p className="coach-input__privacy">{localCoachNotes ? "Offline preview. Notes are saved in this browser." : "Anyone with this report link can read saved notes."}</p>
             <button className="coach-input__primary" type="submit" disabled={!detail.trim() || busy || loading || !!loadError}>
               {busy ? "Saving…" : "Save note"}
             </button>

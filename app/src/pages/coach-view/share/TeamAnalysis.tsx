@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { ordinal, testName } from "../CoachStandings";
-import { formatTestingWindow, hasScore, rosterName, type SharedTeam, type TeamAgeSeries, type TeamJumpComparison } from "./reportData";
+import { formatTestingWindow, hasScore, rosterName, type SharedTeam, type TeamAgeSeries, type TeamTestComparison } from "./reportData";
 import "./team-analysis.css";
 
 export type TeamAnalysisMode = "standings" | "pathway";
@@ -62,12 +62,16 @@ function playerCount(count: number) {
   return count + (count === 1 ? " player" : " players");
 }
 
-function PathwayChart({ series, teamName, club }: { series: TeamJumpComparison; teamName: string; club: string }) {
+function PathwayChart({ series, teamName, club }: { series: TeamTestComparison; teamName: string; club: string }) {
   const { groups, teamMean, teamCount, unit } = series;
   const maximum = Math.max(...groups.map(group => group.mean), teamMean ?? 0);
   const increment = 10 ** Math.floor(Math.log10(maximum)) / 2;
   const ceiling = maximum > 0 ? Math.ceil(maximum / increment) * increment : 1;
-  const axis = unit === "in" ? "Mean jump height (inches)" : "Mean jump distance (feet)";
+  const axis = {
+    s: "Mean time (seconds) · Lower is faster",
+    in: "Mean jump height (inches) · Higher is better",
+    ft: "Mean jump distance (feet) · Higher is better",
+  }[unit];
   return <div className="cr-pathway">
     <p className="cr-pathway-legend"><span className="cr-age-key">{club} age averages</span>
       <span className="cr-team-average" data-available={teamMean != null}>{teamName} average{teamMean == null ? " unavailable" :
@@ -100,7 +104,7 @@ export function TeamAnalysis({ team, mode, onModeChange }: {
 }) {
   const chartId = useId();
   const teamName = rosterName(team);
-  const [selections, setSelections] = useState<Partial<Record<TeamAnalysisMode, Selection>>>({});
+  const [selection, setSelection] = useState<Selection>();
   const { testingWindow } = team;
   const standings = standingRows(team);
   const datedPathway = (team.pathway ?? []).filter(series => series.groups.length > 0).sort(preferredSeries);
@@ -108,7 +112,6 @@ export function TeamAnalysis({ team, mode, onModeChange }: {
   const isPathway = mode === "pathway";
   const records = isPathway ? pathway : standings;
   const tests = [...new Set(records.map(row => row.test))];
-  const selection = selections[mode];
   const preferredTest = tests.includes("Vertical jump") ? "Vertical jump" : tests[0];
   const defaultTest = isPathway && !testingWindow ? datedPathway[0]?.test : preferredTest;
   const test = selection && tests.includes(selection.test) ? selection.test : defaultTest;
@@ -124,16 +127,13 @@ export function TeamAnalysis({ team, mode, onModeChange }: {
   const period = testingWindow ? formatTestingWindow(testingWindow) : date && showDate(date);
   const series = testingWindow ? pathway.find(row => row.test === test) : datedPathway.find(row => row.test === test && row.date === date);
   const rows = standings.filter(row => row.test === test && (testingWindow || row.date === date));
-  function select(next: Selection) {
-    setSelections(previous => ({ ...previous, [mode]: next }));
-  }
   let chart;
   if (isPathway && series) {
     chart = <PathwayChart series={series} teamName={teamName} club={team.club}/>;
   } else if (!isPathway && rows.length) {
     chart = <StandingsChart rows={rows} pooled={Boolean(testingWindow)}/>;
   } else {
-    chart = <p className="cr-chart-note">{isPathway ? "No age-group jump averages were published for this team." : "No published percentiles for this team."}</p>;
+    chart = <p className="cr-chart-note">{isPathway ? "No age-group averages were published for this team." : "No published percentiles for this team."}</p>;
   }
   return <section className="cr-analysis" aria-label={teamName + " analysis"}>
     <div className="cr-analysis-toolbar">
@@ -142,11 +142,11 @@ export function TeamAnalysis({ team, mode, onModeChange }: {
           onClick={() => onModeChange(key)}>{modes[key]}</button>)}
       </div>
       {(test || testingWindow) && <div className="cr-chart-filters">
-        {test && <label>Test<select aria-label="Test" value={test} onChange={e => select({ test: e.target.value, date })}>
+        {test && <label>Test<select aria-label="Test" value={test} onChange={e => setSelection({ test: e.target.value, date })}>
           {tests.map(name => <option key={name}>{name}</option>)}
         </select></label>}
         {testingWindow && <div className="cr-chart-window"><span>Testing window</span><strong>{period}</strong></div>}
-        {test && date && <label>Session<select aria-label="Session" value={date} onChange={e => select({ test, date: e.target.value })}>
+        {test && date && <label>Session<select aria-label="Session" value={date} onChange={e => setSelection({ test, date: e.target.value })}>
           {dates.map(day => <option key={day} value={day}>{showDate(day)}</option>)}
         </select></label>}
       </div>}

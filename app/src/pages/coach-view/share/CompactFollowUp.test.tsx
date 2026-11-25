@@ -44,11 +44,11 @@ describe("compact athlete follow-up", () => {
     expect(html).not.toContain("First workout");
   });
 
-  it("labels the focusable roster by team and keeps simulated messaging collapsed", () => {
+  it("labels the focusable roster by team and opens the simulated messaging disclosure by default", () => {
     const html = renderRoster([signedIn]);
     expect(html).toMatch(/<div class="cr-activity-scroll" role="region" aria-label="Example JV follow-up roster" tabindex="0">/i);
     expect(html).toContain("All time · As of 2026-11-25");
-    expect(html).toContain('<details class="cr-message-demo"><summary>Try a team message');
+    expect(html).toContain('<details class="cr-message-demo" open=""><summary>Try a team message');
     expect(html).toContain("Demo messages stay in this tab.");
     expect(html).toContain('id="cv-followup-review-1"');
   });

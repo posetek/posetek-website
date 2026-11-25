@@ -13,15 +13,20 @@ type Milestones = {
   timerRecords?: number | null;
 };
 export type SharedAthlete = RosterAthlete & { followUp: boolean; activity?: Milestones };
-export type TeamJumpComparison = {
-  test: "Vertical jump" | "Broad jump";
-  unit: "in" | "ft";
+export const pathwayUnits = {
+  "Vertical jump": "in", "Broad jump": "ft",
+  "Left dribble": "s", "Right dribble": "s", "Sprint": "s", "Change of direction": "s",
+} as const;
+
+export type TeamTestComparison = {
+  test: keyof typeof pathwayUnits;
+  unit: (typeof pathwayUnits)[keyof typeof pathwayUnits];
   groups: { age: number; count: number; mean: number }[];
   teamMean: number | null;
   teamCount: number;
 };
-export type TeamAgeSeries = TeamJumpComparison & { date: string };
-export type TestingWindow = { startDate: string; endDate: string; pathway: TeamJumpComparison[] };
+export type TeamAgeSeries = TeamTestComparison & { date: string };
+export type TestingWindow = { startDate: string; endDate: string; pathway: TeamTestComparison[] };
 export type SharedTeam = {
   layout?: string; team: string; shortName?: string; club: string; asOf: string; athletes: SharedAthlete[];
   pathway?: TeamAgeSeries[]; testingWindow?: TestingWindow;

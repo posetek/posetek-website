@@ -7,7 +7,7 @@ import { TeamResults, focusRoster } from "./TeamResults";
 import { rosterName, type SharedTeam } from "./reportData";
 import { clickedAction, createUsage, usageEnabled } from "./usage";
 import { CoachInput } from "./CoachInput";
-import { coachNotesEnabled, createCoachNotes, type CoachNote } from "./coachNotes";
+import { coachNotesEnabled, createCoachNotes, localCoachNotes, type CoachNote } from "./coachNotes";
 import "./reader.css";
 import "../coach-view.scss";
 import "./team-report.css";
@@ -61,7 +61,7 @@ function TeamInput({ team, teamIndex, teams, onSelectTeam, client, onClose }: {
     client.list(teamIndex).then(saved => {
       if (active) setNotes(saved.filter(note => note.player >= 0 && note.player < team.athletes.length));
     }).catch(() => {
-      if (active) setLoadError("Couldn’t load saved input. Close and reopen Coaches input to try again.");
+      if (active) setLoadError(localCoachNotes ? "This browser couldn’t open your offline notes. Allow local storage or use the live preview." : "Couldn’t load saved input. Close and reopen Coaches input to try again.");
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [client, teamIndex, team]);
@@ -148,13 +148,21 @@ function TeamView({ teams, record, client, resultsLayout }: { teams: SharedTeam[
 }
 
 async function openView() {
-  const keyText = location.hash.slice(1);
+  const embedded: { key: string; snapshot: string } | null = localCoachNotes
+    ? JSON.parse(document.getElementById("offline-report")?.textContent || "null") : null;
+  if (localCoachNotes && !embedded) throw new Error("Open the offline review file");
+  const keyText = embedded?.key ?? location.hash.slice(1);
   if (!/^[A-Za-z0-9_-]{43}$/.test(keyText)) throw new Error("Invalid link");
   const keyBytes = Uint8Array.from(atob(keyText.replace(/-/g, '+').replace(/_/g, '/') + '='), ch => ch.charCodeAt(0));
   const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["decrypt"]);
-  const response = await fetch("./view.bin", {credentials:"omit", cache:"no-store", redirect:"error"});
-  if (!response.ok) throw new Error("Data unavailable");
-  const ciphertext = new Uint8Array(await response.arrayBuffer());
+  let ciphertext: Uint8Array<ArrayBuffer>;
+  if (embedded) {
+    ciphertext = Uint8Array.from(atob(embedded.snapshot), ch => ch.charCodeAt(0));
+  } else {
+    const response = await fetch("./view.bin", {credentials:"omit", cache:"no-store", redirect:"error"});
+    if (!response.ok) throw new Error("Data unavailable");
+    ciphertext = new Uint8Array(await response.arrayBuffer());
+  }
   const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv:ciphertext.subarray(0,12)}, key, ciphertext.subarray(12));
   const data: SharedTeam | { layout?: string; teams: SharedTeam[] } = JSON.parse(new TextDecoder().decode(plain));
   const client = coachNotesEnabled ? await createCoachNotes(keyText) : null;

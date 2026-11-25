@@ -15,7 +15,7 @@ function focusHeading(id: string) {
 }
 
 export function focusRoster(index: number) {
-  focusHeading(index === 0 ? "cr-results-heading" : `cr-roster-${index}`);
+  focusHeading(`cr-roster-${index}`);
 }
 
 const shortDateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -70,12 +70,12 @@ function AthleteProfile({ athlete, tests, team }: { athlete: SharedAthlete; test
   </div>;
 }
 
-function RosterResults({ team, index, selected, children, onOpen }: {
-  team: SharedTeam; index: number; selected: boolean; children: ReactNode; onOpen: () => void;
+function RosterResults({ team, index, children, onOpen }: {
+  team: SharedTeam; index: number; children: ReactNode; onOpen: () => void;
 }) {
   const tests = [...new Set(team.athletes.flatMap(athlete => athlete.report?.metrics.map(metric => testName(metric.label)) ?? []))];
   const playersWithResults = team.athletes.filter(athlete => athlete.report?.metrics.some(hasScore)).length;
-  return <section className="cr-roster" id={`cr-team-${index}`} data-active={selected} data-results-team={index} aria-labelledby={`cr-roster-${index}`}>
+  return <section className="cr-roster" id="cr-team-results" data-results-team={index} aria-labelledby={`cr-roster-${index}`}>
     <div className="cr-roster-heading">
       <h2 id={`cr-roster-${index}`} tabIndex={-1}>{rosterName(team)}</h2>
       <p><strong>{team.athletes.length}</strong> players <span aria-hidden="true">/</span> <strong>{playersWithResults}</strong> with results</p>
@@ -90,12 +90,7 @@ function RosterResults({ team, index, selected, children, onOpen }: {
         const highlight = scores.find(metric => testName(metric.label) === "Sprint") ?? scores[0];
         return <details key={player} className="cr-player" name="team-result-profiles">
           <summary className="cr-grid" aria-label={`Open ${athlete.name} profile`}
-            onClick={event => {
-              if (event.currentTarget.parentElement?.hasAttribute("open")) return;
-              const row = event.currentTarget;
-              onOpen();
-              if (!selected) requestAnimationFrame(() => row.scrollIntoView({ block: "nearest" }));
-            }}>
+            onClick={event => { if (!event.currentTarget.parentElement?.hasAttribute("open")) onOpen(); }}>
             <span className="cr-name"><strong>{athlete.name}</strong>
               <small>{scores.length === 0 ? "No reviewed results" : `${scores.length} of ${tests.length} tests`}</small>
             </span>
@@ -118,31 +113,32 @@ export function TeamResults({ teams, active, onSelectTeam, record }: {
   teams: SharedTeam[]; active: number; onSelectTeam: (team: number) => void; record: RecordAction;
 }) {
   const [mode, setMode] = useState<TeamAnalysisMode>("standings");
-  const club = [...new Set(teams.map(team => team.club))].join(" · ");
-  const total = teams.reduce((count, team) => count + team.athletes.length, 0);
+  const selectedTeam = teams[active];
   return <main className="insights-shell cr-report">
     <div className="cr-heading">
-      <div><p>{club}</p><h1 tabIndex={-1} id="cr-results-heading">Team results</h1><p className="cr-instruction">Select a player for their full results.</p></div>
-      <dl className="cr-count"><dt>Players</dt><dd>{total}</dd></dl>
+      <div><p>{selectedTeam.club}</p><h1 id="cr-results-heading">Team results</h1><p className="cr-instruction">Select a player for their full results.</p></div>
+      <dl className="cr-count"><dt>Players</dt><dd>{selectedTeam.athletes.length}</dd></dl>
     </div>
     <nav className="cr-jumps" aria-label="Report sections">
-      {teams.length > 1 && teams.map((team, i) => <button key={i} type="button" aria-label={`Jump to ${rosterName(team)} roster`}
-        aria-pressed={i === active} aria-controls={`cr-team-${i}`}
-        onClick={() => { onSelectTeam(i); requestAnimationFrame(() => focusHeading(`cr-roster-${i}`)); }}>{rosterName(team)}</button>)}
+      {teams.length > 1 && teams.map((team, i) => <button key={team.team} type="button" aria-label={`Show ${rosterName(team)} roster`}
+        aria-pressed={i === active} aria-controls="cr-team-results"
+        onClick={() => { onSelectTeam(i); requestAnimationFrame(() => focusRoster(i)); }}>{rosterName(team)}</button>)}
       <button type="button" onClick={() => focusHeading("cr-follow-up-heading")}>Athlete follow-up <span aria-hidden="true">↓</span></button>
     </nav>
-    {teams.map((team, i) => <RosterResults key={i} team={team} index={i} selected={i === active} onOpen={() => {
-      onSelectTeam(i);
-      record("one-pager", i);
-    }}>
-      {i === active && <TeamAnalysis team={team} mode={mode} onModeChange={setMode}/>}
-    </RosterResults>)}
+    <RosterResults key={selectedTeam.team} team={selectedTeam} index={active} onOpen={() => record("one-pager", active)}>
+      <TeamAnalysis team={selectedTeam} mode={mode} onModeChange={setMode}/>
+    </RosterResults>
     <section className="cr-follow-up" aria-labelledby="cr-follow-up-heading">
       <h2 id="cr-follow-up-heading" tabIndex={-1}>Athlete follow-up</h2>
       {teams.length > 1 && <div className="cr-activity-teams" role="group" aria-label="Activity roster">
-        {teams.map((team, i) => <button key={i} aria-pressed={i === active} onClick={() => onSelectTeam(i)}>{rosterName(team)}</button>)}
+        {teams.map((team, i) => <button key={team.team} type="button" aria-pressed={i === active} aria-controls={`cr-team-activity-${i}`}
+          onClick={event => {
+            const button = event.currentTarget;
+            onSelectTeam(i);
+            requestAnimationFrame(() => button.scrollIntoView({ block: "nearest" }));
+          }}>{rosterName(team)}</button>)}
       </div>}
-      {teams.map((team, index) => <div key={team.team} hidden={index !== active}>
+      {teams.map((team, index) => <div key={team.team} id={`cr-team-activity-${index}`} hidden={index !== active}>
         <CompactFollowUp team={team} index={index}/>
       </div>)}
     </section>

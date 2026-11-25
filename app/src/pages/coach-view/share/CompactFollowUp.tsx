@@ -41,7 +41,7 @@ export function CompactFollowUp({ team, index }: { team: SharedTeam; index: numb
           )}</tbody>
         </table>
       </div>
-      <details className="cr-message-demo">
+      <details className="cr-message-demo" open>
         <summary>Try a team message <span className="cr-chevron" aria-hidden="true">›</span></summary>
         <CoachFollowUp items={team.athletes.map(athlete => athleteCheckIn(athlete.name, "Team check-in"))}
           heading="Message athletes" idSuffix={`-review-${index}`}/>

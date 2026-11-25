@@ -39,17 +39,16 @@ function textContent(html: string) {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-describe("combined coach team results", () => {
-  it.each([0, 1])("renders both rosters and highlights only the selected team %i", active => {
+describe("coach team results", () => {
+  it.each([0, 1])("shows profiles and counts only for the selected team %i", active => {
     const html = render(active);
-    expect(html.match(/data-active="true"/g)).toHaveLength(1);
-    expect(html).toContain(`id="cr-team-${active}" data-active="true"`);
-    expect(html).toContain(`aria-label="Jump to ${teams[active].shortName} roster" aria-pressed="true"`);
-    for (const team of teams) {
-      expect(html).toContain(`aria-label="Jump to ${team.shortName} roster"`);
-      for (const athlete of team.athletes) {
-        expect(html).toContain(`aria-label="Open ${athlete.name} profile"`);
-      }
+    expect(html.match(/class="cr-roster"/g)).toHaveLength(1);
+    expect(html).toContain(`id="cr-team-results" data-results-team="${active}"`);
+    expect(html).toContain(`<dl class="cr-count"><dt>Players</dt><dd>${teams[active].athletes.length}</dd></dl>`);
+    for (const [i, team] of teams.entries()) {
+      expect(html).toContain(`aria-label="Show ${team.shortName} roster" aria-pressed="${i === active}" aria-controls="cr-team-results"`);
+      for (const athlete of team.athletes) expect(html.includes(`aria-label="Open ${athlete.name} profile"`)).toBe(i === active);
+      expect(html).toContain(`id="cr-team-activity-${i}"${i === active ? "" : ' hidden=""'}>`);
     }
   });
 
@@ -82,7 +81,7 @@ describe("combined coach team results", () => {
   });
 
   it("keeps distinct milestones in the expanded profile", () => {
-    const html = render();
+    const html = render(0) + render(1);
     const profiles = [...html.matchAll(/<dl class="cr-profile-activity">([\s\S]*?)<\/dl>/g)].map(match => textContent(match[1]));
     expect(profiles).toContain("Signed in Yes First workout completed Not yet");
     expect(profiles).toContain("Signed in Unconfirmed First workout completed Yes");
