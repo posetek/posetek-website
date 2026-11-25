@@ -2734,4 +2734,10 @@ Build the standalone team reader with `VITE_COACH_NOTES=1` to enable Coaches Att
 
 Run `npm ci --prefix app/scripts/coach-share-functions` for the optional function bundler. From `app/`, run `VITE_COACH_NOTES=1 COACH_NOTES_HOST=<preview-alias-host> node scripts/build-coach-share.mjs <private-snapshot.json>`. The output contains a public viewer directory, a sibling functions directory for the same draft deploy, and a private fragment key. Keep the key outside both deployment directories. Each snapshot has its own roster ordering, key and notes namespace. Preserve the deployed link for later reads. A fresh build generates a new key and a separate notes history.
 
-The browser encrypts notes before saving. Anyone with the complete team link can add notes and view its saved history across devices. This capability is separate from simulated athlete messages. Scoped handler checks run with `node --test app/scripts/coach-share-functions/notes.test.mjs`.
+The browser encrypts notes before saving. Anyone with the complete team link can add notes and view its saved history across devices. This capability is separate from simulated athlete messages. Scoped handler checks run with `node --test scripts/coach-share-notes.test.mjs`.
+
+### Coach review with combined rosters
+
+Set `layout: "roster-results"` on a private share bundle to show all included teams in one results view. Each team can have a `shortName` for the team picker. Keep the original team and roster order for the lifetime of a link because saved notes use those positions. The coach can choose a team and player in Coaches Input, then open Team Results at that team’s roster.
+
+Prepare one entry per rostered player with the latest reviewed result for each test. Each scored metric can include its own `date` and `estimated` flag. Carry over the comparison from that team, test and session. Use a null result for unavailable measurements. A roster entry may have no report. Individual `activity.signedIn` and `activity.firstWorkoutCompleted` values are true, false or null as of the team’s `asOf` date. Null means unconfirmed. Older snapshots may omit these fields.

@@ -1,12 +1,14 @@
 import { useState } from "react";
 
-type Metric = {
+export type Metric = {
   label: string;
   result: string | null;
   average?: string | null;
   count?: number | null;
   percentile?: number | null;
   band?: string;
+  date?: string | null;
+  estimated?: boolean;
 };
 export type OnePager = {
   date: string;
@@ -17,14 +19,14 @@ export type OnePager = {
 
 const bands = { strong: "Strong", middle: "Average", practice: "Weak" } as const;
 
-function testName(label: string) {
+export function testName(label: string) {
   const aliases: Record<string, string> = {
     "Recorded sprint": "Sprint", "Left-course dribble": "Left dribble", "Right-course dribble": "Right dribble",
   };
   return aliases[label] ?? label;
 }
 
-function ordinal(n: number) {
+export function ordinal(n: number) {
   const suffix = n % 100 >= 11 && n % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] ?? "th");
   return `${n}${suffix}`;
 }

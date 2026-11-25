@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { createRoot } from "react-dom/client";
 import { athleteCheckIn, CoachFollowUp } from "../CoachFollowUp";
 import { CoachStandings } from "../CoachStandings";
-import { CoachRoster, type RosterAthlete } from "../CoachRoster";
+import { CoachRoster } from "../CoachRoster";
+import { TeamResults, focusRoster, rosterName, type SharedTeam } from "./TeamResults";
 import { clickedAction, createUsage, usageEnabled } from "./usage";
 import { CoachInput } from "./CoachInput";
 import { coachNotesEnabled, createCoachNotes, type CoachNote } from "./coachNotes";
@@ -10,8 +11,6 @@ import "./reader.css";
 import "../coach-view.scss";
 import "./team-report.css";
 
-type SharedAthlete = RosterAthlete & { followUp: boolean };
-type SharedTeam = { team: string; club: string; asOf: string; athletes: SharedAthlete[] };
 
 function focusFollowUp(idSuffix: string) {
   const heading = document.getElementById(`team-follow-up${idSuffix}`);
@@ -49,8 +48,8 @@ function TeamPanel({ team, suffix }: { team: SharedTeam; suffix: string }) {
 
 type NotesClient = Awaited<ReturnType<typeof createCoachNotes>>;
 
-function TeamInput({ team, teamIndex, client, onClose }: {
-  team: SharedTeam; teamIndex: number; client: NotesClient; onClose: () => void;
+function TeamInput({ team, teamIndex, teams, onSelectTeam, client, onClose }: {
+  team: SharedTeam; teamIndex: number; teams: string[]; onSelectTeam: (index: number) => void; client: NotesClient; onClose: () => void;
 }) {
   const [notes, setNotes] = useState<CoachNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,11 +76,11 @@ function TeamInput({ team, teamIndex, client, onClose }: {
     setNotes(previous => [saved, ...previous.filter(item => item.id !== saved.id)]);
     pending.current = null;
   }
-  return <CoachInput teamName={team.team.split(" — ")[0]} players={team.athletes.map(athlete => athlete.name)}
+  return <CoachInput teamName={rosterName(team)} teams={teams} teamIndex={teamIndex} onSelectTeam={onSelectTeam} players={team.athletes.map(athlete => athlete.name)}
     notes={notes} loading={loading} loadError={loadError} saveNote={saveNote} onClose={onClose}/>;
 }
 
-function TeamView({ teams, record, client }: { teams: SharedTeam[]; client: NotesClient | null; record: Awaited<ReturnType<typeof createUsage>> }) {
+function TeamView({ teams, record, client, resultsLayout }: { teams: SharedTeam[]; resultsLayout: boolean; client: NotesClient | null; record: Awaited<ReturnType<typeof createUsage>> }) {
   const [active, setActive] = useState(0);
   const [inputOpen, setInputOpen] = useState(Boolean(client));
   const trigger = useRef<HTMLButtonElement>(null);
@@ -99,27 +98,31 @@ function TeamView({ teams, record, client }: { teams: SharedTeam[]; client: Note
     selectTeam(next);
     document.getElementById(`team-tab-${next}`)?.focus();
   }
-  return <div className="pt-pose portal-body pt-insights is-coach-workspace cv-page"
+  return <div className={`pt-pose portal-body pt-insights is-coach-workspace cv-page${resultsLayout ? " cr-page" : ""}`}
     onClickCapture={e => {
       if (!(e.target instanceof Element)) return;
       const action = clickedAction(e.target);
       if (action) record(action, active);
     }}
     onChangeCapture={e => {
-      if (e.target instanceof HTMLSelectElement && e.target.closest(".cv-test-select")) record("standings-test", active);
+      if (e.target instanceof HTMLSelectElement && e.target.closest(".cv-test-select")) {
+        const roster = e.target.closest<HTMLElement>("[data-results-team]");
+        record("standings-test", roster ? Number(roster.dataset.resultsTeam) : active);
+      }
     }}>
     <header className="portal-header">
       <div className="cv-header-inner">
         <strong className="portal-brand"><span aria-hidden="true" className="portal-brand-mark">P</span> POSETEK</strong>
         <div className="cv-header-actions">
-          <button className="cv-group cv-message-jump" aria-label="Message athletes" onClick={() => focusFollowUp(suffix(active))}>
+          {!resultsLayout && <button className="cv-group cv-message-jump" aria-label="Message athletes" onClick={() => focusFollowUp(suffix(active))}>
             <span className="cv-label-wide">Message athletes</span><span className="cv-label-small">Messages</span>
-          </button>
+          </button>}
           {client && <button className="cv-input-trigger" ref={trigger} aria-haspopup="dialog"
-            onClick={() => setInputOpen(true)}>Coaches input</button>}
+            onClick={() => setInputOpen(true)}>Coaches Input</button>}
         </div>
       </div>
     </header>
+    {resultsLayout ? <TeamResults teams={teams} active={active} onSelectTeam={selectTeam} record={record}/> :
     <main className="insights-shell">
       {usageEnabled && <p className="cv-usage-note">PoseTek records demo opens and which controls are used. Player details and message text stay private.</p>}
       {multiple && <div role="tablist" aria-label="Your teams" className="cv-team-tabs">
@@ -131,9 +134,15 @@ function TeamView({ teams, record, client }: { teams: SharedTeam[]; client: Note
         id={`team-panel-${i}`} aria-labelledby={multiple ? `team-tab-${i}` : undefined} hidden={active !== i}>
         <TeamPanel team={team} suffix={suffix(i)}/>
       </div>)}
-    </main>
-    {client && inputOpen && <TeamInput key={active} team={teams[active]} teamIndex={active} client={client}
-      onClose={() => { setInputOpen(false); requestAnimationFrame(() => trigger.current?.focus({ preventScroll: true })); }}/>}
+    </main>}
+    {client && inputOpen && <TeamInput key={active} team={teams[active]} teamIndex={active} teams={teams.map(rosterName)} onSelectTeam={selectTeam} client={client}
+      onClose={() => {
+        setInputOpen(false);
+        requestAnimationFrame(() => {
+          if (resultsLayout) focusRoster(active);
+          else trigger.current?.focus({ preventScroll: true });
+        });
+      }}/>}
   </div>;
 }
 
@@ -146,7 +155,7 @@ async function openView() {
   if (!response.ok) throw new Error("Data unavailable");
   const ciphertext = new Uint8Array(await response.arrayBuffer());
   const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv:ciphertext.subarray(0,12)}, key, ciphertext.subarray(12));
-  const data: SharedTeam | { teams: SharedTeam[] } = JSON.parse(new TextDecoder().decode(plain));
+  const data: SharedTeam | { layout?: string; teams: SharedTeam[] } = JSON.parse(new TextDecoder().decode(plain));
   const client = coachNotesEnabled ? await createCoachNotes(keyText) : null;
   const record = await createUsage(keyText).catch(() => () => {});
   const recordOpen = () => {
@@ -156,7 +165,10 @@ async function openView() {
   };
   document.addEventListener("visibilitychange", recordOpen);
   recordOpen();
-  createRoot(document.getElementById("root")!).render(<TeamView client={client} record={record} teams={"teams" in data ? data.teams : [data]}/>);
+  const teams = "teams" in data ? data.teams : [data];
+  if (!teams.length) throw new Error("Report unavailable");
+  const resultsLayout = data.layout === "roster-results" || (Boolean(client) && teams.length === 1);
+  createRoot(document.getElementById("root")!).render(<TeamView client={client} record={record} teams={teams} resultsLayout={resultsLayout}/>);
 }
 openView().catch(() => {
   document.getElementById("status")!.textContent = "Open the complete private link shared with you to view your team.";

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import test from "node:test";
-import { coachNotesHandler } from "./notes.mjs";
+import { coachNotesHandler } from "../app/scripts/coach-share-functions/notes.mjs";
 
 const host = "review--posetek.netlify.app";
 const proof = randomBytes(32).toString("base64url");

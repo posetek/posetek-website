@@ -4,6 +4,9 @@ import "./coach-input.css";
 
 interface CoachInputProps {
   teamName: string;
+  teams?: string[];
+  teamIndex?: number;
+  onSelectTeam?: (index: number) => void;
   players: string[];
   notes: CoachNote[];
   saveNote: (input: { player: number; category: Category; detail: string }) => Promise<void>;
@@ -13,23 +16,26 @@ interface CoachInputProps {
 }
 
 const prompts = {
-  Technique: "Work on opening the first touch toward space.",
-  Speed: "Focus on the first three steps after changing direction.",
-  Strength: "Work on holding balance through contact.",
-  Fitness: "Keep the same pace through the final sprint.",
+  Technique: "Open up your first touch toward space.",
+  Speed: "Drive through the first three steps after a turn.",
+  Strength: "Stay balanced through shoulder contact.",
+  Fitness: "Hold the same pace through the final sprint.",
 } satisfies Record<Category, string>;
 
-function initials(name: string) {
-  const words = name.trim().split(/\s+/);
-  return (words[0][0] || "") + (words.length > 1 ? words[words.length - 1][0] : "");
+function Chevron() {
+  return <svg className="coach-input__chevron" aria-hidden="true" viewBox="0 0 16 16" width="16" height="16"
+    fill="none" stroke="currentColor" strokeWidth="1.6"><path d="m6 3 5 5-5 5"/></svg>;
 }
 
-export function CoachInput({ teamName, players, notes, saveNote, onClose, loadError, loading }: CoachInputProps) {
+export function CoachInput({
+  teamName, teams, teamIndex = 0, onSelectTeam, players, notes, saveNote, onClose, loadError, loading,
+}: CoachInputProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const roster = useRef<HTMLDivElement>(null);
   const focusHeading = useRef<HTMLHeadingElement>(null);
   const field = useRef<HTMLTextAreaElement>(null);
+  const keepEditing = useRef<HTMLButtonElement>(null);
   const saving = useRef(false);
   const [player, setPlayer] = useState<number | null>(null);
   const [category, setCategory] = useState<Category | null>(null);
@@ -37,6 +43,9 @@ export function CoachInput({ teamName, players, notes, saveNote, onClose, loadEr
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [saveError, setSaveError] = useState("");
+  const [pendingExit, setPendingExit] = useState<"results" | "roster" | null>(null);
+  const teamOptions = teams && teams.length > 1 && onSelectTeam ? teams : [];
+  const activeTeamName = teams?.[teamIndex] || teamName;
 
   useEffect(() => {
     const element = dialog.current;
@@ -61,6 +70,10 @@ export function CoachInput({ teamName, players, notes, saveNote, onClose, loadEr
     if (category !== null) field.current?.focus();
   }, [category]);
 
+  useEffect(() => {
+    if (pendingExit) keepEditing.current?.focus();
+  }, [pendingExit]);
+
   function returnToRoster() {
     setPlayer(null);
     setCategory(null);
@@ -69,6 +82,23 @@ export function CoachInput({ teamName, players, notes, saveNote, onClose, loadEr
     requestAnimationFrame(() => {
       roster.current?.querySelector<HTMLButtonElement>(`[data-player="${player}"]`)?.focus();
     });
+  }
+
+  function leave(destination: "results" | "roster") {
+    setPendingExit(null);
+    if (destination === "results") onClose();
+    else returnToRoster();
+  }
+
+  function requestExit(destination: "results" | "roster") {
+    if (saving.current) return;
+    if (detail.trim()) setPendingExit(destination);
+    else leave(destination);
+  }
+
+  function resumeDraft() {
+    setPendingExit(null);
+    requestAnimationFrame(() => field.current?.focus());
   }
 
   function navigateRoster(event: KeyboardEvent<HTMLDivElement>) {
@@ -88,10 +118,10 @@ export function CoachInput({ teamName, players, notes, saveNote, onClose, loadEr
     setSaveError("");
     try {
       await saveNote({ player, category, detail: detail.trim() });
-      setMessage(`Input saved for ${players[player]}.`);
+      setMessage(`Note saved for ${players[player]}.`);
       returnToRoster();
     } catch {
-      setSaveError("Your input couldn’t be saved. Keep this window open and try again.");
+      setSaveError("Your note couldn’t be saved. Try again.");
     } finally {
       saving.current = false;
       setBusy(false);
@@ -99,70 +129,79 @@ export function CoachInput({ teamName, players, notes, saveNote, onClose, loadEr
   }
 
   return <dialog className="coach-input" ref={dialog} aria-labelledby="coach-input-title"
-    onCancel={event => { event.preventDefault(); if (!saving.current) onClose(); }}>
+    onCancel={event => { event.preventDefault(); if (pendingExit) resumeDraft(); else requestExit("results"); }}>
     <header className="coach-input__header">
-      <p className="coach-input__team">{teamName.split(" — ")[0]}</p>
-      <h2 id="coach-input-title" ref={heading} tabIndex={-1}>Coaches Attention</h2>
-      <button className="coach-input__close" aria-label="Close Coaches Attention" type="button" onClick={onClose} disabled={busy}>
-        <svg viewBox="0 0 24 24" height="18" width="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 6 12 12m0-12L6 18"/></svg>
-      </button>
+      <h2 id="coach-input-title" ref={heading} tabIndex={-1} aria-describedby={player === null && teamOptions.length > 0 ? "coach-input-active-team" : undefined}>Coaches Input</h2>
+      {!pendingExit && <button className="coach-input__close" aria-label="Close Coaches Input" type="button"
+        onClick={() => requestExit("results")} disabled={busy}>
+        <svg viewBox="0 0 24 24" height="18" width="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="m6 6 12 12m0-12L6 18"/></svg>
+      </button>}
     </header>
     <div className="coach-input__body">
-      {loadError && <p className="coach-input__error" role="alert">{loadError}</p>}
-      {player === null ? <>
-        <p className="coach-input__lead">Choose a player to add a coaching note.</p>
-        <div className="coach-input__section-heading">
-          <h3>Team roster</h3><span>{players.length} {players.length === 1 ? "player" : "players"}</span>
-        </div>
-        {players.length ? <div className="coach-input__roster" ref={roster} role="group" aria-label="Choose a player" onKeyDown={navigateRoster}>
-          {players.map((name, index) => <button key={index} type="button" className="coach-input__player" data-player={index} aria-label={name}
-            onClick={() => { setPlayer(index); setMessage(""); }}>
-            <span className="coach-input__initials" aria-hidden="true">{initials(name)}</span>
-            <span>{name}</span><span className="coach-input__arrow" aria-hidden="true">›</span>
-          </button>)}
-        </div> : <p className="coach-input__empty">There are no players on this roster yet.</p>}
-        <div role="status" className="coach-input__status">{message}</div>
-        {loading && <p role="status">Loading saved input…</p>}
-        {notes.length > 0 && <details className="coach-input__history">
-          <summary>Saved input <span>{notes.length}</span></summary>
-          <ul>{notes.map(note => <li key={note.id}>
-            <strong>{players[note.player]}</strong><span>{note.category}</span>
-            <p>{note.detail}</p>
-          </li>)}</ul>
-        </details>}
-        <button className="coach-input__exit" type="button" onClick={onClose}>View team report <span aria-hidden="true">→</span></button>
-      </> : <form onSubmit={submit}>
-        <div className="coach-input__selected">
-          <span className="coach-input__initials" aria-hidden="true">{initials(players[player])}</span>
-          <strong>{players[player]}</strong>
-          <button className="coach-input__change" onClick={() => { setMessage(""); returnToRoster(); }} disabled={busy} type="button">Change player</button>
-        </div>
-        <h3 className="coach-input__question" id="coach-input-focus" tabIndex={-1} ref={focusHeading}>Choose a focus</h3>
-        <div className="coach-input__presets" role="group" aria-labelledby="coach-input-focus">
-          {categories.map(option => <button key={option} type="button" aria-pressed={category === option} disabled={busy}
-            onClick={() => { setCategory(option); setSaveError(""); }}>
-            {option}<span aria-hidden="true">{category === option ? "✓" : "+"}</span>
-          </button>)}
-        </div>
-        {category && <div className="coach-input__entry">
-          <label htmlFor="coach-input-detail">What should they work on?</label>
-          <p id="coach-input-hint">Describe it in one sentence.</p>
-          <textarea id="coach-input-detail" ref={field} aria-describedby="coach-input-hint" value={detail}
-            onChange={event => setDetail(event.target.value)} required maxLength={1000} disabled={busy}
-            placeholder={`e.g. ${prompts[category]}`} rows={3} enterKeyHint="done"
-            onKeyDown={event => {
-              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-                event.preventDefault();
-                event.currentTarget.form?.requestSubmit();
-              }
-            }}/>
-          {saveError && <p className="coach-input__error" role="alert">{saveError}</p>}
-          <p className="coach-input__privacy">Anyone with this team link can read saved input.</p>
-          <button className="coach-input__save" type="submit" disabled={!detail.trim() || busy || loading || !!loadError}>
-            {busy ? "Saving…" : "Save input"}<span aria-hidden="true">↵</span>
-          </button>
-        </div>}
-      </form>}
+      {pendingExit ? <section className="coach-input__discard" aria-labelledby="coach-discard-title">
+        <h3 id="coach-discard-title">Discard this note?</h3>
+        <p>Your note for {player !== null && players[player]} hasn’t been saved.</p>
+        <button type="button" className="coach-input__primary" ref={keepEditing} onClick={resumeDraft}>Keep editing</button>
+        <button type="button" className="coach-input__secondary" onClick={() => leave(pendingExit)}>Discard note</button>
+      </section> : <>
+        {loadError && <p className="coach-input__error" role="alert">{loadError}</p>}
+        {player === null ? <>
+          {teamOptions.length > 0 && <div className="coach-input__teams" role="group" aria-label="Choose a team">
+            {teamOptions.map((name, index) => <button type="button" key={index} aria-pressed={teamIndex === index}
+              id={teamIndex === index ? "coach-input-active-team" : undefined}
+              onClick={() => { if (index !== teamIndex) onSelectTeam?.(index); }}>{name}</button>)}
+          </div>}
+          {teamOptions.length === 0 && <p className="coach-input__team">{activeTeamName}</p>}
+          <div className="coach-input__section-heading">
+            <h3>Choose a player</h3><span>{players.length} {players.length === 1 ? "player" : "players"}</span>
+          </div>
+          {players.length ? <div className="coach-input__roster" ref={roster} role="group" aria-label={`${activeTeamName} roster`} onKeyDown={navigateRoster}>
+            {players.map((name, index) => <button key={index} type="button" className="coach-input__player" data-player={index}
+              onClick={() => { setPlayer(index); setMessage(""); }}>
+              <span>{name}</span><Chevron/>
+            </button>)}
+          </div> : <p className="coach-input__empty">No players on this roster yet.</p>}
+          <div role="status" className="coach-input__status">{message || (loading ? "Loading saved notes…" : "")}</div>
+          {notes.length > 0 && <details className="coach-input__history">
+            <summary>Saved notes <span>({notes.length})</span></summary>
+            <ul>{notes.map(note => <li key={note.id}>
+              <strong>{players[note.player]}</strong><span>{note.category}</span>
+              <p>{note.detail}</p>
+            </li>)}</ul>
+          </details>}
+          <button className="coach-input__secondary coach-input__exit" type="button" onClick={() => requestExit("results")}>View team results <Chevron/></button>
+        </> : <form onSubmit={submit}>
+          <div className="coach-input__selected">
+            <div><p className="coach-input__team">{activeTeamName}</p><strong>{players[player]}</strong></div>
+            <button className="coach-input__change" onClick={() => requestExit("roster")} disabled={busy} type="button">Change player</button>
+          </div>
+          <h3 className="coach-input__question" id="coach-input-focus" tabIndex={-1} ref={focusHeading}>Choose a focus</h3>
+          <div className="coach-input__presets" role="group" aria-labelledby="coach-input-focus">
+            {categories.map(option => <button key={option} type="button" aria-pressed={category === option} disabled={busy}
+              onClick={() => { setCategory(option); setSaveError(""); }}>
+              {option}<span aria-hidden="true" className="coach-input__radio"/>
+            </button>)}
+          </div>
+          {category && <div className="coach-input__entry">
+            <label htmlFor="coach-input-detail">Add a coaching note</label>
+            <p id="coach-input-hint">In one sentence, what should they work on?</p>
+            <textarea id="coach-input-detail" ref={field} aria-describedby="coach-input-hint" value={detail}
+              onChange={event => setDetail(event.target.value)} required maxLength={1000} disabled={busy}
+              placeholder={prompts[category]} rows={3} enterKeyHint="done"
+              onKeyDown={event => {
+                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  event.currentTarget.form?.requestSubmit();
+                }
+              }}/>
+            {saveError && <p className="coach-input__error" role="alert">{saveError}</p>}
+            <p className="coach-input__privacy">Anyone with this report link can read saved notes.</p>
+            <button className="coach-input__primary" type="submit" disabled={!detail.trim() || busy || loading || !!loadError}>
+              {busy ? "Saving…" : "Save note"}
+            </button>
+          </div>}
+        </form>}
+      </>}
     </div>
   </dialog>;
 }

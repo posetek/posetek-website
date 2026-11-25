@@ -6,15 +6,27 @@ import { fileURLToPath } from "node:url";
 import { build } from "vite";
 
 // One private input file per team. Only fields displayed by the share reader are sealed.
-function selectAthlete({ name, workouts, testingAttempts, followUp, report }) {
+function milestone(value) {
+  if (value == null) return null;
+  if (typeof value !== "boolean") throw new Error("Activity milestones must be true, false or null.");
+  return value;
+}
+
+function selectAthlete({ name, workouts, testingAttempts, followUp, report, activity }) {
   if (typeof followUp !== "boolean") throw new Error("Each roster entry needs a followUp flag.");
   const athlete = { name, workouts, testingAttempts, followUp };
+  if (activity) {
+    athlete.activity = {
+      signedIn: milestone(activity.signedIn),
+      firstWorkoutCompleted: milestone(activity.firstWorkoutCompleted),
+    };
+  }
   if (report) {
     const { date, comparisonLabel, notes, metrics } = report;
     athlete.report = {
       date, comparisonLabel, notes,
-      metrics: metrics.map(({ label, result, average, count, percentile, band }) =>
-        ({ label, result, average, count, percentile, band })),
+      metrics: metrics.map(({ label, result, average, count, percentile, band, date, estimated }) =>
+        ({ label, result, average, count, percentile, band, date, estimated })),
     };
   }
   return athlete;
@@ -22,9 +34,9 @@ function selectAthlete({ name, workouts, testingAttempts, followUp, report }) {
 
 const input = process.argv[2];
 if (!input || process.argv.length !== 3) throw new Error("Usage: node scripts/build-coach-share.mjs <prepared-team.json>");
-function selectTeam({ team, club, asOf, athletes }) {
+function selectTeam({ team, shortName, club, asOf, athletes }) {
   if (!team || !club || !asOf || !Array.isArray(athletes)) throw new Error("Incomplete team snapshot.");
-  return { team, club, asOf, athletes: athletes.map(selectAthlete) };
+  return { team, shortName, club, asOf, athletes: athletes.map(selectAthlete) };
 }
 
 const data = JSON.parse(await readFile(input, "utf8"));
@@ -37,6 +49,7 @@ if (Array.isArray(data.teams)) {
 } else {
   selected = selectTeam(data);
 }
+if (data.layout === "roster-results") selected.layout = data.layout;
 const snapshot = JSON.stringify(selected);
 const privateDir = await mkdtemp(join(tmpdir(), "coach-share-"));
 const publishDir = join(privateDir, "publish");
