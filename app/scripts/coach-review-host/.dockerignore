@@ -1,0 +1,11 @@
+**
+!server.mjs
+!Dockerfile
+!publish/
+!publish/index.html
+!publish/view.bin
+!publish/robots.txt
+!publish/_headers
+!publish/assets/
+!publish/assets/index-*.js
+!publish/assets/index-*.css
