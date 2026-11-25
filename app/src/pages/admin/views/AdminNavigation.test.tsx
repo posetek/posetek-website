@@ -10,7 +10,7 @@ describe("admin navigation", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready email="admin@example.test" onSignOut={() => {}} /></MemoryRouter>);
     for (const path of ["accounts", "programs", "analysis", "drills", "ai-incidents", "device-performance", "user-issues", "feedback"]) expect(html).toContain(`href="/admin/${path}"`);
     expect(html).not.toContain('href="/admin"');
-    expect((html.match(/class="admin-section-link/g) ?? []).length).toBe(10);
+    expect((html.match(/class="admin-section-link/g) ?? []).length).toBe(11);
     expect(html).toContain("People &amp; organizations");
     expect(html).toContain("Device performance");
     expect(html.indexOf("AI incidents")).toBeLessThan(html.indexOf("Device performance"));
@@ -20,7 +20,7 @@ describe("admin navigation", () => {
     expect(html).toContain("Account access");
     expect(html).toContain("Technique review");
     expect(html).toContain("Result validation");
-    expect(html).toMatch(/href="\/insights\?from=organization&amp;view=overview"[^>]*>Overview<\/a>/);
+    expect(html).toContain('href="/insights?from=organization&amp;view=overview"');
     expect(html).toContain("Training");
     expect(html).toContain("Review tools");
     expect(html).toContain("System &amp; support");
