@@ -7,7 +7,7 @@ import { TeamResults, focusRoster } from "./TeamResults";
 import { rosterName, type SharedTeam } from "./reportData";
 import { clickedAction, createUsage, usageEnabled } from "./usage";
 import { CoachInput } from "./CoachInput";
-import { coachNotesEnabled, createCoachNotes, localCoachNotes, type CoachNote } from "./coachNotes";
+import { coachDemo, coachNotesEnabled, createCoachNotes, createDemoNotes, localCoachNotes, type CoachNote } from "./coachNotes";
 import "./reader.css";
 import "../coach-view.scss";
 import "./team-report.css";
@@ -61,7 +61,7 @@ function TeamInput({ team, teamIndex, teams, onSelectTeam, client, onClose }: {
     client.list(teamIndex).then(saved => {
       if (active) setNotes(saved.filter(note => note.player >= 0 && note.player < team.athletes.length));
     }).catch(() => {
-      if (active) setLoadError(localCoachNotes ? "This browser couldn’t open your offline notes. Allow local storage or use the live preview." : "Couldn’t load saved input. Close and reopen Coaches input to try again.");
+      if (active) setLoadError(coachDemo ? "Allow local storage in this browser to use demo notes." : localCoachNotes ? "This browser couldn’t open your offline notes. Allow local storage or use the live preview." : "Couldn’t load saved input. Close and reopen Coaches input to try again.");
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [client, teamIndex, team]);
@@ -99,6 +99,7 @@ function TeamView({ teams, record, client, resultsLayout }: { teams: SharedTeam[
     selectTeam(next);
     document.getElementById(`team-tab-${next}`)?.focus();
   }
+  const brand = <strong className="portal-brand"><span aria-hidden="true" className="portal-brand-mark">P</span> POSETEK</strong>;
   return <div className={`pt-pose portal-body pt-insights is-coach-workspace cv-page${resultsLayout ? " cr-page" : ""}`}
     onClickCapture={e => {
       if (!(e.target instanceof Element)) return;
@@ -113,7 +114,7 @@ function TeamView({ teams, record, client, resultsLayout }: { teams: SharedTeam[
     }}>
     <header className="portal-header">
       <div className="cv-header-inner">
-        <strong className="portal-brand"><span aria-hidden="true" className="portal-brand-mark">P</span> POSETEK</strong>
+        {coachDemo ? <div className="cv-demo-brand">{brand}<span>Coach demo · Sample data</span></div> : brand}
         <div className="cv-header-actions">
           {!resultsLayout && <button className="cv-group cv-message-jump" aria-label="Message athletes" onClick={() => focusFollowUp(suffix(active))}>
             <span className="cv-label-wide">Message athletes</span><span className="cv-label-small">Messages</span>
@@ -147,7 +148,21 @@ function TeamView({ teams, record, client, resultsLayout }: { teams: SharedTeam[
   </div>;
 }
 
+type ReportBundle = SharedTeam | { layout?: string; teams: SharedTeam[] };
+
+function showView(data: ReportBundle, client: NotesClient | null, record: Awaited<ReturnType<typeof createUsage>>) {
+  const teams = "teams" in data ? data.teams : [data];
+  if (!teams.length) throw new Error("Report unavailable");
+  const resultsLayout = data.layout === "roster-results" || (Boolean(client) && teams.length === 1);
+  createRoot(document.getElementById("root")!).render(<TeamView client={client} record={record} teams={teams} resultsLayout={resultsLayout}/>);
+}
+
 async function openView() {
+  if (coachDemo) {
+    const { snapshot, version } = JSON.parse(document.getElementById("coach-demo-data")!.textContent!);
+    showView(snapshot, await createDemoNotes(version), () => {});
+    return;
+  }
   const embedded: { key: string; snapshot: string } | null = localCoachNotes
     ? JSON.parse(document.getElementById("offline-report")?.textContent || "null") : null;
   if (localCoachNotes && !embedded) throw new Error("Open the offline review file");
@@ -164,7 +179,7 @@ async function openView() {
     ciphertext = new Uint8Array(await response.arrayBuffer());
   }
   const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv:ciphertext.subarray(0,12)}, key, ciphertext.subarray(12));
-  const data: SharedTeam | { layout?: string; teams: SharedTeam[] } = JSON.parse(new TextDecoder().decode(plain));
+  const data: ReportBundle = JSON.parse(new TextDecoder().decode(plain));
   const client = coachNotesEnabled ? await createCoachNotes(keyText) : null;
   const record = await createUsage(keyText).catch(() => () => {});
   const recordOpen = () => {
@@ -174,11 +189,8 @@ async function openView() {
   };
   document.addEventListener("visibilitychange", recordOpen);
   recordOpen();
-  const teams = "teams" in data ? data.teams : [data];
-  if (!teams.length) throw new Error("Report unavailable");
-  const resultsLayout = data.layout === "roster-results" || (Boolean(client) && teams.length === 1);
-  createRoot(document.getElementById("root")!).render(<TeamView client={client} record={record} teams={teams} resultsLayout={resultsLayout}/>);
+  showView(data, client, record);
 }
 openView().catch(() => {
-  document.getElementById("status")!.textContent = "Open the complete private link shared with you to view your team.";
+  document.getElementById("status")!.textContent = coachDemo ? "The coach demo couldn’t open. Reload the page to try again." : "Open the complete private link shared with you to view your team.";
 });

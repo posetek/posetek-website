@@ -83,3 +83,10 @@
   .cv-label-small { display: inline; }
   .cv-page .cv-header-actions button { font-size: .82rem; }
 }
+
+.cv-demo-brand { display: flex; align-items: center; gap: .85rem; }
+.cv-demo-brand > span { color: var(--muted); font-size: .82rem; }
+@media (max-width: 600px) {
+  .cv-demo-brand { display: grid; gap: 0; }
+  .cv-demo-brand > span { font-size: .73rem; }
+}

@@ -1,6 +1,6 @@
 type Action = "open" | "team" | "standings-test" | "one-pager" | "notes" | "messages" | "recipient" | "group" | "send-one" | "send-all";
 
-export const usageEnabled = import.meta.env.VITE_COACH_DEMO_USAGE === "1";
+export const usageEnabled = import.meta.env.VITE_COACH_NOTES !== "demo" && import.meta.env.VITE_COACH_DEMO_USAGE === "1";
 type RecordAction = (action: Action, team: number) => void;
 
 export async function createUsage(key: string): Promise<RecordAction> {

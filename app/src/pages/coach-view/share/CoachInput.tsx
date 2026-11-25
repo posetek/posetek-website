@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { categories, localCoachNotes, type Category, type CoachNote } from "./coachNotes";
+import { categories, coachDemo, localCoachNotes, type Category, type CoachNote } from "./coachNotes";
 import "./coach-input.css";
 
 interface CoachInputProps {
@@ -131,7 +131,9 @@ export function CoachInput({
   return <dialog className="coach-input" ref={dialog} aria-labelledby="coach-input-title"
     onCancel={event => { event.preventDefault(); if (pendingExit) resumeDraft(); else requestExit("results"); }}>
     <header className="coach-input__header">
+      {coachDemo && <p className="coach-input__sample">Coach demo · Sample data</p>}
       <h2 id="coach-input-title" ref={heading} tabIndex={-1} aria-describedby={player === null && teamOptions.length > 0 ? "coach-input-active-team" : undefined}>Coaches Input</h2>
+      {coachDemo && <p className="coach-input__local-note">Notes stay in this browser.</p>}
       {!pendingExit && <button className="coach-input__close" aria-label="Close Coaches Input" type="button"
         onClick={() => requestExit("results")} disabled={busy}>
         <svg viewBox="0 0 24 24" height="18" width="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="m6 6 12 12m0-12L6 18"/></svg>
@@ -195,7 +197,7 @@ export function CoachInput({
                 }
               }}/>
             {saveError && <p className="coach-input__error" role="alert">{saveError}</p>}
-            <p className="coach-input__privacy">{localCoachNotes ? "Offline preview. Notes are saved in this browser." : "Anyone with this report link can read saved notes."}</p>
+            {!coachDemo && <p className="coach-input__privacy">{localCoachNotes ? "Offline preview. Notes are saved in this browser." : "Anyone with this report link can read saved notes."}</p>}
             <button className="coach-input__primary" type="submit" disabled={!detail.trim() || busy || loading || !!loadError}>
               {busy ? "Saving…" : "Save note"}
             </button>

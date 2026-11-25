@@ -228,3 +228,6 @@
   .coach-input__body { padding: .875rem 1rem 1rem; }
   .coach-input .coach-input__close { top: .5rem; right: .5rem; }
 }
+
+.coach-input__sample { margin: 0 0 .3rem; color: var(--input-accent); font-size: .8rem; font-weight: 650; }
+.coach-input__local-note { margin: .3rem 0 0; color: var(--input-muted); font-size: .85rem; }

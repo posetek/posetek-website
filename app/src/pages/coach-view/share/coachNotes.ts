@@ -1,4 +1,5 @@
-export const localCoachNotes = import.meta.env.VITE_COACH_NOTES === "local";
+export const coachDemo = import.meta.env.VITE_COACH_NOTES === "demo";
+export const localCoachNotes = coachDemo || import.meta.env.VITE_COACH_NOTES === "local";
 export const coachNotesEnabled = localCoachNotes || import.meta.env.VITE_COACH_NOTES === "1";
 export const categories = ["Technique", "Speed", "Strength", "Fitness"] as const;
 export type Category = (typeof categories)[number];
@@ -24,6 +25,23 @@ function decode(value: string) {
   return Uint8Array.from(atob(value.replace(/-/g, "+").replace(/_/g, "/")), char => char.charCodeAt(0));
 }
 
+export async function createDemoNotes(version: number) {
+  const name = "posetek/coach-demo/key/" + version;
+  function browserKey() {
+    const fresh = base64url(crypto.getRandomValues(new Uint8Array(32)));
+    try {
+      const saved = localStorage.getItem(name);
+      if (saved && /^[A-Za-z0-9_-]{43}$/.test(saved)) return saved;
+      localStorage.setItem(name, fresh);
+    } catch {
+      // The demo can still show results if this browser has disabled local storage.
+    }
+    return fresh;
+  }
+  const key = navigator.locks ? await navigator.locks.request(name, browserKey).catch(browserKey) : browserKey();
+  return createCoachNotes(key);
+}
+
 export async function createCoachNotes(keyText: string) {
   if (!coachNotesEnabled || !/^[A-Za-z0-9_-]{43}$/.test(keyText)) {
     throw new Error("Open your complete private Coach View link to save notes.");
@@ -32,7 +50,8 @@ export async function createCoachNotes(keyText: string) {
   const proof = base64url(new Uint8Array(await digest("coach-notes-access-v1:" + keyText)));
   const key = await crypto.subtle.importKey("raw", await digest("coach-notes-encryption-v1:" + keyText), "AES-GCM", false, ["encrypt", "decrypt"]);
   const binding = (team: number, id: string) => encoder.encode(`coach-notes-v1/${team}/${id}`);
-  const storagePrefix = (team: number) => `posetek/coach-review/${proof}/${team}/`;
+  const storageRoot = coachDemo ? "posetek/coach-demo/notes" : "posetek/coach-review";
+  const storagePrefix = (team: number) => `${storageRoot}/${proof}/${team}/`;
   async function request(team: number, envelope?: Envelope) {
     if (!Number.isSafeInteger(team) || team < 0) throw new Error("Select a team to open its notes.");
     const headers: Record<string, string> = { Authorization: "Bearer " + proof };

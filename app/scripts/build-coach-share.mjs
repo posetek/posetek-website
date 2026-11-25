@@ -41,6 +41,7 @@ function selectAthlete({ name, workouts, testingAttempts, followUp, report, acti
   return athlete;
 }
 
+if (process.env.VITE_COACH_NOTES === "demo") throw new Error("Build the synthetic coach demo with build-coach-demo.mjs.");
 const input = process.argv[2];
 if (!input || process.argv.length !== 3) throw new Error("Usage: node scripts/build-coach-share.mjs <prepared-team.json>");
 function isTestDate(value) {
