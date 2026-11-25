@@ -42,30 +42,56 @@ function selectAthlete({ name, workouts, testingAttempts, followUp, report, acti
 
 const input = process.argv[2];
 if (!input || process.argv.length !== 3) throw new Error("Usage: node scripts/build-coach-share.mjs <prepared-team.json>");
-// Each point represents at least five athletes of a recorded age in the same school session.
-function selectPathway(series) {
+function isTestDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const time = new Date(value + "T00:00:00Z");
+  return Number.isFinite(time.getTime()) && time.toISOString().slice(0, 10) === value;
+}
+
+// Each point represents at least five athletes of a recorded age in the same testing group.
+function selectPathway(series, dated) {
   const units = { "Vertical jump": "in", "Broad jump": "ft" };
-  if (!Array.isArray(series)) throw new Error("Expected a list of dated jump comparisons.");
+  if (!Array.isArray(series)) throw new Error("Expected a list of jump comparisons.");
+  const seen = new Set();
   return series.map(({ date, test, unit, groups, teamCount, teamMean }) => {
-    if (units[test] !== unit || !Object.hasOwn(units, test) || !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+    if (units[test] !== unit || !Object.hasOwn(units, test) || (dated ? !isTestDate(date) : date != null) ||
         !Array.isArray(groups) || !Number.isSafeInteger(teamCount) || teamCount < 0 ||
         (teamMean !== null && (teamCount < 5 || !Number.isFinite(teamMean) || teamMean <= 0))) {
-      throw new Error("Invalid dated jump comparison.");
+      throw new Error("Invalid jump comparison.");
     }
+    const key = dated ? date + "/" + test : test;
+    if (seen.has(key)) throw new Error("Duplicate jump comparison.");
+    seen.add(key);
     const points = groups.map(({ age, count, mean }) => {
       if (!Number.isSafeInteger(age) || age < 5 || age > 24 || !Number.isSafeInteger(count) ||
           count < 5 || !Number.isFinite(mean) || mean <= 0) throw new Error("Invalid age comparison group.");
       return { age, count, mean };
     }).sort((a, b) => a.age - b.age);
     if (new Set(points.map(point => point.age)).size !== points.length) throw new Error("Duplicate age in a testing session.");
-    return { date, test, unit, groups: points, teamCount, teamMean };
+    return { ...(dated ? { date } : {}), test, unit, groups: points, teamCount, teamMean };
   });
 }
 
-function selectTeam({ team, shortName, club, asOf, athletes, pathway }) {
+function selectTeam({ team, shortName, club, asOf, athletes, pathway, testingWindow }) {
   if (!team || !club || !asOf || !Array.isArray(athletes)) throw new Error("Incomplete team snapshot.");
   const selected = { team, shortName, club, asOf, athletes: athletes.map(selectAthlete) };
-  if (pathway != null) selected.pathway = selectPathway(pathway);
+  if (testingWindow != null) {
+    const { startDate, endDate } = testingWindow;
+    if (!isTestDate(startDate) || !isTestDate(endDate) || startDate > endDate || pathway != null) {
+      throw new Error("A combined assessment needs one testing window and its own comparisons.");
+    }
+    for (const athlete of selected.athletes) {
+      for (const metric of athlete.report?.metrics ?? []) {
+        if (metric.result == null) continue;
+        if (!isTestDate(metric.date) || metric.date < startDate || metric.date > endDate) {
+          throw new Error("A scored result falls outside the declared testing window.");
+        }
+      }
+    }
+    selected.testingWindow = { startDate, endDate, pathway: selectPathway(testingWindow.pathway ?? [], false) };
+  } else if (pathway != null) {
+    selected.pathway = selectPathway(pathway, true);
+  }
   return selected;
 }
 

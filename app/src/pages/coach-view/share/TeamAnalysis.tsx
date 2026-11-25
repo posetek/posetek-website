@@ -1,11 +1,11 @@
 import { useId, useState } from "react";
 import { ordinal, testName } from "../CoachStandings";
-import { hasScore, rosterName, type SharedTeam, type TeamAgeSeries } from "./reportData";
+import { formatTestingWindow, hasScore, rosterName, type SharedTeam, type TeamAgeSeries, type TeamJumpComparison } from "./reportData";
 import "./team-analysis.css";
 
 export type TeamAnalysisMode = "standings" | "pathway";
-type Selection = { test: string; date: string };
-type Standing = Selection & { name: string; result: string; percentile: number };
+type Selection = { test: string; date?: string };
+type Standing = { test: string; date: string; name: string; result: string; percentile: number };
 const modes = { standings: "Team standings", pathway: "Development pathway" } as const;
 const modeKeys = Object.keys(modes) as TeamAnalysisMode[];
 const dateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
@@ -17,11 +17,13 @@ function showDate(date: string) {
 }
 
 function standingRows(team: SharedTeam): Standing[] {
+  const { testingWindow } = team;
   return team.athletes.flatMap(({ name, report }) => report?.metrics.flatMap(metric => {
     const date = metric.date || report.date;
     const percentile = metric.percentile;
     if (!hasScore(metric) || !date || percentile == null || !Number.isFinite(percentile) ||
         percentile < 0 || percentile > 100) return [];
+    if (testingWindow && (date < testingWindow.startDate || date > testingWindow.endDate)) return [];
     return [{ name, test: testName(metric.label), date, result: metric.result, percentile }];
   }) ?? []);
 }
@@ -31,7 +33,7 @@ function preferredSeries(a: TeamAgeSeries, b: TeamAgeSeries) {
     b.date.localeCompare(a.date) || Number(b.test === "Vertical jump") - Number(a.test === "Vertical jump");
 }
 
-function StandingsChart({ rows }: { rows: Standing[] }) {
+function StandingsChart({ rows, pooled }: { rows: Standing[]; pooled: boolean }) {
   const ranked = [...rows].sort((a, b) => b.percentile - a.percentile || a.name.localeCompare(b.name));
   return <>
     <div className="cr-standing-headers" aria-hidden="true">
@@ -50,7 +52,9 @@ function StandingsChart({ rows }: { rows: Standing[] }) {
           </li>)}
       </ol>
     </div>
-    <p className="cr-chart-note">Percentiles use each player’s original testing group.</p>
+    <p className="cr-chart-note">{pooled
+      ? `Percentiles compare ${playerCount(ranked.length)} on this team across the testing window.`
+      : "Percentiles use each player’s original testing group."}</p>
   </>;
 }
 
@@ -58,7 +62,7 @@ function playerCount(count: number) {
   return count + (count === 1 ? " player" : " players");
 }
 
-function PathwayChart({ series, teamName, club }: { series: TeamAgeSeries; teamName: string; club: string }) {
+function PathwayChart({ series, teamName, club }: { series: TeamJumpComparison; teamName: string; club: string }) {
   const { groups, teamMean, teamCount, unit } = series;
   const maximum = Math.max(...groups.map(group => group.mean), teamMean ?? 0);
   const increment = 10 ** Math.floor(Math.log10(maximum)) / 2;
@@ -97,20 +101,29 @@ export function TeamAnalysis({ team, mode, onModeChange }: {
   const chartId = useId();
   const teamName = rosterName(team);
   const [selections, setSelections] = useState<Partial<Record<TeamAnalysisMode, Selection>>>({});
+  const { testingWindow } = team;
   const standings = standingRows(team);
-  const pathway = (team.pathway ?? []).filter(series => series.groups.length > 0).sort(preferredSeries);
+  const datedPathway = (team.pathway ?? []).filter(series => series.groups.length > 0).sort(preferredSeries);
+  const pathway = testingWindow ? testingWindow.pathway.filter(series => series.groups.length > 0) : datedPathway;
   const isPathway = mode === "pathway";
   const records = isPathway ? pathway : standings;
   const tests = [...new Set(records.map(row => row.test))];
   const selection = selections[mode];
-  const standingsTest = tests.includes("Vertical jump") ? "Vertical jump" : tests[0];
-  const defaultTest = isPathway ? pathway[0]?.test : standingsTest;
+  const preferredTest = tests.includes("Vertical jump") ? "Vertical jump" : tests[0];
+  const defaultTest = isPathway && !testingWindow ? datedPathway[0]?.test : preferredTest;
   const test = selection && tests.includes(selection.test) ? selection.test : defaultTest;
-  const dates = [...new Set(records.filter(row => row.test === test).map(row => row.date))].sort().reverse();
-  const preferredDate = isPathway ? pathway.find(series => series.test === test)?.date : dates[0];
-  const date = selection && dates.includes(selection.date) ? selection.date : preferredDate;
-  const series = pathway.find(row => row.test === test && row.date === date);
-  const rows = standings.filter(row => row.test === test && row.date === date);
+
+  let dates: string[] = [];
+  let date: string | undefined;
+  if (!testingWindow) {
+    const datedRecords = isPathway ? datedPathway : standings;
+    dates = [...new Set(datedRecords.filter(row => row.test === test).map(row => row.date))].sort().reverse();
+    const preferredDate = isPathway ? datedPathway.find(series => series.test === test)?.date : dates[0];
+    date = selection?.date && dates.includes(selection.date) ? selection.date : preferredDate;
+  }
+  const period = testingWindow ? formatTestingWindow(testingWindow) : date && showDate(date);
+  const series = testingWindow ? pathway.find(row => row.test === test) : datedPathway.find(row => row.test === test && row.date === date);
+  const rows = standings.filter(row => row.test === test && (testingWindow || row.date === date));
   function select(next: Selection) {
     setSelections(previous => ({ ...previous, [mode]: next }));
   }
@@ -118,7 +131,7 @@ export function TeamAnalysis({ team, mode, onModeChange }: {
   if (isPathway && series) {
     chart = <PathwayChart series={series} teamName={teamName} club={team.club}/>;
   } else if (!isPathway && rows.length) {
-    chart = <StandingsChart rows={rows}/>;
+    chart = <StandingsChart rows={rows} pooled={Boolean(testingWindow)}/>;
   } else {
     chart = <p className="cr-chart-note">{isPathway ? "No age-group jump averages were published for this team." : "No published percentiles for this team."}</p>;
   }
@@ -128,16 +141,17 @@ export function TeamAnalysis({ team, mode, onModeChange }: {
         {modeKeys.map(key => <button key={key} type="button" aria-pressed={mode === key} aria-controls={chartId}
           onClick={() => onModeChange(key)}>{modes[key]}</button>)}
       </div>
-      {test && date && <div className="cr-chart-filters">
-        <label>Test<select aria-label="Test" value={test} onChange={e => select({ test: e.target.value, date })}>
+      {(test || testingWindow) && <div className="cr-chart-filters">
+        {test && <label>Test<select aria-label="Test" value={test} onChange={e => select({ test: e.target.value, date })}>
           {tests.map(name => <option key={name}>{name}</option>)}
-        </select></label>
-        <label>Session<select aria-label="Session" value={date} onChange={e => select({ test, date: e.target.value })}>
+        </select></label>}
+        {testingWindow && <div className="cr-chart-window"><span>Testing window</span><strong>{period}</strong></div>}
+        {test && date && <label>Session<select aria-label="Session" value={date} onChange={e => select({ test, date: e.target.value })}>
           {dates.map(day => <option key={day} value={day}>{showDate(day)}</option>)}
-        </select></label>
+        </select></label>}
       </div>}
     </div>
-    <figure className="cr-analysis-chart" id={chartId} aria-label={[teamName, modes[mode], test, date && showDate(date)].filter(Boolean).join(" · ")}>
+    <figure className="cr-analysis-chart" id={chartId} aria-label={[teamName, modes[mode], test, period].filter(Boolean).join(" · ")}>
       {chart}
     </figure>
   </section>;

@@ -13,15 +13,27 @@ type Milestones = {
   timerRecords?: number | null;
 };
 export type SharedAthlete = RosterAthlete & { followUp: boolean; activity?: Milestones };
-export type TeamAgeSeries = {
-  date: string;
+export type TeamJumpComparison = {
   test: "Vertical jump" | "Broad jump";
   unit: "in" | "ft";
   groups: { age: number; count: number; mean: number }[];
   teamMean: number | null;
   teamCount: number;
 };
-export type SharedTeam = { layout?: string; team: string; shortName?: string; club: string; asOf: string; athletes: SharedAthlete[]; pathway?: TeamAgeSeries[] };
+export type TeamAgeSeries = TeamJumpComparison & { date: string };
+export type TestingWindow = { startDate: string; endDate: string; pathway: TeamJumpComparison[] };
+export type SharedTeam = {
+  layout?: string; team: string; shortName?: string; club: string; asOf: string; athletes: SharedAthlete[];
+  pathway?: TeamAgeSeries[]; testingWindow?: TestingWindow;
+};
+
+const windowDateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+export function formatTestingWindow({ startDate, endDate }: TestingWindow) {
+  const start = new Date(startDate + "T12:00:00Z");
+  const end = new Date(endDate + "T12:00:00Z");
+  return windowDateFormat.formatRange(start, end).replace(/\s*–\s*/g, "–");
+}
 
 export function rosterName(team: SharedTeam) {
   return team.shortName || team.team.split(" — ")[0];

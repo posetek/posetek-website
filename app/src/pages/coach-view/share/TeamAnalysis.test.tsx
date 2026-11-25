@@ -72,3 +72,42 @@ describe("coach roster graph selection", () => {
     expect(pathway).not.toContain('class="cr-age-column"');
   });
 });
+
+describe("combined testing window", () => {
+  const combined: SharedTeam = {
+    ...team,
+    athletes: [
+      ...team.athletes,
+      makePlayer("Prior event", "25 in", 100, "2026-11-22"),
+      makePlayer("Future event", "22 in", 100, "2026-11-25"),
+    ],
+    testingWindow: { startDate: earlier, endDate: later, pathway: [{
+      test: "Vertical jump", unit: "in", groups: [{ age: 15, count: 12, mean: 14.34 }], teamMean: 15.16, teamCount: 17,
+    }] },
+  };
+
+  it("shows one standing per ranked test result across both days and excludes other events", () => {
+    const html = render("standings", combined);
+    expect(html).toContain('aria-label="Varsity · Team standings · Vertical jump · Nov 23–24, 2026"');
+    expect(html).toContain("Testing window");
+    expect(html).toContain("Percentiles compare 3 players on this team");
+    expect(html).not.toContain('aria-label="Session"');
+    expect(html.match(/data-percentile="(\d+)"/g)).toEqual(['data-percentile="100"', 'data-percentile="80"', 'data-percentile="0"']);
+    for (const excluded of ["Withheld", "No rank", "Another test", "Prior event", "Future event"]) expect(html).not.toContain(excluded);
+  });
+
+  it("uses the published combined age and team averages even when legacy daily summaries are present", () => {
+    const html = render("pathway", combined);
+    expect(html).toContain('aria-label="Varsity · Development pathway · Vertical jump · Nov 23–24, 2026"');
+    for (const label of ["Age 15", "12 players", "14.34 in", "15.16 in", "17 players"]) expect(html).toContain(label);
+    for (const excluded of ['aria-label="Session"', "Age 14", "Age 16", "15.55 in"]) expect(html).not.toContain(excluded);
+  });
+
+  it("preserves the empty window and gracefully displays a single event date", () => {
+    const html = render("pathway", { ...combined, testingWindow: { startDate: earlier, endDate: earlier, pathway: [] } });
+    expect(html).toContain("Nov 23, 2026");
+    expect(html).toContain("No age-group jump averages");
+    expect(html).not.toContain("Age 14");
+    expect(html).not.toContain('aria-label="Session"');
+  });
+});

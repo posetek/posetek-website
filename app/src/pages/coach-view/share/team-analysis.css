@@ -43,7 +43,8 @@
 .cr-chart-modes button[aria-pressed="true"] { color: #11210c; background: var(--lime); }
 .cr-chart-modes button[aria-pressed="true"]:focus-visible { outline-color: #11210c; outline-offset: -4px; }
 .cr-chart-filters { display: flex; gap: 12px; }
-.cr-chart-filters label { display: grid; gap: 2px; font-size: .74rem; color: var(--cr-muted); }
+.cr-chart-filters label, .cr-chart-window { display: grid; gap: 2px; font-size: .74rem; color: var(--cr-muted); }
+.cr-chart-window strong { align-self: center; font-size: .88rem; font-weight: 600; color: var(--cr-ink); }
 .cr-chart-filters select {
   color-scheme: dark;
   background: #182c20;
@@ -120,7 +121,7 @@
 .cr-analysis .cr-age-axis { margin: 42px 0 0 2rem; text-align: center; }
 @media (max-width: 700px) {
   .cr-chart-filters { flex: 1 0 100%; gap: 8px; }
-  .cr-chart-filters label { flex: 1; min-width: 0; }
+  .cr-chart-filters label, .cr-chart-window { flex: 1; min-width: 0; }
   .cr-chart-filters select { min-height: 36px; }
   .cr-chart-modes { flex: 1; }
   .cr-chart-modes button { flex: 1; min-height: 42px; }
