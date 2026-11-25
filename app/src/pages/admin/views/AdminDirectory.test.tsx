@@ -30,6 +30,13 @@ describe("admin directory presentation", () => {
     expect(html).toContain("Current club");
     expect(html).not.toContain("Old roster");
     expect(html).not.toContain("Legacy organization");
+    if (url === "/admin/accounts") {
+      expect(html).toContain('aria-label="Organization directory"');
+      expect(html).not.toContain('aria-label="Organization hierarchy"');
+      expect(html.match(/>Current club</g)).toHaveLength(1);
+      expect(html).toContain("Player count unavailable");
+      expect(html).toContain("Find a player");
+    }
     if (url.includes("orgId=old")) expect(html).toContain("That organization is no longer available. Choose a current organization.");
   });
   it("renders the workspace and tabs before organizations or unrelated accounts finish loading", () => {
