@@ -41,7 +41,7 @@ describe("privacy policy page", () => {
   });
 
   it("discloses prospective account attribution, anonymous shared visits and unchanged historical anonymity", () => {
-    expect(POLICY_LAST_UPDATED).toBe("November 21, 2026");
+    expect(POLICY_LAST_UPDATED).toBe("November 26, 2026");
     const section = html.match(/<section id="app-feedback"[\s\S]*?<\/section>/)?.[0] ?? "";
     expect(section).toContain("before you answer");
     expect(section).toContain("requires a signed-in account");
@@ -124,6 +124,25 @@ describe("privacy policy page", () => {
     for (const text of ["community feed is off unless", "teammates, coaches and staff",
       "shared automatically with the player&#x27;s organization", "PoseTek administrators, who can also hide any activity"])
       expect(sharing).toContain(text);
+  });
+
+  it("discloses training reminder notifications, the device token, Apple's delivery and how to turn them off", () => {
+    const data = html.match(/<section id="information-we-collect"[\s\S]*?<\/section>/)?.[0] ?? "";
+    for (const text of ["<strong>Notifications:</strong>", "asks once for permission to send notifications",
+      "through Apple&#x27;s push notification service", "push notification token for your iPhone",
+      "linked to the signed-in account and the player", "when the player recently finished training",
+      "receives that player&#x27;s reminders on their own phone", "contain no messages written by users",
+      "Turning notifications off for PoseTek in iOS Settings stops the reminders"]) expect(data).toContain(text);
+    const sharing = html.match(/<section id="how-we-share-information"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(sharing).toContain("Apple, through its push notification service, for delivering training reminders");
+    const retention = html.match(/<section id="data-retention"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(retention).toContain("push notification token is deleted when the account is deleted");
+    expect(retention).toContain("when another account registers for notifications on that device");
+    const choices = html.match(/<section id="your-choices-and-rights"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(choices).toContain("photo library and notification access in your device settings");
+    expect(choices).toContain("training reminders stop when notifications are off");
+    const children = html.match(/<section id="childrens-privacy"[\s\S]*?<\/section>/)?.[0] ?? "";
+    expect(children).toContain("a device token used to deliver training reminders");
   });
 
 });
