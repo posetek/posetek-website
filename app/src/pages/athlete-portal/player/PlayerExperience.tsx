@@ -9,6 +9,7 @@ import { accepted, allStatsReps, normalizeRep } from '../lib/metrics';
 import type { PortalContext } from '../views/shared';
 import CoachChat from './CoachChat';
 import { usePersonalWorkouts } from './use-personal-workouts';
+import { coalescedRepRefresh } from './rep-refresh';
 import { useCoachConfig } from './gateway';
 import { personalDraftLink } from './personal-conversation';
 import { defaultDataset, intakeSnapshot, playerProfile } from './scoring';
@@ -90,7 +91,7 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
     const player = db.collection('players').doc(ctx.playerId!);
     let alive = true, refreshVersion = 0;
     const stopPlayer = player.onSnapshot(d => { if (d.exists) setAthlete({ ...d.data(), id: d.id }); }, e => setRefreshError(e.message));
-    const stopReps = player.collection('reps').onSnapshot(() => {
+    const refresh = coalescedRepRefresh(() => {
       const version = ++refreshVersion;
       void cloud.httpsCallable('getAthleteEffectiveResults')({ playerId: ctx.playerId }).then(response => {
         if (!alive || version !== refreshVersion) return;
@@ -100,12 +101,13 @@ export default function PlayerExperience({ ctx, initialReps }: { ctx: PortalCont
         setProvisionalEstimates(parseProvisionalEstimates(payload.provisionalEstimates));
         setRefreshError('');
       }).catch(e => { if (alive && version === refreshVersion) { setProvisionalEstimates([]); setRefreshError(e.message); } });
-    }, e => setRefreshError(e.message));
+    });
+    const stopReps = player.collection('reps').onSnapshot(s => refresh.signal(s.metadata.fromCache), e => setRefreshError(e.message));
     const stopBenchmarks = db.collection('benchmarks').doc('d1').onSnapshot(d => {
       const value = d.data();
       if (value?.schemaVersion === 1 && value.tier === 'd1' && value.cells && Number.isInteger(value.generation)) setDataset(old => value.generation > old.generation ? value : old);
     }, () => { /* bundled generation remains valid offline */ });
-    return () => { alive = false; ++refreshVersion; stopPlayer(); stopReps(); stopBenchmarks(); };
+    return () => { alive = false; ++refreshVersion; refresh.stop(); stopPlayer(); stopReps(); stopBenchmarks(); };
   }, [ctx.playerId, preview]);
   const all = useMemo(() => allStatsReps(reps), [reps]);
   const profile = useMemo(() => playerProfile(all, athlete, dataset), [all, athlete, dataset]);
