@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import firebase, { auth, db } from '../../../lib/firebase';
 import { normalizeCatalogDrill } from '../../../lib/contracts/drillV2';
+import { watchCachedCatalog } from '../../../lib/drill-catalog-cache';
 import type { CatalogDrill } from '../../../lib/contracts/drillV2';
 import type { Row } from './execution';
 import type { PlayerWorkoutStore } from './use-player-workouts';
@@ -183,7 +184,7 @@ export function usePersonalWorkouts(playerId: string, preview: boolean, config: 
       player.collection('personalWorkouts').onSnapshot(s => { current.current.workouts = s.docs.map(d => latestPersonalRevision(current.current.workouts.find(w => w.workoutId === d.id), { ...d.data(), id: d.id })); setWorkouts(current.current.workouts); setLoaded(true); }, e => setError(e.message)),
       player.collection('personalWorkoutLogs').onSnapshot(s => { current.current.logs = Object.fromEntries(s.docs.map(d => [d.id, latestPersonalRevision(current.current.logs[d.id], { ...d.data(), id: d.id })])); setLogs(current.current.logs); }, e => setError(e.message)),
       player.collection('workoutSchedule').doc('current').onSnapshot(d => { current.current.scheduleRevision = Math.max(current.current.scheduleRevision || 0, Number(d.data()?.revision || 0)); setScheduleRevision(current.current.scheduleRevision); }, e => setError(e.message)),
-      db.collection('drillCatalog').where('status', '==', 'published').onSnapshot(s => setCatalog(s.docs.map(d => normalizeCatalogDrill(d.id, d.data()))), e => setError(e.message)),
+      watchCachedCatalog('published', docs => setCatalog(docs.map(d => normalizeCatalogDrill(d.id, d.data))), e => setError(e.message)),
       player.collection('aiConversations').where('capability', '==', 'generate_personal_workout').where('createdByUid', '==', uid).onSnapshot(s => {
         if (generation.current !== token) return;
         setConversations(s.docs.map(d => ({ ...d.data(), id: d.id, conversationId: d.id })).sort((a: Row, b: Row) => personalTimestamp(b.lastMessageAt) - personalTimestamp(a.lastMessageAt)));

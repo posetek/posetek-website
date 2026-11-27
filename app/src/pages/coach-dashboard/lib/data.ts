@@ -12,6 +12,7 @@ import { readAccessibleLegacyRoster } from "../../../lib/legacy-roster";
 import { auth, cloud, db } from "../../../lib/firebase";
 import { findCoach as findCoachByUid } from "../../../lib/identity";
 import { normalizeStatus } from "../../../lib/contracts/drillV2";
+import { loadCachedCatalog } from "../../../lib/drill-catalog-cache";
 import { allStatsReps, normalizeRep, accepted } from "../../athlete-portal/lib/metrics";
 import { DRILLS } from "../../athlete-portal/lib/drills";
 import { submitLlmJob } from "../../athlete-portal/lib/loaders";
@@ -132,8 +133,8 @@ export function coachCatalogRows(docs: { id: string; data: () => any }[]): any[]
 
 export async function loadDrillCatalog(): Promise<any[]> {
   if (catalogCache) return catalogCache;
-  const snapshot = await db.collection("drillCatalog").get();
-  catalogCache = coachCatalogRows(snapshot.docs);
+  const docs = await loadCachedCatalog("all");
+  catalogCache = coachCatalogRows(docs.map(doc => ({ id: doc.id, data: () => doc.data })));
   return catalogCache;
 }
 
