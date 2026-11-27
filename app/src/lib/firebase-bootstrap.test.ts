@@ -1,8 +1,8 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
 const mock = vi.hoisted(() => {
-  const auth = { useEmulator: vi.fn(), currentUser: null };
-  const firestore = { useEmulator: vi.fn() };
+  const auth = { useEmulator: vi.fn(), currentUser: null, onAuthStateChanged: vi.fn() };
+  const firestore = { useEmulator: vi.fn(), enablePersistence: vi.fn(async () => {}), clearPersistence: vi.fn(async () => {}), terminate: vi.fn(async () => {}) };
   const storage = { useEmulator: vi.fn() };
   const functions = { useEmulator: vi.fn() };
   const firebase = {
@@ -24,7 +24,8 @@ vi.mock('./user-issues', () => ({ configureIssueIdentity: mock.configureIssueIde
 beforeEach(() => {
   vi.resetModules(); vi.clearAllMocks(); mock.firebase.apps.length = 0;
 });
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+const stubBrowser = () => vi.stubGlobal('window', { localStorage: { getItem: () => null, setItem: vi.fn(), removeItem: vi.fn() }, location: { reload: vi.fn() }, setTimeout: vi.fn() });
 
 describe('Firebase client bootstrap', () => {
   it('keeps the existing production configuration and never opens an emulator in ordinary mode', async () => {
@@ -32,6 +33,20 @@ describe('Firebase client bootstrap', () => {
     await import('./firebase');
     expect(mock.firebase.initializeApp).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'kickai-69dd0' }));
     for (const client of [mock.auth, mock.firestore, mock.storage, mock.functions]) expect(client.useEmulator).not.toHaveBeenCalled();
+  });
+
+  it('turns on the account-scoped persistent cache in the browser', async () => {
+    vi.stubEnv('MODE', 'production'); vi.stubEnv('DEV', false); stubBrowser();
+    await import('./firebase');
+    expect(mock.firestore.enablePersistence).toHaveBeenCalledWith({ synchronizeTabs: true });
+    expect(mock.auth.onAuthStateChanged).toHaveBeenCalled();
+  });
+
+  it('keeps emulator journeys on a fresh memory cache', async () => {
+    vi.stubEnv('MODE', 'posetek-emulator-e2e'); vi.stubEnv('DEV', true);
+    vi.stubEnv('PUBLIC_FIREBASE_EMULATOR_PORT_OFFSET', '100'); stubBrowser();
+    await import('./firebase');
+    expect(mock.firestore.enablePersistence).not.toHaveBeenCalled();
   });
 
   it('connects all four clients to exact loopback endpoints before exposing them', async () => {

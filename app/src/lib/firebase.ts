@@ -5,6 +5,7 @@ import "firebase/compat/storage";
 import "firebase/compat/functions";
 import { configureIssueIdentity, instrumentIssueCallable } from "./user-issues";
 import { websiteEmulatorConfig } from "./firebase-emulator-config";
+import { enableAccountScopedCache } from "./firestore-browser-cache";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSfyXyhmD4kYGRSg-jOmGeLeOO8hX0-Gs",
@@ -34,6 +35,10 @@ if (emulator) {
   db.useEmulator(firestore.host, firestore.port);
   storage.useEmulator(storageEndpoint.host, storageEndpoint.port);
   functionsClient.useEmulator(functions.host, functions.port);
+} else if (typeof window !== "undefined") {
+  // Real browsers only: the emulator journeys above keep a fresh memory cache per run.
+  enableAccountScopedCache(db, authClient, { storage: (() => { try { return window.localStorage; } catch { return null; } })(),
+    reload: () => window.location.reload(), delay: (run, ms) => { window.setTimeout(run, ms); } });
 }
 export const auth = new Proxy(authClient, { get(target, key) {
   const value = Reflect.get(target, key);
