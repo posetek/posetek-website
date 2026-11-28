@@ -2764,3 +2764,9 @@ Verify the complete link over ordinary HTTPS, including the first-open dialog, e
 From `app/`, run `node scripts/build-coach-demo.mjs <empty-output-directory>` to build the standalone sample page. The builder takes its two rosters and all six tests from `scripts/coach-demo-snapshot.mjs`. It accepts only an output directory. Numbered players, testing results, age averages and app activity are fictional. Demo notes are local to each visitor’s browser and messages are simulated.
 
 Serve the resulting `index.html` on a separate origin. The [static demo host](app/scripts/coach-demo-host/) accepts the generated showcase, serves the page and robots.txt, and has no notes API, private report key or upstream service configuration. Build its container in a clean directory containing its Dockerfile, `.dockerignore`, `server.mjs` and the generated page. David’s private service, notes store and delivery QR have their own deployment.
+
+## Vacaville signed-in coach report candidate, November 27, 2026
+
+Website PR 175 adds the authenticated coach workspace at `/coach-report`. Club administrators and managers reconcile team access, create private enrollment invitations and review guardian permissions and inbound parent replies. The report opens with Coaches Input and then shows one assigned team, the most recent validated score and date for each test, individual assessments, and the club development pathway. Parent reminders use the paired backend's preview, submission and receipt flow. Public coach examples and private snapshot viewers use their existing separate entry points.
+
+A release also needs the scoped Firebase functions, reviewed club policy, roster projections, and rebuilt application and sign-in entries. Live SMS activation has its own staff handset pilot and sender setup. Keep coach invitations, real report snapshots and guardian routes in private operations storage.

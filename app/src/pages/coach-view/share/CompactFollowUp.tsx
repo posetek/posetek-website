@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { workoutMinutes } from "../../../lib/workout-duration";
 import { athleteCheckIn, CoachFollowUp } from "../CoachFollowUp";
 import { rosterName, type SharedTeam } from "./reportData";
@@ -17,35 +18,38 @@ function timerText(activity: SharedTeam["athletes"][number]["activity"]) {
   return workoutMinutes(timerMinutes);
 }
 
-export function CompactFollowUp({ team, index }: { team: SharedTeam; index: number }) {
+export function CompactFollowUp({ team, index, reminder }: { team: SharedTeam; index: number; reminder?: ReactNode }) {
   const name = rosterName(team);
+  const showCompletions = Boolean(reminder || team.assessments);
   return <section className="cr-team-activity" aria-label={`${name} activity`}>
     <div className="cr-activity-heading">
       <h3>{name}</h3>
-      <span>All time · As of {team.asOf}</span>
+      <span>{team.asOf ? `All time · As of ${team.asOf}` : "Activity history unavailable"}</span>
     </div>
     {team.athletes.length ? <>
       <div className="cr-activity-scroll" role="region" aria-label={`${name} follow-up roster`} tabIndex={0}>
-        <table className="cr-activity-table" aria-label={`${name} athlete activity`}>
+        <table className={showCompletions ? "cr-activity-table cr-activity-with-workouts" : "cr-activity-table"} aria-label={`${name} athlete activity`}>
           <thead><tr>
             <th scope="col">Player</th>
             <th scope="col">Signed in</th>
+            {showCompletions && <th scope="col">Workouts completed</th>}
             <th scope="col">Workout timer</th>
           </tr></thead>
           <tbody>{team.athletes.map((athlete, i) =>
             <tr className="cr-activity-row" key={i}>
               <th scope="row">{athlete.name}</th>
               <td><Milestone value={athlete.activity?.signedIn}/></td>
+              {showCompletions && <td>{athlete.activity?.firstWorkoutCompleted == null ? "Unconfirmed" : athlete.workouts}</td>}
               <td>{timerText(athlete.activity)}</td>
             </tr>
           )}</tbody>
         </table>
       </div>
-      <details className="cr-message-demo" open>
+      {reminder ?? <details className="cr-message-demo" open>
         <summary>Try a team message <span className="cr-chevron" aria-hidden="true">›</span></summary>
         <CoachFollowUp items={team.athletes.map(athlete => athleteCheckIn(athlete.name, "Team check-in"))}
           heading="Message athletes" idSuffix={`-review-${index}`}/>
-      </details>
+      </details>}
     </> : <p className="cr-no-results">No players on this roster.</p>}
   </section>;
 }

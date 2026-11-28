@@ -54,3 +54,9 @@
   .cr-activity-table { font-size: .81rem; }
   .cr-activity-table thead th:first-child { width: 36%; }
 }
+
+.cr-activity-with-workouts thead th:first-child { width: 35%; }
+@media (max-width: 520px) {
+  .cr-activity-with-workouts thead th:first-child { width: 30%; }
+  .cr-activity-with-workouts :is(th, td) { padding-inline: .25rem; overflow-wrap: anywhere; }
+}

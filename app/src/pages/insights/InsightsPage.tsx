@@ -1,3 +1,4 @@
+import { coachReportOrganization, coachReportRoute } from "../../lib/coach-report-route";
 import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { auth } from "../../lib/firebase";
@@ -252,6 +253,8 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
       <h1>{embedded ? "Overview" : report?.scope.label || (scope?.kind === "global" ? "All organizations" : "Team Insights")}</h1>
       <p>{embedded && (report?.scope.label || "")} {coach ? "Your roster, player progress and training in one place." : "Understand your roster, successful testing, completed workouts and estimated active use."}</p>
     </section>
+    {coach && currentScope && (currentScope.kind === "team" || currentScope.kind === "organization") && currentScope.organizationId === coachReportOrganization &&
+      <Link className="quiet-button" to={coachReportRoute(currentScope.organizationId, currentScope.kind === "team" ? currentScope.teamId : undefined)}>Open coach report</Link>}
     {choices && currentScope && activeView !== "community" && <InsightsControls choices={choices} request={request} scope={currentScope} loading={loading} hideScope={embedded} coach={coach} onChange={change} onRefresh={refresh} />}
     <InsightTabs request={{ ...request, view: activeView }} onChange={change} coach={coach} playerName={playerName} onClosePlayer={closePlayer} />
     {["overview", "testing", "player"].includes(activeView) && <div className="insights-toolbar"><p className="insights-note">Testing coverage</p><div className="insights-toggle" aria-label="Testing coverage period"><button type="button" aria-pressed={request.testingWindow === "cumulative"} onClick={() => change({ testingWindow: "cumulative" })}>Through selected end</button><button type="button" aria-pressed={request.testingWindow === "period"} onClick={() => change({ testingWindow: "period" })}>Selected period only</button></div></div>}

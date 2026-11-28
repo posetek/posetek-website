@@ -53,12 +53,12 @@ export default function CoachEnrollmentPage() {
     <a className="coach-join-brand" href="/">PoseTek</a>
     <div className="coach-join-card">
       <h1>{destination ? "Your coach account is ready." : "Welcome, coach."}</h1>
-      <p className="coach-join-intro">{destination ? "Your assigned teams, player progress and workout prescribing are together in Team Insights." : "Enter your own name and login details to join your assigned teams."}</p>
+      <p className="coach-join-intro">{destination ? "You can now open your assigned teams." : "Enter your own name and login details to join your assigned teams."}</p>
       {loading && <p role="status">Checking your invitation…</p>}
       {invitation?.status === "ready" && <CoachInvitationSummary invitation={invitation} />}
       {error && <p className="coach-join-error" role="alert">{error}</p>}
-      {destination ? <a className="coach-join-primary" href={destination}>Open Team Insights <span aria-hidden="true">→</span></a>
-        : invitation?.status === "claimed" ? <div><p>This invitation has already been used. Sign in with your coach account to open Team Insights.</p><a className="coach-join-primary" href="/signin">Sign in</a></div>
+      {destination ? <a className="coach-join-primary" href={destination}>{destination.startsWith("/coach-report") ? "Open coach report" : "Open Team Insights"} <span aria-hidden="true">→</span></a>
+        : invitation?.status === "claimed" ? <div><p>This invitation has already been used. Sign in with your coach account to open your teams.</p><a className="coach-join-primary" href="/kickai.html">Sign in</a></div>
         : invitation?.status === "ready" && <>
           <fieldset className="coach-join-mode" disabled={busy}><legend>Your account</legend>
             <label><input type="radio" name="account-mode" checked={mode === "create"} onChange={() => setMode("create")} /> Create account</label>

@@ -9,6 +9,7 @@ export type Metric = {
   band?: string;
   date?: string | null;
   estimated?: boolean;
+  source?: string;
 };
 export type OnePager = {
   date: string;

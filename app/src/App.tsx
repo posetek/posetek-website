@@ -17,6 +17,7 @@ const AdminPage = lazy(() => import("./pages/admin/AdminPage"));
 const ProgramsPage = lazy(() => import("./pages/programs/ProgramsPage"));
 const PrivacyPage = lazy(() => import("./pages/privacy/PrivacyPage"));
 const SupportPage = lazy(() => import("./pages/support/SupportPage"));
+const CoachAccountReport = lazy(() => import("./pages/coach-view/CoachAccountReport"));
 const CoachViewPage = lazy(() => import("./pages/coach-view/CoachViewPage"));
 const NotFoundPage = lazy(() => import("./pages/not-found/NotFoundPage"));
 
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="/privacy.html" element={<PrivacyPage />} />
 
           <Route path="/support" element={<SupportPage />} />
+          <Route path="/coach-report" element={<CoachAccountReport />} />
           <Route path="/coach-view" element={<CoachViewPage />} />
 
           <Route path="*" element={<NotFoundPage />} />

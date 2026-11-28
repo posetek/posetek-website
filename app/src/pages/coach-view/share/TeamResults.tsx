@@ -3,7 +3,7 @@ import { ordinal, testName, type Metric } from "../CoachStandings";
 import { type createUsage, usageEnabled } from "./usage";
 import { TeamAnalysis, type TeamAnalysisMode } from "./TeamAnalysis";
 import { CompactFollowUp, Milestone } from "./CompactFollowUp";
-import { hasScore, rosterName, type SharedAthlete, type SharedTeam } from "./reportData";
+import { assessmentTeam, hasScore, rosterName, type SharedAthlete, type SharedTeam } from "./reportData";
 import "./team-results.css";
 
 type RecordAction = Awaited<ReturnType<typeof createUsage>>;
@@ -52,8 +52,11 @@ function AthleteProfile({ athlete, tests, team }: { athlete: SharedAthlete; test
         return <li className="cr-profile-metric" key={test}>
           <span>{test}</span>
           <div className="cr-profile-score"><strong>{reviewed ? metric.result : "Unavailable"}</strong></div>
+          {!reviewed && team.assessments?.length ? <small>No validated score for this selection.</small> : null}
           {reviewed && <>
             {date && <small><TestDate date={date} full/></small>}
+            {metric.source && <small>{metric.source}</small>}
+            {metric.estimated && metric.source && <small>Estimated scale</small>}
             {metric.percentile != null && <div className="cr-percentile"><i aria-hidden="true" style={{ width: `${Math.min(100, Math.max(0, metric.percentile))}%` }}/><span>{ordinal(metric.percentile)} percentile</span></div>}
             {metric.average && <small>{report.comparisonLabel || "Team average"} {metric.average}{metric.count != null && ` · ${metric.count} players`}</small>}
           </>}
@@ -66,7 +69,7 @@ function AthleteProfile({ athlete, tests, team }: { athlete: SharedAthlete; test
       <div><dt>Signed in</dt><dd><Milestone value={athlete.activity?.signedIn}/></dd></div>
       <div><dt>First workout completed</dt><dd><Milestone value={athlete.activity?.firstWorkoutCompleted}/></dd></div>
     </dl>
-    <small className="cr-asof">Activity as of {team.asOf}</small>
+    <small className="cr-asof">{team.asOf ? `Activity as of ${team.asOf}` : "Activity history unavailable"}</small>
   </div>;
 }
 
@@ -109,11 +112,17 @@ function RosterResults({ team, index, children, onOpen }: {
   </section>;
 }
 
-export function TeamResults({ teams, active, onSelectTeam, record }: {
-  teams: SharedTeam[]; active: number; onSelectTeam: (team: number) => void; record: RecordAction;
+export function TeamResults({ teams, active, onSelectTeam, record, renderReminder }: {
+  teams: SharedTeam[]; active: number; onSelectTeam: (team: number) => void; record: RecordAction; renderReminder?: (index: number) => ReactNode;
 }) {
   const [mode, setMode] = useState<TeamAnalysisMode>("standings");
   const selectedTeam = teams[active];
+  const [periods, setPeriods] = useState<Record<string, string>>({});
+  const assessments = selectedTeam.assessments ?? [];
+  const period = assessments.find(item => item.id === periods[selectedTeam.team]);
+  const roster = assessmentTeam(selectedTeam, period);
+  // Latest scores can span different protocols. The standings always belong to one assessment.
+  const standings = period ? roster : assessmentTeam(selectedTeam, assessments[0]);
   return <main className="insights-shell cr-report">
     <div className="cr-heading">
       <div><p>{selectedTeam.club}</p><h1 id="cr-results-heading">Team results</h1><p className="cr-instruction">Select a player for their full results.</p></div>
@@ -125,8 +134,14 @@ export function TeamResults({ teams, active, onSelectTeam, record }: {
         onClick={() => { onSelectTeam(i); requestAnimationFrame(() => focusRoster(i)); }}>{rosterName(team)}</button>)}
       <button type="button" onClick={() => focusHeading("cr-follow-up-heading")}>Athlete follow-up <span aria-hidden="true">↓</span></button>
     </nav>
-    <RosterResults key={selectedTeam.team} team={selectedTeam} index={active} onOpen={() => record("one-pager", active)}>
-      <TeamAnalysis team={selectedTeam} mode={mode} onModeChange={setMode}/>
+    <RosterResults key={selectedTeam.team} team={roster} index={active} onOpen={() => record("one-pager", active)}>
+      {assessments.length > 0 && <div className="cr-chart-filters cr-history-filter" >
+        <label>Player results<select aria-label="Player results" value={period?.id ?? ""} onChange={e => setPeriods({ ...periods, [selectedTeam.team]: e.target.value })}>
+          <option value="">Latest results</option>{assessments.map(a => <option value={a.id} key={a.id}>{a.label}</option>)}
+        </select></label>
+        <small>{period ? "Only validated scores from this assessment appear below." : "Each test shows its most recent validated score."}</small>
+      </div>}
+      <TeamAnalysis team={standings} mode={mode} onModeChange={setMode}/>
     </RosterResults>
     <section className="cr-follow-up" aria-labelledby="cr-follow-up-heading">
       <h2 id="cr-follow-up-heading" tabIndex={-1}>Athlete follow-up</h2>
@@ -139,7 +154,7 @@ export function TeamResults({ teams, active, onSelectTeam, record }: {
           }}>{rosterName(team)}</button>)}
       </div>}
       {teams.map((team, index) => <div key={team.team} id={`cr-team-activity-${index}`} hidden={index !== active}>
-        <CompactFollowUp team={team} index={index}/>
+        <CompactFollowUp team={team} index={index} reminder={renderReminder?.(index)}/>
       </div>)}
     </section>
     {usageEnabled && <p className="cv-usage-note">PoseTek records demo opens and which controls are used. Player details and message text stay private.</p>}

@@ -1,16 +1,19 @@
+import { coachReportOrganization, coachReportRoute } from "../../lib/coach-report-route";
 import { getSafeReturnToUrl, playerStatsRoute } from "./landing-helpers";
 
 export type AccountRole = "admin" | "manager" | "coach" | "independent" | "player" | "pending";
 
 /** Routing is a convenience. Destination pages and server membership checks still enforce access. */
-export function accountDestination(role: AccountRole, playerId: string | null, search: string, base: string, origin: string): string {
+export function accountDestination(role: AccountRole, playerId: string | null, search: string, base: string, origin: string, organizationId?: string): string {
   const home = role === "admin" ? "/admin" : role === "manager" ? "/organization"
+    : role === "coach" && organizationId === coachReportOrganization ? coachReportRoute(organizationId)
     : role === "coach" || role === "independent" ? "/insights" : role === "player" && playerId ? playerStatsRoute(playerId) : "/join";
   const target = getSafeReturnToUrl(search, base, origin);
   if (!target) return home;
   const path = new URL(target).pathname;
   if (role === "player" && ["/feed", "/feed.html"].includes(path)) return home;
   const staff = role === "admin" || role === "manager" || role === "coach" || role === "independent";
+  if (path === "/coach-report") return role === "coach" ? target : home;
   if (path === "/admin" || path.startsWith("/admin/")) return role === "admin" ? target : home;
   if (role === "pending") return path === "/join" ? target : home;
   if (["/insights", "/organization", "/roster"].includes(path) || path.endsWith("/coachesview.html")) {

@@ -5,14 +5,14 @@ import type { SharedTeam } from "./reportData";
 
 type Activity = SharedTeam["athletes"][number]["activity"];
 
-function renderRoster(activities: Activity[]) {
+function renderRoster(activities: Activity[], signedInReport = false) {
   const team: SharedTeam = {
     team: "Example JV — Example Coach", club: "Example School", asOf: "2026-11-25",
     athletes: activities.map((activity, i) => ({
       name: `Athlete ${i + 1}`, workouts: 8, testingAttempts: 6, followUp: true, activity,
     })),
   };
-  return renderToStaticMarkup(<CompactFollowUp team={team} index={1}/>);
+  return renderToStaticMarkup(<CompactFollowUp team={team} index={1} reminder={signedInReport ? <p>Remind parents</p> : undefined}/>);
 }
 
 const signedIn = { signedIn: true, firstWorkoutCompleted: true };
@@ -42,6 +42,14 @@ describe("compact athlete follow-up", () => {
     expect(html.match(/<th scope="col">[^<]+<\/th>/g)).toHaveLength(3);
     expect(html).toContain(">Workout timer</th>");
     expect(html).not.toContain("First workout");
+  });
+
+  it("shows verified completions separately from timer minutes in the signed-in report", () => {
+    const html = renderRoster([{ ...signedIn, timerMinutes: 12, timerRecords: 2 }, undefined], true);
+    expect(html).toContain(">Workouts completed</th>");
+    expect(html).toContain("<td>8</td><td>12 min</td>");
+    expect(html).toContain("<td>Unconfirmed</td><td>Unconfirmed</td>");
+    expect(html).not.toContain("Try a team message");
   });
 
   it("labels the focusable roster by team and opens the simulated messaging disclosure by default", () => {

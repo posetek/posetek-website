@@ -13,6 +13,7 @@ interface CoachInputProps {
   onClose: () => void;
   loadError?: string;
   loading?: boolean;
+  authenticated?: boolean;
 }
 
 const prompts = {
@@ -28,7 +29,7 @@ function Chevron() {
 }
 
 export function CoachInput({
-  teamName, teams, teamIndex = 0, onSelectTeam, players, notes, saveNote, onClose, loadError, loading,
+  teamName, teams, teamIndex = 0, onSelectTeam, players, notes, saveNote, onClose, loadError, loading, authenticated,
 }: CoachInputProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -197,7 +198,7 @@ export function CoachInput({
                 }
               }}/>
             {saveError && <p className="coach-input__error" role="alert">{saveError}</p>}
-            {!coachDemo && <p className="coach-input__privacy">{localCoachNotes ? "Offline preview. Notes are saved in this browser." : "Anyone with this report link can read saved notes."}</p>}
+            {!coachDemo && <p className="coach-input__privacy">{authenticated ? "This note is private to your coach account." : localCoachNotes ? "Offline preview. Notes are saved in this browser." : "Anyone with this report link can read saved notes."}</p>}
             <button className="coach-input__primary" type="submit" disabled={!detail.trim() || busy || loading || !!loadError}>
               {busy ? "Saving…" : "Save note"}
             </button>

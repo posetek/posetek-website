@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { ordinal, testName } from "../CoachStandings";
 import { formatTestingWindow, hasScore, rosterName, type SharedTeam, type TeamAgeSeries, type TeamTestComparison } from "./reportData";
+import { OrganizationPathway } from "./OrganizationPathway";
 import "./team-analysis.css";
 
 export type TeamAnalysisMode = "standings" | "pathway";
@@ -141,7 +142,7 @@ export function TeamAnalysis({ team, mode, onModeChange }: {
         {modeKeys.map(key => <button key={key} type="button" aria-pressed={mode === key} aria-controls={chartId}
           onClick={() => onModeChange(key)}>{modes[key]}</button>)}
       </div>
-      {(test || testingWindow) && <div className="cr-chart-filters">
+      {!(isPathway && team.organizationPathway) && (test || testingWindow) && <div className="cr-chart-filters">
         {test && <label>Test<select aria-label="Test" value={test} onChange={e => setSelection({ test: e.target.value, date })}>
           {tests.map(name => <option key={name}>{name}</option>)}
         </select></label>}
@@ -151,8 +152,8 @@ export function TeamAnalysis({ team, mode, onModeChange }: {
         </select></label>}
       </div>}
     </div>
-    <figure className="cr-analysis-chart" id={chartId} aria-label={[teamName, modes[mode], test, period].filter(Boolean).join(" · ")}>
-      {chart}
+    <figure className="cr-analysis-chart" id={chartId} aria-label={[teamName, modes[mode], ...(isPathway && team.organizationPathway ? [] : [test, period])].filter(Boolean).join(" · ")}>
+      {isPathway && team.organizationPathway ? <OrganizationPathway team={team}/> : chart}
     </figure>
   </section>;
 }

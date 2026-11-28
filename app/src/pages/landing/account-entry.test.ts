@@ -19,6 +19,12 @@ describe("account entry destinations", () => {
     expect(route(role, "/insights?orgId=o")).toBe(origin + "/insights?orgId=o");
     expect(route(role, "/join")).toBe(origin + "/join");
   });
+  it("routes assigned Vacaville coaches to their report and honors explicit coach return links", () => {
+    expect(accountDestination("coach", null, "", base, origin, "vacaville-united-soccer-club")).toBe("/coach-report?orgId=vacaville-united-soccer-club");
+    expect(route("coach", "/coach-report?orgId=club&teamId=girls")).toBe(origin + "/coach-report?orgId=club&teamId=girls");
+    for (const role of ["admin", "manager", "independent", "player", "pending"] as const)
+      expect(route(role, "/coach-report")).toBe(route(role));
+  });
   it("uses current role homes without a return request", () => {
     expect(route("admin")).toBe("/admin");
     expect(route("manager")).toBe("/organization");

@@ -346,8 +346,8 @@ export default function LandingPage() {
     finishCoachOrgModal({ action: coachOrgAction as CoachOrgAction, value: val });
   }
 
-  function redirectAfterAuth(role: AccountRole, playerId: string | null = null) {
-    const destination = accountDestination(role, playerId, window.location.search, window.location.href, window.location.origin);
+  function redirectAfterAuth(role: AccountRole, playerId: string | null = null, organizationId?: string) {
+    const destination = accountDestination(role, playerId, window.location.search, window.location.href, window.location.origin, organizationId);
     if (destination.startsWith("http") || destination === "/admin") window.location.href = destination;
     else navigate(destination);
   }
@@ -385,7 +385,7 @@ export default function LandingPage() {
         rememberPlayerJourneyEntry(user.uid, entry);
       }
       if (reportDestination) navigate(reportDestination);
-      else redirectAfterAuth(access.role, access.playerId || null);
+      else redirectAfterAuth(access.role, access.playerId || null, access.organizationId);
     }
   }
 

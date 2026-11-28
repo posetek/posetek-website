@@ -175,6 +175,7 @@ const RETURN_TO_ALLOWED_PATHS = new Set([
   "/drills/dribbling",
   "/join",
   "/organization",
+  "/coach-report",
   "/programs",
   "/insights",
 ]);

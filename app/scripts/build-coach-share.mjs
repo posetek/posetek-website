@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "vite";
+import historyFields from "./coach-report-history.cjs";
 import { pathwayUnits } from "../src/pages/coach-view/share/reportData.ts";
 
 // One private input file per team. Only fields displayed by the share reader are sealed.
@@ -13,7 +14,13 @@ function milestone(value) {
   return value;
 }
 
-function selectAthlete({ name, workouts, testingAttempts, followUp, report, activity }) {
+function selectMetrics(metrics) {
+  if (!Array.isArray(metrics)) throw new Error("Expected athlete metrics.");
+  return metrics.map(({ label, result, average, count, percentile, band, date, estimated, source }) =>
+    ({ label, result, average, count, percentile, band, date, estimated, source }));
+}
+
+function selectAthlete({ name, workouts, testingAttempts, followUp, report, activity }, assessments) {
   if (typeof followUp !== "boolean") throw new Error("Each roster entry needs a followUp flag.");
   const athlete = { name, workouts, testingAttempts, followUp };
   if (activity) {
@@ -34,8 +41,8 @@ function selectAthlete({ name, workouts, testingAttempts, followUp, report, acti
     const { date, comparisonLabel, notes, metrics } = report;
     athlete.report = {
       date, comparisonLabel, notes,
-      metrics: metrics.map(({ label, result, average, count, percentile, band, date, estimated }) =>
-        ({ label, result, average, count, percentile, band, date, estimated })),
+      metrics: selectMetrics(metrics),
+      ...historyFields.selectHistoryReportFields(report, assessments, selectMetrics),
     };
   }
   return athlete;
@@ -73,9 +80,10 @@ function selectPathway(series, dated) {
   });
 }
 
-function selectTeam({ team, shortName, club, asOf, athletes, pathway, testingWindow }) {
+function selectTeam({ team, shortName, club, asOf, athletes, pathway, testingWindow, assessments, organizationPathway }) {
   if (!team || !club || !asOf || !Array.isArray(athletes)) throw new Error("Incomplete team snapshot.");
-  const selected = { team, shortName, club, asOf, athletes: athletes.map(selectAthlete) };
+  const context = historyFields.selectReportContext({ assessments, organizationPathway });
+  const selected = { team, shortName, club, asOf, athletes: athletes.map(a => selectAthlete(a, context.assessments)), ...context };
   if (testingWindow != null) {
     const { startDate, endDate } = testingWindow;
     if (!isTestDate(startDate) || !isTestDate(endDate) || startDate > endDate || pathway != null) {

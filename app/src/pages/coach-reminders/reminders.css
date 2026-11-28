@@ -1,0 +1,87 @@
+.coach-reminders {
+  margin-block: 1.5rem;
+  padding-block: 1rem;
+  border-block-start: 1px solid var(--cr-line, #67766d);
+  color: inherit;
+}
+.coach-reminders header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-block: 0.75rem;
+}
+.coach-reminders :is(h2, h3, h4, p, blockquote) {
+  margin-block: 0.55rem;
+}
+.coach-reminders fieldset {
+  min-width: 0;
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.7rem 0;
+  padding: 0.8rem;
+  border: 1px solid var(--cr-line, #647367);
+  border-radius: 0.45rem;
+}
+.coach-reminders label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  overflow-wrap: anywhere;
+}
+.coach-reminders label:has(:is(textarea, select, input:not([type="checkbox"]))) {
+  align-items: stretch;
+  flex-direction: column;
+}
+.coach-reminders :is(input:not([type="checkbox"]), textarea, select) {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.55rem;
+  font: inherit;
+}
+.coach-reminders textarea {
+  resize: vertical;
+}
+.coach-reminders button {
+  min-height: 40px;
+  justify-self: start;
+  cursor: pointer;
+}
+.coach-reminders button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.reminder-players {
+  max-height: 12rem;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 0.25rem;
+}
+.reminder-players label {
+  min-height: 2.6rem;
+}
+.coach-reminders article {
+  padding: 0.65rem 0;
+  border-block-end: 1px solid var(--cr-line, #647367);
+}
+.coach-reminders :is(article p, blockquote) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.coach-reminders blockquote {
+  border-inline-start: 3px solid var(--lime, #86a743);
+  margin-inline: 0;
+  padding: 0.6rem 0.85rem;
+}
+.coach-reminders details > summary {
+  cursor: pointer;
+  font-weight: 650;
+  padding-block: 0.65rem;
+}
+.coach-reminders input[type="checkbox"] {
+  width: 1.12rem;
+  height: 1.12rem;
+  accent-color: #7a9e32;
+}

@@ -15,6 +15,7 @@ describe("private coach entry", () => {
   it("opens both assigned teams without inventing a combined team ID", () => {
     expect(coachEnrollmentDestination({ organizationId: "club", teamIds: ["boys", "girls"] })).toBe("/insights?orgId=club");
     expect(coachEnrollmentDestination({ organizationId: "club", teamIds: ["boys"] })).toBe("/insights?orgId=club&teamId=boys");
+    expect(coachEnrollmentDestination({organizationId:"vacaville-united-soccer-club",teamIds:["first","second"]})).toBe("/coach-report?orgId=vacaville-united-soccer-club");
     expect(() => coachEnrollmentDestination({ organizationId: "//external", teamIds: ["boys"] })).toThrow();
   });
   it("shows the exact coach label and team names with no access editor", () => {
