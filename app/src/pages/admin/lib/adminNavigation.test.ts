@@ -40,6 +40,15 @@ it("clears session identity on account change and keeps session/player cursors o
   expect(adminToolPath("/admin/analysis", "/admin/ball-striking-sessions/session-id", "?playerId=private-player&cursor=private-cursor")).toBe("/admin/analysis");
 });
 
+it("opens the inbox for the current organization, without retaining stale clubs or player filters", () => {
+  const path = "/admin/messaging";
+  expect(adminToolPath(path, "/admin/accounts", "?orgId=club&teamId=team&playerId=player&preview=1")).toBe(path + "?orgId=club&preview=1");
+  expect(adminToolPath(path, "/insights", "?orgId=other&teamId=team", "", { orgId: "old" })).toBe(path + "?orgId=other");
+  expect(adminToolPath(path, "/admin/accounts", "", "?orgId=old", { orgId: "old" })).toBe(path);
+  expect(adminToolPath(path, "/admin/analysis", "", "", { orgId: "retained" })).toBe(path + "?orgId=retained");
+  expect(adminAccountResetPath(path)).toBe(path);
+});
+
 describe("admin directory navigation", () => {
   it("round trips scope, lookup, tab, search and page", () => {
     const state = { orgId: "club", teamId: "u15", directoryTab: "staff" as const, search: "Ana & Jo", page: 3, directoryLookup: "all" as const };

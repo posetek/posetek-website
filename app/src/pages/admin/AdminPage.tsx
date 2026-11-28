@@ -28,6 +28,7 @@ const DrillLibrary = lazy(() => import("./views/DrillLibrary"));
 const DrillDetail = lazy(() => import("./views/DrillDetail"));
 const DrillForm = lazy(() => import("./views/DrillForm"));
 const MonitorAccounts = lazy(() => import("./views/MonitorAccounts"));
+const AdminMessaging = lazy(() => import("./views/AdminMessaging"));
 const CoachDetail = lazy(() => import("./views/CoachDetail"));
 const PlayerDetail = lazy(() => import("./views/PlayerDetail"));
 const WorkoutEditor = lazy(() => import("./views/WorkoutEditor"));
@@ -126,6 +127,7 @@ function AdminConsole({ session, preview = false }: { session: AdminSession; pre
           <Route path="drills/:drillId/edit" element={<DrillForm mode="edit" />} />
           <Route path="organizations" element={<Navigate to={legacyOrganizationsPath(location.search)} replace />} />
           <Route path="accounts" element={<MonitorAccounts />} />
+          <Route path="messaging" element={<AdminMessaging preview={preview} />} />
           <Route path="access" element={<AccountAccess preview={preview} />} />
           <Route path="accounts/coach/:coachId" element={<CoachDetail />} />
           <Route path="accounts/player/:playerId" element={<PlayerDetail preview={preview} />} />

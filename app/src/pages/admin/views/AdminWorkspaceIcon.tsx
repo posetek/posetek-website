@@ -28,6 +28,7 @@ const paths: Record<string, string> = {
   devices: "M4 16H2V4h15v4M7 16v4M3 20h8M14 8h8v14h-8V8ZM17 19h2",
   bug_report: "M9 4 7 2M15 4l2-2M8 8V6a4 4 0 0 1 8 0v2M6 8h12v7a6 6 0 0 1-12 0V8ZM2 10h4M18 10h4M2 15h4M18 15h4M4 21l3-3M20 21l-3-3M12 9v10",
   chat_bubble_outline: "M4 3h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8l-6 4V5a2 2 0 0 1 2-2ZM7 8h10M7 13h7",
+  inbox: "M7 4h10l5 10v5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-5L7 4ZM2 14h6l2 3h4l2-3h6",
   key: "M8 3a5 5 0 1 0 0 10A5 5 0 0 0 8 3Zm3 9 10 10M16 17l3-3M19 20l3-3",
   dynamic_feed: "M4 7H2v15h15v-2M7 2h15v15H7V2ZM11 6h7M11 10h7M11 14h4",
   logout: "M10 3H3v18h7M8 12h14m-5-5 5 5-5 5",

@@ -9,6 +9,7 @@ export interface AdminWorkspaceTool {
 export const ADMIN_WORKSPACE_GROUPS: { label: string; tools: AdminWorkspaceTool[] }[] = [
   { label: "Workspace", tools: [
     { path: "/admin/accounts", label: "People & organizations", icon: "groups", description: "Organizations, teams and player records", keywords: "players athletes teams staff coaches directory contacts" },
+    { path: "/admin/messaging", label: "Messaging", icon: "inbox", description: "Parent reminders, replies and texting plans", keywords: "sms inbox forward coach carrier subscription costs provider" },
   ] },
   { label: "Training", tools: [
     { path: "/admin/programs", label: "Planner", icon: "calendar_month", description: "Personalized plans and workout drafts", keywords: "training workouts prescribe programs" },

@@ -2817,3 +2817,8 @@ Serve the resulting `index.html` on a separate origin. The [static demo host](ap
 Website PR 175 adds the authenticated coach workspace at `/coach-report`. Club administrators and managers reconcile team access, create private enrollment invitations and review guardian permissions and inbound parent replies. The report opens with Coaches Input and then shows one assigned team, the most recent validated score and date for each test, individual assessments, and the club development pathway. Parent reminders use the paired backend's preview, submission and receipt flow. Public coach examples and private snapshot viewers use their existing separate entry points.
 
 A release also needs the scoped Firebase functions, reviewed club policy, roster projections, and rebuilt application and sign-in entries. Live SMS activation has its own staff handset pilot and sender setup. Keep coach invitations, real report snapshots and guardian routes in private operations storage.
+
+
+### Vacaville Admin messaging
+
+The Admin sidebar opens the Vacaville parent inbox at `/admin/messaging?orgId=vacaville-united-soccer-club`. Admin can forward a reply to its assigned team coach and review forwarded replies. The Texting plan tab compares published U.S. toll-free rates at three monthly volumes. Its setup information is a dated planning record. See the [provider comparison](docs/features/COACH_SMS_PROVIDER_COMPARISON.md) for carrier fees, startup costs and the staff handset test.

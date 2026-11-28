@@ -1,0 +1,28 @@
+# Two-way SMS for Vacaville coach reminders
+
+US pricing checked November 27, 2026. **Twilio is the simplest choice for the first handset test.** PoseTek’s existing backend candidate already sends through Twilio and verifies its inbound callbacks. At the example volume below, its base price is $2.06 a month above Telnyx. **Telnyx is the lowest-cost option at that volume** if PoseTek is ready to build and test a second provider integration. [PoseTek reminder integration](https://github.com/posetek/posetek-backend/blob/b04eef3f935b8a883f750911dd91e4c644cf9215/functions/coach-reminder-entrypoints.js)
+
+## What a month would cost
+
+One ordinary US toll-free number, 300 outgoing reminders and 60 incoming replies, one SMS segment each. The monthly estimate adds number rental and 360 billable segments. Long messages and some characters, including emoji, can use additional segments. Carrier fees, tax and one-time charges are extra. These are budget estimates in USD.
+
+| Provider | Number per month | Outgoing / incoming per segment | Estimated month | Source |
+| --- | ---: | ---: | ---: | --- |
+| Telnyx | $1.10 with SMS enabled | $0.0055 / $0.0055 | **$3.08** | [Toll-free rates](https://telnyx.com/pricing/toll-free) · [SMS number add-on](https://telnyx.com/pricing/numbers) |
+| SignalWire | $0.80 | $0.0068 / $0.0068 | **$3.25** | [US messaging rates](https://signalwire.com/pricing) |
+| Twilio | $2.15 | $0.0083 / $0.0083 | **$5.14** | [US SMS and number rates](https://www.twilio.com/en-us/sms/pricing/us) |
+| Bandwidth | Quote | $0.007 outgoing at volume pricing. Confirm inbound rate. | Quote | [Volume pricing](https://www.bandwidth.com/pricing/) · [Toll-free terms](https://www.bandwidth.com/products/toll-free-sms/) |
+| Plivo | Sales contract | US SMS requires a $1,000 monthly commitment and direct-brand eligibility. | At least $1,000 | [SMS availability](https://www.plivo.com/docs/messaging/sms-availability) |
+
+For a concrete carrier example, the same Telnyx traffic would total **$4.34 before tax on AT&T**, **$4.43 on Verizon** or **$4.58 on T-Mobile** if all recipients used that carrier. A real team’s total depends on its carrier mix. SignalWire’s lower rental makes its base price the cheapest of these three published monthly options through 230 segments. [Telnyx carrier rates](https://telnyx.com/pricing/messaging) · [SignalWire rates](https://signalwire.com/pricing)
+
+## Startup and pilot fit
+
+- **Twilio.** US toll-free verification is free. Allow time for approval before the handset test. Use the registered company sender and Messaging Service with PoseTek’s inbound and delivery status callbacks. Twilio’s paid-account guide lists an initial $20 balance. Its public rate card also lists a $0.001 processing charge for a message ending in Failed status. [Verification](https://help.twilio.com/articles/360038172934) · [Initial balance](https://www.twilio.com/en-us/blog/getting-the-most-out-of-your-twilio-messaging-project) · [Rates](https://www.twilio.com/en-us/sms/pricing/us)
+- **Telnyx.** Verification is free. Budget a $10 minimum prepaid top-up and check the one-time activation price on the number itself. Choose an ordinary prefix such as 833 or 844 to get standard pricing. PoseTek would need to connect and verify Telnyx’s inbound reply, delivery receipt and opt-out events. [Billing](https://support.telnyx.com/en/articles/4280500-billing-setup-billing-groups) · [Number costs](https://support.telnyx.com/en/articles/2026102601-how-graduated-volume-pricing-works-for-phone-numbers) · [Reply and delivery callbacks](https://support.telnyx.com/en/articles/4334722-how-to-leverage-webhooks) · [Opt-outs](https://support.telnyx.com/en/articles/1270091-sms-opt-out-keywords-and-stop-words)
+- **SignalWire.** Its restricted trial can text one verified personal handset from a US local trial number and adds a trial prefix. That can demonstrate the handset leg once PoseTek integrates SignalWire. For the company toll-free number, submit verification. Leaving trial mode requires at least $5 in prepaid credit and enables automatic top-ups. Toll-free verification is free. [Handset trial](https://signalwire.com/docs/platform/messaging/send-and-receive-messages) · [Billing](https://signalwire.com/docs/platform/trial-mode) · [Toll-free verification](https://signalwire.com/docs/platform/messaging/toll-free-numbers) · [Webhooks](https://signalwire.com/docs/platform/webhooks)
+- **Bandwidth and Plivo.** Before considering Bandwidth, obtain low-volume terms covering number rental, inbound SMS, carrier fees and minimum spend. Plivo limits new SMS provisioning to businesses messaging their own customers under their own brand and excludes ISVs sending on behalf of clients. Its published minimum already exceeds this pilot’s budget. [Bandwidth terms](https://www.bandwidth.com/pricing/) · [Plivo eligibility](https://www.plivo.com/docs/messaging/sms-availability)
+
+## First live test
+
+At deployment, register the sender under the business named in the opt-in, using its actual reminder wording. Send one reminder to Dylan’s opted-in handset, check its delivery receipt, then reply from that handset. Dylan should see the reply in the Vacaville Admin inbox and forward it to the assigned coach. Verify that the coach sees it only after forwarding. Confirm STOP handling before opening the workflow to families. [Twilio verification and consent](https://www.twilio.com/docs/messaging/compliance/toll-free/console-onboarding) · [Incoming replies](https://www.twilio.com/docs/messaging/guides/webhook-request) · [Delivery receipts](https://www.twilio.com/docs/messaging/guides/track-outbound-message-status)

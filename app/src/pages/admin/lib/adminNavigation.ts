@@ -231,7 +231,14 @@ export function adminToolKey(path: string): string {
   if (path.startsWith("/admin/device-performance")) return "devices";
   return path.split("/")[2] || "directory";
 }
-export function supportsAdminScope(path: string): boolean { return ["directory", "programs"].includes(adminToolKey(path)); }
+export function supportsAdminScope(path: string): boolean { return ["directory", "programs", "messaging"].includes(adminToolKey(path)); }
+export function adminMessagingPath(orgId?: string, preview = false): string {
+  const query = new URLSearchParams();
+  if (orgId) query.set("orgId", orgId);
+  if (preview) query.set("preview", "1");
+  return pathQuery("/admin/messaging", query);
+}
+
 function workspaceOrigin(search: string): string | undefined {
   let back = validatedAdminReturn(new URLSearchParams(search).get("returnTo"));
   for (let depth = 0; back && depth < 2; depth++) {
@@ -251,6 +258,7 @@ export function adminToolPath(destination: string, currentPath: string, search: 
   // An empty selection on a scoped tool is deliberate. Never resurrect a
   // previous organization merely because its IDs are absent from this URL.
   let context = supportsAdminScope(currentPath) ? accountContext(search) : retainedScope ?? accountContext(retainedSearch || search);
+  if (key === "messaging") return adminMessagingPath(context.orgId, new URLSearchParams(search).get("preview") === "1");
   if (key === "directory") {
     if (currentPath === "/admin") return legacyAdminWorkspacePath(search);
     let directorySearch = same ? search : retainedSearch;
@@ -283,5 +291,5 @@ export function adminAccountResetPath(path: string): string {
   if (path.startsWith("/admin/device-performance")) return "/admin/device-performance";
   const key = adminToolKey(path);
   if (key === "directory") return "/admin/accounts";
-  return ["programs", "analysis", "ball-striking-sessions", "drills", "ai-incidents", "user-issues", "feedback", "access"].includes(key) ? `/admin/${key}` : "/admin/accounts";
+  return ["messaging", "programs", "analysis", "ball-striking-sessions", "drills", "ai-incidents", "user-issues", "feedback", "access"].includes(key) ? `/admin/${key}` : "/admin/accounts";
 }

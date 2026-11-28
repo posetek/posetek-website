@@ -20,16 +20,18 @@ export function AdminDisclosure({ title, children }: { title: string; children: 
 }
 
 type PageOfReplies = { replies: ParentReply[]; nextCursor?: string | null };
-function ReplyInbox({ context }: { context: ClubContext }) {
+export function ReplyInbox({ context, forwardedOnly = false }: { context: ClubContext; forwardedOnly?: boolean }) {
   const [pages, setPages] = useState<string[]>([]);
   const cursor = pages.at(-1);
   const load = useCallback(
-    () =>
-      clubCall<PageOfReplies>("listAdminParentReplies", {
+    async () => {
+      const page = await clubCall<PageOfReplies>("listAdminParentReplies", {
         organizationId: vacavilleId,
         ...(cursor ? { cursor } : {}),
-      }),
-    [cursor],
+      });
+      return { ...page, replies: forwardedOnly ? page.replies.filter(reply => reply.forwardedCoachUid) : page.replies };
+    },
+    [cursor, forwardedOnly],
   );
   const { state, refresh } = useAccountLoad(load);
   return (
@@ -41,13 +43,19 @@ function ReplyInbox({ context }: { context: ClubContext }) {
           refresh();
         }}
       >
-        Refresh inbox
+        {forwardedOnly ? "Refresh forwarded replies" : "Refresh inbox"}
       </button>
       {state.kind === "loading" && <p role="status">Loading replies…</p>}
       {state.kind === "error" && <p role="alert">{state.message}</p>}
       {state.kind === "ready" && (
         <>
-          {!state.data.replies.length && <p>No parent replies on this page.</p>}
+          {!state.data.replies.length && (
+            <p role="status">
+              {forwardedOnly ? "No forwarded replies" : "No parent replies"}
+              {cursor || state.data.nextCursor ? " on this page." : " yet."}
+              {state.data.nextCursor && " Choose Older replies to continue."}
+            </p>
+          )}
           {state.data.replies.map((r) => (
             <ForwardReply key={r.id} reply={r} context={context} onForward={refresh} />
           ))}
@@ -82,6 +90,7 @@ function ForwardReply({
   const coaches = context.staff.filter(
     (s) => s.status === "active" && s.role === "coach" && s.teamIds.includes(teamId),
   );
+  const forwardedTeam = context.teams.find(team => team.id === reply.forwardedTeamId);
   const recipient = context.staff.find((s) => s.userUID === reply.forwardedCoachUid);
   return (
     <article>
@@ -111,7 +120,7 @@ function ForwardReply({
             : "SMS keyword received: " + reply.command}
         </p>
       ) : reply.forwardedCoachUid ? (
-        <p>Forwarded to {recipient ? staffName(recipient) : "the assigned coach"}.</p>
+        <p>Forwarded to <strong>{recipient ? staffName(recipient) : "the assigned coach"}</strong>{forwardedTeam && <> · {forwardedTeam.name}</>}.</p>
       ) : (
         <form
           onSubmit={(e) => {
@@ -183,7 +192,7 @@ type Route = {
   guardianUid?: string;
   consentedAt?: number;
 };
-function GuardianConsent({ context }: { context: ClubContext }) {
+export function GuardianConsent({ context }: { context: ClubContext }) {
   const [team, chooseTeam] = useState("");
   const [playerId, choosePlayer] = useState("");
   const players = context.players.filter((p) => p.organizationId === vacavilleId && p.teamId === team);
