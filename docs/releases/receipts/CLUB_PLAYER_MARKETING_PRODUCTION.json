@@ -1,0 +1,77 @@
+{
+  "status": "published-and-verified",
+  "source": {
+    "repository": "posetek/posetek-website",
+    "pullRequest": "https://github.com/posetek/posetek-website/pull/184",
+    "head": "e998649f36ba7e21729bf69bf0495827a8379f6d",
+    "merge": "e736f3bdb7f277db53777d1b17ca9172e0196529",
+    "mergeCI": "https://github.com/posetek/posetek-website/actions/runs/46116567143",
+    "preservedApplicationRuntime": "5d6afaa6793c88a95f372b6a626292cd8aa5dd32"
+  },
+  "deployment": {
+    "site": "https://posetek.net",
+    "previous": "6b0628df406fa1fc2213ad25",
+    "acceptedDraft": "6b0a72c5ef66d82681227a7b",
+    "production": "6b0a72c5ef66d82681227a7b",
+    "publishedAtUtc": "2026-11-28T06:30:58.382Z"
+  },
+  "artifact": {
+    "servedFiles": 3043,
+    "providerRecords": 3044,
+    "artifactSha256": "6f887022b173aba9498f259ff4742185b5e17dc3e486705050887276928ab984",
+    "providerInventorySha256": "80ccd75d808c83ab6185c9f24d613f570df99db7b8427b3e4d8f89a52b2a02d2",
+    "digestDefinition": "SHA-256 over sorted lowercase NFC paths, tab, decimal byte length, tab, SHA-256 of file bytes and LF. The provider inventory uses sorted lowercase NFC paths, tab, provider SHA-1, tab, decimal byte length and LF."
+  },
+  "preservation": {
+    "previousServedFiles": 3018,
+    "previousProtectedFiles": 3016,
+    "changedPriorFiles": [
+      "/coaches/index.html",
+      "/index.html"
+    ],
+    "removedPriorFiles": 0,
+    "addedMarketingAssetCount": 25,
+    "platformConfigSha1": "696de7c78bf08055ee4eeba3acd0da89a24f9cab",
+    "protectedBaselineFiles": 3041,
+    "localRecoveryMappings": 37
+  },
+  "verification": {
+    "candidate": {
+      "orientationCleanupFailures": 2,
+      "affectedAudiencePages": [
+        "coaches",
+        "players"
+      ],
+      "canceledImagesIndependentlyVerified": 8,
+      "settledOrientationContextsPassed": 6,
+      "orientationObservation": "The original browser run reported canceled responsive image requests during viewport changes. Independent settled viewport checks verified the layouts and confirmed successful HTTP responses and decoding for the affected images.",
+      "orientationProofSha256": "7b40b0bfecbb49856274a491f412ef7149d8e2bdd68cc41b6a49f56464e66599",
+      "publicBrowserChecksRun": 34,
+      "serverRoutesPassed": 14,
+      "publicBrowserChecksPassed": 32,
+      "inventoryProofSha256": "6731543c88dcc2c9c4e2dd5eaa1bb05f062b4320075179a1bcb98165545bc770",
+      "routeProofSha256": "2c5585dba62af62621fe192186e963946d6c2b3fe33fce1ed55c614df59105db",
+      "browserProofSha256": "2822ae97b5915e44d597883276f154d73bce1a94e34498e56b96230573cf645d"
+    },
+    "production": {
+      "orientationCleanupFailures": 2,
+      "affectedAudiencePages": [
+        "coaches",
+        "players"
+      ],
+      "canceledImagesIndependentlyVerified": 8,
+      "settledOrientationContextsPassed": 6,
+      "orientationObservation": "The original browser run reported canceled responsive image requests during viewport changes. Independent settled viewport checks verified the layouts and confirmed successful HTTP responses and decoding for the affected images.",
+      "orientationProofSha256": "39a5910cccc74999ca96de1988ba310ce5485dd3790b9ea0b4d5687e52259e99",
+      "publicBrowserChecksRun": 34,
+      "serverRoutesPassed": 14,
+      "publicBrowserChecksPassed": 32,
+      "inventoryProofSha256": "6731543c88dcc2c9c4e2dd5eaa1bb05f062b4320075179a1bcb98165545bc770",
+      "routeProofSha256": "2c5585dba62af62621fe192186e963946d6c2b3fe33fce1ed55c614df59105db",
+      "browserProofSha256": "e51e048a58ddfd5a67bc4af9d32e551b29359b4fce1d8c429402c4687ba512e4"
+    },
+    "postReleaseBuildProtectedFilesVerified": 3041,
+    "postReleaseBaselineTestsPassed": 16
+  },
+  "recovery": "Use this complete provider inventory and the prior deploy as references. For a correction, recheck the currently published inventory, preserve subsequent accepted files, and qualify a new full-site draft."
+}

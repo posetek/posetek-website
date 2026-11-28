@@ -21,12 +21,13 @@ switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.m
 
 Check Netlify's currently published deploy before assembling a whole-site
 artifact. Capture that deploy's inventory and preserve the files and routing
-outside the approved change. The
-[production receipt](docs/releases/receipts/ADMIN_DIRECTORY_AND_CLUB_REPORTING_PRODUCTION.json)
-pins the current protected baseline, application runtime and preserved sign-in
-runtime. One-pager releases
+outside the approved change. The latest production receipt below identifies the protected baseline and application runtime. One-pager releases
 also use the current published deploy to carry forward the app and sign-in
 entry. Keep `[skip netlify]` on every source and receipt merge.
+
+## Players and Coaches website — November 27, 2026
+
+Production `6b0a72c5ef66d82681227a7b` serves the public Players and Coaches pages. The protected baseline contains 3,041 files and 37 local recovery mappings. [Source PR #184](https://github.com/posetek/posetek-website/pull/184) · [Production receipt](docs/releases/receipts/CLUB_PLAYER_MARKETING_PRODUCTION.json)
 
 ## Admin directory and club reporting — November 24, 2026
 

@@ -1,5 +1,9 @@
 # PoseTek website
 
+## Players and Coaches website — November 27, 2026
+
+Production `6b0a72c5ef66d82681227a7b` serves the public Players and Coaches pages. The protected baseline contains 3,041 files and 37 local recovery mappings. [Source PR #184](https://github.com/posetek/posetek-website/pull/184) · [Production receipt](docs/releases/receipts/CLUB_PLAYER_MARKETING_PRODUCTION.json)
+
 ## Admin directory and club reporting — November 24, 2026
 
 Production `6b0628df406fa1fc2213ad25` serves runtime `5d6afaa` from website PR #179. Administrators can select a club directly, combine directory filters, and open report scope and dates on phones. The forest-green navigation groups the existing tools and preserves keyboard focus. The release updated the application entry and added 16 hashed assets. The protected baseline contains 3,016 files and 37 local recovery mappings. [Production receipt](docs/releases/receipts/ADMIN_DIRECTORY_AND_CLUB_REPORTING_PRODUCTION.json)
