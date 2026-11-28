@@ -1,24 +1,57 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { DrillMedia } from "../home/product/DrillMedia";
 import { drillMedia } from "../home/product/drill-media";
 import { createDemoWorkout, formatDose } from "../home/product/product-demo";
-import { coachActivityWindow, type SamplePlayer } from "./coach-samples";
+import { CoachWorkoutTime } from "./CoachWorkoutTime";
+import type { SamplePlayer, SampleTeam } from "./coach-samples";
 
 const steps = ["Plan", "Train", "Retest"] as const;
-export function DevelopmentJourney({ player, teamName }: { player: SamplePlayer; teamName: string }) {
+export function DevelopmentJourney({ player, team }: { player: SamplePlayer; team: SampleTeam }) {
   const [step, setStep] = useState<(typeof steps)[number]>("Plan");
   const panelId = useId();
+  const trainButton = useRef<HTMLButtonElement>(null);
   const drill = createDemoWorkout({ minutes: 15, energy: "normal", focus: player.drillId === "DRB-006" ? "dribbling" : "passing" }).drills[0];
   const dose = `${formatDose(drill)} · ${drill.restSeconds} seconds rest`;
   const difference = player.priorDribbleSeconds - player.latestDribbleSeconds;
-  const description = step === "Plan" ? "Prescribe the next workout." : step === "Train" ? "Follow the assigned drill." : "See what changed on the same test.";
   return <div className="coach-development">
-    <div className="coach-development-top"><div><span className="coach-mini-logo">P</span><strong>{player.name}</strong><span>{teamName}</span></div><span className="coach-micro">Illustrative example</span></div>
-    <div className="coach-development-tabs" role="group" aria-label="Explore player development">{steps.map((value,index)=><button type="button" key={value} aria-pressed={step===value} aria-controls={panelId} onClick={()=>setStep(value)}><span>0{index+1}</span>{value}<span aria-hidden="true">↗</span></button>)}</div>
+    <div className="coach-development-top"><div><span className="coach-mini-logo">P</span><strong>{player.name}</strong><span>{team.name}</span></div><span className="coach-micro">Illustrative example</span></div>
+    <div className="coach-development-tabs" role="group" aria-label="Explore player development">
+      {steps.map((value, index) => (
+        <button type="button" key={value} ref={value === "Train" ? trainButton : undefined}
+          aria-pressed={step === value} aria-controls={panelId} onClick={() => setStep(value)}>
+          <span>0{index + 1}</span>{value}<span aria-hidden="true">↗</span>
+        </button>
+      ))}
+    </div>
     <div className="coach-development-body" id={panelId}>
-      <div className="coach-development-copy"><p className="eyebrow">{step === "Plan" ? "Coach practice plan" : step === "Train" ? "Player workout" : "Follow-up testing"}</p><h3>{description}</h3><p>{step === "Plan" ? "Use the team report and what you saw at practice to choose one skill. Give the player a drill and a cue they can use on the field." : step === "Train" ? "The player can watch the demonstration, set up the drill and log a session. The coach can check the workout time recorded between tests." : "Run the same left dribble course again. Compare the times with your practice notes to decide whether the player should keep the drill or move on."}</p></div>
+      {step === "Plan" ? <CoachWorkoutTime team={team} player={player} /> : (
+        <div className="coach-development-copy">
+          <p className="eyebrow">{step === "Train" ? "Player workout" : "Follow-up testing"}</p>
+          <h3>{step === "Train" ? "Follow the assigned drill." : "See what changed on the same test."}</h3>
+          <p>{step === "Train" ? "The player can watch the demonstration, set up the drill and log a session. The coach can check the workout time recorded between tests." : "Run the same left dribble course again. Compare the times with your practice notes to decide whether the player should keep the drill or move on."}</p>
+        </div>
+      )}
       <div className={`coach-development-scene is-${step.toLowerCase()}`}>
-        {step === "Plan" && <div className="coach-plan-sheet"><div className="coach-plan-heading"><span className="coach-micro">PLAYER DEVELOPMENT PLAN</span><span aria-hidden="true">↗</span></div><span className="coach-plan-player">{player.name}</span><h4>{player.focus}</h4><p>{player.cue}</p><div className="coach-plan-session"><span className="coach-plan-number">01</span><div><strong>{drillMedia[player.drillId].name}</strong><span>{dose}</span></div><span aria-hidden="true">→</span></div><div className="coach-plan-progress"><span>Recorded completions</span><strong>{player.completedSessions}<small> / {player.plannedSessions} sessions</small></strong><div role="img" aria-label={`${player.completedSessions} of ${player.plannedSessions} sample sessions logged`}><i style={{width:`${player.completedSessions/player.plannedSessions*100}%`}}/></div></div><span className="coach-plan-note">{player.workoutMinutes} workout minutes logged · {coachActivityWindow}.</span></div>}
+        {step === "Plan" && (
+          <div className="coach-plan-sheet">
+            <div className="coach-plan-heading"><span className="coach-micro">PLAYER DEVELOPMENT PLAN</span><span aria-hidden="true">↗</span></div>
+            <span className="coach-plan-player">{player.name}</span>
+            <h4>{player.focus}</h4><p>{player.cue}</p>
+            <button className="coach-plan-session" type="button" aria-label={`Open ${drillMedia[player.drillId].name} workout`} aria-controls={panelId}
+              onClick={() => { setStep("Train"); trainButton.current?.focus(); }}>
+              <span className="coach-plan-number">01</span>
+              <span className="coach-plan-details"><strong>{drillMedia[player.drillId].name}</strong><span>{dose}</span></span>
+              <span aria-hidden="true">→</span>
+            </button>
+            <div className="coach-plan-progress">
+              <span>Recorded completions</span>
+              <strong>{player.completedSessions}<small> / {player.plannedSessions} sessions</small></strong>
+              <div role="img" aria-label={`${player.completedSessions} of ${player.plannedSessions} sample sessions logged`}>
+                <i style={{ width: `${player.completedSessions / player.plannedSessions * 100}%` }} />
+              </div>
+            </div>
+          </div>
+        )}
         {step === "Train" && <div className="coach-training-phone" role="group" aria-label={`${player.name} sample mobile workout`}><div className="app-device"><div className="app-device-screen"><div className="app-device-status" aria-hidden="true"><span>9:41</span><span className="app-device-island"/><span>▰</span></div><div className="app-device-header"><span className="app-device-logo">P</span><span>PoseTek</span><span>Workout</span></div><div className="app-device-content"><div className="app-device-context"><span>{player.name}</span><span>Sample session</span></div><h3>{drillMedia[player.drillId].name}</h3><div className="app-device-media"><DrillMedia drillId={player.drillId} compact/><span>{player.cue}</span></div><div className="coach-phone-next"><span>YOUR NEXT STEP</span><strong>{dose}</strong></div><span className="app-device-note">Interactive preview · No workout is recorded</span></div><div className="app-device-home"/></div></div></div>}
         {step === "Retest" && <div className="coach-retest-sheet"><div className="coach-plan-heading"><span className="coach-micro">SAME PLAYER. SAME TEST.</span><span aria-hidden="true">↗</span></div><h4>Left-course dribble</h4><p>Compare the same setup across assessments.</p><div className="coach-retest-bars">{[{label:"Earlier assessment",value:player.priorDribbleSeconds},{label:"Latest assessment",value:player.latestDribbleSeconds}].map((item,index)=><div key={item.label} data-latest={index===1}><span>{item.label}</span><strong>{item.value.toFixed(2)} <small>sec</small></strong><div className="coach-result-track"><i style={{width:`${item.value/10*100}%`}}/></div></div>)}<div className="coach-result-axis"><span>0</span><span>Time · seconds</span><span>10</span></div></div><div className="coach-retest-change"><strong>{Math.abs(difference).toFixed(2)}<small> sec {difference >= 0 ? "faster" : "slower"}</small></strong><span>Change between sample testing days</span></div><p className="coach-plan-note">Coach’s next observation · {player.cue}</p></div>}
       </div>

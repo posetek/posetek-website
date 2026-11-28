@@ -88,7 +88,12 @@ export default function CoachesPage() {
         <RevealFrame className="coach-hero-frame">
           <a className="marketing-visual-link" href="#club" data-preview-link="" data-cursor="Open team report" aria-label="Explore the sample team report"
             onClick={event => {
-              if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) setReportRequest(previous => previous + 1);
+              if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+              // The unenhanced link lands on the chapter. Once interactive, the
+              // open report owns the scroll so native fragment scrolling cannot interrupt it.
+              event.preventDefault();
+              if (window.location.hash !== "#club") window.history.pushState(window.history.state, "", "#club");
+              setReportRequest(previous => previous + 1);
             }}>
             <TeamReportPreview />
           </a>
@@ -105,8 +110,8 @@ export default function CoachesPage() {
           </ShowcaseChapter>
         </ShowcasePair>
         <ShowcasePair>
-          <ShowcaseChapter id="development" titleId="development-title" number="03" label="Training and follow-up" title={<>What happened <em>between tests?</em></>} description="See the workout time each player logged, then compare two attempts on the same course to decide what to practice next." artwork="coaches-development" kind="development" requestToken={planRequest}>
-            <DevelopmentJourney key={player.id} player={player} teamName={team.name} />
+          <ShowcaseChapter id="development" titleId="development-title" number="03" label="Training and follow-up" title={<>What happened <em>between tests?</em></>} description="See how many workout minutes each player logged. Follow a player’s drill and compare their next test with the last one." artwork="coaches-development" kind="development" requestToken={planRequest} demoAnchors={["workout-time"]}>
+            <DevelopmentJourney key={player.id} player={player} team={team} />
           </ShowcaseChapter>
           <ShowcaseChapter id="contact" titleId="contact-title" number="04" label="Club testing" title={<>Bring testing <em>to your club.</em></>} description="Tell us about your squads and their training schedule. We’ll plan a testing day around what your staff wants to learn." artwork="coaches-contact" action={{ href: teamEnquiryHref, label: "Plan a team testing day" }} footer={<a href="/signin">Coach sign in ↗</a>} />
         </ShowcasePair>

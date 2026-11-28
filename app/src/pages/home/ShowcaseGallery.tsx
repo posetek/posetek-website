@@ -12,18 +12,16 @@ const ShowcaseContext = createContext({ active: null as string | null, enhanced:
 /** Stable native document slots: previews and retained panels never reparent. */
 export function ShowcaseGallery({ children, fluid = false }: { children: ReactNode; fluid?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState<string | null>(null);
+  const [request, setRequest] = useState<{ id: string; focus: boolean; scroll: boolean } | null>(null);
+  const active = request?.id ?? null;
   const [enhanced, setEnhanced] = useState(false);
-  const pending = useRef<{ id: string; focus: boolean; scroll: boolean } | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const open = useCallback((id: string, options: OpenOptions = {}) => {
     opener.current = options.opener ?? host.current?.querySelector<HTMLElement>(`[data-showcase-open="${id}"][data-showcase-primary]`) ?? null;
-    pending.current = { id, focus: options.focus !== false, scroll: options.scroll !== false };
-    setActive(id);
+    setRequest({ id, focus: options.focus !== false, scroll: options.scroll !== false });
   }, []);
   const close = useCallback((id: string) => {
-    pending.current = null;
-    setActive(null);
+    setRequest(null);
     const button = opener.current?.isConnected ? opener.current : host.current?.querySelector<HTMLButtonElement>(`[data-showcase-open="${id}"][data-showcase-primary]`);
     button?.focus({ preventScroll: true });
     requestAnimationFrame(() => {
@@ -34,14 +32,12 @@ export function ShowcaseGallery({ children, fluid = false }: { children: ReactNo
   }, []);
 
   useLayoutEffect(() => {
-    const request = pending.current;
-    if (!request || request.id !== active) return;
-    pending.current = null;
+    if (!request) return;
     const panel = host.current?.querySelector<HTMLElement>(`[data-showcase-panel="${request.id}"]`);
     if (!panel) return;
     if (request.focus) panel.querySelector<HTMLElement>("[data-showcase-panel-title]")?.focus({ preventScroll: true });
     if (request.scroll) panel.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
-  }, [active]);
+  }, [request]);
 
   useEffect(() => {
     const node = host.current;

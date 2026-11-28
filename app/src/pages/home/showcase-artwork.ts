@@ -70,9 +70,9 @@ export const showcaseArtwork = {
     src: artwork6, srcSmall: artwork6Small
   },
   "coaches-development": {
-    title: "Training between tests",
-    alt: "A close view of the public Figure-8 demonstration. Sam Bennett logged 12 minutes of workout time during Oct 1–14 in this fictional example.",
-    qualifier: "Public drill photo · Fictional workout time",
+    title: "Logged workout time",
+    alt: "Sample U13 coach dashboard for Oct 1–14. The squad logged 74 workout minutes. Robin Ellis 38, Alex Rivera 24, Sam Bennett 12, Quinn Hall 0, Ari Hayes 0 minutes.",
+    qualifier: "Illustrative coach dashboard · Sample workout logs",
     width: 1200, height: 900,
     src: artwork7, srcSmall: artwork7Small
   },

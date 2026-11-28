@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ClubExplorer } from "./ClubExplorer";
+import { CoachWorkoutTime } from "./CoachWorkoutTime";
 import { PlayerEvidence } from "./PlayerEvidence";
 import { clubDribbleBenchmarks, getClubTestPathway, getTeamActivity, getTeamCheckIn, getTeamTestReport, profileAreas, reportTests, resolvePlayer, resolveTeam, sampleTeams } from "./coach-samples";
 
@@ -51,6 +52,21 @@ describe("coaches illustrative data", () => {
 });
 
 describe("coaches sample views", () => {
+  it.each(sampleTeams)("shows logged minutes for the full $name roster and highlights the selected player", team => {
+    const roster = [...team.players, ...team.otherDribbleResults];
+    for (const player of team.players) {
+      const html = renderToStaticMarkup(<CoachWorkoutTime team={team} player={player} />);
+      expect(html).toContain("Oct 1–14");
+      expect(html).toContain(`<strong>${roster.reduce((sum, row) => sum + row.workoutMinutes, 0)}<span> min</span></strong>`);
+      expect(html).toContain(`data-selected="true"><th scope="row">${player.name}</th>`);
+      expect(html.match(/data-selected="true"/g)).toHaveLength(1);
+      for (const row of roster) {
+        expect(html).toContain(row.name);
+        expect(html).toContain(`>${row.workoutMinutes} min</span>`);
+      }
+      for (const other of sampleTeams.filter(other => other !== team)) expect(html).not.toContain(other.players[0].name);
+    }
+  });
   it.each(sampleTeams)("shows only the selected $name roster and explains role boundaries", team => {
     const html = renderToStaticMarkup(<ClubExplorer teamId={team.id} onTeamChange={() => undefined} onPlayerSelect={() => undefined} />);
     expect(html).toContain("Northfield FC");

@@ -496,6 +496,11 @@ check('Coaches: the first click on the team report works while the page is loadi
     resume();
   }
   await page.locator('[data-showcase-panel="club"]:visible .cx-team-context h4').waitFor();
+  await page.getByRole('link', { name: 'Explore the sample team report' }).click();
+  await page.waitForFunction(() => {
+    const heading = document.getElementById('demo-heading-club');
+    return document.activeElement === heading && heading.getBoundingClientRect().top < innerHeight / 2;
+  });
 });
 
 check('Coaches: team standings, club pathway and coach input lead to a player workout and retest', async t => {

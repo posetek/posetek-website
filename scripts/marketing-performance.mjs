@@ -291,7 +291,7 @@ async function compareContentAssets() {
   const coachSources = {
     'coaches-club': [coachSample],
     'coaches-evidence': [coachSample, 'app/src/pages/home/product/DrillDiagram.tsx', 'app/src/pages/home/product/product-demo.ts'],
-    'coaches-development': [coachSample, 'app/src/pages/home/product/product-demo.ts', 'app/src/pages/home/product/media/figure-8.jpg'],
+    'coaches-development': [coachSample],
     'coaches-contact': ['app/src/pages/home/pitch/ball.ts'],
   };
   for (const [id, sourcePaths] of Object.entries(coachSources)) {

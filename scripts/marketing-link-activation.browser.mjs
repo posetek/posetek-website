@@ -101,6 +101,21 @@ for (const engine of ['chromium', 'webkit']) {
     await page.locator('summary.pt-marketing-menu-button').tap();
     await activateText(page, '.pt-menu-account a[href="/signin"]', true);
   });
+  test(`${engine} phone report link scrolls to the panel on first and repeat taps`, { timeout: 30_000 }, async t => {
+    const page = await pageFor(t, engine, '/coaches/', true);
+    const link = page.getByRole('link', { name: 'Explore the sample team report' });
+    await page.locator('[data-showcase-enhanced]').waitFor();
+    for (let tap = 0; tap < 2; tap++) {
+      await link.tap();
+      await page.waitForFunction(() => {
+        const heading = document.getElementById('demo-heading-club');
+        if (document.activeElement !== heading) return false;
+        const rect = heading.getBoundingClientRect();
+        return rect.top >= 0 && rect.bottom < innerHeight / 2;
+      });
+    }
+    assert.equal(new URL(page.url()).hash, '#club');
+  });
   test(`${engine} phone closing Sign in follows one text tap`, { timeout: 20_000 }, async t => {
     const page = await pageFor(t, engine, '/', true);
     await activateText(page, '.marketing-footer-secondary', true);

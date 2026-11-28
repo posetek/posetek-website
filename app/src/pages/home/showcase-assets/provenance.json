@@ -325,43 +325,33 @@
     },
     {
       "id": "coaches-development",
-      "title": "Training between tests",
-      "alt": "A close view of the public Figure-8 demonstration. Sam Bennett logged 12 minutes of workout time during Oct 1–14 in this fictional example.",
-      "qualifier": "Public drill photo · Fictional workout time",
+      "title": "Logged workout time",
+      "alt": "Sample U13 coach dashboard for Oct 1–14. The squad logged 74 workout minutes. Robin Ellis 38, Alex Rivera 24, Sam Bennett 12, Quinn Hall 0, Ari Hayes 0 minutes.",
+      "qualifier": "Illustrative coach dashboard · Sample workout logs",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
           "source": "app/src/pages/coaches/coach-samples.ts",
-          "detail": "Recorded workout minutes across the sample follow-up window for the U13 check-in player.",
+          "detail": "Team total and recorded workout minutes per player for the full fictional U13 roster during the sample activity window. The selected player is highlighted.",
           "sha256": "4c6d4c07c87fed4287c1643f9b40cf03c7ea7a0f1a6d30b118b08f401c7c80d1"
-        },
-        {
-          "source": "app/src/pages/home/product/product-demo.ts",
-          "detail": "Selected drill ID matches the Figure-8 dribble in the public workout catalog.",
-          "sha256": "64168ac85c3d2eece46909092bcd6d9c958a9d5b86d966e0ae27d4c5091b6872"
-        },
-        {
-          "source": "app/src/pages/home/product/media/figure-8.jpg",
-          "detail": "A full-width crop of the approved public drill demonstration; this is an illustration of the exercise, not a photo of the fictional player.",
-          "sha256": "734a4803f58812692ac989a812edb61bb3fc076b5660b0578f3fa0ff129ba7c1"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-development.svg",
-          "sha256": "24c47c31d8bf9d15a8b363180a87efe5967fd99b892a8c93e5f37ad5d99cb6e4",
-          "bytes": 154802
+          "sha256": "3d9a22bea01a72636a451c9b4ea3134703bedf9758e307d43572f45aec9771be",
+          "bytes": 3890
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-development.webp",
-          "sha256": "c0069db87a7b7119e205c44566359db81799e1e13406d7fd58deed01a5bc4182",
-          "bytes": 108204
+          "sha256": "adc5c581ca95e2121cba44f671a46206346cf95ad40a173e70dc8c8635d1d063",
+          "bytes": 45154
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-development-600.webp",
-          "sha256": "6b2af807b97321a3d053fc02da196555a8a82966709b414e2ec8b7371af2267a",
-          "bytes": 44738
+          "sha256": "b685d9292f39c98885d41f5bdef6471a50a28c37393e659d46bebff99bb0ee00",
+          "bytes": 19942
         }
       }
     },

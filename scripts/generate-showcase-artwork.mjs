@@ -225,18 +225,31 @@ add('coaches-evidence','Sam’s practice focus',
  routeArrow(.24)+routeArrow(Math.PI+.24)+
  text('One short touch after each turn.',left,817,61,field.ink)));
 
-add('coaches-development','Training between tests',
- `A close view of the public Figure-8 demonstration. ${checkIn.name} logged ${checkIn.workoutMinutes} minutes of workout time during ${coaches.coachActivityWindow} in this fictional example.`,
- 'Public drill photo · Fictional workout time', [
-  {source:coachSource,detail:'Recorded workout minutes across the sample follow-up window for the U13 check-in player.'},
-  {source:'app/src/pages/home/product/product-demo.ts',detail:'Selected drill ID matches the Figure-8 dribble in the public workout catalog.'},
-  {source:'app/src/pages/home/product/media/figure-8.jpg',detail:'A full-width crop of the approved public drill demonstration; this is an illustration of the exercise, not a photo of the fictional player.'}
-],svg('Workout follow-up',field.ink,
- `<image href="${photo}" x="0" y="-172" width="${W}" height="${W*720/406}" preserveAspectRatio="xMidYMin meet"/>`+
- rect(0,0,W,H,'url(#photo-floor)')+
- text(`${firstName}’s logged workout time`,left,678,50,field.paper)+
- text(`${checkIn.workoutMinutes} min`,left-7,830,167,field.paper),
- '<linearGradient id="photo-floor" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop offset="0.32" stop-color="#061d12" stop-opacity="0"/><stop offset="0.66" stop-color="#061d12" stop-opacity=".45"/><stop offset="1" stop-color="#061d12" stop-opacity=".93"/></linearGradient>'));
+const timeRoster = [...team.players, ...team.otherDribbleResults].sort((a, b) => b.workoutMinutes - a.workoutMinutes);
+const teamMinutes = coaches.getTeamActivity(team).workoutMinutes;
+const mostMinutes = timeRoster[0].workoutMinutes;
+const timeRows = timeRoster.map((member, index) => {
+  const y = 475 + index * 77;
+  const selected = member === checkIn;
+  const color = selected ? field.lime : field.paper;
+  const trackLeft = 518, trackWidth = 373;
+  return line(left, y - 42, right, y - 42, '#3c5847', 2) +
+    text(member.name, left, y + 15, 47, color, selected ? 'font-weight="bold"' : '') +
+    rect(trackLeft, y - 10, trackWidth, 14, '#365443') +
+    rect(trackLeft, y - 10, num(trackWidth * member.workoutMinutes / mostMinutes), 14, selected ? field.lime : '#9bb6a0') +
+    text(`${member.workoutMinutes} min`, right, y + 15, 47, color, end);
+}).join('');
+
+add('coaches-development','Logged workout time',
+ `Sample ${team.name} coach dashboard for ${coaches.coachActivityWindow}. The squad logged ${teamMinutes} workout minutes. ${timeRoster.map(member => member.name + ' ' + member.workoutMinutes).join(', ')} minutes.`,
+ 'Illustrative coach dashboard · Sample workout logs', [
+  {source:coachSource,detail:'Team total and recorded workout minutes per player for the full fictional U13 roster during the sample activity window. The selected player is highlighted.'}
+],svg('Logged workout time',field.ink,
+ text(`${team.name} coach dashboard`,left,92,46,field.chalk)+text(coaches.coachActivityWindow,right,92,45,field.chalk,end)+
+ text('Logged workout time',left-3,202,84,field.paper)+
+ text(`${teamMinutes} min`,left-6,349,136,field.lime)+text('Team total',514,346,51,field.chalk)+
+ text('Player',left,411,39,'#b7c9b8')+text('Recorded time',right,411,39,'#b7c9b8',end)+
+ timeRows));
 
 // Project PoseTek’s existing soccer ball into a print-style kickoff illustration.
 const ballSource = 'app/src/pages/home/pitch/ball.ts';
