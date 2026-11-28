@@ -20,16 +20,24 @@ export function TextingPlan() {
       <h2 id="texting-plan-heading">Texting plan</h2>
       <dl className="messaging-setup">
         <div>
-          <dt>Provider</dt>
-          <dd>Selection pending</dd>
+          <dt>Staff pilot provider</dt>
+          <dd>Telnyx</dd>
+        </div>
+        <div>
+          <dt>Messaging profile</dt>
+          <dd>Created for U.S. messaging only</dd>
         </div>
         <div>
           <dt>Company number</dt>
+          <dd>Awaiting an approved number</dd>
+        </div>
+        <div>
+          <dt>Reply callback</dt>
           <dd>Awaiting setup</dd>
         </div>
         <div>
-          <dt>Setup reviewed</dt>
-          <dd>Nov 27, 2026</dd>
+          <dt>Setup updated</dt>
+          <dd>Nov 28, 2026</dd>
         </div>
       </dl>
       <div className="messaging-estimate">
@@ -44,7 +52,7 @@ export function TextingPlan() {
         </select>
       </div>
       <table className="messaging-rates">
-        <caption>One U.S. toll-free number. Prices in USD per billed SMS segment.</caption>
+        <caption>Rates published Nov 27, 2026. One U.S. toll-free number. SMS rates in USD per billed segment.</caption>
         <thead>
           <tr>
             <th scope="col">Provider</th>
@@ -73,8 +81,7 @@ export function TextingPlan() {
         <a href="https://telnyx.com/pricing/numbers">SMS number add-on</a>.
       </p>
       <p className="messaging-note">
-        The current pilot software supports Twilio. Choosing another provider requires connecting and testing
-        its two-way messaging service.
+        The staff handset test will check that a reminder arrives and its reply reaches the Vacaville inbox.
       </p>
     </section>
   );

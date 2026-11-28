@@ -140,5 +140,14 @@ it("shows the published pilot estimate as a monthly base for one number and 360 
     ["Twilio", "$2.15", "$0.0083", "$5.14"],
   ]);
   expect(html).toContain("exclude carrier fees and taxes");
-  expect(html).toContain("Selection pending");
+  expect(html).toContain("Rates published Nov 27, 2026");
+});
+
+it("shows the latest staff pilot setup separately from the published rates", () => {
+  const html = renderPage("?section=plan");
+  expect(html).toContain("<dt>Staff pilot provider</dt><dd>Telnyx</dd>");
+  expect(html).toContain("<dt>Messaging profile</dt><dd>Created for U.S. messaging only</dd>");
+  expect(html).toContain("<dt>Company number</dt><dd>Awaiting an approved number</dd>");
+  expect(html).toContain("<dt>Reply callback</dt><dd>Awaiting setup</dd>");
+  expect(html).toContain("<dt>Setup updated</dt><dd>Nov 28, 2026</dd>");
 });
