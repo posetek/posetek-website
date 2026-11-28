@@ -51,8 +51,8 @@ async function pageFor(t) {
 }
 
 for (const [route, title] of [
-  ['/', 'PoseTek | Start with evidence. Train what’s next.'],
-  ['/coaches', 'PoseTek for Coaches & Clubs | Start with every player.'],
+  ['/', 'Soccer testing and workouts for players | PoseTek'],
+  ['/coaches', 'Soccer team testing for coaches and clubs | PoseTek'],
   ['/feedback', 'Give feedback | PoseTek'],
 ]) {
   test(`compiled Astro ${route} serves its own public entry`, { timeout: 30_000 }, async t => {

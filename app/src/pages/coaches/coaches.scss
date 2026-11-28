@@ -5,6 +5,7 @@
   .coach-hero-copy { padding:20px 0; }
   .coach-hero-copy .eyebrow { display:flex; gap:10px; align-items:center; }
   .coach-hero h1 { font-size:clamp(58px,5.4vw,78px); max-width:630px; text-wrap:balance; }
+  .coach-hero .editorial-title > span:last-child { padding-bottom: .16em; margin-bottom: -.09em; }
   .coach-hero-description { color:#b7c8be; font-size:15px; line-height:1.85; margin:28px 0; }
   .coach-hero-note { display:block; color:#839e8e; font-size:11px; margin-top:25px; }
   .coach-service-strip { grid-column:1/-1; display:grid; grid-template-columns:repeat(3,1fr); border-block:1px solid var(--line); padding:26px 0; margin-top:20px; }

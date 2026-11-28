@@ -28,10 +28,11 @@ export interface SkillEntry {
 /** Radar label order in the legacy markup (clockwise from the top). */
 export const SKILL_ORDER: readonly SkillKey[] = ["speed", "shooting", "power", "control", "agility"];
 
-/** The label marked `active` in the legacy initial DOM. */
-export const DEFAULT_SKILL: SkillKey = "agility";
+/** Start the sample profile on the skill connected to Alex’s workout. */
+export const DEFAULT_SKILL: SkillKey = "control";
+export const SAMPLE_DRIBBLE_RESULT = "6.18 s";
 
-/** Legacy `skillData`, verbatim. */
+/** Fictional skill scores and supporting measurements for Alex’s sample profile. */
 export const SKILL_DATA: Record<SkillKey, SkillEntry> = {
   speed: {
     name: "Speed",
@@ -42,7 +43,7 @@ export const SKILL_DATA: Record<SkillKey, SkillEntry> = {
     note: "Focus: hold speed mechanics through the end of the lane.",
   },
   shooting: {
-    name: "Shooting",
+    name: "Striking",
     score: 74,
     color: "#ff8c8c",
     change: "↑ Building",
@@ -58,12 +59,12 @@ export const SKILL_DATA: Record<SkillKey, SkillEntry> = {
     note: "Focus: horizontal force without losing landing control.",
   },
   control: {
-    name: "Control",
+    name: "Ball Control",
     score: 70,
     color: "#66d6e8",
     change: "→ Developing",
-    metrics: [["Shuttle time", "6.18 s"], ["Out phase", "2.55 s"], ["Ball distance", "0.42 m"]],
-    note: "Focus: keep the ball in a playable radius through the turn.",
+    metrics: [["Shuttle time", SAMPLE_DRIBBLE_RESULT], ["Out phase", "2.55 s"], ["Ball distance", "0.42 m"]],
+    note: "Keep the ball close enough for your next touch as you turn.",
   },
   agility: {
     name: "Agility",

@@ -1,3 +1,9 @@
+## Club and player website preview — November 27, 2026
+
+Players opens with a fictional U17 player’s Stats, a testing-session comparison and club age-group averages, then continues into the Figure-8 workout. Coaches opens with a team testing inquiry and a fictional club one-pager. From that report a coach can select a player, see the practice focus and assigned drill, check logged sessions and compare retests.
+
+[Parent preview](https://club-player-preview--posetek.netlify.app/) · [Coaches preview](https://club-player-preview--posetek.netlify.app/coaches/). The draft serves the public marketing pages and sample media. Sign-in, booking and privacy links use the main site. Publishing these changes on the main domain is a separate decision.
+
 ## Admin directory and club reporting — November 24, 2026
 
 Production `6b0628df406fa1fc2213ad25` serves runtime `5d6afaa` from website PR #179. Administrators can select a club directly, combine directory filters, and open report scope and dates on phones. The forest-green navigation groups the existing tools and preserves keyboard focus. The release updated the application entry and added 16 hashed assets. The protected baseline contains 3,016 files and 37 local recovery mappings. [Production receipt](docs/releases/receipts/ADMIN_DIRECTORY_AND_CLUB_REPORTING_PRODUCTION.json)

@@ -22,7 +22,7 @@ describe("marketing audience navigation", () => {
     const html = renderToStaticMarkup(<MarketingHeader audience="coaches" />);
     for (const hash of ["club", "players", "development", "contact"]) expect(html).toContain(`href="#${hash}"`);
     expect(html).toContain(`href="${TEAM_ENQUIRY_HREF}"`);
-    expect(html).toContain("Talk about your team");
+    expect(html).toContain("Team testing");
     expect(html).toMatch(/href="\/signin"><span[^>]*><span class="interaction-text-source">Coach sign in<\/span>/);
     expect(html).not.toContain('href="/bookPerformanceTest.html"');
   });

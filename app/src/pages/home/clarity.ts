@@ -7,6 +7,8 @@ type ClarityFn = { (...args: unknown[]): void; q?: unknown[][] };
 const CLARITY_SRC = "https://www.clarity.ms/tag/w8lex8gzl7";
 
 export function injectClarity(): void {
+  // A shareable draft should not add parent review sessions to live site analytics.
+  if (document.documentElement.hasAttribute("data-marketing-preview")) return;
   const w = window as Window & { clarity?: ClarityFn };
   if (!w.clarity) {
     const queued: ClarityFn = (...args: unknown[]) => {

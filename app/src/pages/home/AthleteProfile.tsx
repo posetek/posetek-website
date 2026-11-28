@@ -1,16 +1,19 @@
 import { useState } from "react";
-import { DEFAULT_SKILL, SKILL_DATA, SKILL_ORDER, progressFillBackground, progressFillWidth, skillDotShadow, type SkillKey } from "./home-logic";
-export function AthleteProfile() {
+import { DEFAULT_SKILL, SAMPLE_DRIBBLE_RESULT, SKILL_DATA, SKILL_ORDER, progressFillBackground, progressFillWidth, skillDotShadow, type SkillKey } from "./home-logic";
+import { sampleAthlete } from "./product/product-demo";
+import "./athlete-profile-sample.css";
+
+export function AthleteProfile({ onOpenWorkout }: { onOpenWorkout: () => void }) {
   const [activeSkill, setActiveSkill] = useState<SkillKey>(DEFAULT_SKILL);
   const skillKey = activeSkill;
   const skill = SKILL_DATA[skillKey];
   const skillTouched = true;
   return (
-            <div className="profile-demo reveal" aria-label="Sample PoseTek athlete profile">
+            <div className="profile-demo reveal" aria-label="Fictional PoseTek player profile">
               <div className="demo-window">
-                <div className="demo-topbar"><span className="mini-mark">P</span>Athlete profile<span className="live-chip">Sample profile</span></div>
+                <div className="demo-topbar"><span className="mini-mark">P</span>Player Stats<span className="live-chip">Fictional example</span></div>
                 <div className="demo-content">
-                  <div className="athlete-row"><span className="avatar">AJ</span><span><strong>Alex Johnson</strong><small>Midfielder · U17 · Sample profile</small></span><span className="sample-chip">Latest assessment</span></div>
+                  <div className="athlete-row"><span className="avatar">{sampleAthlete.initials}</span><span><strong>{sampleAthlete.name}</strong><small>{sampleAthlete.role} · Parkside FC U17</small></span><span className="sample-chip">Latest assessment</span></div>
                   <div className="demo-main">
                     <div className="radar-card">
                       <span className="card-kicker">Skill map</span>
@@ -66,6 +69,25 @@ export function AthleteProfile() {
                       <p className="focus-note" id="focusNote">{skill.note}</p>
                     </div>
                   </div>
+                  <section className="profile-assessment" aria-labelledby="sample-dribble-title">
+                    <div>
+                      <span className="card-kicker">Dribbling shuttle · Sample results</span>
+                      <h4 id="sample-dribble-title">How does Alex compare?</h4>
+                      <dl>
+                        <div><dt>Alex on test day</dt><dd>{SAMPLE_DRIBBLE_RESULT}</dd></div>
+                        <div><dt>Team average that day</dt><dd>6.05 s</dd></div>
+                        <div><dt>Club U16 average</dt><dd>6.40 s</dd></div>
+                        <div><dt>Club U17 average</dt><dd>6.10 s</dd></div>
+                      </dl>
+                      <p>A shorter time is faster. The club averages come from different players who took the same test at each age.</p>
+                    </div>
+                    <div>
+                      <span className="card-kicker">What to practice next</span>
+                      <h4>Keep the ball close through turns.</h4>
+                      <p>Alex’s plan uses the Figure-8 dribble. Weave around two cones, using short touches with the inside and outside of your feet.</p>
+                      <button type="button" className="profile-workout-action" onClick={onOpenWorkout}>Try Alex’s dribbling workout <span aria-hidden="true">→</span></button>
+                    </div>
+                  </section>
                 </div>
               </div>
             </div>

@@ -244,6 +244,22 @@ check('scrambled header, hero and footer labels retain intrinsic width throughou
   }
 });
 
+// Exercise the real hero link without handing a mailto URL to the machine's mail client.
+async function activateHero(page, audience, activate) {
+  const link = page.locator('.hero-explore');
+  if (audience === 'players') {
+    await activate();
+    await page.waitForURL(url => url.hash === '#profile');
+    return;
+  }
+  await link.evaluate(node => node.addEventListener('click', event => {
+    event.preventDefault();
+    node.dataset.activatedHref = node.getAttribute('href');
+  }, { once: true }));
+  await activate();
+  assert.equal(await link.getAttribute('data-activated-href'), 'mailto:dylank@posetek.net?subject=PoseTek%20team%20enquiry');
+}
+
 for (const config of audiences) {
   check(`${config.name}: desktop scramble is bounded, accessible, reversible and cancelable`, async t => {
     const { page } = await fixture(t);
@@ -255,7 +271,7 @@ for (const config of audiences) {
     await link.hover();
     await waitData(page, '.hero-explore .interaction-text', 'scrambling', 'true');
     assert.notEqual(await label.locator('.interaction-text-visual').textContent(), source, 'visual copy actually changes');
-    assert.equal(await page.getByRole('link', { name: source, exact: true }).count(), 1, 'accessible name remains complete during scramble');
+    assert.equal(await link.and(page.getByRole('link', { name: source, exact: true })).count(), 1, 'accessible name remains complete during scramble');
     const during = await link.boundingBox();
     assert.ok(Math.abs(during.width - before.width) < 1 && Math.abs(during.height - before.height) < 1, 'scramble does not change the link hit area');
     await capture(page, `${config.name}-desktop-text-scramble`);
@@ -269,8 +285,7 @@ for (const config of audiences) {
     await link.hover(); await link.focus();
     assert.equal(await label.getAttribute('data-scrambling'), 'false', 'keyboard focus restores copy');
     assert.equal(await label.locator('.interaction-text-visual').textContent(), source);
-    await page.keyboard.press('Enter');
-    await page.waitForURL(url => url.hash === (config.name === 'players' ? '#tests' : '#club'));
+    await activateHero(page, config.name, () => page.keyboard.press('Enter'));
   });
 
   check(`${config.name}: live demonstration controls remain stationary and preserve selection after reopening`, async t => {
@@ -323,11 +338,14 @@ for (const config of audiences) {
     const { page } = await fixture(t, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     await visit(page, config.route);
     assert.equal(await page.evaluate(() => matchMedia('(pointer: coarse)').matches), true);
-    await page.locator('.hero-explore').tap();
-    await page.waitForURL(url => url.hash === (config.name === 'players' ? '#tests' : '#club'));
+    await activateHero(page, config.name, () => page.locator('.hero-explore').tap());
     assert.equal(await page.locator('.marketing-cursor').getAttribute('data-visible'), 'false');
     assert.equal(await page.locator('.interaction-text[data-scrambling="true"]').count(), 0);
-    const panel = await openShowcase(page, config.section);
+    // The player hero opens the profile itself. The coach hero opens an enquiry.
+    const panel = config.name === 'players'
+      ? page.locator('[data-showcase-panel="profile"]')
+      : await openShowcase(page, config.section);
+    await panel.waitFor({ state: 'visible' });
     const controls = panel.locator(config.controls);
     await controls.last().tap();
     assert.equal(await controls.last().getAttribute('aria-pressed'), 'true');

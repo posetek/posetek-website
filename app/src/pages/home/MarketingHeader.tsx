@@ -36,11 +36,11 @@ export function MarketingHeader({ audience, legacy = false }: { audience: Market
     }).catch(() => {});
     return () => { cancelled = true; dispose?.(); cleanup?.(); };
   }, [legacy]);
-  const cta = audience === "coaches" ? { label: "Talk about your team", href: TEAM_ENQUIRY_HREF } : { label: "Book a test", href: "/bookPerformanceTest.html" };
+  const cta = audience === "coaches" ? { label: "Team testing", href: TEAM_ENQUIRY_HREF } : { label: "Book a test", href: "/bookPerformanceTest.html" };
   const pages = [
-    { label: "Players", href: "/", title: "Start with evidence.", caption: "Your game. A clearer picture.", kind: "players" },
-    { label: "Coaches", href: "/coaches", title: "One club. Every team.", caption: "See the team. Understand the individual.", kind: "coaches" },
-    { label: audience === "coaches" ? "Get in touch" : "Book a test", href: cta.href, title: audience === "coaches" ? "Talk about your team." : "Establish your baseline.", caption: "Start with evidence. Train what’s next.", kind: "contact" },
+    { label: "Players", href: "/", title: "Your player profile.", caption: "See your strengths and what to practice next.", kind: "players" },
+    { label: "Coaches", href: "/coaches", title: "Testing for your team.", caption: "See each player’s results and follow their training.", kind: "coaches" },
+    { label: audience === "coaches" ? "Get in touch" : "Book a test", href: cta.href, title: audience === "coaches" ? "Talk about testing your team." : "Establish your baseline.", caption: "Start with evidence. Train what’s next.", kind: "contact" },
   ];
   return <header ref={host} className="site-header marketing-header" data-marketing-header>
     <nav className="pt-marketing-bar" aria-label="Primary navigation">
@@ -59,7 +59,7 @@ export function MarketingHeader({ audience, legacy = false }: { audience: Market
           <div className="pt-menu-bottom"><nav className="pt-menu-sections" aria-label="On this page">{marketingSections[audience].map(([label, href]) => <a key={href} href={href}><Label>{label}</Label><span aria-hidden="true">↘</span></a>)}</nav><div className="pt-menu-account"><a href="/signin"><Label>{audience === "coaches" ? "Coach sign in" : "Sign in"}</Label><span aria-hidden="true">↗</span></a><a href="/privacy"><Label>Privacy</Label></a></div></div>
         </div>
         <p className="pt-menu-footnote">Start with evidence. Train what’s next.</p>
-        <div className="pt-menu-peek" aria-hidden="true" data-visible="false" data-page="players"><div className="pt-menu-peek-panel"><div className="pt-menu-peek-content"><div className="pt-menu-peek-bar"><span>POSETEK</span><span data-peek-label>Players</span></div><div className="pt-menu-peek-body"><div><span className="pt-menu-peek-label" data-peek-label>Players</span><p data-peek-title>Start with evidence.</p><span className="pt-menu-peek-caption" data-peek-caption>Your game. A clearer picture.</span></div><div className="pt-menu-peek-art"><img src="/brand/posetek-p.svg" alt="" width="48" height="48"/><i/><i/><i/></div></div><div className="pt-menu-peek-foot">TEST / UNDERSTAND / TRAIN / RETEST</div></div></div></div>
+        <div className="pt-menu-peek" aria-hidden="true" data-visible="false" data-page="players"><div className="pt-menu-peek-panel"><div className="pt-menu-peek-content"><div className="pt-menu-peek-bar"><span>POSETEK</span><span data-peek-label>Players</span></div><div className="pt-menu-peek-body"><div><span className="pt-menu-peek-label" data-peek-label>Players</span><p data-peek-title>{pages[0].title}</p><span className="pt-menu-peek-caption" data-peek-caption>{pages[0].caption}</span></div><div className="pt-menu-peek-art"><img src="/brand/posetek-p.svg" alt="" width="48" height="48"/><i/><i/><i/></div></div><div className="pt-menu-peek-foot">TEST / UNDERSTAND / TRAIN / RETEST</div></div></div></div>
       </div>
     </details>
   </header>;

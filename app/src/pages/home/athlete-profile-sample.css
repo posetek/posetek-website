@@ -1,0 +1,55 @@
+.profile-demo .profile-assessment {
+  display: grid;
+  gap: 24px 40px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #355041;
+}
+
+.profile-demo .profile-assessment h4 {
+  margin: 8px 0;
+  color: #f1f5ef;
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.profile-demo .profile-assessment p {
+  color: #bfd0c4;
+  line-height: 1.55;
+}
+
+.profile-demo .profile-assessment dl {
+  margin: 13px 0;
+}
+
+.profile-demo .profile-assessment dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 4px;
+  border-bottom: 1px solid #355041;
+  color: #e2eadc;
+  font-size: 13px;
+}
+
+.profile-demo .profile-assessment dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-demo .profile-workout-action {
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 6px 0;
+  background: transparent;
+  border: 0;
+  color: var(--lime);
+  font-weight: 600;
+  text-align: start;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@media (min-width: 760px) {
+  .profile-demo .profile-assessment { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

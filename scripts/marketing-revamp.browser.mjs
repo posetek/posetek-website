@@ -23,8 +23,8 @@ const allowFonts = process.env.MARKETING_ALLOW_FONTS === '1';
 const originPolicy = productionOrigin ? 'PoseTek production origin GET/HEAD' : previewOrigin ? 'immutable PoseTek draft origin GET/HEAD' : 'loopback GET/HEAD';
 const evidence = { output, previewOrigin, networkPolicy: `${originPolicy}${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`, checks: [], screenshots: [], requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, expectedOriginFailures: 0, unexpectedOriginFailures: 0 }, injectedFailures: [], measurements: [] };
 const pages = [
-  { route: '/', name: 'players', chapters: ['tests', 'profile', 'training', 'ai-coach', 'technique', 'mobile-app'], title: 'PoseTek | Start with evidence. Train what’s next.' },
-  { route: '/coaches', name: 'coaches', chapters: ['club', 'players', 'development', 'contact'], title: 'PoseTek for Coaches & Clubs | Start with every player.' },
+  { route: '/', name: 'players', chapters: ['tests', 'profile', 'training', 'ai-coach', 'technique', 'mobile-app'], title: 'Soccer testing and workouts for players | PoseTek', heading: 'What do I train next?' },
+  { route: '/coaches', name: 'coaches', chapters: ['club', 'players', 'development', 'contact'], title: 'Soccer team testing for coaches and clubs | PoseTek', heading: 'Team testing.' },
 ];
 // Netlify Pretty URLs rewrites the existing .html booking link to this preserved
 // alias in served HTML. Accept exactly those two established destinations.
@@ -196,7 +196,7 @@ for (const config of pages) {
       const { page } = await fixture(t, { viewport: { width, height: width < 768 ? 844 : 1080 } });
       await visit(page, config.route);
       assert.equal(await page.title(), config.title);
-      assert.match(await page.locator('h1').innerText(), /Start with\s+evidence\./);
+      assert.equal((await page.locator('h1').innerText()).replace(/\s+/g, ' ').trim(), config.heading);
       await noOverflow(page, `${config.name} hero ${width}`);
       const chapterLinks = page.locator('.chapter-nav a');
       assert.deepEqual(await chapterLinks.evaluateAll(links => links.map(link => link.getAttribute('href'))), config.chapters.map(id => '#' + id));
@@ -281,7 +281,7 @@ for (const config of pages) {
   check(`${config.name}: SSR remains usable without JavaScript`, async t => {
     const { page } = await fixture(t, { javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
     await visit(page, config.route, false);
-    assert.match(await page.locator('h1').innerText(), /Start with\s+evidence\./);
+    assert.equal((await page.locator('h1').innerText()).replace(/\s+/g, ' ').trim(), config.heading);
     assert.equal(await page.locator('[src^="file:"],[href^="file:"]').count(), 0, 'server-rendered asset URLs must be public URLs, never local filesystem paths');
     for (const id of config.chapters) {
       await page.locator(`.chapter-nav a[href="#${id}"]`).click();

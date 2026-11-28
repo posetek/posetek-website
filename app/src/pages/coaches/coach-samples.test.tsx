@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ClubExplorer } from "./ClubExplorer";
 import { PlayerEvidence } from "./PlayerEvidence";
-import { profileAreas, resolvePlayer, resolveTeam, sampleTeams } from "./coach-samples";
+import { clubDribbleBenchmarks, profileAreas, resolvePlayer, resolveTeam, sampleTeams } from "./coach-samples";
 
 describe("coaches illustrative data", () => {
   it("keeps nine unique players in three distinct team contexts with usable profile and session values", () => {
@@ -31,7 +31,7 @@ describe("coaches illustrative data", () => {
 
 describe("coaches sample views", () => {
   it.each(sampleTeams)("shows only the selected $name roster and explains role boundaries", team => {
-    const html = renderToStaticMarkup(<ClubExplorer teamId={team.id} onTeamChange={() => undefined} />);
+    const html = renderToStaticMarkup(<ClubExplorer teamId={team.id} onTeamChange={() => undefined} onPlayerSelect={() => undefined} />);
     expect(html).toContain("Northfield FC");
     expect(html).toContain("Illustrative example");
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
@@ -39,12 +39,23 @@ describe("coaches sample views", () => {
     for (const otherTeam of sampleTeams.filter(item => item.id !== team.id)) {
       for (const player of otherTeam.players) expect(html).not.toContain(player.name);
     }
+    const times = [...team.players.map(player => player.latestDribbleSeconds), ...team.otherDribbleResults.map(result => result.seconds)];
+    expect(times.length).toBeGreaterThanOrEqual(5);
+    const mean = times.reduce((sum, time) => sum + time, 0) / times.length;
+    expect(html).toContain(mean.toFixed(2));
+    expect(html).toContain(Math.min(...times).toFixed(2));
+    const checkIn = team.players.find(player => player.latestDribbleSeconds === Math.max(...times))!;
+    expect(html).toContain(checkIn.name + " took the longest");
     expect(html).toContain("Managers see the club. Coaches work with their assigned teams.");
   });
   it.each(sampleTeams.flatMap(team => team.players.map(player => ({ team, player }))))("keeps $player.name's evidence and next step aligned", ({ team, player }) => {
     const html = renderToStaticMarkup(<PlayerEvidence teamId={team.id} playerId={player.id} onPlayerChange={() => undefined} />);
     expect(html).toContain(player.latestDribbleSeconds.toFixed(2));
     expect(html).toContain(player.focus);
+    expect(html).toContain("Club development pathway");
+    for (const group of clubDribbleBenchmarks) {
+      expect(html).toContain(group.meanSeconds.toFixed(2));
+    }
     expect(html).toContain(player.drillId === "DRB-006" ? "Figure-8 dribble" : "Wall pass rhythm");
     expect(html).toContain('role="img"');
     expect(html).toContain("Illustrative example");

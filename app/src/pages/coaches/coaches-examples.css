@@ -113,3 +113,22 @@
   .cx-assessment strong { font-size: 54px; }
 }
 @media (prefers-reduced-motion: reduce) { .cx-club button, .cx-evidence button { transition: none; } }
+
+.cx-report-stats { display: flex; flex-wrap: wrap; gap: 12px 28px; margin: 18px 0; }
+.cx-report-stats dt, .cx-roster-player small { color: var(--cx-muted); font-size: 12px; }
+.cx-report-stats dd { margin: 3px 0 0; color: var(--cx-lime); font: 600 27px/1.1 "Barlow Condensed", sans-serif; }
+.cx-report-check { max-width: 42ch; line-height: 1.55; }
+.cx-report-check strong { color: #f0f5ed; }
+.cx-club .cx-profile-link { width: 100%; border: 0; border-bottom: 1px solid var(--cx-line); text-align: left; color: inherit; background: transparent; }
+.cx-club .cx-profile-link:hover, .cx-club .cx-profile-link:focus-visible { background: #193424; }
+.cx-roster-player small { display: block; margin-top: 4px; }
+.cx-profile-link .cx-focus-tag { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cx-pathway { margin-top: 20px; border-top: 1px solid var(--cx-line); color: var(--cx-muted); }
+.cx-pathway summary { padding: 16px 0; color: #f0f5ed; font-size: 14px; font-weight: 550; cursor: pointer; }
+.cx-pathway summary:focus-visible { outline: 2px solid var(--cx-lime); outline-offset: 2px; }
+.cx-pathway p { max-width: 56ch; font-size: 13px; line-height: 1.6; }
+.cx-pathway dl { margin: 12px 0; }
+.cx-pathway dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-top: 1px solid var(--cx-line); padding: 7px 0; font-size: 14px; }
+.cx-pathway [data-selected=true] { color: var(--cx-lime); }
+.cx-pathway dt small { font-size: 12px; color: var(--cx-muted); }
+.cx-pathway dd { margin: 0; font-variant-numeric: tabular-nums; }

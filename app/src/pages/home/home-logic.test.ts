@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_SKILL,
   HEADER_SCROLL_THRESHOLD,
+  SAMPLE_DRIBBLE_RESULT,
   SKILL_DATA,
   SKILL_ORDER,
   isHeaderScrolled,
@@ -10,6 +11,7 @@ import {
   progressFillWidth,
   skillDotShadow,
 } from "./home-logic";
+import { sampleAthlete } from "./product/product-demo";
 
 describe("isHeaderScrolled", () => {
   it("adds .scrolled strictly past 12px", () => {
@@ -28,12 +30,19 @@ describe("menuButtonLabel", () => {
 });
 
 describe("skill map data", () => {
-  it("lists the radar labels in legacy DOM order with Agility active", () => {
+  it("starts the sample skill map on the ball control used in Alex’s workout", () => {
     expect(SKILL_ORDER).toEqual(["speed", "shooting", "power", "control", "agility"]);
-    expect(DEFAULT_SKILL).toBe("agility");
+    expect(DEFAULT_SKILL).toBe("control");
+    expect(SKILL_DATA[DEFAULT_SKILL].name).toBe("Ball Control");
   });
 
-  it("matches the legacy initial breakdown card", () => {
+  it("uses the same dribbling result in the profile and the retest conversation", () => {
+    const dribbling = sampleAthlete.metrics.find(metric => metric.key === "dribbling");
+    expect(SAMPLE_DRIBBLE_RESULT).toBe(`${dribbling?.value} s`);
+    expect(SKILL_DATA.control.metrics).toContainEqual(["Shuttle time", SAMPLE_DRIBBLE_RESULT]);
+  });
+
+  it("preserves the sampled agility breakdown", () => {
     expect(SKILL_DATA.agility).toEqual({
       name: "Agility",
       score: 68,
