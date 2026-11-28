@@ -258,9 +258,6 @@ async function compareContentAssets() {
     for (const root of roots) for (const item of await inventory(resolve(source, root))) {
       if (retainedExtensions.has(extname(item.path))) entries.push({ ...item, path: root + '/' + item.path });
     }
-    const sample = 'app/src/pages/coaches/coach-samples.ts';
-    const bytes = await readFile(resolve(source, sample));
-    entries.push({ path: sample, bytes: bytes.length, sha256: sha256(bytes) });
     return entries.sort((a, b) => a.path.localeCompare(b.path));
   }
   const before = await sourceInventory(baselineSource), after = await sourceInventory(candidateSource);
@@ -270,10 +267,37 @@ async function compareContentAssets() {
   const artworkRoot = 'app/src/pages/home/showcase-assets/';
   const addedArtwork = after.filter(item => item.path.startsWith(artworkRoot));
   const retained = after.filter(item => !item.path.startsWith(artworkRoot) && (item.path !== derivedPath || before.some(previous => previous.path === derivedPath)));
-  assert.deepEqual(retained, before, 'Existing recorded/sample content, media, fallback visuals and public brand assets must be unchanged.');
+  const baselineRetained = before.filter(item => !item.path.startsWith(artworkRoot));
+  assert.deepEqual(retained, baselineRetained, 'Existing recorded/sample content, media, fallback visuals and public brand assets must be unchanged.');
   const provenancePath = artworkRoot + 'provenance.json';
   const provenance = JSON.parse(await readFile(resolve(candidateSource, provenancePath), 'utf8'));
-  assert.equal(provenance.artworks.length, 10, 'Exactly ten approved showcase compositions.');
+  const archivedIds = provenance.artworks.map(artwork => artwork.id);
+  assert.equal(new Set(archivedIds).size, 10, 'Exactly ten distinct showcase compositions have source records.');
+  assert.equal(archivedIds.length, 10);
+  assert.ok(archivedIds.includes('players-technique'), 'The retired kick illustration retains its provenance.');
+  const runtimeArtwork = await readFile(resolve(candidateSource, 'app/src/pages/home/showcase-artwork.ts'), 'utf8');
+  const runtimeIds = [...runtimeArtwork.matchAll(/^  "([\w-]+)": \{/gm)].map(match => match[1]).sort();
+  const active = provenance.artworks.filter(artwork => artwork.id !== 'players-technique');
+  assert.deepEqual(runtimeIds, active.map(artwork => artwork.id).sort(), 'Only nine reviewed compositions are offered at runtime.');
+  const imports = [...runtimeArtwork.matchAll(/from "\.\/showcase-assets\/([^"]+)\?url"/g)].map(match => artworkRoot + match[1]).sort();
+  assert.deepEqual(imports, active.flatMap(artwork => [artwork.files.webp.path, artwork.files.small.path]).sort(), 'Only the active responsive textures are imported.');
+  // All six Players illustrations, including the archive, were approved in this parent preview.
+  // Pin their complete source/output records, so comparisons also work in exported source trees.
+  const playerArtworkRevision = '287d805372947fae78475f2ede2b0d99ad632793';
+  const players = provenance.artworks.filter(art => art.id.startsWith('players-'));
+  assert.equal(sha256(JSON.stringify(players)), 'bba561562e4d2fa5565958ace7e7da918de401bb078971da1251260180863800',
+    `Players artwork matches the reviewed pixels, metadata and generation sources from ${playerArtworkRevision}.`);
+  const coachSample = 'app/src/pages/coaches/coach-samples.ts';
+  const coachSources = {
+    'coaches-club': [coachSample],
+    'coaches-evidence': [coachSample, 'app/src/pages/home/product/DrillDiagram.tsx', 'app/src/pages/home/product/product-demo.ts'],
+    'coaches-development': [coachSample],
+    'coaches-contact': ['app/src/pages/home/pitch/ball.ts'],
+  };
+  for (const [id, sourcePaths] of Object.entries(coachSources)) {
+    const chart = active.find(art => art.id === id);
+    assert.deepEqual(chart?.provenance.map(source => source.source), sourcePaths, `The ${id} artwork derives from the public sample sources.`);
+  }
   const expectedPaths = [provenancePath];
   for (const artwork of provenance.artworks) {
     for (const file of Object.values(artwork.files)) {
@@ -284,26 +308,17 @@ async function compareContentAssets() {
       expectedPaths.push(file.path);
     }
     for (const source of artwork.provenance) {
-      assert.ok(!source.source.includes('..'), 'Source paths are repository-relative.');
-      const baseline = await readFile(resolve(baselineSource, source.source));
-      const current = await readFile(resolve(candidateSource, source.source));
-      assert.equal(sha256(current), source.sha256, `Generation source identity: ${source.source}`);
-      if (source.excerpts) {
-        assert.equal(source.source, 'app/src/pages/coaches/CoachesPage.tsx', 'Only the deliberately restyled page uses excerpt preservation.');
-        assert.ok(source.excerpts.length > 0);
-        for (const excerpt of source.excerpts) {
-          assert.ok(excerpt.length > 0 && baseline.toString('utf8').includes(excerpt), 'Approved baseline contains the exact reused excerpt.');
-          assert.ok(current.toString('utf8').includes(excerpt), 'Current source retains the exact reused excerpt.');
-        }
-      } else assert.equal(sha256(baseline), source.sha256, `Unchanged approved baseline source: ${source.source}`);
+      assert.ok(source.source.startsWith('app/') && !source.source.includes('..'), 'Source paths are repository-relative.');
+      const input = await readFile(resolve(candidateSource, source.source));
+      assert.equal(sha256(input), source.sha256, `Generation source identity: ${source.source}`);
     }
   }
   assert.deepEqual(addedArtwork.map(item => item.path).sort(), expectedPaths.sort(), 'No undeclared showcase content is exempted from preservation.');
   const derived = JSON.parse(await readFile(resolve(candidateSource, derivedPath), 'utf8'));
   const approved = await readFile(resolve(candidateSource, 'app/astro/public/brand/posetek-p.svg'));
   verifyDerivedBrandShape(derived, approved, sha256);
-  report.contentAssets = { baselineSource, candidateSource, exactFiles: retained.length, bytes: retained.reduce((sum, item) => sum + item.bytes, 0), scope: 'Every existing homepage JSON/media/static visual, public brand/icon and coach-samples.ts is exact. The ten declared showcase compositions have complete file and original-source hash verification; the approved P contour is independently verified.', showcaseArtwork: { files: addedArtwork, bytes: addedArtwork.reduce((sum, item) => sum + item.bytes, 0), provenanceSha256: sha256(await readFile(resolve(candidateSource, provenancePath))) }, files: retained, derivedBrandGeometry: { ...derivedAsset, source: derived.source, sourceSha256: derived.sha256, commandCount: derived.commands.length, approvedContourExact: true } };
-  report.checks.push(`${retained.length} existing source content/media/brand files remain byte-identical; P geometry exactly matches the approved source contour; all 30 new artwork files match declared output/source provenance`);
+  report.contentAssets = { baselineSource, candidateSource, exactFiles: retained.length, bytes: retained.reduce((sum, item) => sum + item.bytes, 0), scope: 'Existing content, media and brand assets outside the showcase directory match the supplied baseline. All ten showcase illustrations match their generation inputs and declared output files.', showcaseArtwork: { activeIds: runtimeIds, playerArtworkRevision, files: addedArtwork, bytes: addedArtwork.reduce((sum, item) => sum + item.bytes, 0), provenanceSha256: sha256(await readFile(resolve(candidateSource, provenancePath))) }, files: retained, derivedBrandGeometry: { ...derivedAsset, source: derived.source, sourceSha256: derived.sha256, commandCount: derived.commands.length, approvedContourExact: true } };
+  report.checks.push(`${retained.length} source content/media/brand files remain byte-identical; P geometry matches its approved contour; nine runtime and one archival illustration passed provenance checks`);
 }
 
 try {

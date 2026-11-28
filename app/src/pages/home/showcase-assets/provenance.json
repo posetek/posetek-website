@@ -14,15 +14,15 @@
   "artworks": [
     {
       "id": "players-testing",
-      "title": "Recorded movement review",
-      "alt": "Three enlarged static frames from PoseTek’s approved recorded sprint, arranged as a movement study.",
-      "qualifier": "Recorded movement · Existing public sample",
+      "title": "Soccer testing, rep by rep",
+      "alt": "Three frames from a recorded sprint test. This rep reached a top speed of 12.5 mph.",
+      "qualifier": "Recorded movement · Public sprint sample",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
           "source": "app/src/pages/home/movement/recorded-movement.json",
-          "detail": "Sprint frames 18, 36, 48; exact recorded landmark coordinates. Each study uses uniform source-aspect scaling; no generated or interpolated motion.",
+          "detail": "Recorded sprint frames 18, 36, 48 and top speed from the same public sequence.",
           "sha256": "a0df987d4b3b206fc180334f1cc3c83f2ff9201e3bccc52b96cd410f1b029761"
         },
         {
@@ -34,55 +34,55 @@
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/players-testing.svg",
-          "sha256": "faa39304c7cdc0e477ed6c62b5b75c749899a334eeab531e8e7e099418fa5431",
-          "bytes": 18681
+          "sha256": "fcd68ed2cfa22205e20ba77e9b656973e0fad464160d45ab98d7c1fa45ede47c",
+          "bytes": 17070
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/players-testing.webp",
-          "sha256": "31b686e8560ca39873ab2e6d86845afd60db5bef26dab112304330200bcddb10",
-          "bytes": 38232
+          "sha256": "554b561a41d782ace08b8faf9e4c83e408648d40eae3afec589d035b3931254c",
+          "bytes": 45980
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/players-testing-600.webp",
-          "sha256": "ea0ef7624613e18938b674d6736827e1c71345923c25037501e203a8cf400e98",
-          "bytes": 14768
+          "sha256": "b68eaecb21f0527251fd3c87de700b3d7532084dc32f16539cee32c438cacf0c",
+          "bytes": 19018
         }
       }
     },
     {
       "id": "players-profile",
-      "title": "Athlete profile",
-      "alt": "Alex Johnson’s existing sample skill map, with the five illustrative sample scores and an emphasis on agility.",
-      "qualifier": "Sample athlete profile",
+      "title": "Your development pathway",
+      "alt": "Alex’s best left dribble is 3.24 m/s. The fictional U17 club average is 3.28 m/s. The curve shows club results across U11 to U17.",
+      "qualifier": "Fictional player and club results",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
-          "source": "app/src/pages/home/home-logic.ts",
-          "detail": "SKILL_ORDER and SKILL_DATA values81,74,72,70,68; no new performance claim.",
-          "sha256": "8a9a43e89a27badf4e772d783adc96d7f32f6b6a7629e93219fa1e399b7f467a"
+          "source": "app/src/pages/home/development-pathway-sample.ts",
+          "detail": "The same fictional age groups, means, spreads and individual results as the interactive sample. Both comparison numbers come from the selected test.",
+          "sha256": "9a6805c69d83c92e64f3280bc5a4f8fae7dc63e8d07d845e8604e6f257819aef"
         },
         {
-          "source": "app/src/pages/home/AthleteProfile.tsx",
-          "detail": "Approved fictional profile Alex Johnson; radar is redrawn proportionally from the sample score values.",
-          "sha256": "92d9ce5f4a61276b2c53d22556164621758d29f0b08a293e60c7feb7bdc10f6b"
+          "source": "app/src/pages/athlete-portal/player/stats/club-cloud.ts",
+          "detail": "Shared signed-in Player Stats curve, spread and axis functions.",
+          "sha256": "e0cc33252bf88347118865eadd6336f4fe6909c755aca9b5961241375d1c458f"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/players-profile.svg",
-          "sha256": "0c16ddea0699b026f48d2d37a0925491360f7d9eb0480ce8366327b7b80b2f98",
-          "bytes": 5169
+          "sha256": "543053d8be1d96f09e8aeaf992136ede03cf6b069736a2f6f572314b5cf03101",
+          "bytes": 22704
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/players-profile.webp",
-          "sha256": "a1ff8eb504f9ffd898aa1286fb9183c4ecef57fd4d524ab838fed77d3cb28e6a",
-          "bytes": 44808
+          "sha256": "5e0d5a545fdd15105be1deb68d81e4ed6cd2c9ec75d3dda2260d740e97d09dd2",
+          "bytes": 54992
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/players-profile-600.webp",
-          "sha256": "795c4226fdce5e9d7ca6bf6290a340e5961fe6a4ed1f134d4cdc7c27518925e0",
-          "bytes": 18418
+          "sha256": "fe5342ee20973ee4396f44838a3a15412801051d45bf8061d7a9b83eee6edaad",
+          "bytes": 22726
         }
       }
     },
@@ -251,163 +251,139 @@
     },
     {
       "id": "coaches-club",
-      "title": "One club, every team",
-      "alt": "Northfield FC’s existing three illustrative age groups, connected to individual player focus on an editorial pitch diagram.",
-      "qualifier": "Illustrative club workspace",
+      "title": "Left-dribble pathway",
+      "alt": "The sample U13 team averages 7.00 s. The points show each club age group’s average on the same left dribble.",
+      "qualifier": "Fictional team and club results",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
-          "source": "app/src/pages/coaches/CoachesPage.tsx",
-          "detail": "Unchanged ClubPreview source excerpt; the pitch is illustrative, not tracked positions. The page layout may change independently.",
-          "excerpts": [
-            "function ClubPreview() {\n  const team = sampleTeams[1], player = team.players[0];\n  return <figure className=\"coach-hero-workspace\" aria-label=\"Illustrative club workspace: Northfield FC, three teams and an individual player focus\">\n    <div className=\"coach-preview-bar\"><span className=\"coach-mini-logo\">P</span><span>Club workspace</span><span>Illustrative example</span></div>\n    <div className=\"coach-preview-club\"><span className=\"coach-club-crest\" aria-hidden=\"true\">N<span>FC</span></span><div><span className=\"coach-micro\">THE WHOLE CLUB, CONNECTED</span><strong>Northfield FC</strong><span>One view. Individual next steps.</span></div><span className=\"coach-preview-live\" aria-hidden=\"true\" /></div>\n    <div className=\"coach-preview-teams\">{sampleTeams.map(item => <div key={item.id} data-selected={item.id === team.id}><span>{item.name}</span><small>{item.players.length} sample players</small><span aria-hidden=\"true\">↗</span></div>)}</div>\n    <div className=\"coach-preview-main\">\n      <div className=\"coach-preview-pitch\" aria-hidden=\"true\"><svg viewBox=\"0 0 280 270\"><rect x=\"20\" y=\"18\" width=\"240\" height=\"232\" rx=\"4\"/><path d=\"M20 134H260M95 18V62H185V18M95 250V206H185V250\"/><circle cx=\"140\" cy=\"134\" r=\"36\"/><path className=\"coach-pitch-pass\" d=\"M67 185L140 132L214 185M140 132V62\"/>{[[140,62],[67,185],[214,185]].map(([x,y],i)=><g key={i}><circle className=\"coach-pitch-player\" cx={x} cy={y} r=\"17\"/><text x={x} y={y+4}>{[8,6,10][i]}</text></g>)}<circle className=\"coach-pitch-selected\" cx=\"140\" cy=\"132\" r=\"23\"/><text className=\"coach-pitch-number\" x=\"140\" y=\"137\">{player.number}</text></svg><span>Team context → Player focus</span></div>\n      <div className=\"coach-preview-focus\"><span className=\"coach-micro\">INDIVIDUAL NEXT STEP</span><span className=\"coach-preview-avatar\" aria-hidden=\"true\">{player.name.split(\" \").map(part=>part[0]).join(\"\")}</span><strong>{player.name}</strong><span>{player.position} · {team.name}</span><div><small>Training focus</small><b>{player.focus}</b></div><p>Evidence from testing.<br/>A plan for the player.</p></div>\n    </div>\n    <figcaption><span className=\"status-dot\"/>Testing <span>→</span> Insight <span>→</span> Training <span>→</span> Retest</figcaption>\n  </figure>;\n}\n\n"
-          ],
-          "sha256": "ca8b801eb84b880356199669a8ddd45ac7913c02a780ac2b0d84506013ce4e54"
-        },
-        {
           "source": "app/src/pages/coaches/coach-samples.ts",
-          "detail": "Existing fictional U13/U15/U17 teams; selected U15 player Jordan Lee,number 6.",
-          "sha256": "d201317d9fdf2782488863344ae75c29be0c2e44b2b987447a9563d793843e34"
+          "detail": "Directly labeled club age-group means and the selected team mean from the same fictional left-dribble report. The points compare different age groups.",
+          "sha256": "4c6d4c07c87fed4287c1643f9b40cf03c7ea7a0f1a6d30b118b08f401c7c80d1"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-club.svg",
-          "sha256": "fc5415ee222eb3f9d9695c8a3affebe00973efb05895c9ffe7d07d427f255d46",
-          "bytes": 3033
+          "sha256": "d51748ebd9244dd902448733845edf8cf76e574d6dcc9dc2fa84bf86435bd447",
+          "bytes": 2500
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-club.webp",
-          "sha256": "9009814c81d1d62cd551cb414a96efd590fd824c789a4f741c3bc9a9e4b3da74",
-          "bytes": 33606
+          "sha256": "a4d91fdeeb5dd4d1414ec3ae50e60490a3ccd3a4bf8128fa453ccd9dfc63dd7b",
+          "bytes": 30712
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-club-600.webp",
-          "sha256": "51cb0392d8797259f37ee103401abe501fbcc8cffba918b3769c396e6cacfa44",
-          "bytes": 14324
+          "sha256": "6b5edb8fcbc372d4a84ee79d8dc10645debe9292f2ae79f663fc36b3a771905f",
+          "bytes": 13178
         }
       }
     },
     {
       "id": "coaches-evidence",
-      "title": "Individual player evidence",
-      "alt": "The existing Alex Rivera sample profile and its five illustrative sample scores, presented as a large radar and player-number study.",
-      "qualifier": "Illustrative player profile · Scores / 100",
+      "title": "Sam’s practice focus",
+      "alt": "Sam Bennett’s assigned Figure-8 dribble drill. A looping route goes around two cones. Take one short touch as you leave each cone.",
+      "qualifier": "Sample player · Illustrated drill",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
           "source": "app/src/pages/coaches/coach-samples.ts",
-          "detail": "U13 Alex Rivera, Midfielder, number 8, illustrative scores[72,63,68,58,70].",
-          "sha256": "d201317d9fdf2782488863344ae75c29be0c2e44b2b987447a9563d793843e34"
+          "detail": "Selected player and coaching cue from the fictional U13 check-in.",
+          "sha256": "4c6d4c07c87fed4287c1643f9b40cf03c7ea7a0f1a6d30b118b08f401c7c80d1"
         },
         {
-          "source": "app/src/pages/coaches/PlayerEvidence.tsx",
-          "detail": "Same five-area proportional radar; individual priorities remain fictional sample data.",
-          "sha256": "c7db891905d4a358dcbcff22ce01b6f0ec26ef80abbef42d86d30feca98185f7"
+          "source": "app/src/pages/home/product/DrillDiagram.tsx",
+          "detail": "Static top-down illustration of the Figure-8 drill’s two-cone Gerono route and direction of travel.",
+          "sha256": "3a2139e5aea64a40f416209793d9ada87549c828da53727d8175eb9b43449f07"
+        },
+        {
+          "source": "app/src/pages/home/product/product-demo.ts",
+          "detail": "The drill name comes from the public workout catalog, matched by the selected player’s drill ID.",
+          "sha256": "64168ac85c3d2eece46909092bcd6d9c958a9d5b86d966e0ae27d4c5091b6872"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-evidence.svg",
-          "sha256": "794f6706f5ff0d4950c15552247de6c37fef282e1c8987ec5ed15b833ad6abc7",
-          "bytes": 5023
+          "sha256": "c888019c1c6635ae3fc6d769d53695c99bc48e3794f016edc28295b5aad23579",
+          "bytes": 4086
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-evidence.webp",
-          "sha256": "8476b52f28ac5f4e3f0409a4f3fa5b55204204dbea0c219916064622df17d41c",
-          "bytes": 43256
+          "sha256": "a2b985d4202a6080701df6ae8e56ea159c43a36d574920fc13175f08ae885557",
+          "bytes": 35424
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-evidence-600.webp",
-          "sha256": "91203c66bc87f9986f4a5b8d3a4ea98cff76a1cb11c5abe74a0385b60320061e",
-          "bytes": 17448
+          "sha256": "749c1d2acfd85896557276141b82b296a5c2fc4f4221f595fe05bc7d1ff9c954",
+          "bytes": 15060
         }
       }
     },
     {
       "id": "coaches-development",
-      "title": "Plan, train, retest",
-      "alt": "An editorial sequence connects the existing Figure-8 coaching route with Alex Rivera’s illustrative 7.12 and 6.94 second retest values.",
-      "qualifier": "Illustrative development example",
+      "title": "Logged workout time",
+      "alt": "Sample U13 coach dashboard for Oct 1–14. The squad logged 74 workout minutes. Robin Ellis 38, Alex Rivera 24, Sam Bennett 12, Quinn Hall 0, Ari Hayes 0 minutes.",
+      "qualifier": "Illustrative coach dashboard · Sample workout logs",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
           "source": "app/src/pages/coaches/coach-samples.ts",
-          "detail": "Alex Rivera sample priorDribbleSeconds 7.12, latestDribbleSeconds 6.94, completedSessions 2, plannedSessions 3.",
-          "sha256": "d201317d9fdf2782488863344ae75c29be0c2e44b2b987447a9563d793843e34"
-        },
-        {
-          "source": "app/src/pages/coaches/DevelopmentJourney.tsx",
-          "detail": "Existing Plan/Train/Retest sequence. No claim of actual player improvement.",
-          "sha256": "e1b7d11c989cf6a4909276ddaa0b053aacb489da31018f02aa312b3fa85b4f9c"
-        },
-        {
-          "source": "app/src/pages/home/product/DrillDiagram.tsx",
-          "detail": "Original arrangement of the existing Figure-8 coaching illustration.",
-          "sha256": "3a2139e5aea64a40f416209793d9ada87549c828da53727d8175eb9b43449f07"
+          "detail": "Team total and recorded workout minutes per player for the full fictional U13 roster during the sample activity window. The selected player is highlighted.",
+          "sha256": "4c6d4c07c87fed4287c1643f9b40cf03c7ea7a0f1a6d30b118b08f401c7c80d1"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-development.svg",
-          "sha256": "da230ace0a395990c9b36c2d2dad4ee58415ce36b648201cd1a5788456b4cddf",
-          "bytes": 4087
+          "sha256": "3d9a22bea01a72636a451c9b4ea3134703bedf9758e307d43572f45aec9771be",
+          "bytes": 3890
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-development.webp",
-          "sha256": "d083c3ddb184011a11d14e8908cc8e4c38f0bcec7582355cb7a4d3d6951a9e6d",
-          "bytes": 34402
+          "sha256": "adc5c581ca95e2121cba44f671a46206346cf95ad40a173e70dc8c8635d1d063",
+          "bytes": 45154
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-development-600.webp",
-          "sha256": "bca71f2a90516c37f85f14811eb381a484ff6b4259b3e44eb9c12d0596b2517c",
-          "bytes": 14972
+          "sha256": "b685d9292f39c98885d41f5bdef6471a50a28c37393e659d46bebff99bb0ee00",
+          "bytes": 19942
         }
       }
     },
     {
       "id": "coaches-contact",
-      "title": "A next step for your club",
-      "alt": "PoseTek’s approved P mark and existing team-enquiry message in a clean original invitation composition.",
-      "qualifier": "PoseTek team enquiry",
+      "title": "Bring testing to your field",
+      "alt": "A faceted PoseTek soccer ball at the halfway line of a lime-green pitch.",
+      "qualifier": "Illustrated field setup",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
-          "source": "app/public/brand/posetek-p.svg",
-          "detail": "Approved P badge, unchanged geometry and colors; enlarged, layered only through translation/rotation.",
-          "sha256": "22e673f3d95187fd9c19f919ce767e95002a8815fd5df5d062d8054a027911d6"
-        },
-        {
-          "source": "app/src/pages/coaches/CoachesPage.tsx",
-          "detail": "Existing enquiry copy, verified as exact excerpts in baseline and current page. No contact details embedded in artwork.",
-          "excerpts": [
-            "Your players, your priorities.",
-            "Discuss your teams",
-            "Arrange testing",
-            "Agree ongoing support"
-          ],
-          "sha256": "ca8b801eb84b880356199669a8ddd45ac7913c02a780ac2b0d84506013ce4e54"
+          "source": "app/src/pages/home/pitch/ball.ts",
+          "detail": "The football panels use the same truncated icosahedron as the approved public pitch scene, shaded and projected onto the halfway line.",
+          "sha256": "480e1175ba2c57764eb4ff8c2c61906e560984f6445171689a854a825c6d2b6c"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-contact.svg",
-          "sha256": "1e235ec72ebcc474678fda17abb7f77b324b9c8bacc01d538761fb4c509dc675",
-          "bytes": 3835
+          "sha256": "d7fc78a708030a696659a08e581178774b02fb643c3f7dfcb47062eef3676fad",
+          "bytes": 7538
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-contact.webp",
-          "sha256": "dee311f417ae8f3b03e701a4e1f02e4571f113bdaacf6bf283e2ebcd4439b248",
-          "bytes": 40966
+          "sha256": "6542592442fb713aeefdce1bc89e1654e536786934478d43af35a15aa6f7a6e3",
+          "bytes": 27144
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-contact-600.webp",
-          "sha256": "7fab63c8459f86bef4f9a93b2f80af8ddd7e8409ba3fa3346d5c670e9a1ab17d",
-          "bytes": 17440
+          "sha256": "55faca14e24b9575afa45fd34c393dad3157b4bef1afcd08d7363492b22f6674",
+          "bytes": 10944
         }
       }
     }

@@ -13,12 +13,13 @@ const output = resolve(root, 'app/src/pages/home/showcase-assets');
 const sourceText = path => readFile(resolve(root, path), 'utf8');
 const sourceJson = async path => JSON.parse(await sourceText(path));
 const moduleFrom = async path => import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(await sourceText(path))).toString('base64')}`);
-const home = await moduleFrom('app/src/pages/home/home-logic.ts');
+const pathwaySource = 'app/src/pages/home/development-pathway-sample.ts';
+const cloudSource = 'app/src/pages/athlete-portal/player/stats/club-cloud.ts';
+const { DEFAULT_PATHWAY_ID, samplePathways, samplePathwayStats } = await moduleFrom(pathwaySource);
+const { cloudFrom, cloudExtent, valueAxis, stepDigits, cloudLayers, bandPath, linePath } = await moduleFrom(cloudSource);
 const product = await moduleFrom('app/src/pages/home/product/product-demo.ts');
-const coaches = await moduleFrom('app/src/pages/coaches/coach-samples.ts');
-const coachPage = await sourceText('app/src/pages/coaches/CoachesPage.tsx');
-const clubExcerpt = coachPage.match(/function ClubPreview\(\) \{[\s\S]*?(?=export default function CoachesPage)/)?.[0];
-if (!clubExcerpt) throw new Error('Approved ClubPreview source is missing.');
+const coachSource = 'app/src/pages/coaches/coach-samples.ts';
+const coaches = await moduleFrom(coachSource);
 const movement = await sourceJson('app/src/pages/home/movement/recorded-movement.json');
 const technique = await sourceJson('app/src/pages/home/technique/technique-data.json');
 const poseSource = await sourceText('app/src/pages/home/pitch/pose-model.ts');
@@ -53,16 +54,6 @@ function pose(frame, box, { color = c.lime, opacity = 1, stroke = 6, points = tr
   const visibleIndices = [0,7,8,...Array.from({ length: 22 }, (_,i) => i + 11)];
   return `<g opacity="${opacity}">${body}${points ? visibleIndices.map(i => { const p = project(frame[i]); return circle(p[0], p[1], stroke * .68, color); }).join('') : ''}</g>`;
 }
-function radar(scores, cx, cy, radius, color = c.lime, labels = true) {
-  const at = (i, r) => [cx + Math.cos(-Math.PI / 2 + i * Math.PI * .4) * r, cy + Math.sin(-Math.PI / 2 + i * Math.PI * .4) * r];
-  const pts = values => values.map((v,i) => at(i,v).map(num).join(',')).join(' ');
-  let result = [1,.75,.5,.25].map(scale => `<polygon points="${pts(scores.map(() => radius * scale))}" fill="none" stroke="${c.sage}" stroke-width="1.4" opacity=".5"/>`).join('');
-  result += scores.map((_,i) => { const p = at(i,radius); return line(cx,cy,num(p[0]),num(p[1]),c.sage,1,'opacity=".35"'); }).join('');
-  result += `<polygon points="${pts(scores.map(s => s / 100 * radius))}" fill="${color}" fill-opacity=".18" stroke="${color}" stroke-width="4"/>`;
-  result += scores.map((score,i) => { const p = at(i,score / 100 * radius); return circle(p[0],p[1],7,color); }).join('');
-  if (labels) result += coaches.profileAreas.map((name,i) => { const p=at(i,radius+55); return text(name,num(p[0]),num(p[1]),28,c.paper,'text-anchor="middle"') + text(scores[i],num(p[0]),num(p[1]+35),30,color,'text-anchor="middle"'); }).join('');
-  return result;
-}
 function routeEight(x, y, width, height, stroke = c.lime) {
   // Same Gerono geometry and cone centroids as public DrillDiagram.tsx.
   const points = Array.from({ length:129 }, (_,i) => { const a=i / 128 * Math.PI * 2; return [x + width / 2 + width * .42 * Math.sin(a), y + height / 2 + height * .32 * Math.sin(2*a)]; });
@@ -73,22 +64,58 @@ function routeEight(x, y, width, height, stroke = c.lime) {
 const artworks=[];
 function add(id, title, alt, qualifier, provenance, image) {artworks.push({id,title,alt,qualifier,provenance,width:W,height:H,image});}
 const sprint=movement.sequences.find(s=>s.key==='sprint');
-add('players-testing','Recorded movement review','Three enlarged static frames from PoseTek’s approved recorded sprint, arranged as a movement study.','Recorded movement · Existing public sample',[
- {source:'app/src/pages/home/movement/recorded-movement.json',detail:'Sprint frames 18, 36, 48; exact recorded landmark coordinates. Each study uses uniform source-aspect scaling; no generated or interpolated motion.'},
+const topSpeed = sprint.metrics.find(([label]) => label === 'Top speed')[1];
+add('players-testing','Soccer testing, rep by rep',`Three frames from a recorded sprint test. This rep reached a top speed of ${topSpeed}.`,'Recorded movement · Public sprint sample',[
+ {source:'app/src/pages/home/movement/recorded-movement.json',detail:'Recorded sprint frames 18, 36, 48 and top speed from the same public sequence.'},
  {source:'app/src/pages/home/pitch/pose-model.ts',detail:'Existing MediaPipe33 skeleton edge topology; face clutter omitted for presentation.'}
-],svg('Sprint — recorded movement study',c.dark,
- grid()+text('Every rep.',56,105,88,c.paper)+text('A clearer view.',56,198,88,c.paper)+mono('SPRINT',58,824,28,c.lime)+arrow(1090,76,48,c.lime)+
- `<g transform="translate(570 330) rotate(-8)">${rect(0,0,545,490,'#13392a')}${grid('#9bb38b',.04)}${pose(sprint.frames[48],{x:95,y:65,w:345,h:355},{stroke:6})}</g>`+
+],svg('Soccer testing — insight from every rep',c.dark,
+ grid()+text('Soccer testing.',56,110,88,c.paper)+text('Insight from every rep.',56,207,88,c.paper)+
+ `<g transform="translate(570 330) rotate(-8)">${rect(0,0,545,490,'#13392a')}${pose(sprint.frames[48],{x:95,y:65,w:345,h:355},{stroke:6})}</g>`+
  pose(sprint.frames[18],{x:85,y:332,w:290,h:340},{color:'#77937c',stroke:4})+pose(sprint.frames[36],{x:343,y:308,w:300,h:360},{color:'#d1e4b9',stroke:4.5})+
- line(55,752,1140,752,'#648365',1)+[18,36,48].map((f,i)=>mono(`F${String(f).padStart(2,'0')}`,90+i*315,720,24,c.muted)).join('')));
-const scores=home.SKILL_ORDER.map(key=>home.SKILL_DATA[key].score);
-add('players-profile','Athlete profile','Alex Johnson’s existing sample skill map, with the five illustrative sample scores and an emphasis on agility.','Sample athlete profile',[
- {source:'app/src/pages/home/home-logic.ts',detail:'SKILL_ORDER and SKILL_DATA values81,74,72,70,68; no new performance claim.'},
- {source:'app/src/pages/home/AthleteProfile.tsx',detail:'Approved fictional profile Alex Johnson; radar is redrawn proportionally from the sample score values.'}
-],svg('Athlete profile — Alex Johnson sample',c.paper,
- text('Five areas.',64,112,88)+text('One player.',64,205,88)+mark(1060,58,78)+
- `<g transform="translate(55 280) rotate(-4 345 250)">${rect(0,0,700,560,c.ink)}${radar(scores,350,295,190)}</g>`+
- text('68',805,540,220,c.ink)+mono('AGILITY',824,610,30)+line(825,650,1110,650,c.sage,1)+text('Alex Johnson',820,706,34)+text('Midfielder / U17',820,748,25,'#5a6f61')));
+ [[18,90],[36,405],[48,1015]].map(([frame,left])=>mono(`F${String(frame).padStart(2,'0')}`,left,724,24,c.muted)).join('')+
+ rect(0,759,W,141,c.dark)+line(55,760,1140,760,'#648365',1)+mono('SPRINT TEST',58,839,34,c.paper)+
+ text(`Top speed  ${topSpeed}`,1140,842,49,c.lime,'text-anchor="end"')));
+
+const test = samplePathways[DEFAULT_PATHWAY_ID];
+const pathway = samplePathwayStats(DEFAULT_PATHWAY_ID);
+const cloud = cloudFrom(pathway.groups);
+const axis = valueAxis(...cloudExtent(cloud, 2), 5);
+const plot = { left: 138, right: 1072, top: 431, bottom: 743 };
+const x = age => plot.left + (age - cloud.from) / (cloud.to - cloud.from) * (plot.right - plot.left);
+const y = value => plot.bottom - (value - axis.from) / (axis.to - axis.from) * (plot.bottom - plot.top);
+const own = pathway.own;
+const ownGroup = pathway.groups.find(group => group.ageGroup === own.ageGroup);
+const dotX = x(own.ageGroup), dotY = y(own.best);
+const highlight = '#b7f34a', cloudLine = '#f1fff6', cloudFill = '#d6f8e4';
+const chartSurface = '#10291f';
+function pathwayScore(label, value, left) {
+  return text(label, left, 210, 34, '#496352') +
+    text(value.toFixed(test.digits), left - 3, 307, 102, c.ink) +
+    text(test.unit, left + 219, 302, 44, '#496352');
+}
+add('players-profile','Your development pathway',
+ `Alex’s best left dribble is ${own.best.toFixed(test.digits)} ${test.unit}. The fictional U${own.ageGroup} club average is ${ownGroup.mean.toFixed(test.digits)} ${test.unit}. The curve shows club results across U11 to U17.`,
+ 'Fictional player and club results',[
+ {source:pathwaySource,detail:'The same fictional age groups, means, spreads and individual results as the interactive sample. Both comparison numbers come from the selected test.'},
+ {source:cloudSource,detail:'Shared signed-in Player Stats curve, spread and axis functions.'}
+],svg('Your development pathway — Alex’s left dribble',c.paper,
+ text('Your development pathway',55,109,82)+mark(1066,54,76)+
+ line(59,148,1140,148,'#b6c4b5',2)+line(586,179,586,309,'#b6c4b5',2)+
+ pathwayScore('Alex’s best left dribble',own.best,62)+pathwayScore(`U${own.ageGroup} club average`,ownGroup.mean,631)+
+ rect(0,347,W,553,chartSurface)+text('Left dribble across the club',58,406,40,c.paper)+
+ text(`Course speed (${test.unit})`,1136,403,29,c.muted,'text-anchor="end"')+
+ axis.ticks.map(value => line(plot.left,y(value),plot.right,y(value),'#496352',1.4)+
+   text(value.toFixed(stepDigits(axis.step)),113,y(value)+9,28,c.muted,'text-anchor="end"')).join('')+
+ cloudLayers(32,.42).map(({k,opacity}) => `<path d="${bandPath(cloud,k,x,y)}" fill="${cloudFill}" opacity="${opacity}"/>`).join('')+
+ `<path d="${linePath(cloud,x,y)}" fill="none" stroke="${cloudLine}" stroke-width="5"/>`+
+ line(dotX,dotY,dotX,plot.bottom,highlight,2,'stroke-dasharray="5 8" opacity=".66"')+
+ own.results.filter(value=>value!==own.best).map(value=>circle(dotX,y(value),5,chartSurface,`stroke="${highlight}" stroke-width="2"`)).join('')+
+ circle(dotX,dotY,18,highlight,'opacity=".24"')+circle(dotX,dotY,9,highlight,`stroke="${c.dark}" stroke-width="2"`)+
+ line(dotX-48,dotY-52,dotX-8,dotY-8,highlight,2.5)+rect(dotX-146,dotY-94,108,49,highlight,'rx="24"')+
+ text('Alex',dotX-92,dotY-60,32,c.dark,'text-anchor="middle"')+
+ pathway.groups.map(({ageGroup})=>text(`U${ageGroup}`,x(ageGroup),787,32,ageGroup===own.ageGroup?highlight:c.paper,'text-anchor="middle"')).join('')+
+ line(59,818,1140,818,'#506a5b',1.5)+line(62,862,108,862,cloudLine,4.5)+text('Club average',125,873,32,c.paper)+
+ rect(479,850,49,23,'#768d7f','rx="6"')+text('Spread within each age group',548,873,32,c.paper)));
 const workout=product.createDemoWorkout({minutes:15,energy:'normal',focus:'dribbling'}),drill=workout.drills[0];
 add('players-training','Training that follows the evidence','An original training composition pairing the approved Figure-8 dribble poster with its existing two-cone route.','Sample workout · Coaching illustration',[
  {source:'app/src/pages/home/product/product-demo.ts',detail:'createDemoWorkout({minutes:15,energy:"normal",focus:"dribbling"}); Figure-8 dribble,3sets×60seconds,45seconds rest.'},
@@ -130,44 +157,153 @@ add('players-mobile','Your next session in your pocket','A bespoke PoseTek phone
  text('Take the',61,125,89)+text('next step.',61,220,89)+text('With you.',61,315,89,'#57705c')+
  `<g transform="translate(617 44) rotate(7 235 400)" filter="url(#shadow)">${rect(0,0,480,822,'#536a58','rx="63"')}${rect(9,9,462,804,c.dark,'rx="55"')}${rect(156,25,168,32,'#000c08','rx="16"')}${mark(39,86,55)}${text('PoseTek',110,124,34,c.paper)}${text('Figure-8',37,218,59,c.paper)}${text('dribble',37,282,59,c.paper)}${rect(30,332,420,290,'#14382a','rx="16"')}${routeEight(34,343,410,266)}${mono('SET 1 OF 3',38,677,25,c.lime)}${[0,1,2].map(i=>circle(64+i*74,731,24,i===0?c.lime:'none',`stroke="${c.lime}" stroke-width="2"`)+text(i+1,64+i*74,741,28,i===0?c.ink:c.paper,'text-anchor="middle"')).join('')}${rect(164,783,152,5,'#bdc9b8','rx="3"')}</g>`+
  `<g transform="translate(57 514)">${circle(145,145,145,'none',`stroke="${c.sage}" stroke-width="1"`)}${circle(145,145,104,'none',`stroke="${c.sage}" stroke-width="1"`)}${arrow(101,99,88)}</g>`));
-const team=coaches.sampleTeams[1],player=team.players[0],alex=coaches.sampleTeams[0].players[0];
-add('coaches-club','One club, every team','Northfield FC’s existing three illustrative age groups, connected to individual player focus on an editorial pitch diagram.','Illustrative club workspace',[
- {source:'app/src/pages/coaches/CoachesPage.tsx',detail:'Unchanged ClubPreview source excerpt; the pitch is illustrative, not tracked positions. The page layout may change independently.',excerpts:[clubExcerpt]},
- {source:'app/src/pages/coaches/coach-samples.ts',detail:'Existing fictional U13/U15/U17 teams; selected U15 player Jordan Lee,number 6.'}
-],svg('One club — every team',c.dark,
- text('One club.',62,122,92,c.paper)+text('Every team.',62,220,92,c.paper)+
- `<g transform="translate(600 105) rotate(8 250 320)">${rect(0,0,518,660,'#183c2a')}${rect(35,35,448,590,'none','stroke="#73936d" stroke-width="2"')}${line(35,330,483,330,'#73936d',2)}${circle(259,330,76,'none','stroke="#73936d" stroke-width="2"')}${rect(165,35,188,108,'none','stroke="#73936d" stroke-width="2"')}${rect(165,517,188,108,'none','stroke="#73936d" stroke-width="2"')}${[[259,180,8],[128,470,6],[390,470,10]].map(([x,y,n])=>circle(x,y,35,'#264c32',`stroke="${c.sage}"`)+text(n,x,y+12,32,c.paper,'text-anchor="middle"')).join('')}${circle(259,330,54,c.lime)}${text(player.number,259,349,58,c.ink,'text-anchor="middle"')}</g>`+
- coaches.sampleTeams.map((t,i)=>rect(59,342+i*137,420,110,i===1?c.lime:'#153829')+text(t.name,89,417+i*137,60,i===1?c.ink:c.paper)+arrow(400,374+i*137,38,i===1?c.ink:c.sage)).join('')+mono('NORTHFIELD FC',62,826,29,c.muted)));
-add('coaches-evidence','Individual player evidence','The existing Alex Rivera sample profile and its five illustrative sample scores, presented as a large radar and player-number study.','Illustrative player profile · Scores / 100',[
- {source:'app/src/pages/coaches/coach-samples.ts',detail:'U13 Alex Rivera, Midfielder, number 8, illustrative scores[72,63,68,58,70].'},
- {source:'app/src/pages/coaches/PlayerEvidence.tsx',detail:'Same five-area proportional radar; individual priorities remain fictional sample data.'}
-],svg('Alex Rivera — individual player evidence', '#dde5d6',
- text('See the player.',60,120,88)+text('Find the focus.',60,213,88)+
- rect(60,285,535,550,c.ink)+radar(alex.scores,312,572,165,c.lime,true)+
- text('08',642,568,272,c.ink)+line(660,613,1135,613,'#81957c')+text(alex.name,661,686,61)+text('Midfielder / U13',663,744,30,'#4e6854')+mark(1057,760,66)));
-add('coaches-development','Plan, train, retest','An editorial sequence connects the existing Figure-8 coaching route with Alex Rivera’s illustrative 7.12 and 6.94 second retest values.','Illustrative development example',[
- {source:'app/src/pages/coaches/coach-samples.ts',detail:'Alex Rivera sample priorDribbleSeconds 7.12, latestDribbleSeconds 6.94, completedSessions 2, plannedSessions 3.'},
- {source:'app/src/pages/coaches/DevelopmentJourney.tsx',detail:'Existing Plan/Train/Retest sequence. No claim of actual player improvement.'},
- {source:'app/src/pages/home/product/DrillDiagram.tsx',detail:'Original arrangement of the existing Figure-8 coaching illustration.'}
-],svg('Plan — train — retest',c.paper,
- rect(0,0,W,260,c.lime)+text('Plan. Train. Retest.',58,166,102)+
- `<g transform="translate(58 311)">${rect(0,0,465,510,c.ink)}${mono('TRAIN',33,52,26,c.lime)}${routeEight(0,110,465,300)}${text('2 / 3 sessions',35,466,38,c.paper)}</g>`+
- mono('DRIBBLING / SECONDS',590,351,26)+text(alex.priorDribbleSeconds.toFixed(2),583,494,128,'#72806c')+arrow(922,419,53)+
- text(alex.latestDribbleSeconds.toFixed(2),583,694,169,c.ink)+line(590,755,1135,755,c.sage)+text('Same test. Next step.',590,814,39,c.ink)));
-add('coaches-contact','A next step for your club','PoseTek’s approved P mark and existing team-enquiry message in a clean original invitation composition.','PoseTek team enquiry',[
- {source:'app/public/brand/posetek-p.svg',detail:'Approved P badge, unchanged geometry and colors; enlarged, layered only through translation/rotation.'},
- {source:'app/src/pages/coaches/CoachesPage.tsx',detail:'Existing enquiry copy, verified as exact excerpts in baseline and current page. No contact details embedded in artwork.',excerpts:['Your players, your priorities.','Discuss your teams','Arrange testing','Agree ongoing support']}
-],svg('Your team — your next step',c.ink,
- rect(42,43,1116,814,'#dbe4cf')+grid('#72886b',.07,100)+
- `<g transform="translate(728 265) rotate(12 210 210)" filter="url(#shadow)">${mark(0,0,440)}</g>`+
- text('Your players.',84,155,89)+text('Your priorities.',84,249,89)+
- text('Let’s start',84,535,84)+text('a conversation.',84,624,84)+
- line(85,714,1080,714,'#7f9378')+mono('POSETEK / FOR CLUBS',86,783,29)+arrow(1030,753,43)));
+const team = coaches.sampleTeams[0];
+const checkIn = coaches.getTeamCheckIn(team);
+const firstName = checkIn.name.split(' ')[0];
+const selectedTest = coaches.reportTests.find(test => test.id === 'dribbleLeft');
+const teamReport = coaches.getTeamTestReport(team, selectedTest.id);
+const ageGroups = coaches.getClubTestPathway(selectedTest.id);
+const reportValue = value => `${value.toFixed(selectedTest.digits)} ${selectedTest.unit}`;
+// The collapsed images introduce a single idea. The detailed, dated report is in the demo.
+const field = { ink: '#0b281d', green: '#183a2a', lime: '#c2eb83', paper: '#f1f2e8', chalk: '#e4eee1' };
+const middle = 'text-anchor="middle"', end = 'text-anchor="end"';
+const left = 70, right = W - left;
+const chartMin = Math.floor(Math.min(...ageGroups.map(group => group.mean), teamReport.average) * 2) / 2;
+const chartMax = Math.ceil(Math.max(...ageGroups.map(group => group.mean), teamReport.average) * 2) / 2;
+const chartY = value => 704 - (value - chartMin) / (chartMax - chartMin) * 370;
+const groupPoints = ageGroups.map((group,index) => ({
+  ...group, x: 164 + index * 432, y: chartY(group.mean),
+}));
+const referenceY = chartY(teamReport.average);
+const ageLine = groupPoints.map(({x,y}) => `${x},${num(y)}`).join(' ');
 
+add('coaches-club','Left-dribble pathway',
+ `The sample ${team.name} team averages ${reportValue(teamReport.average)}. The points show each club age group’s average on the same left dribble.`,
+ 'Fictional team and club results', [
+  {source:coachSource,detail:'Directly labeled club age-group means and the selected team mean from the same fictional left-dribble report. The points compare different age groups.'}
+],svg('Left dribble across the club',field.green,
+ text('Left dribble across the club',left,104,56,field.paper)+
+ text(reportValue(teamReport.average),left-5,254,132,field.lime)+
+ text(`${team.name} team average`,495,245,48,field.paper)+
+ groupPoints.map(({x})=>line(x,328,x,714,'#486555',2)).join('')+
+ line(left,referenceY,right,referenceY,field.lime,5,'stroke-dasharray="16 14"')+
+ `<polyline points="${ageLine}" fill="none" stroke="${field.chalk}" stroke-width="6"/>`+
+ groupPoints.map(({x,y,mean,ageGroup}) =>
+   circle(x,y,12,field.paper,`stroke="${field.green}" stroke-width="3"`)+
+   text(reportValue(mean),x,num(y)-31,43,field.paper,middle)+
+   text(ageGroup,x,792,56,field.paper,middle)
+ ).join('')));
+
+const checkInDrill = workout.drills.find(item => item.id === checkIn.drillId);
+if (checkInDrill?.id !== 'DRB-006') throw new Error('The check-in workout must match the approved Figure-8 illustration.');
+const routeCenter = { x: 600, y: 501 }, routeRx = 426, routeRy = 151;
+// Same Gerono figure eight and loop-centroid cones as the public drill guide.
+const routePoint = angle => [routeCenter.x + routeRx*Math.sin(angle), routeCenter.y + routeRy*Math.sin(2*angle)];
+const figureEight = Array.from({length:129}, (_, i) => routePoint(i / 128 * Math.PI * 2));
+const routeD = figureEight.map(([x,y],i) => `${i ? 'L' : 'M'}${num(x)} ${num(y)}`).join(' ') + 'Z';
+const coneOffset = routeRx * 3 * Math.PI / 16;
+function discCone(cx, cy) {
+  return `<ellipse cx="${cx}" cy="${cy+7}" rx="38" ry="32" fill="#0b281d" opacity=".13"/>`+
+    circle(cx,cy,32,'#d1943d')+circle(cx,cy-3,24,'#eeac53')+circle(cx,cy-7,10,'#9a622d')+circle(cx,cy-7,6,'#252c20');
+}
+function routeArrow(angle) {
+  const [x,y] = routePoint(angle);
+  const slope = Math.atan2(2 * routeRy * Math.cos(2*angle), routeRx * Math.cos(angle));
+  return `<g transform="translate(${num(x)} ${num(y)}) rotate(${num(slope * 180 / Math.PI)})"><path d="M-16 -13 L3 0 L-16 13" fill="none" stroke="${field.ink}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g>`;
+}
+add('coaches-evidence','Sam’s practice focus',
+ `${checkIn.name}’s assigned ${checkInDrill.name} drill. A looping route goes around two cones. ${checkIn.cue}`,
+ 'Sample player · Illustrated drill', [
+  {source:coachSource,detail:'Selected player and coaching cue from the fictional U13 check-in.'},
+  {source:'app/src/pages/home/product/DrillDiagram.tsx',detail:'Static top-down illustration of the Figure-8 drill’s two-cone Gerono route and direction of travel.'},
+  {source:'app/src/pages/home/product/product-demo.ts',detail:'The drill name comes from the public workout catalog, matched by the selected player’s drill ID.'}
+],svg(`${firstName}’s practice focus`,field.paper,
+ text(`${firstName}’s practice focus`,left,101,49,'#496151')+
+ text(checkInDrill.name,left-4,236,110,field.ink)+
+ `<path d="${routeD}" fill="none" stroke="#749483" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>`+
+ discCone(routeCenter.x-coneOffset,routeCenter.y)+discCone(routeCenter.x+coneOffset,routeCenter.y)+
+ routeArrow(.24)+routeArrow(Math.PI+.24)+
+ text('One short touch after each turn.',left,817,61,field.ink)));
+
+const timeRoster = [...team.players, ...team.otherDribbleResults].sort((a, b) => b.workoutMinutes - a.workoutMinutes);
+const teamMinutes = coaches.getTeamActivity(team).workoutMinutes;
+const mostMinutes = timeRoster[0].workoutMinutes;
+const timeRows = timeRoster.map((member, index) => {
+  const y = 475 + index * 77;
+  const selected = member === checkIn;
+  const color = selected ? field.lime : field.paper;
+  const trackLeft = 518, trackWidth = 373;
+  return line(left, y - 42, right, y - 42, '#3c5847', 2) +
+    text(member.name, left, y + 15, 47, color, selected ? 'font-weight="bold"' : '') +
+    rect(trackLeft, y - 10, trackWidth, 14, '#365443') +
+    rect(trackLeft, y - 10, num(trackWidth * member.workoutMinutes / mostMinutes), 14, selected ? field.lime : '#9bb6a0') +
+    text(`${member.workoutMinutes} min`, right, y + 15, 47, color, end);
+}).join('');
+
+add('coaches-development','Logged workout time',
+ `Sample ${team.name} coach dashboard for ${coaches.coachActivityWindow}. The squad logged ${teamMinutes} workout minutes. ${timeRoster.map(member => member.name + ' ' + member.workoutMinutes).join(', ')} minutes.`,
+ 'Illustrative coach dashboard · Sample workout logs', [
+  {source:coachSource,detail:'Team total and recorded workout minutes per player for the full fictional U13 roster during the sample activity window. The selected player is highlighted.'}
+],svg('Logged workout time',field.ink,
+ text(`${team.name} coach dashboard`,left,92,46,field.chalk)+text(coaches.coachActivityWindow,right,92,45,field.chalk,end)+
+ text('Logged workout time',left-3,202,84,field.paper)+
+ text(`${teamMinutes} min`,left-6,349,136,field.lime)+text('Team total',514,346,51,field.chalk)+
+ text('Player',left,411,39,'#b7c9b8')+text('Recorded time',right,411,39,'#b7c9b8',end)+
+ timeRows));
+
+// Project PoseTek’s existing soccer ball into a print-style kickoff illustration.
+const ballSource = 'app/src/pages/home/pitch/ball.ts';
+const {createBall} = await import('../app/src/pages/home/pitch/ball.ts');
+const ball = createBall();
+const faces = [];
+for (const [mesh, sides] of [['hexagons',6],['pentagons',5]]) {
+  const geometry = ball[mesh].rotateX(.26).rotateY(-.43).rotateZ(.24);
+  const vertices = geometry.getAttribute('position');
+  const stride = (sides-2)*3;
+  for (let offset = 0; offset < vertices.count; offset += stride) {
+    const indices = [offset,offset+1,...Array.from({length:sides-2},(_,i)=>offset+3*i+2)];
+    const points = indices.map(i => [vertices.getX(i),vertices.getY(i),vertices.getZ(i)]);
+    const centroid = [0,1,2].map(axis=>points.reduce((sum,p)=>sum+p[axis],0)/sides);
+    const shade = Math.max(0,Math.min(1,.52 + (-.38*centroid[0]+.62*centroid[1]+.36*centroid[2])/2));
+    const shadow = sides===6 ? [166,189,154] : [9,34,23];
+    const light = sides===6 ? [255,254,226] : [40,66,49];
+    const tones = shadow.map((v,i)=>Math.round(v+(light[i]-v)*shade));
+    faces.push({z:centroid[2],color:`rgb(${tones.join(',')})`,points:points.map(([x,y])=>`${num(600+x*206)},${num(417-y*206)}`).join(' ')});
+  }
+}
+for (const geometry of Object.values(ball)) geometry.dispose();
+const panels = faces.sort((a,b)=>a.z-b.z).map(face=>
+  `<polygon points="${face.points}" fill="${face.color}" stroke="${face.color}" stroke-width="2" stroke-linejoin="round"/>`
+).join('');
+add('coaches-contact','Bring testing to your field',
+ 'A faceted PoseTek soccer ball at the halfway line of a lime-green pitch.',
+ 'Illustrated field setup', [
+  {source:ballSource,detail:'The football panels use the same truncated icosahedron as the approved public pitch scene, shaded and projected onto the halfway line.'}
+],svg('At the halfway line','#b9dc79',
+ `<g transform="rotate(-25 600 450)">
+   ${rect(-600,70,2400,190,'#b0d473')}${rect(-600,450,2400,190,'#b0d473')}${rect(-600,830,2400,190,'#b0d473')}
+   <ellipse cx="600" cy="530" rx="690" ry="440" fill="none" stroke="#ecf4c7" stroke-width="13"/>
+   ${line(600,-500,600,1450,'#ecf4c7',13)}
+  </g>`+
+ `<ellipse cx="662" cy="720" rx="245" ry="42" fill="#304726" opacity=".16" filter="url(#ground-shadow)"/>`+
+ `<ellipse cx="619" cy="708" rx="124" ry="13" fill="#2b4027" opacity=".28" filter="url(#contact-shadow)"/>`+
+ panels,
+ '<filter id="ground-shadow" x="-.3" y="-1" width="1.6" height="3"><feGaussianBlur stdDeviation="24"/></filter><filter id="contact-shadow" x="-.4" y="-2" width="1.8" height="5"><feGaussianBlur stdDeviation="11"/></filter>'));
 await mkdir(output,{recursive:true});
 const hash = buffer => createHash('sha256').update(buffer).digest('hex');
+const requested = new Set(process.argv.slice(2));
+for (const id of requested) {
+  if (!artworks.some(art => art.id === id)) throw new Error(`Unknown artwork: ${id}`);
+}
+const prior = requested.size ? JSON.parse(await readFile(resolve(output,'provenance.json'),'utf8')).artworks : [];
 const manifest=[];
 for (const art of artworks) {
+  if (requested.size && !requested.has(art.id)) {
+    const saved = prior.find(entry => entry.id === art.id);
+    if (!saved) throw new Error(`Missing existing artwork: ${art.id}. Run a full generation.`);
+    manifest.push(saved);
+    continue;
+  }
   const stem=resolve(output,art.id),raw=Buffer.from(art.image);
   await writeFile(stem+'.svg',raw);
   const webp=await sharp(raw).webp({quality:90,effort:6}).toBuffer();
@@ -176,9 +312,10 @@ for (const art of artworks) {
   const provenance=await Promise.all(art.provenance.map(async source=>({...source,sha256:hash(await readFile(resolve(root,source.source)))})));
   manifest.push({...Object.fromEntries(Object.entries(art).filter(([key])=>!['image','provenance'].includes(key))),provenance,files:{svg:{path:relative(root,stem+'.svg'),sha256:hash(raw),bytes:raw.length},webp:{path:relative(root,stem+'.webp'),sha256:hash(webp),bytes:webp.length},small:{path:relative(root,stem+'-600.webp'),sha256:hash(small),bytes:small.length}}});
 }
-const prelude=manifest.map((art,i)=>`import artwork${i} from "./showcase-assets/${art.id}.webp?url";\nimport artwork${i}Small from "./showcase-assets/${art.id}-600.webp?url";`).join('\n');
+const activeArtwork = manifest.filter(art => art.id !== 'players-technique');
+const prelude=activeArtwork.map((art,i)=>`import artwork${i} from "./showcase-assets/${art.id}.webp?url";\nimport artwork${i}Small from "./showcase-assets/${art.id}-600.webp?url";`).join('\n');
 // String construction avoids runtime filesystem/data parsing in the public bundle.
-const entrySource=manifest.map((art,i)=>`  ${JSON.stringify(art.id)}: {\n    title: ${JSON.stringify(art.title)},\n    alt: ${JSON.stringify(art.alt)},\n    qualifier: ${JSON.stringify(art.qualifier)},\n    width: ${W}, height: ${H},\n    src: artwork${i}, srcSmall: artwork${i}Small\n  }`).join(',\n');
+const entrySource=activeArtwork.map((art,i)=>`  ${JSON.stringify(art.id)}: {\n    title: ${JSON.stringify(art.title)},\n    alt: ${JSON.stringify(art.alt)},\n    qualifier: ${JSON.stringify(art.qualifier)},\n    width: ${W}, height: ${H},\n    src: artwork${i}, srcSmall: artwork${i}Small\n  }`).join(',\n');
 await writeFile(resolve(root,'app/src/pages/home/showcase-artwork.ts'),`// Generated from editable SVG compositions by scripts/generate-showcase-artwork.mjs.\n// Artwork is illustrative; visible UI must retain the qualifier beside each preview.\n${prelude}\n\nexport const showcaseArtwork = {\n${entrySource}\n} as const;\n\nexport type ShowcaseArtworkId = keyof typeof showcaseArtwork;\nexport type ShowcaseArtwork = (typeof showcaseArtwork)[ShowcaseArtworkId];\n`);
 await writeFile(resolve(output,'provenance.json'),JSON.stringify({version:1,generator:'scripts/generate-showcase-artwork.mjs',rendering:{width:W,height:H,responsiveWidth:600,format:'WebP',sharp:sharp.versions.sharp,svgRenderer:sharp.versions.rsvg,text:'Editable SVG text uses Arial/Helvetica system sans-serif; committed WebP textures carry the reviewed typography without a runtime font dependency.'},sources:'Only checked-in approved public samples and brand assets. No live DOM capture, private data, new measurements, generated motion, or external asset requests.',artworks:manifest},null,2)+'\n');
 console.log(JSON.stringify({artworks:manifest.length,largeBytes:manifest.reduce((n,a)=>n+a.files.webp.bytes,0),smallBytes:manifest.reduce((n,a)=>n+a.files.small.bytes,0),output:relative(root,output)}));

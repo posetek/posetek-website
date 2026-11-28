@@ -56,6 +56,19 @@
   .showcase-panel .mobile-showcase { display: grid; place-items: center; padding: 16px; }
   .showcase-panel .mobile-app-preview { margin: 0; }
   .showcase-no-script { margin-top: 48px; max-width: 48ch; font-size: 14px; }
+  @media (min-width: 1024px) {
+    .showcase-pair + .showcase-pair:has(> .showcase-chapter:only-of-type) {
+      margin-top: clamp(80px, 8vw, 144px);
+    }
+    .showcase-chapter:only-of-type {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--showcase-gap);
+      align-items: center;
+    }
+    .showcase-chapter:only-of-type .showcase-caption { padding-top: 0; }
+  }
   @media (min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
     .showcase-preview:hover:not(:disabled) .showcase-frame-hint { opacity: 1; transform: translate(-50%,-50%); }
     .showcase-frame:not([data-showcase-renderer="ready"]) > img { transition: transform .65s cubic-bezier(.25,1,.5,1); }

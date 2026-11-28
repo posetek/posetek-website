@@ -23,8 +23,8 @@ const allowFonts = process.env.MARKETING_ALLOW_FONTS === '1';
 const originPolicy = productionOrigin ? 'PoseTek production origin GET/HEAD' : previewOrigin ? 'immutable PoseTek draft origin GET/HEAD' : 'loopback GET/HEAD';
 const evidence = { output, previewOrigin, networkPolicy: `${originPolicy}${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`, checks: [], screenshots: [], requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, expectedOriginFailures: 0, unexpectedOriginFailures: 0 }, injectedFailures: [], measurements: [] };
 const pages = [
-  { route: '/', name: 'players', chapters: ['tests', 'profile', 'training', 'ai-coach', 'technique', 'mobile-app'], title: 'PoseTek | Start with evidence. Train what’s next.' },
-  { route: '/coaches', name: 'coaches', chapters: ['club', 'players', 'development', 'contact'], title: 'PoseTek for Coaches & Clubs | Start with every player.' },
+  { route: '/', name: 'players', chapters: ['tests', 'profile', 'training', 'ai-coach', 'mobile-app'], title: 'Soccer testing and workouts for players | PoseTek', heading: 'What do I train next?' },
+  { route: '/coaches', name: 'coaches', chapters: ['club', 'players', 'development', 'contact'], title: 'Soccer team testing for coaches and clubs | PoseTek', heading: 'Team testing for the next practice.' },
 ];
 // Netlify Pretty URLs rewrites the existing .html booking link to this preserved
 // alias in served HTML. Accept exactly those two established destinations.
@@ -169,7 +169,7 @@ async function unclippedText(locator, label) {
     const issues = [], walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     while (walk.nextNode()) {
       const node = walk.currentNode, parent = node.parentElement;
-      if (!node.textContent.trim() || !parent || parent.closest('svg,style,script,[hidden],.pd-sr-only')) continue;
+      if (!node.textContent.trim() || !parent || parent.closest('svg,style,script,[hidden],.pd-sr-only,.stats-sr-only')) continue;
       if (parent.closest('[aria-hidden="true"]') && !parent.closest('.pt-menu-pages strong')) continue;
       if (!parent.getClientRects().length || getComputedStyle(parent).visibility === 'hidden') continue;
       const range = document.createRange(); range.selectNodeContents(node);
@@ -196,7 +196,7 @@ for (const config of pages) {
       const { page } = await fixture(t, { viewport: { width, height: width < 768 ? 844 : 1080 } });
       await visit(page, config.route);
       assert.equal(await page.title(), config.title);
-      assert.match(await page.locator('h1').innerText(), /Start with\s+evidence\./);
+      assert.equal((await page.locator('h1').innerText()).replace(/\s+/g, ' ').trim(), config.heading);
       await noOverflow(page, `${config.name} hero ${width}`);
       const chapterLinks = page.locator('.chapter-nav a');
       assert.deepEqual(await chapterLinks.evaluateAll(links => links.map(link => link.getAttribute('href'))), config.chapters.map(id => '#' + id));
@@ -281,7 +281,7 @@ for (const config of pages) {
   check(`${config.name}: SSR remains usable without JavaScript`, async t => {
     const { page } = await fixture(t, { javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
     await visit(page, config.route, false);
-    assert.match(await page.locator('h1').innerText(), /Start with\s+evidence\./);
+    assert.equal((await page.locator('h1').innerText()).replace(/\s+/g, ' ').trim(), config.heading);
     assert.equal(await page.locator('[src^="file:"],[href^="file:"]').count(), 0, 'server-rendered asset URLs must be public URLs, never local filesystem paths');
     for (const id of config.chapters) {
       await page.locator(`.chapter-nav a[href="#${id}"]`).click();
@@ -412,7 +412,7 @@ check('sound remains opt-in and persists only within its browsing session', asyn
   assert.equal(await page.evaluate(() => sessionStorage.getItem('posetek.marketing.sound')), 'off');
 });
 
-check('Players: six recordings, real playback, skill selection, workout progression, coach handoff and technique', async t => {
+check('Players: six recordings, real playback, pathway comparison, workout progression and coach handoff', async t => {
   const { page } = await fixture(t, { reducedMotion: 'reduce' });
   await visit(page, '/');
   const movement = await demoReady(page, 'movement');
@@ -434,13 +434,19 @@ check('Players: six recordings, real playback, skill selection, workout progress
   await scrubber.fill('10');
   assert.equal(await scrubber.inputValue(), '10');
   await openShowcase(page, 'profile');
-  const skills = page.locator('[data-showcase-panel="profile"] button[data-skill]');
-  for (let index = 0; index < await skills.count(); index++) {
-    const skill = skills.nth(index), name = await skill.innerText();
-    await skill.click();
-    assert.equal(await skill.getAttribute('aria-pressed'), 'true');
-    assert.equal(await page.locator('#skillName').innerText(), name);
+  const profile = page.locator('[data-showcase-panel="profile"]');
+  const pathwayTests = profile.locator('button[data-pathway-test]');
+  assert.equal(await pathwayTests.count(), 6);
+  for (const choice of await pathwayTests.all()) {
+    const label = (await choice.innerText()).trim();
+    await choice.click();
+    assert.equal(await choice.getAttribute('aria-pressed'), 'true');
+    assert.ok((await profile.locator('.club-cloud h3').innerText()).includes(label));
   }
+  const pathwayPlot = profile.locator('.club-cloud-frame svg[role="img"]');
+  await pathwayPlot.focus();
+  await pathwayPlot.press('ArrowRight');
+  await profile.locator('.club-cloud-tip-head').waitFor({ state: 'visible' });
   const workout = await demoReady(page, 'workout');
   await workout.getByRole('button', { name: 'Customize', exact: true }).click();
   await workout.getByRole('button', { name: '15 min', exact: true }).click();
@@ -469,21 +475,84 @@ check('Players: six recordings, real playback, skill selection, workout progress
   await coach.getByRole('button', { name: /Help me plan 20 minutes/ }).click();
   await workout.getByRole('button', { name: 'Start sample workout', exact: true }).waitFor({ state: 'visible' });
   assert.match(await workout.innerText(), /20 min available/);
-  const technique = await demoReady(page, 'technique');
-  await technique.getByRole('button', { name: 'Play technique at quarter speed', exact: true }).click();
-  await technique.getByRole('button', { name: 'Pause technique playback', exact: true }).click();
-  await technique.getByRole('slider', { name: 'Scrub kick frame', exact: true }).fill('10');
-  await technique.getByRole('group', { name: 'Kick analysis phases', exact: true }).getByRole('button').first().click();
-  const reference = technique.getByRole('button', { name: 'Show reference', exact: true });
-  if (await reference.count()) { await reference.click(); assert.equal(await technique.getByRole('button', { name: 'Hide reference', exact: true }).getAttribute('aria-pressed'), 'true'); }
+
 });
 
-check('Coaches: team and player stay connected through Plan, Train and Retest', async t => {
+check('Coaches: the first click on the team report works while the page is loading', async t => {
+  const { page } = await fixture(t, { reducedMotion: 'reduce' });
+  let resume;
+  const moduleReady = new Promise(resolve => { resume = resolve; });
+  await page.route('**/_astro/CoachesPage.*.js', async route => {
+    await moduleReady;
+    await route.fallback();
+  });
+  try {
+    await page.goto(origin + '/coaches/', { waitUntil: 'commit' });
+    const reportLink = page.getByRole('link', { name: 'Explore the sample team report' });
+    await reportLink.click();
+    await page.waitForURL(url => url.hash === '#club');
+    assert.equal(await page.locator('astro-island[ssr]').count(), 1);
+  } finally {
+    resume();
+  }
+  await page.locator('[data-showcase-panel="club"]:visible .cx-team-context h4').waitFor();
+  await page.getByRole('link', { name: 'Explore the sample team report' }).click();
+  await page.waitForFunction(() => {
+    const heading = document.getElementById('demo-heading-club');
+    return document.activeElement === heading && heading.getBoundingClientRect().top < innerHeight / 2;
+  });
+});
+
+check('Coaches: team standings, club pathway and coach input lead to a player workout and retest', async t => {
   const { page } = await fixture(t, { reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
   await visit(page, '/coaches');
+  const hero = page.locator('.coach-hero');
+  assert.equal(await hero.getByRole('link', { name: 'Plan a team testing day', exact: true }).count(), 1);
+  const repImage = hero.getByRole('img', { name: /recorded dribble test/i });
+  await repImage.evaluate(image => image.decode());
+  const repUrl = await repImage.evaluate(image => new URL(image.currentSrc).pathname);
+  assert.match(repUrl, /\.svg$/, 'the hero uses the recorded movement graphic');
+  const description = await repImage.getAttribute('alt');
+  assert.match(description, /Outbound 2\.91 seconds, turn 2\.12 seconds, return 2\.45 seconds/i);
+  assert.match(await hero.locator('.coach-field-result').innerText(), /7\.48\s*s/);
+  await hero.getByRole('link', { name: 'Explore the sample team report' }).click();
+  const club = page.locator('[data-showcase-panel="club"]');
+  await club.waitFor({ state: 'visible' });
+  assert.equal(await club.locator('.cx-team-context h4').innerText(), 'U13 team results');
+  assert.equal(await club.locator('[data-coach-report-test]').count(), 6);
+  const standings = club.locator('[data-coach-report-view="standings"]');
+  const pathway = club.locator('[data-coach-report-view="pathway"]');
+  await standings.click();
+  assert.match(await club.locator('[data-coach-report-test="dribbleLeft"]').innerText(), /7\.00 s/);
+  assert.equal(await club.locator('.cx-standings tbody tr').count(), 5);
+  assert.match(await club.locator('[data-coach-input]').innerText(), /first touch/i);
+  for (const test of ['sprint', 'changeOfDirection', 'broadJump', 'jump', 'dribbleRight', 'dribbleLeft']) {
+    const button = club.locator(`[data-coach-report-test="${test}"]`);
+    await button.click();
+    assert.equal(await button.getAttribute('aria-pressed'), 'true');
+    await pathway.click();
+    const chart = club.locator('.cx-pathway-plot > svg');
+    assert.equal(await chart.isVisible(), true);
+    assert.equal(await chart.getAttribute('role'), 'img');
+    const selectedLabel = await button.locator('strong').innerText();
+    assert.ok((await chart.locator('title').textContent()).includes(selectedLabel));
+  }
+  assert.match(await club.locator('.cx-pathway-plot').textContent(), /7\.05/);
+  await screenshot(page, 'coaches-390-team-pathway');
+  await club.locator('.cx-check-in-link').click();
+  const profile = page.locator('[data-showcase-panel="players"]');
+  await profile.waitFor({ state: 'visible' });
+  assert.equal(await profile.locator('.cx-player-heading h3').innerText(), 'Sam Bennett');
+  assert.match(await profile.innerText(), /7\.31/);
+  assert.match(await profile.innerText(), /Figure-8 dribble/);
+  await profile.getByRole('button', { name: /Open Sam’s workout/ }).click();
+  await page.locator('[data-showcase-panel="development"]').waitFor({ state: 'visible' });
+  assert.match(await page.locator('.coach-plan-sheet').innerText(), /Figure-8 dribble/);
   await openShowcase(page, 'club');
-  await page.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U15/ }).click();
-  assert.match(await page.locator('.cx-team-context').innerText(), /Taylor Brooks/);
+  assert.match(await club.locator('.cx-activity').innerText(), /4 of 5 players/);
+  assert.match(await club.locator('.cx-activity').innerText(), /74 min/);
+  await club.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U15/ }).click();
+  assert.equal(await club.locator('.cx-team-context h4').innerText(), 'U15 team results');
   await expandDemo(page, '#players');
   const players = page.getByRole('group', { name: 'Choose a sample player from U15', exact: true });
   await players.getByRole('button', { name: /Riley Chen/ }).click();
@@ -498,13 +567,13 @@ check('Coaches: team and player stay connected through Plan, Train and Retest', 
   await noOverflow(page, 'Coaches mobile Train');
   await steps.getByRole('button', { name: /Retest/ }).click();
   assert.match(await development.innerText(), /0\.14\s*sec faster/);
-  assert.match(await development.innerText(), /Illustrative change · Not a promised outcome/);
+  assert.match(await development.innerText(), /Change between sample testing days/);
   await screenshot(page, 'coaches-390-retest');
   await openShowcase(page, 'club');
   await page.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U17/ }).click();
   await openShowcase(page, 'development');
-  assert.equal(await page.locator('.cx-player-heading h3').innerText(), 'Morgan Adams');
-  assert.match(await development.innerText(), /Morgan Adams/);
+  assert.equal(await page.locator('.cx-player-heading h3').innerText(), 'Avery Shaw');
+  assert.match(await development.innerText(), /Avery Shaw/);
   assert.equal(await steps.getByRole('button', { name: /Plan/ }).getAttribute('aria-pressed'), 'true');
 });
 
@@ -557,8 +626,8 @@ check('a failed lazy demo stays isolated; bounded retry offers explicit reload r
   await movement.getByRole('button', { name: 'Try again', exact: true }).waitFor({ state: 'visible' });
   assert.ok(attempts > 0, 'real compiled module was withheld');
   await openShowcase(page, 'profile');
-  await page.locator('[data-showcase-panel="profile"] button[data-skill]').last().click();
-  assert.equal(await page.locator('[data-showcase-panel="profile"] button[data-skill]').last().getAttribute('aria-pressed'), 'true');
+  await page.locator('[data-showcase-panel="profile"] button[data-pathway-test]').last().click();
+  assert.equal(await page.locator('[data-showcase-panel="profile"] button[data-pathway-test]').last().getAttribute('aria-pressed'), 'true');
   await demoReady(page, 'workout');
   await context.unroute(blockedUrl, failImport);
   await openShowcase(page, 'tests', { ready: false });
@@ -581,7 +650,6 @@ for (const width of [390, 1440]) check(`${width}px close-up demonstrations show 
   for (const [name, selector, kind] of [
     ['profile', '.profile-showcase', null],
     ['training', '[data-demo="workout"]', 'workout'],
-    ['technique', '[data-demo="technique"]', 'technique'],
   ]) {
     if (kind) await demoReady(page, kind);
     await expandDemo(page, '#' + name);

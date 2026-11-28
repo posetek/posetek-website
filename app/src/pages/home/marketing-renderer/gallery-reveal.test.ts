@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createGalleryRevealProfiles, galleryRevealProgress } from "./gallery-reveal";
 
-const chapters = ["tests", "profile", "training", "ai-coach", "technique", "mobile-app"];
+const chapters = ["tests", "profile", "training", "ai-coach", "mobile-app"];
 
 describe("fluid chapter reveals", () => {
   it("selects exactly two nonadjacent accents, with bounded brief durations", () => {

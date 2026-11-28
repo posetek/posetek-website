@@ -1,7 +1,7 @@
 // Browser acceptance helpers. These operate only public, explicit demo controls.
 import assert from 'node:assert/strict';
 
-export const demoChapters = { movement: 'tests', profile: 'profile', workout: 'training', coach: 'ai-coach', technique: 'technique', mobile: 'mobile-app', club: 'club', evidence: 'players', development: 'development' };
+export const demoChapters = { movement: 'tests', profile: 'profile', workout: 'training', coach: 'ai-coach', mobile: 'mobile-app', club: 'club', evidence: 'players', development: 'development' };
 export const panelSelector = id => `[data-showcase-panel="${id.replace(/^#/, '')}"]`;
 
 export async function openShowcase(page, chapter, { ready = true } = {}) {

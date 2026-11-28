@@ -23,7 +23,7 @@ const evidence = {
   requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, unexpectedOriginFailures: 0 },
 };
 const audiences = [
-  { name: 'players', route: '/', chapters: ['tests', 'profile', 'training', 'ai-coach', 'technique', 'mobile-app'], aliases: ['how-it-works', 'retest'], history: ['profile', 'training'] },
+  { name: 'players', route: '/', chapters: ['tests', 'profile', 'training', 'ai-coach', 'mobile-app'], aliases: ['how-it-works', 'technique', 'retest'], history: ['profile', 'training'] },
   { name: 'coaches', route: '/coaches', chapters: ['club', 'players', 'development', 'contact'], aliases: [], history: ['players', 'development'] },
 ];
 let browser, server, origin;
@@ -159,7 +159,7 @@ async function assertReadableCard(card) {
   const issues = await card.evaluate(root => {
     const found = { controls: [], text: [], fonts: [], scale: [] }, bounds = root.getBoundingClientRect();
     const shown = node => {
-      if (node.closest('[hidden],[aria-hidden="true"],svg,.pd-sr-only,.sr-only')) return false;
+      if (node.closest('[hidden],[aria-hidden="true"],svg,.pd-sr-only,.stats-sr-only,.sr-only')) return false;
       const box = node.getBoundingClientRect(), style = getComputedStyle(node);
       return box.width > 0 && box.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
     };
@@ -172,7 +172,7 @@ async function assertReadableCard(card) {
     // Explanatory prose must remain readable. Decorative mono annotations,
     // chart labels and phone statusbars are not a blanket body-text benchmark.
     for (const node of root.querySelectorAll('p:not(.eyebrow):not(.coach-micro):not(.pd-kicker):not(.showcase-provenance),label,legend')) if (shown(node) && node.textContent.trim() && parseFloat(getComputedStyle(node).fontSize) < 11) found.fonts.push({ text: node.textContent.trim().slice(0, 80), font: getComputedStyle(node).fontSize, type: 'explanatory text' });
-    for (const node of root.querySelectorAll('.reveal-frame,.homepage-demo,.product-demo,.profile-demo,.technique-demo,.cx-club,.cx-evidence,.coach-development')) {
+    for (const node of root.querySelectorAll('.reveal-frame,.homepage-demo,.product-demo,.profile-demo,.cx-club,.cx-evidence,.coach-development')) {
       const matrix = new DOMMatrixReadOnly(getComputedStyle(node).transform);
       if (Math.abs(matrix.a - 1) > .01 || Math.abs(matrix.d - 1) > .01) found.scale.push({ class: node.className, transform: getComputedStyle(node).transform });
     }
@@ -215,6 +215,7 @@ async function geometry(page) {
   return page.locator('[data-showcase-gallery]').evaluate(gallery => {
     const rect = node => { const r = node.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top + scrollY, bottom: r.bottom + scrollY, width: r.width, height: r.height }; };
     return { width: innerWidth, documentWidth: document.documentElement.scrollWidth, gallery: rect(gallery),
+      captions: [...gallery.querySelectorAll('.showcase-caption')].map(rect),
       chapters: [...gallery.querySelectorAll('[data-showcase-chapter]')].map(node => ({ id: node.dataset.showcaseChapter, ...rect(node) })),
       frames: [...gallery.querySelectorAll('[data-showcase-frame]')].map(node => ({ id: node.dataset.showcaseFrame, ...rect(node) })) };
   });
@@ -228,6 +229,11 @@ function assertFrames(data) {
   }
   if (data.width >= 1024) {
     for (let index = 2; index < data.chapters.length; index++) assert.ok(data.chapters[index].top >= data.chapters[index - 2].bottom + 24, 'each desktop column keeps its full preceding caption readable');
+    if (data.frames.length % 2) {
+      const frame = data.frames.at(-1), caption = data.captions.at(-1);
+      assert.ok(caption.left > frame.right + 10 && caption.right >= data.gallery.right - 2, 'the final chapter uses both columns');
+      assert.ok(caption.top < frame.bottom && caption.bottom > frame.top, 'the final caption sits beside its preview');
+    }
     for (let index = 0; index + 1 < data.frames.length; index += 2) {
       const [left, right] = data.frames.slice(index, index + 2);
       assert.ok(right.left > left.right + 10, 'paired previews have distinct columns and a visible gutter');
@@ -375,8 +381,8 @@ for (const config of audiences) {
 check('Players: selected profile, paused movement and workout progress survive switching panels', async t => {
   const { page } = await fixture(t, { reducedMotion: 'reduce' }); await visit(page, '/');
   const profile = await openShowcase(page, 'profile');
-  const skill = profile.locator('button[data-skill]').last(); await skill.click();
-  const selected = await profile.locator('#skillName').innerText();
+  const chosenTest = profile.locator('button[data-pathway-test]').last(); await chosenTest.click();
+  const selected = await profile.locator('.club-cloud h3').innerText();
   const movement = await openShowcase(page, 'tests');
   const pause = movement.getByRole('button', { name: 'Pause pose playback', exact: true });
   if (await pause.isVisible()) await pause.click();
@@ -388,8 +394,8 @@ check('Players: selected profile, paused movement and workout progress survive s
   const timer = await workout.getByRole('timer').innerText();
   const workoutHandle = await workout.locator('[data-demo="workout"]').elementHandle();
   await openShowcase(page, 'profile');
-  assert.equal(await skill.getAttribute('aria-pressed'), 'true');
-  assert.equal(await profile.locator('#skillName').innerText(), selected);
+  assert.equal(await chosenTest.getAttribute('aria-pressed'), 'true');
+  assert.equal(await profile.locator('.club-cloud h3').innerText(), selected);
   await openShowcase(page, 'tests');
   assert.equal(await movement.getByRole('slider', { name: 'Pose playback position' }).inputValue(), '10');
   assert.equal(await movement.locator('#posePlayButton').getAttribute('aria-pressed'), 'false');
@@ -434,7 +440,7 @@ check('Coaches: team selection, player evidence and development remain connected
   const development = await openShowcase(page, 'development');
   assert.match(await development.innerText(), /Riley Chen/);
   await development.getByRole('group', { name: 'Explore player development', exact: true }).getByRole('button', { name: /Retest/ }).click();
-  assert.match(await development.innerText(), /Illustrative change · Not a promised outcome/);
+  assert.match(await development.innerText(), /Change between sample testing days/);
   await openShowcase(page, 'players');
   assert.equal(await players.locator('.cx-player-heading h3').innerText(), 'Riley Chen');
   await openShowcase(page, 'development');
@@ -442,7 +448,7 @@ check('Coaches: team selection, player evidence and development remain connected
   await openShowcase(page, 'club');
   await club.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U17/ }).click();
   await openShowcase(page, 'development');
-  assert.match(await development.innerText(), /Morgan Adams/);
+  assert.match(await development.innerText(), /Avery Shaw/);
   assert.equal(await development.getByRole('button', { name: /Plan/ }).getAttribute('aria-pressed'), 'true', 'existing team-change reset remains intact');
 });
 
@@ -596,8 +602,8 @@ check('Players: failed decorative lazy import preserves previews, navigation and
   await page.waitForFunction(() => document.querySelector('[data-showcase-gallery]')?.dataset.showcaseMotion === 'failed');
   assert.ok(injected > 0, 'real decorative module was exercised');
   const panel = await openShowcase(page, 'profile');
-  const skill = panel.locator('button[data-skill]').last(); await skill.click();
-  assert.equal(await skill.getAttribute('aria-pressed'), 'true');
+  const chosenTest = panel.locator('button[data-pathway-test]').last(); await chosenTest.click();
+  assert.equal(await chosenTest.getAttribute('aria-pressed'), 'true');
   await closeShowcase(page, 'profile'); assertFrames(await geometry(page));
   await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
   await page.getByRole('dialog', { name: 'Explore PoseTek' }).waitFor({ state: 'visible' });
@@ -609,7 +615,7 @@ check('Players: failed decorative lazy import preserves previews, navigation and
 check('Players: full demo modules load only after an explicit opening and remain mounted after Close', async t => {
   const { page } = await fixture(t, { reducedMotion: 'reduce' });
   const modules = [];
-  page.on('request', request => { const url = new URL(request.url()); if (url.origin === origin && /\/(MovementDemo|WorkoutDemo|CoachDemo|TechniqueDemo)[.-][^/]+\.js$/.test(url.pathname)) modules.push(url.pathname); });
+  page.on('request', request => { const url = new URL(request.url()); if (url.origin === origin && /\/(MovementDemo|WorkoutDemo|CoachDemo)[.-][^/]+\.js$/.test(url.pathname)) modules.push(url.pathname); });
   await visit(page, '/'); await frames(page, 12);
   assert.deepEqual(modules, [], 'the initial showcase does not import full interactive demos');
   assert.equal(await page.locator('[data-showcase-panel] [data-demo]').count(), 0);
@@ -716,10 +722,10 @@ check('Players: completed reveals survive real texture eviction and replay only 
   const textureSource = await page.evaluate(() => window.__showcaseActualView.cards.find(card => card.id === 'tests').src);
   const requestsBeforeEviction = textureRequests.filter(url => url === textureSource).length;
   assert.ok(requestsBeforeEviction > 0, 'the initial texture was fetched by the real worker');
-  await page.locator('[data-showcase-frame="technique"]').evaluate(node => scrollTo({ top: node.getBoundingClientRect().top + scrollY - 110, behavior: 'instant' }));
+  await page.locator('[data-showcase-frame="mobile-app"]').evaluate(node => scrollTo({ top: node.getBoundingClientRect().top + scrollY - 110, behavior: 'instant' }));
   await page.waitForFunction(() => {
     const view = window.__showcaseActualView, frame = window.__showcaseRevealFrames.at(-1);
-    return frame?.galleryCards.includes('technique') && frame.galleryRevision === view?.revision && !view.cards.some(card => card.id === 'tests');
+    return frame?.galleryCards.includes('mobile-app') && frame.galleryRevision === view?.revision && !view.cards.some(card => card.id === 'tests');
   });
   const evicted = await page.evaluate(() => window.__showcaseRevealFrames.at(-1));
   assert.equal(evicted.galleryReveals.find(reveal => reveal.id === 'tests')?.complete, true, 'reveal lifecycle metadata intentionally survives texture residency');

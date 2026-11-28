@@ -12,18 +12,16 @@ const ShowcaseContext = createContext({ active: null as string | null, enhanced:
 /** Stable native document slots: previews and retained panels never reparent. */
 export function ShowcaseGallery({ children, fluid = false }: { children: ReactNode; fluid?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState<string | null>(null);
+  const [request, setRequest] = useState<{ id: string; focus: boolean; scroll: boolean } | null>(null);
+  const active = request?.id ?? null;
   const [enhanced, setEnhanced] = useState(false);
-  const pending = useRef<{ id: string; focus: boolean; scroll: boolean } | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const open = useCallback((id: string, options: OpenOptions = {}) => {
     opener.current = options.opener ?? host.current?.querySelector<HTMLElement>(`[data-showcase-open="${id}"][data-showcase-primary]`) ?? null;
-    pending.current = { id, focus: options.focus !== false, scroll: options.scroll !== false };
-    setActive(id);
+    setRequest({ id, focus: options.focus !== false, scroll: options.scroll !== false });
   }, []);
   const close = useCallback((id: string) => {
-    pending.current = null;
-    setActive(null);
+    setRequest(null);
     const button = opener.current?.isConnected ? opener.current : host.current?.querySelector<HTMLButtonElement>(`[data-showcase-open="${id}"][data-showcase-primary]`);
     button?.focus({ preventScroll: true });
     requestAnimationFrame(() => {
@@ -34,14 +32,12 @@ export function ShowcaseGallery({ children, fluid = false }: { children: ReactNo
   }, []);
 
   useLayoutEffect(() => {
-    const request = pending.current;
-    if (!request || request.id !== active) return;
-    pending.current = null;
+    if (!request) return;
     const panel = host.current?.querySelector<HTMLElement>(`[data-showcase-panel="${request.id}"]`);
     if (!panel) return;
     if (request.focus) panel.querySelector<HTMLElement>("[data-showcase-panel-title]")?.focus({ preventScroll: true });
     if (request.scroll) panel.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
-  }, [active]);
+  }, [request]);
 
   useEffect(() => {
     const node = host.current;
@@ -96,7 +92,7 @@ export function ShowcasePair({ children }: { children: ReactNode }) {
 
 type ChapterProps = {
   id: string; titleId: string; number: string; label: string; title: ReactNode; description: string;
-  artwork: ShowcaseArtworkId; kind?: string; caption: string; children?: ReactNode;
+  artwork: ShowcaseArtworkId; kind?: string; caption?: string; children?: ReactNode;
   aliases?: string[]; demoAnchors?: string[]; requestToken?: number; footer?: ReactNode;
   action?: { href: string; label: string };
 };
@@ -126,7 +122,7 @@ export function ShowcaseChapter({ id, titleId, number, label, title, description
         <div className="showcase-heading"><p className="eyebrow">{number} / {label}</p><h2 id={titleId} tabIndex={-1}>{title}</h2></div>
         <p className="showcase-description">{description}</p>
         <p className="showcase-provenance">{artwork.qualifier}</p>
-        <p className="showcase-facts">{caption}</p>
+        {caption && <p className="showcase-facts">{caption}</p>}
         <div className="showcase-actions">{action ? <a className="showcase-action" href={action.href}><span>{action.label}</span><span aria-hidden="true">↗</span></a>
           : <button className="showcase-action" type="button" disabled={!enhanced} data-showcase-open={id} data-showcase-primary="" aria-controls={`demo-panel-${id}`} aria-expanded={expanded} onClick={event => expanded ? close(id) : open(id, { opener: event.currentTarget })}><span>{expanded ? "Close demo" : "Explore full demo"}</span><span aria-hidden="true">{expanded ? "−" : "+"}</span></button>}
         {!action && footer && <div className="showcase-footer">{footer}</div>}</div>

@@ -6,16 +6,15 @@ import { usePreviewMotion, useRepeatReveal } from "./marketing-effects";
 const MARKETING_CHAPTERS = {
   players: [
     { id: "tests", label: "Test & review" },
-    { id: "profile", label: "Athlete profile" },
+    { id: "profile", label: "Development pathway" },
     { id: "training", label: "Training" },
     { id: "ai-coach", label: "AI Coach" },
-    { id: "technique", label: "Technique" },
     { id: "mobile-app", label: "Mobile app" },
   ],
   coaches: [
-    { id: "club", label: "Your club" },
-    { id: "players", label: "Every player" },
-    { id: "development", label: "Development" },
+    { id: "club", label: "Team report" },
+    { id: "players", label: "Player focus" },
+    { id: "development", label: "Follow-up" },
     { id: "contact", label: "Get in touch" },
   ],
 } as const;
