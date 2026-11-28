@@ -1,8 +1,8 @@
-## Club and player website preview — November 27, 2026
+## Players and Coaches website — November 27, 2026
 
-Players opens with a recorded sprint and its measured top speed. The next chapter places a fictional U17 player’s result on the signed-in Stats development pathway. Families can switch tests, inspect the average and spread for each club age group, and follow the player’s dribbling focus into a Figure-8 workout. The five-chapter gallery ends with the mobile workout preview. The Coaches tab introduces testing with three recorded phases of a dribble test and its measured time. Four editorial illustrations lead into the Coach One Pagers format with fictional Northfield FC data. The interactive report shows a dated team leaderboard, six test choices, a team-average comparison with tested club age groups, and a player check-in that opens the assigned soccer workout. The [workout-time dashboard](https://club-player-preview--posetek.netlify.app/coaches/#workout-time) shows the selected team’s logged minutes for Oct 1–14, each player’s contribution, and the selected player’s plan. The follow-up compares the same test across two testing days.
+The public Players page follows a recorded sprint into a sample player’s development pathway and Figure-8 workout. The Coaches page follows a recorded dribble into a sample team report with six tests. Coaches can compare the squad with club age groups, open a player’s assigned drill, review logged workout minutes and compare retests. [Players](https://posetek.net/) · [Coaches](https://posetek.net/coaches/) · [Workout-time dashboard](https://posetek.net/coaches/#workout-time)
 
-[Parent preview](https://club-player-preview--posetek.netlify.app/) · [Coaches preview](https://club-player-preview--posetek.netlify.app/coaches/). The draft serves the public marketing pages and sample media. Sign-in, booking and privacy links use the main site. Publishing these changes on the main domain is a separate decision.
+Production `6b0a72c5ef66d82681227a7b` serves the two public pages from website PR #184. The protected baseline contains 3,041 files and 37 local recovery mappings. [Source PR](https://github.com/posetek/posetek-website/pull/184) · [Production receipt](docs/releases/receipts/CLUB_PLAYER_MARKETING_PRODUCTION.json)
 
 ## Admin directory and club reporting — November 24, 2026
 
