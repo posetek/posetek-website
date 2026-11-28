@@ -1,3 +1,5 @@
+import { CoachAccessPanel } from "../coach-reminders/CoachAccessPanel";
+import { ReminderAdmin } from "../coach-reminders/ReminderAdmin";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { auth } from "../../lib/firebase";
@@ -234,6 +236,7 @@ export default function OrganizationPage({ admin = false }: { admin?: boolean })
           {invite.role === "coach" && <TeamChecks teams={context.teams} selected={invite.teamIds} onChange={teamIds => setInvite({ ...invite, teamIds })} />}
           <button className="primary-cta" disabled={busy || (invite.role === "coach" && invite.teamIds.length === 0)}>Create activation link</button>
         </form></section>
+        <CoachAccessPanel context={context}/><ReminderAdmin context={context}/>
         <section className="club-card"><h2>Staff access</h2>{context.staff.length === 0 && <p>No staff have activated access yet.</p>}{context.staff.map(member => <div className="club-staff" key={member.userUID}><div><strong>{member.firstName} {member.lastName}</strong><span>{member.email} · {member.role === "manager" ? "Organization admin" : "Coach"} · {accessStatusLabel(member.status)}</span><span>{member.role === "manager" ? "All teams" : context.teams.filter(entry => member.teamIds.includes(entry.id)).map(entry => entry.name).join(", ") || "No teams assigned"}</span></div><button className="quiet-button" disabled={busy} onClick={() => setEditedStaff({ ...member, teamIds: [...member.teamIds] })}>Edit access</button></div>)}
           {editedStaff && <form className="club-edit" onSubmit={event => { event.preventDefault(); void mutate(async isCurrent => { await clubCall("setClubStaffTeams", { organizationId, userUID: editedStaff.userUID, teamIds: editedStaff.role === "manager" ? [] : editedStaff.teamIds, status: editedStaff.status }); if (isCurrent()) setEditedStaff(null); }, "Staff access updated."); }}><h3>{editedStaff.firstName} {editedStaff.lastName}</h3>{editedStaff.role === "coach" && <TeamChecks teams={context.teams} selected={editedStaff.teamIds} onChange={teamIds => setEditedStaff({ ...editedStaff, teamIds })} />}<label>Access status<select value={editedStaff.status} onChange={event => setEditedStaff({ ...editedStaff, status: event.target.value })}><option value="active">Active</option><option value="inactive">Inactive</option></select></label><button className="primary-cta" disabled={busy}>Save access</button><button type="button" className="quiet-button" onClick={() => setEditedStaff(null)}>Cancel</button></form>}
         </section>

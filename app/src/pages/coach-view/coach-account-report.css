@@ -1,0 +1,90 @@
+.ca-report {
+  min-height: 100dvh;
+  --lime: #b7f34a;
+  --text: #f1f6f3;
+  color: var(--text);
+  background: #07160f;
+}
+.ca-report .portal-header {
+  min-height: 64px;
+}
+.ca-state,
+.ca-footer,
+.ca-notice {
+  max-width: 1160px;
+  margin: auto;
+  padding: 24px 20px;
+}
+.ca-state {
+  max-width: 680px;
+  padding-top: clamp(3rem, 12vh, 7rem);
+}
+.ca-teams {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.ca-state button,
+.ca-footer button,
+.ca-team-select select {
+  min-height: 44px;
+  color: inherit;
+  font: inherit;
+  padding: 6px 12px;
+  background: #152b20;
+  border: 1px solid #506b59;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ca-teams button {
+  display: grid;
+  text-align: left;
+  gap: 3px;
+  padding: 12px 14px;
+}
+.ca-teams button span,
+.ca-team-select {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.ca-state a,
+.ca-footer a {
+  color: var(--lime);
+}
+.ca-signin {
+  display: inline-flex;
+  align-items: center;
+  color: #0a2115 !important;
+  text-decoration: none;
+}
+.ca-team-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ca-team-select select {
+  max-width: min(42vw, 17rem);
+}
+.ca-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+@media (max-width: 580px) {
+  .ca-report .portal-header:has(.ca-team-select) .portal-brand {
+    font-size: 0;
+  }
+  .ca-report .portal-header:has(.ca-team-select) .portal-brand-mark {
+    font-size: 1rem;
+  }
+  .ca-team-select {
+    font-size: 0;
+    gap: 0;
+  }
+  .ca-team-select select {
+    font-size: 1rem;
+  }
+  .ca-report .cv-header-actions {
+    gap: 6px;
+  }
+}

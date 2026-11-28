@@ -2774,3 +2774,46 @@ unverified. This work does not change the recorded production release or authori
 ## Phone processing dashboard (2026-10-03)
 
 The admin phone overview and session analytics use backend-derived summaries from existing diagnostic manifests. See [docs/features/DEVICE_PROCESSING_DASHBOARD.md](docs/features/DEVICE_PROCESSING_DASHBOARD.md) for schema, comparison semantics and exact verification/release status. Current-algorithm baseline is explicitly pinned to native source e279f408 / 1.1 (31). No new TestFlight build is required for already-recorded fields.
+
+## Shared Coach View input preview
+
+Build the standalone team reader with `VITE_COACH_NOTES=1` to enable Coaches Attention. The dialog opens on entry. The coach selects a roster player, chooses a training focus and saves an observation. Coaches input reopens saved observations from the team header.
+
+Run `npm ci --prefix app/scripts/coach-share-functions` for the optional function bundler. From `app/`, run `VITE_COACH_NOTES=1 COACH_NOTES_HOST=<preview-alias-host> node scripts/build-coach-share.mjs <private-snapshot.json>`. The output contains a public viewer directory, a sibling functions directory for the same draft deploy, and a private fragment key. Keep the key outside both deployment directories. Each snapshot has its own roster ordering, key and notes namespace. Preserve the deployed link for later reads. A fresh build generates a new key and a separate notes history.
+
+The browser encrypts notes before saving. Anyone with the complete team link can add notes and view its saved history across devices. This capability is separate from simulated athlete messages. Scoped handler checks run with `node --test scripts/coach-share-notes.test.mjs`.
+
+### Coach review with combined rosters
+
+Set `layout: "roster-results"` on a private share bundle to show one roster at a time. Each team can have a `shortName` for the team picker. Keep the original team and roster order for the lifetime of a link because saved notes use those positions. Coaches Input opens first in a notes-enabled review. Closing it shows the selected team's count, charts, roster and follow-up. Its team-message demo starts expanded and can be collapsed.
+
+Prepare one entry per rostered player with the latest reviewed result for each test. Each score shows its testing date. Retain estimate provenance in the source when applicable. The coach-facing results show all reviewed scores without an estimate badge. Use a null result for unavailable measurements. A roster entry may have no report. Individual `activity.signedIn` and `activity.firstWorkoutCompleted` values are true, false or null as of the team’s `asOf` date. Athlete follow-up shows the sign-in milestone and recorded workout timer minutes in a scrollable roster. Supply `activity.timerMinutes` and `activity.timerRecords` from the same all-time timer source. A positive record count supports a measured zero, zero records means no timer recorded, and missing coverage reads as unconfirmed. Older snapshots may omit these fields.
+
+
+The selected team button and roster panel share one selection. Team standings and the player profile use the same test percentile, team average and eligible count. For separate testing sessions, preserve the dated comparisons and supply any age series in the team's `pathway`, keyed by test and date.
+
+When multiple dates cover one assessment, supply the team's `testingWindow` with inclusive ISO `startDate`, `endDate` and optional `pathway` series keyed by test. Select one reviewed result per player and test across the window, using the latest valid result for a repeat. Compute percentiles, performance bands, averages and eligible counts from that roster’s selected results for each test. Keep the actual capture date on each score. The chart presents the whole window as one assessment.
+
+Development pathway compares left dribble, right dribble, sprint, change of direction, vertical jump and broad jump by recorded age. Timed tests use seconds and lower times indicate faster performances. Jumps use inches or feet. Each series contains school age groups, their counts and mean, the measured unit, and the selected team's eligible count and mean. Use the same deduplicated measurements for both charts. Publish age-group means only for groups of at least five and omit individual ages. A single age group is a single comparison point.
+
+For an offline review, build the same private snapshot with `VITE_COACH_NOTES=local VITE_COACH_DEMO_USAGE=0`. The builder writes a self-contained `offline.html` beside the generated key. Keep this file private and outside the hosted artifact. It opens Coaches Input on each visit and stores encrypted review notes in that browser for that copy. The hosted link has its own notes history. Retain the same offline key and roster order when refreshing a copy that already has notes.
+
+### An additional live address for a private coach report
+
+The [standalone review host](app/scripts/coach-review-host/) serves the approved encrypted reader directly and forwards same-origin coaching-note requests to the report’s original Netlify function. The two addresses use the same URL fragment and existing note history. The fragment stays in the browser. The service needs no database credentials.
+
+In an isolated build directory, copy the host's Dockerfile, `.dockerignore` and `server.mjs`, plus the verified public viewer tree as `publish/`. Compare the files with the approved artifact hashes before building. Run `node server.mjs --check` in that directory and build the container for Linux/amd64. Keep the offline HTML, keys and source data in the private review package. Configure `COACH_REVIEW_HOST` with the exact HTTPS hostname used by the phone link and `COACH_NOTES_HOST` with the exact original review alias hostname. Deploy the image by digest to a dedicated service using a keyless runtime identity without project roles. For a report update, refresh the approved encrypted tree on both hosts and retain the original notes namespace.
+
+Verify the complete link over ordinary HTTPS, including the first-open dialog, each team's results and read-only note history. Verify the keyless address opens the locked viewer. Update the reviewer's private launcher and test the decoded QR after those checks pass. The relay's save and retry tests use a fictional note store in `node --test scripts/coach-review-host.test.mjs`.
+
+### Shareable coach demo
+
+From `app/`, run `node scripts/build-coach-demo.mjs <empty-output-directory>` to build the standalone sample page. The builder takes its two rosters and all six tests from `scripts/coach-demo-snapshot.mjs`. It accepts only an output directory. Numbered players, testing results, age averages and app activity are fictional. Demo notes are local to each visitor’s browser and messages are simulated.
+
+Serve the resulting `index.html` on a separate origin. The [static demo host](app/scripts/coach-demo-host/) accepts the generated showcase, serves the page and robots.txt, and has no notes API, private report key or upstream service configuration. Build its container in a clean directory containing its Dockerfile, `.dockerignore`, `server.mjs` and the generated page. David’s private service, notes store and delivery QR have their own deployment.
+
+## Vacaville signed-in coach report candidate, November 27, 2026
+
+Website PR 175 adds the authenticated coach workspace at `/coach-report`. Club administrators and managers reconcile team access, create private enrollment invitations and review guardian permissions and inbound parent replies. The report opens with Coaches Input and then shows one assigned team, the most recent validated score and date for each test, individual assessments, and the club development pathway. Parent reminders use the paired backend's preview, submission and receipt flow. Public coach examples and private snapshot viewers use their existing separate entry points.
+
+A release also needs the scoped Firebase functions, reviewed club policy, roster projections, and rebuilt application and sign-in entries. Live SMS activation has its own staff handset pilot and sender setup. Keep coach invitations, real report snapshots and guardian routes in private operations storage.
