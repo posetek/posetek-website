@@ -251,149 +251,149 @@
     },
     {
       "id": "coaches-club",
-      "title": "The team development pathway",
-      "alt": "Left dribble. The fictional U13 team averaged 7.00 s. Club age-group averages: U13 7.05 s, U15 6.66 s, U17 6.41 s.",
-      "qualifier": "Fictional club and team results",
+      "title": "Left-dribble pathway",
+      "alt": "The sample U13 team averages 7.00 s. The points show each club age group’s average on the same left dribble.",
+      "qualifier": "Fictional team and club results",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
           "source": "app/src/pages/coaches/coach-samples.ts",
-          "detail": "The selected team mean, club age-group means and tested counts come from the same dated left-dribble report as the interactive sample.",
+          "detail": "Directly labeled club age-group means and the selected team mean from the same fictional left-dribble report. The points compare different age groups.",
           "sha256": "4c6d4c07c87fed4287c1643f9b40cf03c7ea7a0f1a6d30b118b08f401c7c80d1"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-club.svg",
-          "sha256": "a4c708f4ece346c3744c66789890bce4a8ce4a8159b3529dd5c072524de3fd49",
-          "bytes": 4700
+          "sha256": "d51748ebd9244dd902448733845edf8cf76e574d6dcc9dc2fa84bf86435bd447",
+          "bytes": 2500
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-club.webp",
-          "sha256": "77e82eeeb62af1c1bcb136c4cfd1dd92e7bad10e1e704ad6dd83b1ece73f0ebb",
-          "bytes": 41392
+          "sha256": "a4d91fdeeb5dd4d1414ec3ae50e60490a3ccd3a4bf8128fa453ccd9dfc63dd7b",
+          "bytes": 30712
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-club-600.webp",
-          "sha256": "f11accde8db62721f7c781b30050d545586b0e1cf1a61f3e4896a02ab4d77611",
-          "bytes": 18342
+          "sha256": "6b5edb8fcbc372d4a84ee79d8dc10645debe9292f2ae79f663fc36b3a771905f",
+          "bytes": 13178
         }
       }
     },
     {
       "id": "coaches-evidence",
-      "title": "A player check-in",
-      "alt": "Sam Bennett’s left-dribble result was 7.31 s, against the U13 team average of 7.00 s. Practice focus: Keep the first touch within reach after the turn.",
-      "qualifier": "Fictional player and team comparison",
+      "title": "Sam’s practice focus",
+      "alt": "Sam Bennett’s assigned Figure-8 dribble drill. A looping route goes around two cones. Take one short touch as you leave each cone.",
+      "qualifier": "Sample player · Illustrated drill",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
           "source": "app/src/pages/coaches/coach-samples.ts",
-          "detail": "The report’s default player check-in, measured result, team comparison and practice focus are read from the fictional team report.",
+          "detail": "Selected player and coaching cue from the fictional U13 check-in.",
           "sha256": "4c6d4c07c87fed4287c1643f9b40cf03c7ea7a0f1a6d30b118b08f401c7c80d1"
+        },
+        {
+          "source": "app/src/pages/home/product/DrillDiagram.tsx",
+          "detail": "Static top-down illustration of the Figure-8 drill’s two-cone Gerono route and direction of travel.",
+          "sha256": "3a2139e5aea64a40f416209793d9ada87549c828da53727d8175eb9b43449f07"
+        },
+        {
+          "source": "app/src/pages/home/product/product-demo.ts",
+          "detail": "The drill name comes from the public workout catalog, matched by the selected player’s drill ID.",
+          "sha256": "64168ac85c3d2eece46909092bcd6d9c958a9d5b86d966e0ae27d4c5091b6872"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-evidence.svg",
-          "sha256": "ccb6554e22b28960d9e21263abed4e30cf7f38e68c2b9c9d46b39173d82daa88",
-          "bytes": 2315
+          "sha256": "c888019c1c6635ae3fc6d769d53695c99bc48e3794f016edc28295b5aad23579",
+          "bytes": 4086
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-evidence.webp",
-          "sha256": "94b4efd29bef06555d8fa79f3a821c634711aec688f34945ac24e759eeaf5c9e",
-          "bytes": 41622
+          "sha256": "a2b985d4202a6080701df6ae8e56ea159c43a36d574920fc13175f08ae885557",
+          "bytes": 35424
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-evidence-600.webp",
-          "sha256": "a427c38c31bcde470c834629aa1ed94a3e6dd80cb6f91918a37095295e335ab4",
-          "bytes": 18760
+          "sha256": "749c1d2acfd85896557276141b82b296a5c2fc4f4221f595fe05bc7d1ff9c954",
+          "bytes": 15060
         }
       }
     },
     {
       "id": "coaches-development",
-      "title": "Follow the work between tests",
-      "alt": "Sam Bennett’s sample Figure-8 dribble workout, 12 minutes logged and 1 of 3 sessions completed. Left-dribble results: 7.46 s earlier, 7.31 s latest.",
-      "qualifier": "Fictional workout and retest",
+      "title": "Training between tests",
+      "alt": "A close view of the public Figure-8 demonstration. Sam Bennett logged 12 minutes of workout time during Oct 1–14 in this fictional example.",
+      "qualifier": "Public drill photo · Fictional workout time",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
           "source": "app/src/pages/coaches/coach-samples.ts",
-          "detail": "Uses the selected check-in player’s prescribed drill, recorded activity window, logged sessions and earlier/latest retest from the fictional follow-up.",
+          "detail": "Recorded workout minutes across the sample follow-up window for the U13 check-in player.",
           "sha256": "4c6d4c07c87fed4287c1643f9b40cf03c7ea7a0f1a6d30b118b08f401c7c80d1"
         },
         {
           "source": "app/src/pages/home/product/product-demo.ts",
-          "detail": "The drill name comes from the public workout catalog and is matched to the selected player’s drill ID.",
+          "detail": "Selected drill ID matches the Figure-8 dribble in the public workout catalog.",
           "sha256": "64168ac85c3d2eece46909092bcd6d9c958a9d5b86d966e0ae27d4c5091b6872"
         },
         {
           "source": "app/src/pages/home/product/media/figure-8.jpg",
-          "detail": "Approved public Figure-8 demonstration still. The image illustrates the assigned drill.",
+          "detail": "A full-width crop of the approved public drill demonstration; this is an illustration of the exercise, not a photo of the fictional player.",
           "sha256": "734a4803f58812692ac989a812edb61bb3fc076b5660b0578f3fa0ff129ba7c1"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-development.svg",
-          "sha256": "b33b3150d486496e721fcc03382a537121a4f3056195063d320ad65fac8dbf07",
-          "bytes": 155925
+          "sha256": "24c47c31d8bf9d15a8b363180a87efe5967fd99b892a8c93e5f37ad5d99cb6e4",
+          "bytes": 154802
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-development.webp",
-          "sha256": "f6fcf7c7c79147c6c10d639b5b0d4978b9030da3af1bb2f4c8b2f973dae78114",
-          "bytes": 93252
+          "sha256": "c0069db87a7b7119e205c44566359db81799e1e13406d7fd58deed01a5bc4182",
+          "bytes": 108204
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-development-600.webp",
-          "sha256": "c75914485deddb083f5e3c98dd65beacc5169559a207ed47b2347fa1739836c7",
-          "bytes": 30204
+          "sha256": "6b2af807b97321a3d053fc02da196555a8a82966709b414e2ec8b7371af2267a",
+          "bytes": 44738
         }
       }
     },
     {
       "id": "coaches-contact",
-      "title": "Plan a club testing day",
-      "alt": "A club testing-day invitation showing three examples from PoseTek’s test battery: sprint, dribbling and broad jump.",
-      "qualifier": "Recorded movement · Testing-day examples",
+      "title": "Bring testing to your field",
+      "alt": "A faceted PoseTek soccer ball at the halfway line of a lime-green pitch.",
+      "qualifier": "Illustrated field setup",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
-          "source": "app/src/pages/home/movement/recorded-movement.json",
-          "detail": "Sprint frame 12, dribbling frame 112 and broad jump frame 23 from recorded public demonstration sequences.",
-          "sha256": "a0df987d4b3b206fc180334f1cc3c83f2ff9201e3bccc52b96cd410f1b029761"
-        },
-        {
-          "source": "app/src/pages/home/pitch/pose-model.ts",
-          "detail": "Original skeleton edge topology for all three recorded tests.",
-          "sha256": "09013c99f0a7d832c022934253ad1a24af1b66e760d0467962fe73e9afc589ea"
-        },
-        {
-          "source": "app/public/brand/posetek-p.svg",
-          "detail": "Approved P mark in the testing invitation.",
-          "sha256": "22e673f3d95187fd9c19f919ce767e95002a8815fd5df5d062d8054a027911d6"
+          "source": "app/src/pages/home/pitch/ball.ts",
+          "detail": "The football panels use the same truncated icosahedron as the approved public pitch scene, shaded and projected onto the halfway line.",
+          "sha256": "480e1175ba2c57764eb4ff8c2c61906e560984f6445171689a854a825c6d2b6c"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-contact.svg",
-          "sha256": "ca33640e8c08f1fb4d1f07e7f0631884e6a28903cfc1284479ab634203a4a6ac",
-          "bytes": 16802
+          "sha256": "d7fc78a708030a696659a08e581178774b02fb643c3f7dfcb47062eef3676fad",
+          "bytes": 7538
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-contact.webp",
-          "sha256": "447dfd793a40c9ae8b017eceb5006def51f4db56432a1916102cef86b72f55a2",
-          "bytes": 38116
+          "sha256": "6542592442fb713aeefdce1bc89e1654e536786934478d43af35a15aa6f7a6e3",
+          "bytes": 27144
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-contact-600.webp",
-          "sha256": "07c9f88960e2b6247dfced64ff41b74deca2bcc5612e2ddb7eefc20961651d46",
-          "bytes": 16424
+          "sha256": "55faca14e24b9575afa45fd34c393dad3157b4bef1afcd08d7363492b22f6674",
+          "bytes": 10944
         }
       }
     }

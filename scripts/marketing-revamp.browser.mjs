@@ -503,7 +503,13 @@ check('Coaches: team standings, club pathway and coach input lead to a player wo
   await visit(page, '/coaches');
   const hero = page.locator('.coach-hero');
   assert.equal(await hero.getByRole('link', { name: 'Plan a team testing day', exact: true }).count(), 1);
-  assert.equal(await hero.locator('.coach-hero-workspace tbody tr').count(), 5);
+  const repImage = hero.getByRole('img', { name: /recorded dribble test/i });
+  await repImage.evaluate(image => image.decode());
+  const repUrl = await repImage.evaluate(image => new URL(image.currentSrc).pathname);
+  assert.match(repUrl, /\.svg$/, 'the hero uses the recorded movement graphic');
+  const description = await repImage.getAttribute('alt');
+  assert.match(description, /Outbound 2\.91 seconds, turn 2\.12 seconds, return 2\.45 seconds/i);
+  assert.match(await hero.locator('.coach-field-result').innerText(), /7\.48\s*s/);
   await hero.getByRole('link', { name: 'Explore the sample team report' }).click();
   const club = page.locator('[data-showcase-panel="club"]');
   await club.waitFor({ state: 'visible' });

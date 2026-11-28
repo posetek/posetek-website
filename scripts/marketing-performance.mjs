@@ -290,9 +290,9 @@ async function compareContentAssets() {
   const coachSample = 'app/src/pages/coaches/coach-samples.ts';
   const coachSources = {
     'coaches-club': [coachSample],
-    'coaches-evidence': [coachSample],
+    'coaches-evidence': [coachSample, 'app/src/pages/home/product/DrillDiagram.tsx', 'app/src/pages/home/product/product-demo.ts'],
     'coaches-development': [coachSample, 'app/src/pages/home/product/product-demo.ts', 'app/src/pages/home/product/media/figure-8.jpg'],
-    'coaches-contact': ['app/src/pages/home/movement/recorded-movement.json', 'app/src/pages/home/pitch/pose-model.ts', 'app/public/brand/posetek-p.svg'],
+    'coaches-contact': ['app/src/pages/home/pitch/ball.ts'],
   };
   for (const [id, sourcePaths] of Object.entries(coachSources)) {
     const chart = active.find(art => art.id === id);

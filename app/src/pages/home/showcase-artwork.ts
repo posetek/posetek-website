@@ -56,30 +56,30 @@ export const showcaseArtwork = {
     src: artwork4, srcSmall: artwork4Small
   },
   "coaches-club": {
-    title: "The team development pathway",
-    alt: "Left dribble. The fictional U13 team averaged 7.00 s. Club age-group averages: U13 7.05 s, U15 6.66 s, U17 6.41 s.",
-    qualifier: "Fictional club and team results",
+    title: "Left-dribble pathway",
+    alt: "The sample U13 team averages 7.00 s. The points show each club age group’s average on the same left dribble.",
+    qualifier: "Fictional team and club results",
     width: 1200, height: 900,
     src: artwork5, srcSmall: artwork5Small
   },
   "coaches-evidence": {
-    title: "A player check-in",
-    alt: "Sam Bennett’s left-dribble result was 7.31 s, against the U13 team average of 7.00 s. Practice focus: Keep the first touch within reach after the turn.",
-    qualifier: "Fictional player and team comparison",
+    title: "Sam’s practice focus",
+    alt: "Sam Bennett’s assigned Figure-8 dribble drill. A looping route goes around two cones. Take one short touch as you leave each cone.",
+    qualifier: "Sample player · Illustrated drill",
     width: 1200, height: 900,
     src: artwork6, srcSmall: artwork6Small
   },
   "coaches-development": {
-    title: "Follow the work between tests",
-    alt: "Sam Bennett’s sample Figure-8 dribble workout, 12 minutes logged and 1 of 3 sessions completed. Left-dribble results: 7.46 s earlier, 7.31 s latest.",
-    qualifier: "Fictional workout and retest",
+    title: "Training between tests",
+    alt: "A close view of the public Figure-8 demonstration. Sam Bennett logged 12 minutes of workout time during Oct 1–14 in this fictional example.",
+    qualifier: "Public drill photo · Fictional workout time",
     width: 1200, height: 900,
     src: artwork7, srcSmall: artwork7Small
   },
   "coaches-contact": {
-    title: "Plan a club testing day",
-    alt: "A club testing-day invitation showing three examples from PoseTek’s test battery: sprint, dribbling and broad jump.",
-    qualifier: "Recorded movement · Testing-day examples",
+    title: "Bring testing to your field",
+    alt: "A faceted PoseTek soccer ball at the halfway line of a lime-green pitch.",
+    qualifier: "Illustrated field setup",
     width: 1200, height: 900,
     src: artwork8, srcSmall: artwork8Small
   }

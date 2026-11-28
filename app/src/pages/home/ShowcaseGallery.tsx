@@ -96,7 +96,7 @@ export function ShowcasePair({ children }: { children: ReactNode }) {
 
 type ChapterProps = {
   id: string; titleId: string; number: string; label: string; title: ReactNode; description: string;
-  artwork: ShowcaseArtworkId; kind?: string; caption: string; children?: ReactNode;
+  artwork: ShowcaseArtworkId; kind?: string; caption?: string; children?: ReactNode;
   aliases?: string[]; demoAnchors?: string[]; requestToken?: number; footer?: ReactNode;
   action?: { href: string; label: string };
 };
@@ -126,7 +126,7 @@ export function ShowcaseChapter({ id, titleId, number, label, title, description
         <div className="showcase-heading"><p className="eyebrow">{number} / {label}</p><h2 id={titleId} tabIndex={-1}>{title}</h2></div>
         <p className="showcase-description">{description}</p>
         <p className="showcase-provenance">{artwork.qualifier}</p>
-        <p className="showcase-facts">{caption}</p>
+        {caption && <p className="showcase-facts">{caption}</p>}
         <div className="showcase-actions">{action ? <a className="showcase-action" href={action.href}><span>{action.label}</span><span aria-hidden="true">↗</span></a>
           : <button className="showcase-action" type="button" disabled={!enhanced} data-showcase-open={id} data-showcase-primary="" aria-controls={`demo-panel-${id}`} aria-expanded={expanded} onClick={event => expanded ? close(id) : open(id, { opener: event.currentTarget })}><span>{expanded ? "Close demo" : "Explore full demo"}</span><span aria-hidden="true">{expanded ? "−" : "+"}</span></button>}
         {!action && footer && <div className="showcase-footer">{footer}</div>}</div>

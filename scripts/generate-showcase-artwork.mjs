@@ -164,91 +164,118 @@ const selectedTest = coaches.reportTests.find(test => test.id === 'dribbleLeft')
 const teamReport = coaches.getTeamTestReport(team, selectedTest.id);
 const ageGroups = coaches.getClubTestPathway(selectedTest.id);
 const reportValue = value => `${value.toFixed(selectedTest.digits)} ${selectedTest.unit}`;
-const report = { surface: '#0c1c14', text: '#f0f6eb', muted: '#b3c8b7', bar: '#bedf83', team: '#a6daf5', rule: '#3b5443' };
-const end = 'text-anchor="end"', middle = 'text-anchor="middle"';
-const plotBase = 703, plotHeight = 355;
-const maxTime = Math.ceil(Math.max(teamReport.average, ...ageGroups.map(group => group.mean)) / 2) * 2;
-const chartY = seconds => plotBase - plotHeight * seconds / maxTime;
-const teamY = chartY(teamReport.average);
-const groupBars = ageGroups.map((group, index) => {
-  const center = 318 + 304 * index;
-  return rect(center - 74, chartY(group.mean), 148, plotBase - chartY(group.mean), report.bar, 'rx="5"') +
-    text(group.mean.toFixed(selectedTest.digits), center, 646, 43, report.surface, middle) +
-    text(group.ageGroup, center, 756, 42, report.text, middle) +
-    text(`${group.testedPlayers} tested`, center, 795, 29, report.muted, middle);
-}).join('');
-add('coaches-club','The team development pathway',
- `Left dribble. The fictional ${team.name} team averaged ${reportValue(teamReport.average)}. Club age-group averages: ${ageGroups.map(group => group.ageGroup + ' ' + reportValue(group.mean)).join(', ')}.`,
- 'Fictional club and team results', [
-  {source:coachSource,detail:'The selected team mean, club age-group means and tested counts come from the same dated left-dribble report as the interactive sample.'}
-],svg('Where does the team stand? — Northfield FC development pathway', report.surface,
- mono(`NORTHFIELD FC  /  ${team.name}`,61,78,30,report.bar)+text(coaches.coachSessionDate,1139,78,32,report.muted,end)+
- text(`Where does ${team.name} stand?`,56,188,91,report.text)+
- line(61,233,1139,233,report.rule,2)+text('Left dribble',59,301,52,report.text)+text('Time in seconds · Lower is faster',1139,298,31,report.muted,end)+
- [0, .25, .5, .75, 1].map(fraction => line(142,chartY(maxTime*fraction),1137,chartY(maxTime*fraction),report.rule,2) +
-   text(maxTime*fraction,111,chartY(maxTime*fraction)+9,29,report.muted,end)).join('')+
- groupBars+line(142,teamY,1137,teamY,report.surface,9)+line(142,teamY,1137,teamY,report.team,5,'stroke-dasharray="16 10"')+
- rect(57,848,28,21,report.bar,'rx="2"')+text('Club age-group average',100,870,32,report.text)+
- line(652,859,710,859,report.team,5,'stroke-dasharray="12 7"')+text(`${team.name} team · ${reportValue(teamReport.average)}`,728,870,32,report.text)));
+// The collapsed images introduce a single idea. The detailed, dated report is in the demo.
+const field = { ink: '#0b281d', green: '#183a2a', lime: '#c2eb83', paper: '#f1f2e8', chalk: '#e4eee1' };
+const middle = 'text-anchor="middle"', end = 'text-anchor="end"';
+const left = 70, right = W - left;
+const chartMin = Math.floor(Math.min(...ageGroups.map(group => group.mean), teamReport.average) * 2) / 2;
+const chartMax = Math.ceil(Math.max(...ageGroups.map(group => group.mean), teamReport.average) * 2) / 2;
+const chartY = value => 704 - (value - chartMin) / (chartMax - chartMin) * 370;
+const groupPoints = ageGroups.map((group,index) => ({
+  ...group, x: 164 + index * 432, y: chartY(group.mean),
+}));
+const referenceY = chartY(teamReport.average);
+const ageLine = groupPoints.map(({x,y}) => `${x},${num(y)}`).join(' ');
 
-const checkInField = `${team.name} · ${checkIn.position}`;
-const focusWords = checkIn.focus.split(' ');
-const focusBreak = focusWords.findIndex((_, i) => focusWords.slice(0, i + 1).join(' ').length > 29);
-const focusLines = focusBreak === -1 ? [checkIn.focus] : [focusWords.slice(0,focusBreak).join(' '), focusWords.slice(focusBreak).join(' ')];
-add('coaches-evidence', 'A player check-in',
- `${checkIn.name}’s left-dribble result was ${reportValue(checkIn.latestDribbleSeconds)}, against the ${team.name} team average of ${reportValue(teamReport.average)}. Practice focus: ${checkIn.focus}`,
- 'Fictional player and team comparison', [
-  {source:coachSource,detail:'The report’s default player check-in, measured result, team comparison and practice focus are read from the fictional team report.'}
-],svg(`Player check-in — ${checkIn.name}`,c.paper,
- mono('PLAYER CHECK-IN',60,80,30,'#4e685b')+text(checkInField,1139,82,34,'#4e685b',end)+
- text(checkIn.name,52,238,137,c.ink)+line(60,289,1140,289,'#b4c4b3',2)+
- text('Left dribble',60,354,43,c.ink)+text(coaches.coachSessionDate,1138,352,32,'#4e685b',end)+
- text(`${firstName}’s time`,60,425,35,'#4e685b')+text('Team average',642,425,35,'#4e685b')+
- text(reportValue(checkIn.latestDribbleSeconds),54,542,111,c.ink)+line(586,389,586,551,'#b4c4b3',2)+text(reportValue(teamReport.average),636,542,111,c.ink)+
- rect(0,609,W,291,report.surface)+mono('PRACTICE FOCUS',60,672,28,report.bar)+
- focusLines.map((value,i)=>text(value,56,768+i*72,69,report.text)).join('')));
+add('coaches-club','Left-dribble pathway',
+ `The sample ${team.name} team averages ${reportValue(teamReport.average)}. The points show each club age group’s average on the same left dribble.`,
+ 'Fictional team and club results', [
+  {source:coachSource,detail:'Directly labeled club age-group means and the selected team mean from the same fictional left-dribble report. The points compare different age groups.'}
+],svg('Left dribble across the club',field.green,
+ text('Left dribble across the club',left,104,56,field.paper)+
+ text(reportValue(teamReport.average),left-5,254,132,field.lime)+
+ text(`${team.name} team average`,495,245,48,field.paper)+
+ groupPoints.map(({x})=>line(x,328,x,714,'#486555',2)).join('')+
+ line(left,referenceY,right,referenceY,field.lime,5,'stroke-dasharray="16 14"')+
+ `<polyline points="${ageLine}" fill="none" stroke="${field.chalk}" stroke-width="6"/>`+
+ groupPoints.map(({x,y,mean,ageGroup}) =>
+   circle(x,y,12,field.paper,`stroke="${field.green}" stroke-width="3"`)+
+   text(reportValue(mean),x,num(y)-31,43,field.paper,middle)+
+   text(ageGroup,x,792,56,field.paper,middle)
+ ).join('')));
 
 const checkInDrill = workout.drills.find(item => item.id === checkIn.drillId);
-if (checkInDrill?.id !== 'DRB-006') throw new Error('The check-in workout must match the approved Figure-8 photo.');
-add('coaches-development','Follow the work between tests',
- `${checkIn.name}’s sample Figure-8 dribble workout, ${checkIn.workoutMinutes} minutes logged and ${checkIn.completedSessions} of ${checkIn.plannedSessions} sessions completed. Left-dribble results: ${reportValue(checkIn.priorDribbleSeconds)} earlier, ${reportValue(checkIn.latestDribbleSeconds)} latest.`,
- 'Fictional workout and retest', [
-  {source:coachSource,detail:'Uses the selected check-in player’s prescribed drill, recorded activity window, logged sessions and earlier/latest retest from the fictional follow-up.'},
-  {source:'app/src/pages/home/product/product-demo.ts',detail:'The drill name comes from the public workout catalog and is matched to the selected player’s drill ID.'},
-  {source:'app/src/pages/home/product/media/figure-8.jpg',detail:'Approved public Figure-8 demonstration still. The image illustrates the assigned drill.'}
-],svg(`Training follow-up — ${checkIn.name}`,'#dce5d4',
- text('Training follow-up',56,138,99,c.ink)+
- text(checkIn.name,61,205,43,'#405a49')+text(coaches.coachActivityWindow,1140,202,34,'#405a49',end)+
- `<image href="${photo}" x="60" y="249" width="476" height="477" preserveAspectRatio="xMidYMin slice" clip-path="url(#drill-image)"/>`+
- rect(60,725,476,116,report.surface)+text(checkInDrill.name,86,800,48,report.text)+
- text('Workout time',597,301,36,'#405a49')+text(`${checkIn.workoutMinutes} min`,593,400,97,c.ink)+
- line(598,438,1140,438,'#aabda9',2)+text('Sessions logged',597,503,36,'#405a49')+
- text(`${checkIn.completedSessions} of ${checkIn.plannedSessions}`,593,602,97,c.ink)+line(598,642,1140,642,'#aabda9',2)+
- text('Left dribble · Earlier to latest',597,705,34,'#405a49')+
- text(`${checkIn.priorDribbleSeconds.toFixed(2)} → ${reportValue(checkIn.latestDribbleSeconds)}`,592,801,65,c.ink),
- '<clipPath id="drill-image"><rect x="60" y="249" width="476" height="477"/></clipPath>'));
+if (checkInDrill?.id !== 'DRB-006') throw new Error('The check-in workout must match the approved Figure-8 illustration.');
+const routeCenter = { x: 600, y: 501 }, routeRx = 426, routeRy = 151;
+// Same Gerono figure eight and loop-centroid cones as the public drill guide.
+const routePoint = angle => [routeCenter.x + routeRx*Math.sin(angle), routeCenter.y + routeRy*Math.sin(2*angle)];
+const figureEight = Array.from({length:129}, (_, i) => routePoint(i / 128 * Math.PI * 2));
+const routeD = figureEight.map(([x,y],i) => `${i ? 'L' : 'M'}${num(x)} ${num(y)}`).join(' ') + 'Z';
+const coneOffset = routeRx * 3 * Math.PI / 16;
+function discCone(cx, cy) {
+  return `<ellipse cx="${cx}" cy="${cy+7}" rx="38" ry="32" fill="#0b281d" opacity=".13"/>`+
+    circle(cx,cy,32,'#d1943d')+circle(cx,cy-3,24,'#eeac53')+circle(cx,cy-7,10,'#9a622d')+circle(cx,cy-7,6,'#252c20');
+}
+function routeArrow(angle) {
+  const [x,y] = routePoint(angle);
+  const slope = Math.atan2(2 * routeRy * Math.cos(2*angle), routeRx * Math.cos(angle));
+  return `<g transform="translate(${num(x)} ${num(y)}) rotate(${num(slope * 180 / Math.PI)})"><path d="M-16 -13 L3 0 L-16 13" fill="none" stroke="${field.ink}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g>`;
+}
+add('coaches-evidence','Sam’s practice focus',
+ `${checkIn.name}’s assigned ${checkInDrill.name} drill. A looping route goes around two cones. ${checkIn.cue}`,
+ 'Sample player · Illustrated drill', [
+  {source:coachSource,detail:'Selected player and coaching cue from the fictional U13 check-in.'},
+  {source:'app/src/pages/home/product/DrillDiagram.tsx',detail:'Static top-down illustration of the Figure-8 drill’s two-cone Gerono route and direction of travel.'},
+  {source:'app/src/pages/home/product/product-demo.ts',detail:'The drill name comes from the public workout catalog, matched by the selected player’s drill ID.'}
+],svg(`${firstName}’s practice focus`,field.paper,
+ text(`${firstName}’s practice focus`,left,101,49,'#496151')+
+ text(checkInDrill.name,left-4,236,110,field.ink)+
+ `<path d="${routeD}" fill="none" stroke="#749483" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>`+
+ discCone(routeCenter.x-coneOffset,routeCenter.y)+discCone(routeCenter.x+coneOffset,routeCenter.y)+
+ routeArrow(.24)+routeArrow(Math.PI+.24)+
+ text('One short touch after each turn.',left,817,61,field.ink)));
 
-const stations = [
-  {key:'sprint', label:'Sprint', frame:12},
-  {key:'dribbling', label:'Dribbling', frame:112},
-  {key:'broadJump', label:'Broad jump', frame:23}
-];
-const stationArt = stations.map(({key,label,frame},index) => {
-  const seq = movement.sequences.find(item => item.key === key), left = 61+index*375;
-  return (index ? line(left-26,469,left-26,818,report.rule,2) : '') +
-    pose(seq.frames[frame],{x:left+54,y:478,w:216,h:239},{stroke:5,color:report.bar})+
-    text(label,left+163,794,42,report.text,middle);
-}).join('');
-add('coaches-contact','Plan a club testing day',
- 'A club testing-day invitation showing three examples from PoseTek’s test battery: sprint, dribbling and broad jump.',
- 'Recorded movement · Testing-day examples', [
-  {source:'app/src/pages/home/movement/recorded-movement.json',detail:'Sprint frame 12, dribbling frame 112 and broad jump frame 23 from recorded public demonstration sequences.'},
-  {source:'app/src/pages/home/pitch/pose-model.ts',detail:'Original skeleton edge topology for all three recorded tests.'},
-  {source:'app/public/brand/posetek-p.svg',detail:'Approved P mark in the testing invitation.'}
-],svg('Bring testing to your club', '#cbe8a2',
- text('Bring testing',49,150,122,c.ink)+text('to your club.',49,283,122,c.ink)+mark(1036,57,103)+
- rect(0,365,W,535,report.surface)+text('On-field tests',57,432,40,report.muted)+
- stationArt));
+add('coaches-development','Training between tests',
+ `A close view of the public Figure-8 demonstration. ${checkIn.name} logged ${checkIn.workoutMinutes} minutes of workout time during ${coaches.coachActivityWindow} in this fictional example.`,
+ 'Public drill photo · Fictional workout time', [
+  {source:coachSource,detail:'Recorded workout minutes across the sample follow-up window for the U13 check-in player.'},
+  {source:'app/src/pages/home/product/product-demo.ts',detail:'Selected drill ID matches the Figure-8 dribble in the public workout catalog.'},
+  {source:'app/src/pages/home/product/media/figure-8.jpg',detail:'A full-width crop of the approved public drill demonstration; this is an illustration of the exercise, not a photo of the fictional player.'}
+],svg('Workout follow-up',field.ink,
+ `<image href="${photo}" x="0" y="-172" width="${W}" height="${W*720/406}" preserveAspectRatio="xMidYMin meet"/>`+
+ rect(0,0,W,H,'url(#photo-floor)')+
+ text(`${firstName}’s logged workout time`,left,678,50,field.paper)+
+ text(`${checkIn.workoutMinutes} min`,left-7,830,167,field.paper),
+ '<linearGradient id="photo-floor" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop offset="0.32" stop-color="#061d12" stop-opacity="0"/><stop offset="0.66" stop-color="#061d12" stop-opacity=".45"/><stop offset="1" stop-color="#061d12" stop-opacity=".93"/></linearGradient>'));
+
+// Project PoseTek’s existing soccer ball into a print-style kickoff illustration.
+const ballSource = 'app/src/pages/home/pitch/ball.ts';
+const {createBall} = await import('../app/src/pages/home/pitch/ball.ts');
+const ball = createBall();
+const faces = [];
+for (const [mesh, sides] of [['hexagons',6],['pentagons',5]]) {
+  const geometry = ball[mesh].rotateX(.26).rotateY(-.43).rotateZ(.24);
+  const vertices = geometry.getAttribute('position');
+  const stride = (sides-2)*3;
+  for (let offset = 0; offset < vertices.count; offset += stride) {
+    const indices = [offset,offset+1,...Array.from({length:sides-2},(_,i)=>offset+3*i+2)];
+    const points = indices.map(i => [vertices.getX(i),vertices.getY(i),vertices.getZ(i)]);
+    const centroid = [0,1,2].map(axis=>points.reduce((sum,p)=>sum+p[axis],0)/sides);
+    const shade = Math.max(0,Math.min(1,.52 + (-.38*centroid[0]+.62*centroid[1]+.36*centroid[2])/2));
+    const shadow = sides===6 ? [166,189,154] : [9,34,23];
+    const light = sides===6 ? [255,254,226] : [40,66,49];
+    const tones = shadow.map((v,i)=>Math.round(v+(light[i]-v)*shade));
+    faces.push({z:centroid[2],color:`rgb(${tones.join(',')})`,points:points.map(([x,y])=>`${num(600+x*206)},${num(417-y*206)}`).join(' ')});
+  }
+}
+for (const geometry of Object.values(ball)) geometry.dispose();
+const panels = faces.sort((a,b)=>a.z-b.z).map(face=>
+  `<polygon points="${face.points}" fill="${face.color}" stroke="${face.color}" stroke-width="2" stroke-linejoin="round"/>`
+).join('');
+add('coaches-contact','Bring testing to your field',
+ 'A faceted PoseTek soccer ball at the halfway line of a lime-green pitch.',
+ 'Illustrated field setup', [
+  {source:ballSource,detail:'The football panels use the same truncated icosahedron as the approved public pitch scene, shaded and projected onto the halfway line.'}
+],svg('At the halfway line','#b9dc79',
+ `<g transform="rotate(-25 600 450)">
+   ${rect(-600,70,2400,190,'#b0d473')}${rect(-600,450,2400,190,'#b0d473')}${rect(-600,830,2400,190,'#b0d473')}
+   <ellipse cx="600" cy="530" rx="690" ry="440" fill="none" stroke="#ecf4c7" stroke-width="13"/>
+   ${line(600,-500,600,1450,'#ecf4c7',13)}
+  </g>`+
+ `<ellipse cx="662" cy="720" rx="245" ry="42" fill="#304726" opacity=".16" filter="url(#ground-shadow)"/>`+
+ `<ellipse cx="619" cy="708" rx="124" ry="13" fill="#2b4027" opacity=".28" filter="url(#contact-shadow)"/>`+
+ panels,
+ '<filter id="ground-shadow" x="-.3" y="-1" width="1.6" height="3"><feGaussianBlur stdDeviation="24"/></filter><filter id="contact-shadow" x="-.4" y="-2" width="1.8" height="5"><feGaussianBlur stdDeviation="11"/></filter>'));
 await mkdir(output,{recursive:true});
 const hash = buffer => createHash('sha256').update(buffer).digest('hex');
 const requested = new Set(process.argv.slice(2));
