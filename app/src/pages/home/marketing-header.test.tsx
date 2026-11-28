@@ -13,7 +13,7 @@ describe("marketing audience navigation", () => {
 
   it("preserves player section and booking destinations", () => {
     const html = renderToStaticMarkup(<MarketingHeader audience="players" />);
-    for (const hash of ["tests", "profile", "training", "ai-coach", "technique"]) expect(html).toContain(`href="#${hash}"`);
+    for (const hash of ["tests", "profile", "training", "ai-coach", "mobile-app"]) expect(html).toContain(`href="#${hash}"`);
     expect(html).toContain('href="/bookPerformanceTest.html"');
     expect(html).not.toContain(TEAM_ENQUIRY_HREF);
   });

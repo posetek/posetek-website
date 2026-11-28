@@ -10,7 +10,7 @@ describe("public showcase initial document", () => {
     expect(renderToStaticMarkup(<CoachesPage />)).not.toContain('data-showcase-motion-policy="fluid"');
   });
   it.each([
-    ["players", HomePage, ["tests", "profile", "training", "ai-coach", "technique", "mobile-app"]],
+    ["players", HomePage, ["tests", "profile", "training", "ai-coach", "mobile-app"]],
     ["coaches", CoachesPage, ["club", "players", "development", "contact"]],
   ] as const)("retains the %s story, ordinary links and artwork before JavaScript", (_audience, Page, chapters) => {
     const html = renderToStaticMarkup(<Page />);
@@ -26,7 +26,7 @@ describe("public showcase initial document", () => {
 
   it("keeps each legacy alias unique before any full demo has mounted", () => {
     const html = renderToStaticMarkup(<HomePage />);
-    for (const id of ["how-it-works", "retest"]) expect(html.split(`id="${id}"`).length - 1).toBe(1);
+    for (const id of ["how-it-works", "technique", "retest"]) expect(html.split(`id="${id}"`).length - 1).toBe(1);
     expect(html).toContain('data-showcase-demo-alias="tests"');
     expect(html).toMatch(/id="demo-panel-tests"[^>]*hidden=""[^>]*inert=""/);
   });

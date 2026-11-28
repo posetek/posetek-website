@@ -23,7 +23,7 @@ const evidence = {
   requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, unexpectedOriginFailures: 0 },
 };
 const audiences = [
-  { name: 'players', route: '/', section: '#profile', art: '.radar-wrap > svg', controls: 'button[data-skill]', selected: '#skillName', heading: '#profile .showcase-heading', frame: '[data-showcase-frame="profile"]' },
+  { name: 'players', route: '/', section: '#profile', art: '.club-cloud-frame svg[role="img"]', controls: 'button[data-pathway-test]', selected: '.club-cloud h3', heading: '#profile .showcase-heading', frame: '[data-showcase-frame="profile"]' },
   { name: 'coaches', route: '/coaches', section: '#players', art: '.cx-profile-radar > svg', controls: '.cx-player-options button', selected: '.cx-player-heading h3', heading: '#players .showcase-heading', frame: '[data-showcase-frame="players"]' },
 ];
 let browser, server, origin;
@@ -87,10 +87,6 @@ async function fixture(t, options = {}) {
     catch (error) { const result = evidence.checks.find(check => check.name === t.name); if (result) { result.status = 'failed'; result.error = error.message; } throw error; }
   });
   return { page, context };
-}
-
-async function expandDemo(page, section) {
-  return openShowcase(page, section);
 }
 
 async function visit(page, route) {
@@ -437,60 +433,14 @@ check('Coaches: centered preview cursor stays inert and the first click follows 
   await page.waitForURL(url => url.hash === '#club');
 });
 
-check('technique joint hit areas stay stationary throughout hover, pointer down and activation', async t => {
+check('the legacy technique link opens the recorded shooting test', async t => {
   const { page } = await fixture(t);
-  await visit(page, '/');
-  await openShowcase(page, 'technique');
-  await page.locator('[data-demo="technique"]').scrollIntoViewIfNeeded();
-  await waitData(page, '[data-demo="technique"]', 'demo-state', 'ready');
-  const demo = page.locator('[data-demo="technique"]');
-  await demo.getByRole('group', { name: 'Kick analysis phases', exact: true }).getByRole('button', { name: /Contact/ }).click();
-  await expandDemo(page, '#technique');
-  const current = await demo.locator('.technique-measurement > div > small').first().innerText();
-  const joints = demo.locator('.technique-stage [role="button"]');
-  await joints.first().waitFor({ state: 'visible' }); // Native details toggle commits its React state asynchronously.
-  const names = await joints.evaluateAll(nodes => nodes.map(node => node.getAttribute('aria-label')));
-  const name = names.find(name => !name.includes(`Inspect ${current} ·`));
-  assert.ok(name, 'a different saved joint measurement is available');
-  const joint = demo.getByRole('button', { name, exact: true });
-  await joint.scrollIntoViewIfNeeded();
-  await neutralFocus(page); await neutralPointer(page);
-  const stage = demo.locator('.technique-stage');
-  await stage.hover({ position: { x: 20, y: 20 } }); await frames(page);
-  // Hover preparation can trigger native smooth scrolling to uncover the stage
-  // beneath the fixed header. Its scroll may outlive Playwright's hover action;
-  // measure artwork stability only after that setup scroll has actually stopped.
-  await page.evaluate(() => new Promise((done, reject) => {
-    let previous = scrollY, steady = 0;
-    const started = performance.now();
-    const sample = () => {
-      steady = Math.abs(scrollY - previous) < .1 ? steady + 1 : 0;
-      previous = scrollY;
-      if (steady >= 8) done();
-      else if (performance.now() - started > 3000) reject(new Error('Native hover preparation scroll did not settle within three seconds.'));
-      else requestAnimationFrame(sample);
-    };
-    requestAnimationFrame(sample);
-  }));
-  assert.equal(await stage.evaluate(node => getComputedStyle(node).transform), 'none', 'an SVG containing actual controls is excluded from preview tilt');
-  // SVG <g> ink bounds include the extra hover-outline stroke. Measure the
-  // actual circle's geometry in screen coordinates rather than that decoration.
-  const geometry = () => joint.locator('.technique-hit-area').evaluate(circle => {
-    const matrix = circle.getScreenCTM();
-    const center = new DOMPoint(circle.cx.baseVal.value, circle.cy.baseVal.value).matrixTransform(matrix);
-    return { x: center.x, y: center.y, radiusX: circle.r.baseVal.value * Math.hypot(matrix.a, matrix.b), radiusY: circle.r.baseVal.value * Math.hypot(matrix.c, matrix.d) };
-  });
-  const before = await geometry();
-  await page.mouse.move(before.x, before.y); await frames(page);
-  const hovered = await geometry();
-  assert.ok(Object.keys(before).every(key => Math.abs(before[key] - hovered[key]) < .5), `hover preserves the actual joint hit geometry: ${JSON.stringify({ before, hovered })}`);
-  await page.mouse.down(); await frames(page);
-  const pressed = await geometry();
-  assert.ok(Object.keys(before).every(key => Math.abs(before[key] - pressed[key]) < .5), 'pointer down cannot move the joint away from pointer up');
-  await page.mouse.up();
-  const expected = name.slice('Inspect '.length).split(' · ')[0];
-  assert.equal(await demo.locator('.technique-measurement > div > small').first().innerText(), expected, 'one complete pointer action selects the saved measurement');
-  await capture(page, 'players-technique-joint-first-action');
+  await visit(page, '/#technique');
+  const panel = page.locator('[data-showcase-panel="tests"]');
+  await panel.waitFor({ state: 'visible' });
+  await page.waitForFunction(() => document.querySelector('.pose-carousel-count')?.getAttribute('aria-label') === 'Recording 6 of 6');
+  await panel.getByRole('button', { name: /Shooting/, pressed: true }).waitFor();
+  assert.equal(await page.locator('[data-showcase-chapter="technique"]').count(), 0);
 });
 
 check('visibility lifecycle cancels transient decoration and preserves a paused movement position', async t => {

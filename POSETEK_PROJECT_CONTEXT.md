@@ -1,6 +1,6 @@
 ## Club and player website preview — November 27, 2026
 
-Players opens with a fictional U17 player’s Stats, a testing-session comparison and club age-group averages, then continues into the Figure-8 workout. Coaches opens with a team testing inquiry and a fictional club one-pager. From that report a coach can select a player, see the practice focus and assigned drill, check logged sessions and compare retests.
+Players opens with a recorded sprint and its measured top speed. The next chapter places a fictional U17 player’s result on the signed-in Stats development pathway. Families can switch tests, inspect the average and spread for each club age group, and follow the player’s dribbling focus into a Figure-8 workout. The five-chapter gallery ends with the mobile workout preview. Coaches opens with a team testing inquiry and a fictional club one-pager. From that report a coach can select a player, see the practice focus and assigned drill, check logged sessions and compare retests.
 
 [Parent preview](https://club-player-preview--posetek.netlify.app/) · [Coaches preview](https://club-player-preview--posetek.netlify.app/coaches/). The draft serves the public marketing pages and sample media. Sign-in, booking and privacy links use the main site. Publishing these changes on the main domain is a separate decision.
 

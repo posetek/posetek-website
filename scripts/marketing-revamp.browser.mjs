@@ -23,7 +23,7 @@ const allowFonts = process.env.MARKETING_ALLOW_FONTS === '1';
 const originPolicy = productionOrigin ? 'PoseTek production origin GET/HEAD' : previewOrigin ? 'immutable PoseTek draft origin GET/HEAD' : 'loopback GET/HEAD';
 const evidence = { output, previewOrigin, networkPolicy: `${originPolicy}${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`, checks: [], screenshots: [], requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, expectedOriginFailures: 0, unexpectedOriginFailures: 0 }, injectedFailures: [], measurements: [] };
 const pages = [
-  { route: '/', name: 'players', chapters: ['tests', 'profile', 'training', 'ai-coach', 'technique', 'mobile-app'], title: 'Soccer testing and workouts for players | PoseTek', heading: 'What do I train next?' },
+  { route: '/', name: 'players', chapters: ['tests', 'profile', 'training', 'ai-coach', 'mobile-app'], title: 'Soccer testing and workouts for players | PoseTek', heading: 'What do I train next?' },
   { route: '/coaches', name: 'coaches', chapters: ['club', 'players', 'development', 'contact'], title: 'Soccer team testing for coaches and clubs | PoseTek', heading: 'Team testing.' },
 ];
 // Netlify Pretty URLs rewrites the existing .html booking link to this preserved
@@ -169,7 +169,7 @@ async function unclippedText(locator, label) {
     const issues = [], walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     while (walk.nextNode()) {
       const node = walk.currentNode, parent = node.parentElement;
-      if (!node.textContent.trim() || !parent || parent.closest('svg,style,script,[hidden],.pd-sr-only')) continue;
+      if (!node.textContent.trim() || !parent || parent.closest('svg,style,script,[hidden],.pd-sr-only,.stats-sr-only')) continue;
       if (parent.closest('[aria-hidden="true"]') && !parent.closest('.pt-menu-pages strong')) continue;
       if (!parent.getClientRects().length || getComputedStyle(parent).visibility === 'hidden') continue;
       const range = document.createRange(); range.selectNodeContents(node);
@@ -412,7 +412,7 @@ check('sound remains opt-in and persists only within its browsing session', asyn
   assert.equal(await page.evaluate(() => sessionStorage.getItem('posetek.marketing.sound')), 'off');
 });
 
-check('Players: six recordings, real playback, skill selection, workout progression, coach handoff and technique', async t => {
+check('Players: six recordings, real playback, pathway comparison, workout progression and coach handoff', async t => {
   const { page } = await fixture(t, { reducedMotion: 'reduce' });
   await visit(page, '/');
   const movement = await demoReady(page, 'movement');
@@ -434,13 +434,19 @@ check('Players: six recordings, real playback, skill selection, workout progress
   await scrubber.fill('10');
   assert.equal(await scrubber.inputValue(), '10');
   await openShowcase(page, 'profile');
-  const skills = page.locator('[data-showcase-panel="profile"] button[data-skill]');
-  for (let index = 0; index < await skills.count(); index++) {
-    const skill = skills.nth(index), name = await skill.innerText();
-    await skill.click();
-    assert.equal(await skill.getAttribute('aria-pressed'), 'true');
-    assert.equal(await page.locator('#skillName').innerText(), name);
+  const profile = page.locator('[data-showcase-panel="profile"]');
+  const pathwayTests = profile.locator('button[data-pathway-test]');
+  assert.equal(await pathwayTests.count(), 6);
+  for (const choice of await pathwayTests.all()) {
+    const label = (await choice.innerText()).trim();
+    await choice.click();
+    assert.equal(await choice.getAttribute('aria-pressed'), 'true');
+    assert.ok((await profile.locator('.club-cloud h3').innerText()).includes(label));
   }
+  const pathwayPlot = profile.locator('.club-cloud-frame svg[role="img"]');
+  await pathwayPlot.focus();
+  await pathwayPlot.press('ArrowRight');
+  await profile.locator('.club-cloud-tip-head').waitFor({ state: 'visible' });
   const workout = await demoReady(page, 'workout');
   await workout.getByRole('button', { name: 'Customize', exact: true }).click();
   await workout.getByRole('button', { name: '15 min', exact: true }).click();
@@ -469,13 +475,7 @@ check('Players: six recordings, real playback, skill selection, workout progress
   await coach.getByRole('button', { name: /Help me plan 20 minutes/ }).click();
   await workout.getByRole('button', { name: 'Start sample workout', exact: true }).waitFor({ state: 'visible' });
   assert.match(await workout.innerText(), /20 min available/);
-  const technique = await demoReady(page, 'technique');
-  await technique.getByRole('button', { name: 'Play technique at quarter speed', exact: true }).click();
-  await technique.getByRole('button', { name: 'Pause technique playback', exact: true }).click();
-  await technique.getByRole('slider', { name: 'Scrub kick frame', exact: true }).fill('10');
-  await technique.getByRole('group', { name: 'Kick analysis phases', exact: true }).getByRole('button').first().click();
-  const reference = technique.getByRole('button', { name: 'Show reference', exact: true });
-  if (await reference.count()) { await reference.click(); assert.equal(await technique.getByRole('button', { name: 'Hide reference', exact: true }).getAttribute('aria-pressed'), 'true'); }
+
 });
 
 check('Coaches: team and player stay connected through Plan, Train and Retest', async t => {
@@ -557,8 +557,8 @@ check('a failed lazy demo stays isolated; bounded retry offers explicit reload r
   await movement.getByRole('button', { name: 'Try again', exact: true }).waitFor({ state: 'visible' });
   assert.ok(attempts > 0, 'real compiled module was withheld');
   await openShowcase(page, 'profile');
-  await page.locator('[data-showcase-panel="profile"] button[data-skill]').last().click();
-  assert.equal(await page.locator('[data-showcase-panel="profile"] button[data-skill]').last().getAttribute('aria-pressed'), 'true');
+  await page.locator('[data-showcase-panel="profile"] button[data-pathway-test]').last().click();
+  assert.equal(await page.locator('[data-showcase-panel="profile"] button[data-pathway-test]').last().getAttribute('aria-pressed'), 'true');
   await demoReady(page, 'workout');
   await context.unroute(blockedUrl, failImport);
   await openShowcase(page, 'tests', { ready: false });
@@ -581,7 +581,6 @@ for (const width of [390, 1440]) check(`${width}px close-up demonstrations show 
   for (const [name, selector, kind] of [
     ['profile', '.profile-showcase', null],
     ['training', '[data-demo="workout"]', 'workout'],
-    ['technique', '[data-demo="technique"]', 'technique'],
   ]) {
     if (kind) await demoReady(page, kind);
     await expandDemo(page, '#' + name);

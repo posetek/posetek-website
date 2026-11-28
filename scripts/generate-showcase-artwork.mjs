@@ -13,7 +13,10 @@ const output = resolve(root, 'app/src/pages/home/showcase-assets');
 const sourceText = path => readFile(resolve(root, path), 'utf8');
 const sourceJson = async path => JSON.parse(await sourceText(path));
 const moduleFrom = async path => import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(await sourceText(path))).toString('base64')}`);
-const home = await moduleFrom('app/src/pages/home/home-logic.ts');
+const pathwaySource = 'app/src/pages/home/development-pathway-sample.ts';
+const cloudSource = 'app/src/pages/athlete-portal/player/stats/club-cloud.ts';
+const { DEFAULT_PATHWAY_ID, samplePathways, samplePathwayStats } = await moduleFrom(pathwaySource);
+const { cloudFrom, cloudExtent, valueAxis, stepDigits, cloudLayers, bandPath, linePath } = await moduleFrom(cloudSource);
 const product = await moduleFrom('app/src/pages/home/product/product-demo.ts');
 const coaches = await moduleFrom('app/src/pages/coaches/coach-samples.ts');
 const coachPage = await sourceText('app/src/pages/coaches/CoachesPage.tsx');
@@ -73,22 +76,58 @@ function routeEight(x, y, width, height, stroke = c.lime) {
 const artworks=[];
 function add(id, title, alt, qualifier, provenance, image) {artworks.push({id,title,alt,qualifier,provenance,width:W,height:H,image});}
 const sprint=movement.sequences.find(s=>s.key==='sprint');
-add('players-testing','Recorded movement review','Three enlarged static frames from PoseTek’s approved recorded sprint, arranged as a movement study.','Recorded movement · Existing public sample',[
- {source:'app/src/pages/home/movement/recorded-movement.json',detail:'Sprint frames 18, 36, 48; exact recorded landmark coordinates. Each study uses uniform source-aspect scaling; no generated or interpolated motion.'},
+const topSpeed = sprint.metrics.find(([label]) => label === 'Top speed')[1];
+add('players-testing','Soccer testing, rep by rep',`Three frames from a recorded sprint test. This rep reached a top speed of ${topSpeed}.`,'Recorded movement · Public sprint sample',[
+ {source:'app/src/pages/home/movement/recorded-movement.json',detail:'Recorded sprint frames 18, 36, 48 and top speed from the same public sequence.'},
  {source:'app/src/pages/home/pitch/pose-model.ts',detail:'Existing MediaPipe33 skeleton edge topology; face clutter omitted for presentation.'}
-],svg('Sprint — recorded movement study',c.dark,
- grid()+text('Every rep.',56,105,88,c.paper)+text('A clearer view.',56,198,88,c.paper)+mono('SPRINT',58,824,28,c.lime)+arrow(1090,76,48,c.lime)+
- `<g transform="translate(570 330) rotate(-8)">${rect(0,0,545,490,'#13392a')}${grid('#9bb38b',.04)}${pose(sprint.frames[48],{x:95,y:65,w:345,h:355},{stroke:6})}</g>`+
+],svg('Soccer testing — insight from every rep',c.dark,
+ grid()+text('Soccer testing.',56,110,88,c.paper)+text('Insight from every rep.',56,207,88,c.paper)+
+ `<g transform="translate(570 330) rotate(-8)">${rect(0,0,545,490,'#13392a')}${pose(sprint.frames[48],{x:95,y:65,w:345,h:355},{stroke:6})}</g>`+
  pose(sprint.frames[18],{x:85,y:332,w:290,h:340},{color:'#77937c',stroke:4})+pose(sprint.frames[36],{x:343,y:308,w:300,h:360},{color:'#d1e4b9',stroke:4.5})+
- line(55,752,1140,752,'#648365',1)+[18,36,48].map((f,i)=>mono(`F${String(f).padStart(2,'0')}`,90+i*315,720,24,c.muted)).join('')));
-const scores=home.SKILL_ORDER.map(key=>home.SKILL_DATA[key].score);
-add('players-profile','Athlete profile','Alex Johnson’s existing sample skill map, with the five illustrative sample scores and an emphasis on agility.','Sample athlete profile',[
- {source:'app/src/pages/home/home-logic.ts',detail:'SKILL_ORDER and SKILL_DATA values81,74,72,70,68; no new performance claim.'},
- {source:'app/src/pages/home/AthleteProfile.tsx',detail:'Approved fictional profile Alex Johnson; radar is redrawn proportionally from the sample score values.'}
-],svg('Athlete profile — Alex Johnson sample',c.paper,
- text('Five areas.',64,112,88)+text('One player.',64,205,88)+mark(1060,58,78)+
- `<g transform="translate(55 280) rotate(-4 345 250)">${rect(0,0,700,560,c.ink)}${radar(scores,350,295,190)}</g>`+
- text('68',805,540,220,c.ink)+mono('AGILITY',824,610,30)+line(825,650,1110,650,c.sage,1)+text('Alex Johnson',820,706,34)+text('Midfielder / U17',820,748,25,'#5a6f61')));
+ [[18,90],[36,405],[48,1015]].map(([frame,left])=>mono(`F${String(frame).padStart(2,'0')}`,left,724,24,c.muted)).join('')+
+ rect(0,759,W,141,c.dark)+line(55,760,1140,760,'#648365',1)+mono('SPRINT TEST',58,839,34,c.paper)+
+ text(`Top speed  ${topSpeed}`,1140,842,49,c.lime,'text-anchor="end"')));
+
+const test = samplePathways[DEFAULT_PATHWAY_ID];
+const pathway = samplePathwayStats(DEFAULT_PATHWAY_ID);
+const cloud = cloudFrom(pathway.groups);
+const axis = valueAxis(...cloudExtent(cloud, 2), 5);
+const plot = { left: 138, right: 1072, top: 431, bottom: 743 };
+const x = age => plot.left + (age - cloud.from) / (cloud.to - cloud.from) * (plot.right - plot.left);
+const y = value => plot.bottom - (value - axis.from) / (axis.to - axis.from) * (plot.bottom - plot.top);
+const own = pathway.own;
+const ownGroup = pathway.groups.find(group => group.ageGroup === own.ageGroup);
+const dotX = x(own.ageGroup), dotY = y(own.best);
+const highlight = '#b7f34a', cloudLine = '#f1fff6', cloudFill = '#d6f8e4';
+const chartSurface = '#10291f';
+function pathwayScore(label, value, left) {
+  return text(label, left, 210, 34, '#496352') +
+    text(value.toFixed(test.digits), left - 3, 307, 102, c.ink) +
+    text(test.unit, left + 219, 302, 44, '#496352');
+}
+add('players-profile','Your development pathway',
+ `Alex’s best left dribble is ${own.best.toFixed(test.digits)} ${test.unit}. The fictional U${own.ageGroup} club average is ${ownGroup.mean.toFixed(test.digits)} ${test.unit}. The curve shows club results across U11 to U17.`,
+ 'Fictional player and club results',[
+ {source:pathwaySource,detail:'The same fictional age groups, means, spreads and individual results as the interactive sample. Both comparison numbers come from the selected test.'},
+ {source:cloudSource,detail:'Shared signed-in Player Stats curve, spread and axis functions.'}
+],svg('Your development pathway — Alex’s left dribble',c.paper,
+ text('Your development pathway',55,109,82)+mark(1066,54,76)+
+ line(59,148,1140,148,'#b6c4b5',2)+line(586,179,586,309,'#b6c4b5',2)+
+ pathwayScore('Alex’s best left dribble',own.best,62)+pathwayScore(`U${own.ageGroup} club average`,ownGroup.mean,631)+
+ rect(0,347,W,553,chartSurface)+text('Left dribble across the club',58,406,40,c.paper)+
+ text(`Course speed (${test.unit})`,1136,403,29,c.muted,'text-anchor="end"')+
+ axis.ticks.map(value => line(plot.left,y(value),plot.right,y(value),'#496352',1.4)+
+   text(value.toFixed(stepDigits(axis.step)),113,y(value)+9,28,c.muted,'text-anchor="end"')).join('')+
+ cloudLayers(32,.42).map(({k,opacity}) => `<path d="${bandPath(cloud,k,x,y)}" fill="${cloudFill}" opacity="${opacity}"/>`).join('')+
+ `<path d="${linePath(cloud,x,y)}" fill="none" stroke="${cloudLine}" stroke-width="5"/>`+
+ line(dotX,dotY,dotX,plot.bottom,highlight,2,'stroke-dasharray="5 8" opacity=".66"')+
+ own.results.filter(value=>value!==own.best).map(value=>circle(dotX,y(value),5,chartSurface,`stroke="${highlight}" stroke-width="2"`)).join('')+
+ circle(dotX,dotY,18,highlight,'opacity=".24"')+circle(dotX,dotY,9,highlight,`stroke="${c.dark}" stroke-width="2"`)+
+ line(dotX-48,dotY-52,dotX-8,dotY-8,highlight,2.5)+rect(dotX-146,dotY-94,108,49,highlight,'rx="24"')+
+ text('Alex',dotX-92,dotY-60,32,c.dark,'text-anchor="middle"')+
+ pathway.groups.map(({ageGroup})=>text(`U${ageGroup}`,x(ageGroup),787,32,ageGroup===own.ageGroup?highlight:c.paper,'text-anchor="middle"')).join('')+
+ line(59,818,1140,818,'#506a5b',1.5)+line(62,862,108,862,cloudLine,4.5)+text('Club average',125,873,32,c.paper)+
+ rect(479,850,49,23,'#768d7f','rx="6"')+text('Spread within each age group',548,873,32,c.paper)));
 const workout=product.createDemoWorkout({minutes:15,energy:'normal',focus:'dribbling'}),drill=workout.drills[0];
 add('players-training','Training that follows the evidence','An original training composition pairing the approved Figure-8 dribble poster with its existing two-cone route.','Sample workout · Coaching illustration',[
  {source:'app/src/pages/home/product/product-demo.ts',detail:'createDemoWorkout({minutes:15,energy:"normal",focus:"dribbling"}); Figure-8 dribble,3sets×60seconds,45seconds rest.'},
@@ -166,8 +205,19 @@ add('coaches-contact','A next step for your club','PoseTek’s approved P mark a
 
 await mkdir(output,{recursive:true});
 const hash = buffer => createHash('sha256').update(buffer).digest('hex');
+const requested = new Set(process.argv.slice(2));
+for (const id of requested) {
+  if (!artworks.some(art => art.id === id)) throw new Error(`Unknown artwork: ${id}`);
+}
+const prior = requested.size ? JSON.parse(await readFile(resolve(output,'provenance.json'),'utf8')).artworks : [];
 const manifest=[];
 for (const art of artworks) {
+  if (requested.size && !requested.has(art.id)) {
+    const saved = prior.find(entry => entry.id === art.id);
+    if (!saved) throw new Error(`Missing existing artwork: ${art.id}. Run a full generation.`);
+    manifest.push(saved);
+    continue;
+  }
   const stem=resolve(output,art.id),raw=Buffer.from(art.image);
   await writeFile(stem+'.svg',raw);
   const webp=await sharp(raw).webp({quality:90,effort:6}).toBuffer();
@@ -176,9 +226,10 @@ for (const art of artworks) {
   const provenance=await Promise.all(art.provenance.map(async source=>({...source,sha256:hash(await readFile(resolve(root,source.source)))})));
   manifest.push({...Object.fromEntries(Object.entries(art).filter(([key])=>!['image','provenance'].includes(key))),provenance,files:{svg:{path:relative(root,stem+'.svg'),sha256:hash(raw),bytes:raw.length},webp:{path:relative(root,stem+'.webp'),sha256:hash(webp),bytes:webp.length},small:{path:relative(root,stem+'-600.webp'),sha256:hash(small),bytes:small.length}}});
 }
-const prelude=manifest.map((art,i)=>`import artwork${i} from "./showcase-assets/${art.id}.webp?url";\nimport artwork${i}Small from "./showcase-assets/${art.id}-600.webp?url";`).join('\n');
+const activeArtwork = manifest.filter(art => art.id !== 'players-technique');
+const prelude=activeArtwork.map((art,i)=>`import artwork${i} from "./showcase-assets/${art.id}.webp?url";\nimport artwork${i}Small from "./showcase-assets/${art.id}-600.webp?url";`).join('\n');
 // String construction avoids runtime filesystem/data parsing in the public bundle.
-const entrySource=manifest.map((art,i)=>`  ${JSON.stringify(art.id)}: {\n    title: ${JSON.stringify(art.title)},\n    alt: ${JSON.stringify(art.alt)},\n    qualifier: ${JSON.stringify(art.qualifier)},\n    width: ${W}, height: ${H},\n    src: artwork${i}, srcSmall: artwork${i}Small\n  }`).join(',\n');
+const entrySource=activeArtwork.map((art,i)=>`  ${JSON.stringify(art.id)}: {\n    title: ${JSON.stringify(art.title)},\n    alt: ${JSON.stringify(art.alt)},\n    qualifier: ${JSON.stringify(art.qualifier)},\n    width: ${W}, height: ${H},\n    src: artwork${i}, srcSmall: artwork${i}Small\n  }`).join(',\n');
 await writeFile(resolve(root,'app/src/pages/home/showcase-artwork.ts'),`// Generated from editable SVG compositions by scripts/generate-showcase-artwork.mjs.\n// Artwork is illustrative; visible UI must retain the qualifier beside each preview.\n${prelude}\n\nexport const showcaseArtwork = {\n${entrySource}\n} as const;\n\nexport type ShowcaseArtworkId = keyof typeof showcaseArtwork;\nexport type ShowcaseArtwork = (typeof showcaseArtwork)[ShowcaseArtworkId];\n`);
 await writeFile(resolve(output,'provenance.json'),JSON.stringify({version:1,generator:'scripts/generate-showcase-artwork.mjs',rendering:{width:W,height:H,responsiveWidth:600,format:'WebP',sharp:sharp.versions.sharp,svgRenderer:sharp.versions.rsvg,text:'Editable SVG text uses Arial/Helvetica system sans-serif; committed WebP textures carry the reviewed typography without a runtime font dependency.'},sources:'Only checked-in approved public samples and brand assets. No live DOM capture, private data, new measurements, generated motion, or external asset requests.',artworks:manifest},null,2)+'\n');
 console.log(JSON.stringify({artworks:manifest.length,largeBytes:manifest.reduce((n,a)=>n+a.files.webp.bytes,0),smallBytes:manifest.reduce((n,a)=>n+a.files.small.bytes,0),output:relative(root,output)}));

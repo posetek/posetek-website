@@ -6,10 +6,9 @@ import { usePreviewMotion, useRepeatReveal } from "./marketing-effects";
 const MARKETING_CHAPTERS = {
   players: [
     { id: "tests", label: "Test & review" },
-    { id: "profile", label: "Athlete profile" },
+    { id: "profile", label: "Development pathway" },
     { id: "training", label: "Training" },
     { id: "ai-coach", label: "AI Coach" },
-    { id: "technique", label: "Technique" },
     { id: "mobile-app", label: "Mobile app" },
   ],
   coaches: [

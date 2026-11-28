@@ -8,6 +8,8 @@ The SVG files retain editable geometry and text. Regenerate them and the two Web
 node scripts/generate-showcase-artwork.mjs
 ```
 
+Pass artwork IDs to rebuild individual compositions, for example `node scripts/generate-showcase-artwork.mjs players-testing players-profile`. The runtime gallery uses nine compositions. The saved kick illustration stays available in the source archive.
+
 The script uses the existing Astro dependency on Sharp. It emits 1200×900 and 600×450 WebP textures, a small runtime manifest at `../showcase-artwork.ts`, and this directory's detailed provenance record. Each provenance entry includes source SHA-256 hashes, a description of the sample transformation, and output hashes. No network asset requests or live page captures are involved.
 
 The runtime manifest explicitly imports the WebP files with `?url` so Astro emits same-origin hashed `/_astro` assets compatible with the guarded marketing build. SVGs and provenance are authoring material and must not be imported into the public JavaScript bundle.

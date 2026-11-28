@@ -14,15 +14,15 @@
   "artworks": [
     {
       "id": "players-testing",
-      "title": "Recorded movement review",
-      "alt": "Three enlarged static frames from PoseTek’s approved recorded sprint, arranged as a movement study.",
-      "qualifier": "Recorded movement · Existing public sample",
+      "title": "Soccer testing, rep by rep",
+      "alt": "Three frames from a recorded sprint test. This rep reached a top speed of 12.5 mph.",
+      "qualifier": "Recorded movement · Public sprint sample",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
           "source": "app/src/pages/home/movement/recorded-movement.json",
-          "detail": "Sprint frames 18, 36, 48; exact recorded landmark coordinates. Each study uses uniform source-aspect scaling; no generated or interpolated motion.",
+          "detail": "Recorded sprint frames 18, 36, 48 and top speed from the same public sequence.",
           "sha256": "a0df987d4b3b206fc180334f1cc3c83f2ff9201e3bccc52b96cd410f1b029761"
         },
         {
@@ -34,55 +34,55 @@
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/players-testing.svg",
-          "sha256": "faa39304c7cdc0e477ed6c62b5b75c749899a334eeab531e8e7e099418fa5431",
-          "bytes": 18681
+          "sha256": "fcd68ed2cfa22205e20ba77e9b656973e0fad464160d45ab98d7c1fa45ede47c",
+          "bytes": 17070
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/players-testing.webp",
-          "sha256": "31b686e8560ca39873ab2e6d86845afd60db5bef26dab112304330200bcddb10",
-          "bytes": 38232
+          "sha256": "554b561a41d782ace08b8faf9e4c83e408648d40eae3afec589d035b3931254c",
+          "bytes": 45980
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/players-testing-600.webp",
-          "sha256": "ea0ef7624613e18938b674d6736827e1c71345923c25037501e203a8cf400e98",
-          "bytes": 14768
+          "sha256": "b68eaecb21f0527251fd3c87de700b3d7532084dc32f16539cee32c438cacf0c",
+          "bytes": 19018
         }
       }
     },
     {
       "id": "players-profile",
-      "title": "Athlete profile",
-      "alt": "Alex Johnson’s existing sample skill map, with the five illustrative sample scores and an emphasis on agility.",
-      "qualifier": "Sample athlete profile",
+      "title": "Your development pathway",
+      "alt": "Alex’s best left dribble is 3.24 m/s. The fictional U17 club average is 3.28 m/s. The curve shows club results across U11 to U17.",
+      "qualifier": "Fictional player and club results",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
-          "source": "app/src/pages/home/home-logic.ts",
-          "detail": "SKILL_ORDER and SKILL_DATA values81,74,72,70,68; no new performance claim.",
-          "sha256": "8a9a43e89a27badf4e772d783adc96d7f32f6b6a7629e93219fa1e399b7f467a"
+          "source": "app/src/pages/home/development-pathway-sample.ts",
+          "detail": "The same fictional age groups, means, spreads and individual results as the interactive sample. Both comparison numbers come from the selected test.",
+          "sha256": "9a6805c69d83c92e64f3280bc5a4f8fae7dc63e8d07d845e8604e6f257819aef"
         },
         {
-          "source": "app/src/pages/home/AthleteProfile.tsx",
-          "detail": "Approved fictional profile Alex Johnson; radar is redrawn proportionally from the sample score values.",
-          "sha256": "92d9ce5f4a61276b2c53d22556164621758d29f0b08a293e60c7feb7bdc10f6b"
+          "source": "app/src/pages/athlete-portal/player/stats/club-cloud.ts",
+          "detail": "Shared signed-in Player Stats curve, spread and axis functions.",
+          "sha256": "e0cc33252bf88347118865eadd6336f4fe6909c755aca9b5961241375d1c458f"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/players-profile.svg",
-          "sha256": "0c16ddea0699b026f48d2d37a0925491360f7d9eb0480ce8366327b7b80b2f98",
-          "bytes": 5169
+          "sha256": "543053d8be1d96f09e8aeaf992136ede03cf6b069736a2f6f572314b5cf03101",
+          "bytes": 22704
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/players-profile.webp",
-          "sha256": "a1ff8eb504f9ffd898aa1286fb9183c4ecef57fd4d524ab838fed77d3cb28e6a",
-          "bytes": 44808
+          "sha256": "5e0d5a545fdd15105be1deb68d81e4ed6cd2c9ec75d3dda2260d740e97d09dd2",
+          "bytes": 54992
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/players-profile-600.webp",
-          "sha256": "795c4226fdce5e9d7ca6bf6290a340e5961fe6a4ed1f134d4cdc7c27518925e0",
-          "bytes": 18418
+          "sha256": "fe5342ee20973ee4396f44838a3a15412801051d45bf8061d7a9b83eee6edaad",
+          "bytes": 22726
         }
       }
     },

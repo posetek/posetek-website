@@ -137,7 +137,7 @@ describe("showcase progressive worker controller", () => {
   });
   it("retains the visit's selected profiles through resize, scrolling, and directional rearming", () => {
     root.dataset.showcaseMotionPolicy = "fluid";
-    root.frames = ["tests", "profile", "training", "ai-coach", "technique", "mobile-app"].map((id, index) => {
+    root.frames = ["tests", "profile", "training", "ai-coach", "mobile-app"].map((id, index) => {
       const element = new ElementStub(); element.dataset.showcaseFrame = id; element.rect.top = 100 + index * 500;
       element.image = { src: `https://example.test/${id}.webp`, currentSrc: "" }; return element;
     });

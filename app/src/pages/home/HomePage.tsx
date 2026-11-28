@@ -22,7 +22,6 @@ import "./marketing-composition.scss";
 import "./marketing-demo-cards.scss";
 
 const loadMovement = () => import("./movement/MovementDemo").then(module => ({ default: module.MovementDemo }));
-const loadTechnique = () => import("./technique/TechniqueDemo");
 const loadCoach = () => import("./product/CoachDemo");
 const loadWorkout = () => import("./product/WorkoutDemo");
 
@@ -53,9 +52,18 @@ export default function HomePage() {
     const updateMotion = () => { root.style.scrollBehavior = media.matches ? "auto" : "smooth"; };
     updateMotion();
     media.addEventListener("change", updateMotion);
+    const followTechniqueLink = () => {
+      if (window.location.hash === "#technique") {
+        setSelectedDrill("shooting");
+        setRequestedDrill({ key: "shooting" });
+      }
+    };
+    followTechniqueLink();
+    window.addEventListener("hashchange", followTechniqueLink);
     const hash = window.location.hash.slice(1);
     if (hash && hash !== "profile") document.getElementById(hash)?.scrollIntoView();
     return () => {
+      window.removeEventListener("hashchange", followTechniqueLink);
       root.style.scrollBehavior = previous;
       media.removeEventListener("change", updateMotion);
     };
@@ -95,13 +103,13 @@ export default function HomePage() {
         <MarketingJourney audience="players" />
         <ShowcaseGallery fluid>
           <ShowcasePair>
-            <ShowcaseChapter id="tests" titleId="tests-title" number="01" label="Test & review" title={<>Six tests. <em>Every rep tells a story.</em></>} description="See how you move, control the ball, and strike. Choose a recorded rep to explore." artwork="players-testing" kind="movement" caption="Recorded reps · Six tests · Frame-by-frame playback" demoAnchors={["how-it-works"]} footer={<a href="#profile">Put it in perspective ↓</a>}>
+            <ShowcaseChapter id="tests" titleId="tests-title" number="01" label="Test & review" title={<>Six soccer tests, <em>rep by rep.</em></>} description="Choose one of six soccer tests and replay a recorded rep frame by frame. See how your steps change in a sprint, how you land a jump, or how close you keep the ball through a turn." artwork="players-testing" kind="movement" caption="Each recording pairs the movement with the measurements available for that rep." demoAnchors={["how-it-works", "technique"]} footer={<a href="#profile">Put it in perspective ↓</a>}>
               <div className="assessment-workspace">
                 <div className="assessment-replay"><LazyHomepageDemo load={loadMovement} demoProps={{ requestedDrill, onDrillChange: setSelectedDrill, hideChoices: true }} forceLoad kind="movement" label="Recorded movement analysis" /></div>
                 <TestCards selectedDrill={selectedDrill} onWatch={key => { setSelectedDrill(key); setRequestedDrill({ key }); }} />
               </div>
             </ShowcaseChapter>
-            <ShowcaseChapter id="profile" titleId="profile-title" number="02" label="Athlete profile" title={<>Where do I stand <em>today?</em></>} description="Meet Alex, a fictional U17 midfielder. Compare a dribbling result with teammates on test day and with other age groups at the club." artwork="players-profile" kind="profile" caption="Club age comparisons appear when enough players have taken the same test." requestToken={profileRequest} footer={<a href="#training">Explore soccer workouts ↓</a>}>
+            <ShowcaseChapter id="profile" titleId="profile-title" number="02" label="Player profile" title={<>Where am I on the <em>development pathway?</em></>} description="Alex is a fictional U17 midfielder. Each dot marks one of his own testing days. See how his result compares with the average and spread for each tested age group at his club." artwork="players-profile" kind="profile" caption="Club age comparisons appear when enough players have taken the same test." requestToken={profileRequest} footer={<a href="#training">Explore soccer workouts ↓</a>}>
               <div className="profile-showcase"><AthleteProfile onOpenWorkout={() => openWorkout(coachWorkoutRequest)} /></div>
             </ShowcaseChapter>
           </ShowcasePair>
@@ -109,15 +117,12 @@ export default function HomePage() {
             <ShowcaseChapter id="training" titleId="training-title" number="03" label="Workout planner" title={<>What can I practice <em>this week?</em></>} description="Alex is working on close control. Try the Figure-8 dribble to practice keeping the ball within reach as you turn around two cones." artwork="players-training" kind="workout" caption="In your own Stats, start a workout or build a six-week plan around your results and schedule." requestToken={workoutRequest.id} footer={<a href="#retest">Close the loop ↓</a>}>
               <LazyHomepageDemo load={loadWorkout} demoProps={{ initialRequest: workoutRequest.text, requestId: workoutRequest.id }} forceLoad kind="workout" label="Interactive workout planner" />
             </ShowcaseChapter>
-            <ShowcaseChapter id="ai-coach" aliases={["retest"]} titleId="retest-title" number="04" label="Retest with AI Coach" title={<>Train. Retest. <em>See what changes.</em></>} description="Alex ran the same dribbling course in 6.62 seconds on the first test and 6.18 on the latest. Ask the sample AI Coach what changed across all four tests." artwork="players-coach" kind="coach" caption="Sample athlete · Previous and latest results · Your next training focus" footer={<a href="#technique">Look closer at technique ↓</a>}>
+            <ShowcaseChapter id="ai-coach" aliases={["retest"]} titleId="retest-title" number="04" label="Retest with AI Coach" title={<>Train. Retest. <em>See what changes.</em></>} description="Alex ran the same dribbling course in 6.62 seconds on the first test and 6.18 on the latest. Ask the sample AI Coach what changed across all four tests." artwork="players-coach" kind="coach" caption="Sample athlete · Previous and latest results · Your next training focus" footer={<a href="#mobile-app">Explore the mobile app ↓</a>}>
               <LazyHomepageDemo load={loadCoach} demoProps={{ onOpenWorkout: openWorkout }} forceLoad kind="coach" label="AI Coach sample conversation" />
             </ShowcaseChapter>
           </ShowcasePair>
           <ShowcasePair>
-            <ShowcaseChapter id="technique" titleId="technique-title" number="05" label="Technique analysis" title={<>The rep. The detail. <em>The difference.</em></>} description="Pause at key moments. Compare technique. Find a clear coaching focus." artwork="players-technique" kind="technique" caption="One kick · One cue at a time · Compare the same moment" footer={<a href="#mobile-app">Take the next step with you ↓</a>}>
-              <LazyHomepageDemo load={loadTechnique} demoProps={{}} forceLoad kind="technique" label="Recorded technique analysis" />
-            </ShowcaseChapter>
-            <ShowcaseChapter id="mobile-app" titleId="closing-title" number="06" label="The PoseTek mobile app" title={<>Your next session. <em>In your pocket.</em></>} description="Sign in to see your own Stats. If you’ve already tested, your linked results are waiting. If your first assessment is coming up, your results will appear afterward." artwork="players-mobile" kind="mobile" caption="Interactive preview · No workout is recorded" footer={<a href="/bookPerformanceTest.html">Establish your baseline ↗</a>}>
+            <ShowcaseChapter id="mobile-app" titleId="closing-title" number="05" label="The PoseTek mobile app" title={<>Your next session. <em>In your pocket.</em></>} description="Sign in to see your own Stats. If you’ve already tested, your linked results are waiting. If your first assessment is coming up, your results will appear afterward." artwork="players-mobile" kind="mobile" caption="Interactive preview · No workout is recorded" footer={<a href="/bookPerformanceTest.html">Establish your baseline ↗</a>}>
               <div className="mobile-showcase"><MobileAppPreview /></div>
             </ShowcaseChapter>
           </ShowcasePair>
