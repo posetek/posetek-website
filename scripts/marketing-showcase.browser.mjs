@@ -440,7 +440,7 @@ check('Coaches: team selection, player evidence and development remain connected
   const development = await openShowcase(page, 'development');
   assert.match(await development.innerText(), /Riley Chen/);
   await development.getByRole('group', { name: 'Explore player development', exact: true }).getByRole('button', { name: /Retest/ }).click();
-  assert.match(await development.innerText(), /Illustrative change · Not a promised outcome/);
+  assert.match(await development.innerText(), /Change between sample testing days/);
   await openShowcase(page, 'players');
   assert.equal(await players.locator('.cx-player-heading h3').innerText(), 'Riley Chen');
   await openShowcase(page, 'development');
@@ -448,7 +448,7 @@ check('Coaches: team selection, player evidence and development remain connected
   await openShowcase(page, 'club');
   await club.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U17/ }).click();
   await openShowcase(page, 'development');
-  assert.match(await development.innerText(), /Morgan Adams/);
+  assert.match(await development.innerText(), /Avery Shaw/);
   assert.equal(await development.getByRole('button', { name: /Plan/ }).getAttribute('aria-pressed'), 'true', 'existing team-change reset remains intact');
 });
 

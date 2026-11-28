@@ -12,9 +12,9 @@ const MARKETING_CHAPTERS = {
     { id: "mobile-app", label: "Mobile app" },
   ],
   coaches: [
-    { id: "club", label: "Your club" },
-    { id: "players", label: "Every player" },
-    { id: "development", label: "Development" },
+    { id: "club", label: "Team report" },
+    { id: "players", label: "Player focus" },
+    { id: "development", label: "Follow-up" },
     { id: "contact", label: "Get in touch" },
   ],
 } as const;

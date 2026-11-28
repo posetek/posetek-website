@@ -56,30 +56,30 @@ export const showcaseArtwork = {
     src: artwork4, srcSmall: artwork4Small
   },
   "coaches-club": {
-    title: "One club, every team",
-    alt: "Northfield FC’s existing three illustrative age groups, connected to individual player focus on an editorial pitch diagram.",
-    qualifier: "Illustrative club workspace",
+    title: "The team development pathway",
+    alt: "Left dribble. The fictional U13 team averaged 7.00 s. Club age-group averages: U13 7.05 s, U15 6.66 s, U17 6.41 s.",
+    qualifier: "Fictional club and team results",
     width: 1200, height: 900,
     src: artwork5, srcSmall: artwork5Small
   },
   "coaches-evidence": {
-    title: "Individual player evidence",
-    alt: "The existing Alex Rivera sample profile and its five illustrative sample scores, presented as a large radar and player-number study.",
-    qualifier: "Illustrative player profile · Scores / 100",
+    title: "A player check-in",
+    alt: "Sam Bennett’s left-dribble result was 7.31 s, against the U13 team average of 7.00 s. Practice focus: Keep the first touch within reach after the turn.",
+    qualifier: "Fictional player and team comparison",
     width: 1200, height: 900,
     src: artwork6, srcSmall: artwork6Small
   },
   "coaches-development": {
-    title: "Plan, train, retest",
-    alt: "An editorial sequence connects the existing Figure-8 coaching route with Alex Rivera’s illustrative 7.12 and 6.94 second retest values.",
-    qualifier: "Illustrative development example",
+    title: "Follow the work between tests",
+    alt: "Sam Bennett’s sample Figure-8 dribble workout, 12 minutes logged and 1 of 3 sessions completed. Left-dribble results: 7.46 s earlier, 7.31 s latest.",
+    qualifier: "Fictional workout and retest",
     width: 1200, height: 900,
     src: artwork7, srcSmall: artwork7Small
   },
   "coaches-contact": {
-    title: "A next step for your club",
-    alt: "PoseTek’s approved P mark and existing team-enquiry message in a clean original invitation composition.",
-    qualifier: "PoseTek team enquiry",
+    title: "Plan a club testing day",
+    alt: "A club testing-day invitation showing three examples from PoseTek’s test battery: sprint, dribbling and broad jump.",
+    qualifier: "Recorded movement · Testing-day examples",
     width: 1200, height: 900,
     src: artwork8, srcSmall: artwork8Small
   }

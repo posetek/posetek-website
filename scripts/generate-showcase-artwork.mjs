@@ -18,10 +18,8 @@ const cloudSource = 'app/src/pages/athlete-portal/player/stats/club-cloud.ts';
 const { DEFAULT_PATHWAY_ID, samplePathways, samplePathwayStats } = await moduleFrom(pathwaySource);
 const { cloudFrom, cloudExtent, valueAxis, stepDigits, cloudLayers, bandPath, linePath } = await moduleFrom(cloudSource);
 const product = await moduleFrom('app/src/pages/home/product/product-demo.ts');
-const coaches = await moduleFrom('app/src/pages/coaches/coach-samples.ts');
-const coachPage = await sourceText('app/src/pages/coaches/CoachesPage.tsx');
-const clubExcerpt = coachPage.match(/function ClubPreview\(\) \{[\s\S]*?(?=export default function CoachesPage)/)?.[0];
-if (!clubExcerpt) throw new Error('Approved ClubPreview source is missing.');
+const coachSource = 'app/src/pages/coaches/coach-samples.ts';
+const coaches = await moduleFrom(coachSource);
 const movement = await sourceJson('app/src/pages/home/movement/recorded-movement.json');
 const technique = await sourceJson('app/src/pages/home/technique/technique-data.json');
 const poseSource = await sourceText('app/src/pages/home/pitch/pose-model.ts');
@@ -55,16 +53,6 @@ function pose(frame, box, { color = c.lime, opacity = 1, stroke = 6, points = tr
   const body = displayEdges.map(([a,b]) => { const p = project(frame[a]), q = project(frame[b]); return line(num(p[0]), num(p[1]), num(q[0]), num(q[1]), color, a > 14 && b > 14 && (a < 23 || b < 23) ? stroke * .55 : stroke, 'stroke-linecap="round"'); }).join('');
   const visibleIndices = [0,7,8,...Array.from({ length: 22 }, (_,i) => i + 11)];
   return `<g opacity="${opacity}">${body}${points ? visibleIndices.map(i => { const p = project(frame[i]); return circle(p[0], p[1], stroke * .68, color); }).join('') : ''}</g>`;
-}
-function radar(scores, cx, cy, radius, color = c.lime, labels = true) {
-  const at = (i, r) => [cx + Math.cos(-Math.PI / 2 + i * Math.PI * .4) * r, cy + Math.sin(-Math.PI / 2 + i * Math.PI * .4) * r];
-  const pts = values => values.map((v,i) => at(i,v).map(num).join(',')).join(' ');
-  let result = [1,.75,.5,.25].map(scale => `<polygon points="${pts(scores.map(() => radius * scale))}" fill="none" stroke="${c.sage}" stroke-width="1.4" opacity=".5"/>`).join('');
-  result += scores.map((_,i) => { const p = at(i,radius); return line(cx,cy,num(p[0]),num(p[1]),c.sage,1,'opacity=".35"'); }).join('');
-  result += `<polygon points="${pts(scores.map(s => s / 100 * radius))}" fill="${color}" fill-opacity=".18" stroke="${color}" stroke-width="4"/>`;
-  result += scores.map((score,i) => { const p = at(i,score / 100 * radius); return circle(p[0],p[1],7,color); }).join('');
-  if (labels) result += coaches.profileAreas.map((name,i) => { const p=at(i,radius+55); return text(name,num(p[0]),num(p[1]),28,c.paper,'text-anchor="middle"') + text(scores[i],num(p[0]),num(p[1]+35),30,color,'text-anchor="middle"'); }).join('');
-  return result;
 }
 function routeEight(x, y, width, height, stroke = c.lime) {
   // Same Gerono geometry and cone centroids as public DrillDiagram.tsx.
@@ -169,40 +157,98 @@ add('players-mobile','Your next session in your pocket','A bespoke PoseTek phone
  text('Take the',61,125,89)+text('next step.',61,220,89)+text('With you.',61,315,89,'#57705c')+
  `<g transform="translate(617 44) rotate(7 235 400)" filter="url(#shadow)">${rect(0,0,480,822,'#536a58','rx="63"')}${rect(9,9,462,804,c.dark,'rx="55"')}${rect(156,25,168,32,'#000c08','rx="16"')}${mark(39,86,55)}${text('PoseTek',110,124,34,c.paper)}${text('Figure-8',37,218,59,c.paper)}${text('dribble',37,282,59,c.paper)}${rect(30,332,420,290,'#14382a','rx="16"')}${routeEight(34,343,410,266)}${mono('SET 1 OF 3',38,677,25,c.lime)}${[0,1,2].map(i=>circle(64+i*74,731,24,i===0?c.lime:'none',`stroke="${c.lime}" stroke-width="2"`)+text(i+1,64+i*74,741,28,i===0?c.ink:c.paper,'text-anchor="middle"')).join('')}${rect(164,783,152,5,'#bdc9b8','rx="3"')}</g>`+
  `<g transform="translate(57 514)">${circle(145,145,145,'none',`stroke="${c.sage}" stroke-width="1"`)}${circle(145,145,104,'none',`stroke="${c.sage}" stroke-width="1"`)}${arrow(101,99,88)}</g>`));
-const team=coaches.sampleTeams[1],player=team.players[0],alex=coaches.sampleTeams[0].players[0];
-add('coaches-club','One club, every team','Northfield FC’s existing three illustrative age groups, connected to individual player focus on an editorial pitch diagram.','Illustrative club workspace',[
- {source:'app/src/pages/coaches/CoachesPage.tsx',detail:'Unchanged ClubPreview source excerpt; the pitch is illustrative, not tracked positions. The page layout may change independently.',excerpts:[clubExcerpt]},
- {source:'app/src/pages/coaches/coach-samples.ts',detail:'Existing fictional U13/U15/U17 teams; selected U15 player Jordan Lee,number 6.'}
-],svg('One club — every team',c.dark,
- text('One club.',62,122,92,c.paper)+text('Every team.',62,220,92,c.paper)+
- `<g transform="translate(600 105) rotate(8 250 320)">${rect(0,0,518,660,'#183c2a')}${rect(35,35,448,590,'none','stroke="#73936d" stroke-width="2"')}${line(35,330,483,330,'#73936d',2)}${circle(259,330,76,'none','stroke="#73936d" stroke-width="2"')}${rect(165,35,188,108,'none','stroke="#73936d" stroke-width="2"')}${rect(165,517,188,108,'none','stroke="#73936d" stroke-width="2"')}${[[259,180,8],[128,470,6],[390,470,10]].map(([x,y,n])=>circle(x,y,35,'#264c32',`stroke="${c.sage}"`)+text(n,x,y+12,32,c.paper,'text-anchor="middle"')).join('')}${circle(259,330,54,c.lime)}${text(player.number,259,349,58,c.ink,'text-anchor="middle"')}</g>`+
- coaches.sampleTeams.map((t,i)=>rect(59,342+i*137,420,110,i===1?c.lime:'#153829')+text(t.name,89,417+i*137,60,i===1?c.ink:c.paper)+arrow(400,374+i*137,38,i===1?c.ink:c.sage)).join('')+mono('NORTHFIELD FC',62,826,29,c.muted)));
-add('coaches-evidence','Individual player evidence','The existing Alex Rivera sample profile and its five illustrative sample scores, presented as a large radar and player-number study.','Illustrative player profile · Scores / 100',[
- {source:'app/src/pages/coaches/coach-samples.ts',detail:'U13 Alex Rivera, Midfielder, number 8, illustrative scores[72,63,68,58,70].'},
- {source:'app/src/pages/coaches/PlayerEvidence.tsx',detail:'Same five-area proportional radar; individual priorities remain fictional sample data.'}
-],svg('Alex Rivera — individual player evidence', '#dde5d6',
- text('See the player.',60,120,88)+text('Find the focus.',60,213,88)+
- rect(60,285,535,550,c.ink)+radar(alex.scores,312,572,165,c.lime,true)+
- text('08',642,568,272,c.ink)+line(660,613,1135,613,'#81957c')+text(alex.name,661,686,61)+text('Midfielder / U13',663,744,30,'#4e6854')+mark(1057,760,66)));
-add('coaches-development','Plan, train, retest','An editorial sequence connects the existing Figure-8 coaching route with Alex Rivera’s illustrative 7.12 and 6.94 second retest values.','Illustrative development example',[
- {source:'app/src/pages/coaches/coach-samples.ts',detail:'Alex Rivera sample priorDribbleSeconds 7.12, latestDribbleSeconds 6.94, completedSessions 2, plannedSessions 3.'},
- {source:'app/src/pages/coaches/DevelopmentJourney.tsx',detail:'Existing Plan/Train/Retest sequence. No claim of actual player improvement.'},
- {source:'app/src/pages/home/product/DrillDiagram.tsx',detail:'Original arrangement of the existing Figure-8 coaching illustration.'}
-],svg('Plan — train — retest',c.paper,
- rect(0,0,W,260,c.lime)+text('Plan. Train. Retest.',58,166,102)+
- `<g transform="translate(58 311)">${rect(0,0,465,510,c.ink)}${mono('TRAIN',33,52,26,c.lime)}${routeEight(0,110,465,300)}${text('2 / 3 sessions',35,466,38,c.paper)}</g>`+
- mono('DRIBBLING / SECONDS',590,351,26)+text(alex.priorDribbleSeconds.toFixed(2),583,494,128,'#72806c')+arrow(922,419,53)+
- text(alex.latestDribbleSeconds.toFixed(2),583,694,169,c.ink)+line(590,755,1135,755,c.sage)+text('Same test. Next step.',590,814,39,c.ink)));
-add('coaches-contact','A next step for your club','PoseTek’s approved P mark and existing team-enquiry message in a clean original invitation composition.','PoseTek team enquiry',[
- {source:'app/public/brand/posetek-p.svg',detail:'Approved P badge, unchanged geometry and colors; enlarged, layered only through translation/rotation.'},
- {source:'app/src/pages/coaches/CoachesPage.tsx',detail:'Existing enquiry copy, verified as exact excerpts in baseline and current page. No contact details embedded in artwork.',excerpts:['Your players, your priorities.','Discuss your teams','Arrange testing','Agree ongoing support']}
-],svg('Your team — your next step',c.ink,
- rect(42,43,1116,814,'#dbe4cf')+grid('#72886b',.07,100)+
- `<g transform="translate(728 265) rotate(12 210 210)" filter="url(#shadow)">${mark(0,0,440)}</g>`+
- text('Your players.',84,155,89)+text('Your priorities.',84,249,89)+
- text('Let’s start',84,535,84)+text('a conversation.',84,624,84)+
- line(85,714,1080,714,'#7f9378')+mono('POSETEK / FOR CLUBS',86,783,29)+arrow(1030,753,43)));
+const team = coaches.sampleTeams[0];
+const checkIn = coaches.getTeamCheckIn(team);
+const firstName = checkIn.name.split(' ')[0];
+const selectedTest = coaches.reportTests.find(test => test.id === 'dribbleLeft');
+const teamReport = coaches.getTeamTestReport(team, selectedTest.id);
+const ageGroups = coaches.getClubTestPathway(selectedTest.id);
+const reportValue = value => `${value.toFixed(selectedTest.digits)} ${selectedTest.unit}`;
+const report = { surface: '#0c1c14', text: '#f0f6eb', muted: '#b3c8b7', bar: '#bedf83', team: '#a6daf5', rule: '#3b5443' };
+const end = 'text-anchor="end"', middle = 'text-anchor="middle"';
+const plotBase = 703, plotHeight = 355;
+const maxTime = Math.ceil(Math.max(teamReport.average, ...ageGroups.map(group => group.mean)) / 2) * 2;
+const chartY = seconds => plotBase - plotHeight * seconds / maxTime;
+const teamY = chartY(teamReport.average);
+const groupBars = ageGroups.map((group, index) => {
+  const center = 318 + 304 * index;
+  return rect(center - 74, chartY(group.mean), 148, plotBase - chartY(group.mean), report.bar, 'rx="5"') +
+    text(group.mean.toFixed(selectedTest.digits), center, 646, 43, report.surface, middle) +
+    text(group.ageGroup, center, 756, 42, report.text, middle) +
+    text(`${group.testedPlayers} tested`, center, 795, 29, report.muted, middle);
+}).join('');
+add('coaches-club','The team development pathway',
+ `Left dribble. The fictional ${team.name} team averaged ${reportValue(teamReport.average)}. Club age-group averages: ${ageGroups.map(group => group.ageGroup + ' ' + reportValue(group.mean)).join(', ')}.`,
+ 'Fictional club and team results', [
+  {source:coachSource,detail:'The selected team mean, club age-group means and tested counts come from the same dated left-dribble report as the interactive sample.'}
+],svg('Where does the team stand? — Northfield FC development pathway', report.surface,
+ mono(`NORTHFIELD FC  /  ${team.name}`,61,78,30,report.bar)+text(coaches.coachSessionDate,1139,78,32,report.muted,end)+
+ text(`Where does ${team.name} stand?`,56,188,91,report.text)+
+ line(61,233,1139,233,report.rule,2)+text('Left dribble',59,301,52,report.text)+text('Time in seconds · Lower is faster',1139,298,31,report.muted,end)+
+ [0, .25, .5, .75, 1].map(fraction => line(142,chartY(maxTime*fraction),1137,chartY(maxTime*fraction),report.rule,2) +
+   text(maxTime*fraction,111,chartY(maxTime*fraction)+9,29,report.muted,end)).join('')+
+ groupBars+line(142,teamY,1137,teamY,report.surface,9)+line(142,teamY,1137,teamY,report.team,5,'stroke-dasharray="16 10"')+
+ rect(57,848,28,21,report.bar,'rx="2"')+text('Club age-group average',100,870,32,report.text)+
+ line(652,859,710,859,report.team,5,'stroke-dasharray="12 7"')+text(`${team.name} team · ${reportValue(teamReport.average)}`,728,870,32,report.text)));
 
+const checkInField = `${team.name} · ${checkIn.position}`;
+const focusWords = checkIn.focus.split(' ');
+const focusBreak = focusWords.findIndex((_, i) => focusWords.slice(0, i + 1).join(' ').length > 29);
+const focusLines = focusBreak === -1 ? [checkIn.focus] : [focusWords.slice(0,focusBreak).join(' '), focusWords.slice(focusBreak).join(' ')];
+add('coaches-evidence', 'A player check-in',
+ `${checkIn.name}’s left-dribble result was ${reportValue(checkIn.latestDribbleSeconds)}, against the ${team.name} team average of ${reportValue(teamReport.average)}. Practice focus: ${checkIn.focus}`,
+ 'Fictional player and team comparison', [
+  {source:coachSource,detail:'The report’s default player check-in, measured result, team comparison and practice focus are read from the fictional team report.'}
+],svg(`Player check-in — ${checkIn.name}`,c.paper,
+ mono('PLAYER CHECK-IN',60,80,30,'#4e685b')+text(checkInField,1139,82,34,'#4e685b',end)+
+ text(checkIn.name,52,238,137,c.ink)+line(60,289,1140,289,'#b4c4b3',2)+
+ text('Left dribble',60,354,43,c.ink)+text(coaches.coachSessionDate,1138,352,32,'#4e685b',end)+
+ text(`${firstName}’s time`,60,425,35,'#4e685b')+text('Team average',642,425,35,'#4e685b')+
+ text(reportValue(checkIn.latestDribbleSeconds),54,542,111,c.ink)+line(586,389,586,551,'#b4c4b3',2)+text(reportValue(teamReport.average),636,542,111,c.ink)+
+ rect(0,609,W,291,report.surface)+mono('PRACTICE FOCUS',60,672,28,report.bar)+
+ focusLines.map((value,i)=>text(value,56,768+i*72,69,report.text)).join('')));
+
+const checkInDrill = workout.drills.find(item => item.id === checkIn.drillId);
+if (checkInDrill?.id !== 'DRB-006') throw new Error('The check-in workout must match the approved Figure-8 photo.');
+add('coaches-development','Follow the work between tests',
+ `${checkIn.name}’s sample Figure-8 dribble workout, ${checkIn.workoutMinutes} minutes logged and ${checkIn.completedSessions} of ${checkIn.plannedSessions} sessions completed. Left-dribble results: ${reportValue(checkIn.priorDribbleSeconds)} earlier, ${reportValue(checkIn.latestDribbleSeconds)} latest.`,
+ 'Fictional workout and retest', [
+  {source:coachSource,detail:'Uses the selected check-in player’s prescribed drill, recorded activity window, logged sessions and earlier/latest retest from the fictional follow-up.'},
+  {source:'app/src/pages/home/product/product-demo.ts',detail:'The drill name comes from the public workout catalog and is matched to the selected player’s drill ID.'},
+  {source:'app/src/pages/home/product/media/figure-8.jpg',detail:'Approved public Figure-8 demonstration still. The image illustrates the assigned drill.'}
+],svg(`Training follow-up — ${checkIn.name}`,'#dce5d4',
+ text('Training follow-up',56,138,99,c.ink)+
+ text(checkIn.name,61,205,43,'#405a49')+text(coaches.coachActivityWindow,1140,202,34,'#405a49',end)+
+ `<image href="${photo}" x="60" y="249" width="476" height="477" preserveAspectRatio="xMidYMin slice" clip-path="url(#drill-image)"/>`+
+ rect(60,725,476,116,report.surface)+text(checkInDrill.name,86,800,48,report.text)+
+ text('Workout time',597,301,36,'#405a49')+text(`${checkIn.workoutMinutes} min`,593,400,97,c.ink)+
+ line(598,438,1140,438,'#aabda9',2)+text('Sessions logged',597,503,36,'#405a49')+
+ text(`${checkIn.completedSessions} of ${checkIn.plannedSessions}`,593,602,97,c.ink)+line(598,642,1140,642,'#aabda9',2)+
+ text('Left dribble · Earlier to latest',597,705,34,'#405a49')+
+ text(`${checkIn.priorDribbleSeconds.toFixed(2)} → ${reportValue(checkIn.latestDribbleSeconds)}`,592,801,65,c.ink),
+ '<clipPath id="drill-image"><rect x="60" y="249" width="476" height="477"/></clipPath>'));
+
+const stations = [
+  {key:'sprint', label:'Sprint', frame:12},
+  {key:'dribbling', label:'Dribbling', frame:112},
+  {key:'broadJump', label:'Broad jump', frame:23}
+];
+const stationArt = stations.map(({key,label,frame},index) => {
+  const seq = movement.sequences.find(item => item.key === key), left = 61+index*375;
+  return (index ? line(left-26,469,left-26,818,report.rule,2) : '') +
+    pose(seq.frames[frame],{x:left+54,y:478,w:216,h:239},{stroke:5,color:report.bar})+
+    text(label,left+163,794,42,report.text,middle);
+}).join('');
+add('coaches-contact','Plan a club testing day',
+ 'A club testing-day invitation showing three examples from PoseTek’s test battery: sprint, dribbling and broad jump.',
+ 'Recorded movement · Testing-day examples', [
+  {source:'app/src/pages/home/movement/recorded-movement.json',detail:'Sprint frame 12, dribbling frame 112 and broad jump frame 23 from recorded public demonstration sequences.'},
+  {source:'app/src/pages/home/pitch/pose-model.ts',detail:'Original skeleton edge topology for all three recorded tests.'},
+  {source:'app/public/brand/posetek-p.svg',detail:'Approved P mark in the testing invitation.'}
+],svg('Bring testing to your club', '#cbe8a2',
+ text('Bring testing',49,150,122,c.ink)+text('to your club.',49,283,122,c.ink)+mark(1036,57,103)+
+ rect(0,365,W,535,report.surface)+text('On-field tests',57,432,40,report.muted)+
+ stationArt));
 await mkdir(output,{recursive:true});
 const hash = buffer => createHash('sha256').update(buffer).digest('hex');
 const requested = new Set(process.argv.slice(2));

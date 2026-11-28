@@ -24,7 +24,7 @@ const evidence = {
 };
 const audiences = [
   { name: 'players', route: '/', section: '#profile', art: '.club-cloud-frame svg[role="img"]', controls: 'button[data-pathway-test]', selected: '.club-cloud h3', heading: '#profile .showcase-heading', frame: '[data-showcase-frame="profile"]' },
-  { name: 'coaches', route: '/coaches', section: '#players', art: '.cx-profile-radar > svg', controls: '.cx-player-options button', selected: '.cx-player-heading h3', heading: '#players .showcase-heading', frame: '[data-showcase-frame="players"]' },
+  { name: 'coaches', route: '/coaches', section: '#players', art: '.cx-evidence .cx-pathway-plot > svg', controls: '.cx-player-options button', selected: '.cx-player-heading h3', heading: '#players .showcase-heading', frame: '[data-showcase-frame="players"]' },
 ];
 let browser, server, origin;
 
@@ -431,6 +431,7 @@ check('Coaches: centered preview cursor stays inert and the first click follows 
   await page.keyboard.press('Escape');
   await link.click();
   await page.waitForURL(url => url.hash === '#club');
+  await page.locator('[data-showcase-panel="club"] .cx-team-context h4').waitFor({ state: 'visible' });
 });
 
 check('the legacy technique link opens the recorded shooting test', async t => {

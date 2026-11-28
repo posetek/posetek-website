@@ -251,163 +251,149 @@
     },
     {
       "id": "coaches-club",
-      "title": "One club, every team",
-      "alt": "Northfield FC’s existing three illustrative age groups, connected to individual player focus on an editorial pitch diagram.",
-      "qualifier": "Illustrative club workspace",
+      "title": "The team development pathway",
+      "alt": "Left dribble. The fictional U13 team averaged 7.00 s. Club age-group averages: U13 7.05 s, U15 6.66 s, U17 6.41 s.",
+      "qualifier": "Fictional club and team results",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
-          "source": "app/src/pages/coaches/CoachesPage.tsx",
-          "detail": "Unchanged ClubPreview source excerpt; the pitch is illustrative, not tracked positions. The page layout may change independently.",
-          "excerpts": [
-            "function ClubPreview() {\n  const team = sampleTeams[1], player = team.players[0];\n  return <figure className=\"coach-hero-workspace\" aria-label=\"Illustrative club workspace: Northfield FC, three teams and an individual player focus\">\n    <div className=\"coach-preview-bar\"><span className=\"coach-mini-logo\">P</span><span>Club workspace</span><span>Illustrative example</span></div>\n    <div className=\"coach-preview-club\"><span className=\"coach-club-crest\" aria-hidden=\"true\">N<span>FC</span></span><div><span className=\"coach-micro\">THE WHOLE CLUB, CONNECTED</span><strong>Northfield FC</strong><span>One view. Individual next steps.</span></div><span className=\"coach-preview-live\" aria-hidden=\"true\" /></div>\n    <div className=\"coach-preview-teams\">{sampleTeams.map(item => <div key={item.id} data-selected={item.id === team.id}><span>{item.name}</span><small>{item.players.length} sample players</small><span aria-hidden=\"true\">↗</span></div>)}</div>\n    <div className=\"coach-preview-main\">\n      <div className=\"coach-preview-pitch\" aria-hidden=\"true\"><svg viewBox=\"0 0 280 270\"><rect x=\"20\" y=\"18\" width=\"240\" height=\"232\" rx=\"4\"/><path d=\"M20 134H260M95 18V62H185V18M95 250V206H185V250\"/><circle cx=\"140\" cy=\"134\" r=\"36\"/><path className=\"coach-pitch-pass\" d=\"M67 185L140 132L214 185M140 132V62\"/>{[[140,62],[67,185],[214,185]].map(([x,y],i)=><g key={i}><circle className=\"coach-pitch-player\" cx={x} cy={y} r=\"17\"/><text x={x} y={y+4}>{[8,6,10][i]}</text></g>)}<circle className=\"coach-pitch-selected\" cx=\"140\" cy=\"132\" r=\"23\"/><text className=\"coach-pitch-number\" x=\"140\" y=\"137\">{player.number}</text></svg><span>Team context → Player focus</span></div>\n      <div className=\"coach-preview-focus\"><span className=\"coach-micro\">INDIVIDUAL NEXT STEP</span><span className=\"coach-preview-avatar\" aria-hidden=\"true\">{player.name.split(\" \").map(part=>part[0]).join(\"\")}</span><strong>{player.name}</strong><span>{player.position} · {team.name}</span><div><small>Training focus</small><b>{player.focus}</b></div><p>Evidence from testing.<br/>A plan for the player.</p></div>\n    </div>\n    <figcaption><span className=\"status-dot\"/>Testing <span>→</span> Insight <span>→</span> Training <span>→</span> Retest</figcaption>\n  </figure>;\n}\n\n"
-          ],
-          "sha256": "ca8b801eb84b880356199669a8ddd45ac7913c02a780ac2b0d84506013ce4e54"
-        },
-        {
           "source": "app/src/pages/coaches/coach-samples.ts",
-          "detail": "Existing fictional U13/U15/U17 teams; selected U15 player Jordan Lee,number 6.",
-          "sha256": "d201317d9fdf2782488863344ae75c29be0c2e44b2b987447a9563d793843e34"
+          "detail": "The selected team mean, club age-group means and tested counts come from the same dated left-dribble report as the interactive sample.",
+          "sha256": "4c6d4c07c87fed4287c1643f9b40cf03c7ea7a0f1a6d30b118b08f401c7c80d1"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-club.svg",
-          "sha256": "fc5415ee222eb3f9d9695c8a3affebe00973efb05895c9ffe7d07d427f255d46",
-          "bytes": 3033
+          "sha256": "a4c708f4ece346c3744c66789890bce4a8ce4a8159b3529dd5c072524de3fd49",
+          "bytes": 4700
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-club.webp",
-          "sha256": "9009814c81d1d62cd551cb414a96efd590fd824c789a4f741c3bc9a9e4b3da74",
-          "bytes": 33606
+          "sha256": "77e82eeeb62af1c1bcb136c4cfd1dd92e7bad10e1e704ad6dd83b1ece73f0ebb",
+          "bytes": 41392
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-club-600.webp",
-          "sha256": "51cb0392d8797259f37ee103401abe501fbcc8cffba918b3769c396e6cacfa44",
-          "bytes": 14324
+          "sha256": "f11accde8db62721f7c781b30050d545586b0e1cf1a61f3e4896a02ab4d77611",
+          "bytes": 18342
         }
       }
     },
     {
       "id": "coaches-evidence",
-      "title": "Individual player evidence",
-      "alt": "The existing Alex Rivera sample profile and its five illustrative sample scores, presented as a large radar and player-number study.",
-      "qualifier": "Illustrative player profile · Scores / 100",
+      "title": "A player check-in",
+      "alt": "Sam Bennett’s left-dribble result was 7.31 s, against the U13 team average of 7.00 s. Practice focus: Keep the first touch within reach after the turn.",
+      "qualifier": "Fictional player and team comparison",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
           "source": "app/src/pages/coaches/coach-samples.ts",
-          "detail": "U13 Alex Rivera, Midfielder, number 8, illustrative scores[72,63,68,58,70].",
-          "sha256": "d201317d9fdf2782488863344ae75c29be0c2e44b2b987447a9563d793843e34"
-        },
-        {
-          "source": "app/src/pages/coaches/PlayerEvidence.tsx",
-          "detail": "Same five-area proportional radar; individual priorities remain fictional sample data.",
-          "sha256": "c7db891905d4a358dcbcff22ce01b6f0ec26ef80abbef42d86d30feca98185f7"
+          "detail": "The report’s default player check-in, measured result, team comparison and practice focus are read from the fictional team report.",
+          "sha256": "4c6d4c07c87fed4287c1643f9b40cf03c7ea7a0f1a6d30b118b08f401c7c80d1"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-evidence.svg",
-          "sha256": "794f6706f5ff0d4950c15552247de6c37fef282e1c8987ec5ed15b833ad6abc7",
-          "bytes": 5023
+          "sha256": "ccb6554e22b28960d9e21263abed4e30cf7f38e68c2b9c9d46b39173d82daa88",
+          "bytes": 2315
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-evidence.webp",
-          "sha256": "8476b52f28ac5f4e3f0409a4f3fa5b55204204dbea0c219916064622df17d41c",
-          "bytes": 43256
+          "sha256": "94b4efd29bef06555d8fa79f3a821c634711aec688f34945ac24e759eeaf5c9e",
+          "bytes": 41622
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-evidence-600.webp",
-          "sha256": "91203c66bc87f9986f4a5b8d3a4ea98cff76a1cb11c5abe74a0385b60320061e",
-          "bytes": 17448
+          "sha256": "a427c38c31bcde470c834629aa1ed94a3e6dd80cb6f91918a37095295e335ab4",
+          "bytes": 18760
         }
       }
     },
     {
       "id": "coaches-development",
-      "title": "Plan, train, retest",
-      "alt": "An editorial sequence connects the existing Figure-8 coaching route with Alex Rivera’s illustrative 7.12 and 6.94 second retest values.",
-      "qualifier": "Illustrative development example",
+      "title": "Follow the work between tests",
+      "alt": "Sam Bennett’s sample Figure-8 dribble workout, 12 minutes logged and 1 of 3 sessions completed. Left-dribble results: 7.46 s earlier, 7.31 s latest.",
+      "qualifier": "Fictional workout and retest",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
           "source": "app/src/pages/coaches/coach-samples.ts",
-          "detail": "Alex Rivera sample priorDribbleSeconds 7.12, latestDribbleSeconds 6.94, completedSessions 2, plannedSessions 3.",
-          "sha256": "d201317d9fdf2782488863344ae75c29be0c2e44b2b987447a9563d793843e34"
+          "detail": "Uses the selected check-in player’s prescribed drill, recorded activity window, logged sessions and earlier/latest retest from the fictional follow-up.",
+          "sha256": "4c6d4c07c87fed4287c1643f9b40cf03c7ea7a0f1a6d30b118b08f401c7c80d1"
         },
         {
-          "source": "app/src/pages/coaches/DevelopmentJourney.tsx",
-          "detail": "Existing Plan/Train/Retest sequence. No claim of actual player improvement.",
-          "sha256": "e1b7d11c989cf6a4909276ddaa0b053aacb489da31018f02aa312b3fa85b4f9c"
+          "source": "app/src/pages/home/product/product-demo.ts",
+          "detail": "The drill name comes from the public workout catalog and is matched to the selected player’s drill ID.",
+          "sha256": "64168ac85c3d2eece46909092bcd6d9c958a9d5b86d966e0ae27d4c5091b6872"
         },
         {
-          "source": "app/src/pages/home/product/DrillDiagram.tsx",
-          "detail": "Original arrangement of the existing Figure-8 coaching illustration.",
-          "sha256": "3a2139e5aea64a40f416209793d9ada87549c828da53727d8175eb9b43449f07"
+          "source": "app/src/pages/home/product/media/figure-8.jpg",
+          "detail": "Approved public Figure-8 demonstration still. The image illustrates the assigned drill.",
+          "sha256": "734a4803f58812692ac989a812edb61bb3fc076b5660b0578f3fa0ff129ba7c1"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-development.svg",
-          "sha256": "da230ace0a395990c9b36c2d2dad4ee58415ce36b648201cd1a5788456b4cddf",
-          "bytes": 4087
+          "sha256": "b33b3150d486496e721fcc03382a537121a4f3056195063d320ad65fac8dbf07",
+          "bytes": 155925
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-development.webp",
-          "sha256": "d083c3ddb184011a11d14e8908cc8e4c38f0bcec7582355cb7a4d3d6951a9e6d",
-          "bytes": 34402
+          "sha256": "f6fcf7c7c79147c6c10d639b5b0d4978b9030da3af1bb2f4c8b2f973dae78114",
+          "bytes": 93252
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-development-600.webp",
-          "sha256": "bca71f2a90516c37f85f14811eb381a484ff6b4259b3e44eb9c12d0596b2517c",
-          "bytes": 14972
+          "sha256": "c75914485deddb083f5e3c98dd65beacc5169559a207ed47b2347fa1739836c7",
+          "bytes": 30204
         }
       }
     },
     {
       "id": "coaches-contact",
-      "title": "A next step for your club",
-      "alt": "PoseTek’s approved P mark and existing team-enquiry message in a clean original invitation composition.",
-      "qualifier": "PoseTek team enquiry",
+      "title": "Plan a club testing day",
+      "alt": "A club testing-day invitation showing three examples from PoseTek’s test battery: sprint, dribbling and broad jump.",
+      "qualifier": "Recorded movement · Testing-day examples",
       "width": 1200,
       "height": 900,
       "provenance": [
         {
-          "source": "app/public/brand/posetek-p.svg",
-          "detail": "Approved P badge, unchanged geometry and colors; enlarged, layered only through translation/rotation.",
-          "sha256": "22e673f3d95187fd9c19f919ce767e95002a8815fd5df5d062d8054a027911d6"
+          "source": "app/src/pages/home/movement/recorded-movement.json",
+          "detail": "Sprint frame 12, dribbling frame 112 and broad jump frame 23 from recorded public demonstration sequences.",
+          "sha256": "a0df987d4b3b206fc180334f1cc3c83f2ff9201e3bccc52b96cd410f1b029761"
         },
         {
-          "source": "app/src/pages/coaches/CoachesPage.tsx",
-          "detail": "Existing enquiry copy, verified as exact excerpts in baseline and current page. No contact details embedded in artwork.",
-          "excerpts": [
-            "Your players, your priorities.",
-            "Discuss your teams",
-            "Arrange testing",
-            "Agree ongoing support"
-          ],
-          "sha256": "ca8b801eb84b880356199669a8ddd45ac7913c02a780ac2b0d84506013ce4e54"
+          "source": "app/src/pages/home/pitch/pose-model.ts",
+          "detail": "Original skeleton edge topology for all three recorded tests.",
+          "sha256": "09013c99f0a7d832c022934253ad1a24af1b66e760d0467962fe73e9afc589ea"
+        },
+        {
+          "source": "app/public/brand/posetek-p.svg",
+          "detail": "Approved P mark in the testing invitation.",
+          "sha256": "22e673f3d95187fd9c19f919ce767e95002a8815fd5df5d062d8054a027911d6"
         }
       ],
       "files": {
         "svg": {
           "path": "app/src/pages/home/showcase-assets/coaches-contact.svg",
-          "sha256": "1e235ec72ebcc474678fda17abb7f77b324b9c8bacc01d538761fb4c509dc675",
-          "bytes": 3835
+          "sha256": "ca33640e8c08f1fb4d1f07e7f0631884e6a28903cfc1284479ab634203a4a6ac",
+          "bytes": 16802
         },
         "webp": {
           "path": "app/src/pages/home/showcase-assets/coaches-contact.webp",
-          "sha256": "dee311f417ae8f3b03e701a4e1f02e4571f113bdaacf6bf283e2ebcd4439b248",
-          "bytes": 40966
+          "sha256": "447dfd793a40c9ae8b017eceb5006def51f4db56432a1916102cef86b72f55a2",
+          "bytes": 38116
         },
         "small": {
           "path": "app/src/pages/home/showcase-assets/coaches-contact-600.webp",
-          "sha256": "7fab63c8459f86bef4f9a93b2f80af8ddd7e8409ba3fa3346d5c670e9a1ab17d",
-          "bytes": 17440
+          "sha256": "07c9f88960e2b6247dfced64ff41b74deca2bcc5612e2ddb7eefc20961651d46",
+          "bytes": 16424
         }
       }
     }

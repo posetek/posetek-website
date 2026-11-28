@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ClubExplorer } from "./ClubExplorer";
 import { PlayerEvidence } from "./PlayerEvidence";
-import { clubDribbleBenchmarks, profileAreas, resolvePlayer, resolveTeam, sampleTeams } from "./coach-samples";
+import { clubDribbleBenchmarks, getClubTestPathway, getTeamActivity, getTeamCheckIn, getTeamTestReport, profileAreas, reportTests, resolvePlayer, resolveTeam, sampleTeams } from "./coach-samples";
 
 describe("coaches illustrative data", () => {
   it("keeps nine unique players in three distinct team contexts with usable profile and session values", () => {
@@ -21,6 +21,27 @@ describe("coaches illustrative data", () => {
       }
     }
   });
+  it.each(sampleTeams)("compares only recorded results in one team and one test", team => {
+    for (const test of reportTests) {
+      const report = getTeamTestReport(team, test.id);
+      const ordered = report.results.map(result => result.value);
+      expect(ordered).toEqual([...ordered].sort((a, b) => test.higherIsBetter ? b - a : a - b));
+      expect(report.average).toBeCloseTo(ordered.reduce((sum, value) => sum + value, 0) / ordered.length);
+      expect(report.testedPlayers).toBe(ordered.length);
+      expect(ordered[0]).toBe(report.best);
+      expect(getClubTestPathway(test.id).every(group => group.testedPlayers >= 5 && group.mean > 0)).toBe(true);
+    }
+    const checkIn = getTeamCheckIn(team);
+    expect(checkIn.latestDribbleSeconds).toBe(Math.max(...team.players.map(player => player.latestDribbleSeconds)));
+    expect(checkIn.drillId).toBe("DRB-006");
+    expect(getTeamActivity(team).signedIn).toBeLessThanOrEqual(getTeamActivity(team).rosterSize);
+  });
+  it("excludes missing attempts and gives tied scores the same standing", () => {
+    expect(getTeamTestReport(sampleTeams[0], "sprint").testedPlayers).toBe(4);
+    const ties = getTeamTestReport(sampleTeams[0], "jump").results.filter(row => row.value === 15);
+    expect(ties).toHaveLength(2);
+    expect(ties[0].percentile).toBe(ties[1].percentile);
+  });
   it("resolves stale player selection within the new team instead of showing another team's player", () => {
     expect(resolvePlayer("u17", "u13-alex")).toBe(sampleTeams[2].players[0]);
     expect(resolvePlayer("u15", "u15-casey")).toBe(sampleTeams[1].players[2]);
@@ -34,7 +55,9 @@ describe("coaches sample views", () => {
     const html = renderToStaticMarkup(<ClubExplorer teamId={team.id} onTeamChange={() => undefined} onPlayerSelect={() => undefined} />);
     expect(html).toContain("Northfield FC");
     expect(html).toContain("Illustrative example");
-    expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(html).toContain(`data-coach-report-test="dribbleLeft" aria-pressed="true"`);
+    expect(html).toContain('data-coach-report-view="standings" aria-pressed="true"');
+    for (const test of reportTests) expect(html).toContain(test.label);
     for (const player of team.players) expect(html).toContain(player.name);
     for (const otherTeam of sampleTeams.filter(item => item.id !== team.id)) {
       for (const player of otherTeam.players) expect(html).not.toContain(player.name);
@@ -45,7 +68,9 @@ describe("coaches sample views", () => {
     expect(html).toContain(mean.toFixed(2));
     expect(html).toContain(Math.min(...times).toFixed(2));
     const checkIn = team.players.find(player => player.latestDribbleSeconds === Math.max(...times))!;
-    expect(html).toContain(checkIn.name + " took the longest");
+    expect(html).toContain(`See ${checkIn.name.split(" ")[0]}’s practice focus`);
+    expect(html).toContain("Athlete follow-up");
+    expect(html).toMatch(new RegExp(getTeamActivity(team).workoutMinutes + " min"));
     expect(html).toContain("Managers see the club. Coaches work with their assigned teams.");
   });
   it.each(sampleTeams.flatMap(team => team.players.map(player => ({ team, player }))))("keeps $player.name's evidence and next step aligned", ({ team, player }) => {
@@ -60,7 +85,7 @@ describe("coaches sample views", () => {
     expect(html).toContain('role="img"');
     expect(html).toContain("Illustrative example");
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
-    for (const [index, area] of profileAreas.entries()) expect(html).toContain(`${area}: ${player.scores[index]} out of 100`);
+    expect(html).toContain(`${team.name} team average ${getTeamTestReport(team, "dribbleLeft").average.toFixed(2)} s`);
     for (const otherPlayer of team.players.filter(item => item.id !== player.id)) expect(html).not.toContain(otherPlayer.focus);
   });
 });

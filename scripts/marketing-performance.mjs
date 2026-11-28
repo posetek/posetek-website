@@ -3,7 +3,6 @@
 // Local HTTP is deliberately uncompressed. This is an asset/loading comparison,
 // not a Lighthouse score or a claim about CDN/mobile-network performance.
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
@@ -259,9 +258,6 @@ async function compareContentAssets() {
     for (const root of roots) for (const item of await inventory(resolve(source, root))) {
       if (retainedExtensions.has(extname(item.path))) entries.push({ ...item, path: root + '/' + item.path });
     }
-    const sample = 'app/src/pages/coaches/coach-samples.ts';
-    const bytes = await readFile(resolve(source, sample));
-    entries.push({ path: sample, bytes: bytes.length, sha256: sha256(bytes) });
     return entries.sort((a, b) => a.path.localeCompare(b.path));
   }
   const before = await sourceInventory(baselineSource), after = await sourceInventory(candidateSource);
@@ -285,20 +281,25 @@ async function compareContentAssets() {
   assert.deepEqual(runtimeIds, active.map(artwork => artwork.id).sort(), 'Only nine reviewed compositions are offered at runtime.');
   const imports = [...runtimeArtwork.matchAll(/from "\.\/showcase-assets\/([^"]+)\?url"/g)].map(match => artworkRoot + match[1]).sort();
   assert.deepEqual(imports, active.flatMap(artwork => [artwork.files.webp.path, artwork.files.small.path]).sort(), 'Only the active responsive textures are imported.');
-  const revised = new Set(['players-testing', 'players-profile']);
-  const profileSources = ['app/src/pages/home/development-pathway-sample.ts', 'app/src/pages/athlete-portal/player/stats/club-cloud.ts'];
-  const profile = active.find(artwork => artwork.id === 'players-profile');
-  assert.deepEqual(profile?.provenance.map(input => input.source).sort(), [...profileSources].sort(), 'The chart uses the fictional sample and the signed-in pathway geometry.');
-  // The other eight compositions keep the inputs from their original generation.
-  // Current coach copy and demos can change without changing the pixels already reviewed.
-  const originalRevision = '38826129be488fafa211180a2b5328dee0f3f3d1';
-  const originalFile = path => execFileSync('git', ['show', originalRevision + ':' + path], { cwd: repository, maxBuffer: 16 * 1024 * 1024 });
-  const original = JSON.parse(originalFile(provenancePath)).artworks;
+  // All six Players illustrations, including the archive, were approved in this parent preview.
+  // Pin their complete source/output records, so comparisons also work in exported source trees.
+  const playerArtworkRevision = '287d805372947fae78475f2ede2b0d99ad632793';
+  const players = provenance.artworks.filter(art => art.id.startsWith('players-'));
+  assert.equal(sha256(JSON.stringify(players)), 'bba561562e4d2fa5565958ace7e7da918de401bb078971da1251260180863800',
+    `Players artwork matches the reviewed pixels, metadata and generation sources from ${playerArtworkRevision}.`);
+  const coachSample = 'app/src/pages/coaches/coach-samples.ts';
+  const coachSources = {
+    'coaches-club': [coachSample],
+    'coaches-evidence': [coachSample],
+    'coaches-development': [coachSample, 'app/src/pages/home/product/product-demo.ts', 'app/src/pages/home/product/media/figure-8.jpg'],
+    'coaches-contact': ['app/src/pages/home/movement/recorded-movement.json', 'app/src/pages/home/pitch/pose-model.ts', 'app/public/brand/posetek-p.svg'],
+  };
+  for (const [id, sourcePaths] of Object.entries(coachSources)) {
+    const chart = active.find(art => art.id === id);
+    assert.deepEqual(chart?.provenance.map(source => source.source), sourcePaths, `The ${id} artwork derives from the public sample sources.`);
+  }
   const expectedPaths = [provenancePath];
   for (const artwork of provenance.artworks) {
-    if (!revised.has(artwork.id)) {
-      assert.deepEqual(artwork, original.find(item => item.id === artwork.id), `Retained illustration and its source records: ${artwork.id}`);
-    }
     for (const file of Object.values(artwork.files)) {
       assert.ok(file.path.startsWith(artworkRoot) && !file.path.includes('..'), 'Artwork stays within its declared directory.');
       const bytes = await readFile(resolve(candidateSource, file.path));
@@ -308,22 +309,15 @@ async function compareContentAssets() {
     }
     for (const source of artwork.provenance) {
       assert.ok(source.source.startsWith('app/') && !source.source.includes('..'), 'Source paths are repository-relative.');
-      const input = revised.has(artwork.id) ? await readFile(resolve(candidateSource, source.source)) : originalFile(source.source);
+      const input = await readFile(resolve(candidateSource, source.source));
       assert.equal(sha256(input), source.sha256, `Generation source identity: ${source.source}`);
-      if (source.excerpts) {
-        assert.equal(source.source, 'app/src/pages/coaches/CoachesPage.tsx', 'Only the deliberately restyled page uses excerpt preservation.');
-        assert.ok(source.excerpts.length > 0);
-        for (const excerpt of source.excerpts) {
-          assert.ok(excerpt.length > 0 && input.toString('utf8').includes(excerpt), 'Generation input contains the exact reused excerpt.');
-        }
-      }
     }
   }
   assert.deepEqual(addedArtwork.map(item => item.path).sort(), expectedPaths.sort(), 'No undeclared showcase content is exempted from preservation.');
   const derived = JSON.parse(await readFile(resolve(candidateSource, derivedPath), 'utf8'));
   const approved = await readFile(resolve(candidateSource, 'app/astro/public/brand/posetek-p.svg'));
   verifyDerivedBrandShape(derived, approved, sha256);
-  report.contentAssets = { baselineSource, candidateSource, exactFiles: retained.length, bytes: retained.reduce((sum, item) => sum + item.bytes, 0), scope: 'Existing content, media and brand assets outside the showcase directory match the supplied baseline. All ten showcase illustrations match their generation inputs and declared output files.', showcaseArtwork: { activeIds: runtimeIds, originalRevision, files: addedArtwork, bytes: addedArtwork.reduce((sum, item) => sum + item.bytes, 0), provenanceSha256: sha256(await readFile(resolve(candidateSource, provenancePath))) }, files: retained, derivedBrandGeometry: { ...derivedAsset, source: derived.source, sourceSha256: derived.sha256, commandCount: derived.commands.length, approvedContourExact: true } };
+  report.contentAssets = { baselineSource, candidateSource, exactFiles: retained.length, bytes: retained.reduce((sum, item) => sum + item.bytes, 0), scope: 'Existing content, media and brand assets outside the showcase directory match the supplied baseline. All ten showcase illustrations match their generation inputs and declared output files.', showcaseArtwork: { activeIds: runtimeIds, playerArtworkRevision, files: addedArtwork, bytes: addedArtwork.reduce((sum, item) => sum + item.bytes, 0), provenanceSha256: sha256(await readFile(resolve(candidateSource, provenancePath))) }, files: retained, derivedBrandGeometry: { ...derivedAsset, source: derived.source, sourceSha256: derived.sha256, commandCount: derived.commands.length, approvedContourExact: true } };
   report.checks.push(`${retained.length} source content/media/brand files remain byte-identical; P geometry matches its approved contour; nine runtime and one archival illustration passed provenance checks`);
 }
 

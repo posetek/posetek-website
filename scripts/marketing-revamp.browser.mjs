@@ -24,7 +24,7 @@ const originPolicy = productionOrigin ? 'PoseTek production origin GET/HEAD' : p
 const evidence = { output, previewOrigin, networkPolicy: `${originPolicy}${allowFonts ? ' + Google fonts GET' : ''}; all other HTTP and WebSockets blocked`, checks: [], screenshots: [], requests: { externalBlocked: 0, writesBlocked: 0, fontsAllowed: 0, expectedOriginFailures: 0, unexpectedOriginFailures: 0 }, injectedFailures: [], measurements: [] };
 const pages = [
   { route: '/', name: 'players', chapters: ['tests', 'profile', 'training', 'ai-coach', 'mobile-app'], title: 'Soccer testing and workouts for players | PoseTek', heading: 'What do I train next?' },
-  { route: '/coaches', name: 'coaches', chapters: ['club', 'players', 'development', 'contact'], title: 'Soccer team testing for coaches and clubs | PoseTek', heading: 'Team testing.' },
+  { route: '/coaches', name: 'coaches', chapters: ['club', 'players', 'development', 'contact'], title: 'Soccer team testing for coaches and clubs | PoseTek', heading: 'Team testing for the next practice.' },
 ];
 // Netlify Pretty URLs rewrites the existing .html booking link to this preserved
 // alias in served HTML. Accept exactly those two established destinations.
@@ -478,12 +478,70 @@ check('Players: six recordings, real playback, pathway comparison, workout progr
 
 });
 
-check('Coaches: team and player stay connected through Plan, Train and Retest', async t => {
+check('Coaches: the first click on the team report works while the page is loading', async t => {
+  const { page } = await fixture(t, { reducedMotion: 'reduce' });
+  let resume;
+  const moduleReady = new Promise(resolve => { resume = resolve; });
+  await page.route('**/_astro/CoachesPage.*.js', async route => {
+    await moduleReady;
+    await route.fallback();
+  });
+  try {
+    await page.goto(origin + '/coaches/', { waitUntil: 'commit' });
+    const reportLink = page.getByRole('link', { name: 'Explore the sample team report' });
+    await reportLink.click();
+    await page.waitForURL(url => url.hash === '#club');
+    assert.equal(await page.locator('astro-island[ssr]').count(), 1);
+  } finally {
+    resume();
+  }
+  await page.locator('[data-showcase-panel="club"]:visible .cx-team-context h4').waitFor();
+});
+
+check('Coaches: team standings, club pathway and coach input lead to a player workout and retest', async t => {
   const { page } = await fixture(t, { reducedMotion: 'reduce', viewport: { width: 390, height: 844 } });
   await visit(page, '/coaches');
+  const hero = page.locator('.coach-hero');
+  assert.equal(await hero.getByRole('link', { name: 'Plan a team testing day', exact: true }).count(), 1);
+  assert.equal(await hero.locator('.coach-hero-workspace tbody tr').count(), 5);
+  await hero.getByRole('link', { name: 'Explore the sample team report' }).click();
+  const club = page.locator('[data-showcase-panel="club"]');
+  await club.waitFor({ state: 'visible' });
+  assert.equal(await club.locator('.cx-team-context h4').innerText(), 'U13 team results');
+  assert.equal(await club.locator('[data-coach-report-test]').count(), 6);
+  const standings = club.locator('[data-coach-report-view="standings"]');
+  const pathway = club.locator('[data-coach-report-view="pathway"]');
+  await standings.click();
+  assert.match(await club.locator('[data-coach-report-test="dribbleLeft"]').innerText(), /7\.00 s/);
+  assert.equal(await club.locator('.cx-standings tbody tr').count(), 5);
+  assert.match(await club.locator('[data-coach-input]').innerText(), /first touch/i);
+  for (const test of ['sprint', 'changeOfDirection', 'broadJump', 'jump', 'dribbleRight', 'dribbleLeft']) {
+    const button = club.locator(`[data-coach-report-test="${test}"]`);
+    await button.click();
+    assert.equal(await button.getAttribute('aria-pressed'), 'true');
+    await pathway.click();
+    const chart = club.locator('.cx-pathway-plot > svg');
+    assert.equal(await chart.isVisible(), true);
+    assert.equal(await chart.getAttribute('role'), 'img');
+    const selectedLabel = await button.locator('strong').innerText();
+    assert.ok((await chart.locator('title').textContent()).includes(selectedLabel));
+  }
+  assert.match(await club.locator('.cx-pathway-plot').textContent(), /7\.05/);
+  await screenshot(page, 'coaches-390-team-pathway');
+  await club.locator('.cx-check-in-link').click();
+  const profile = page.locator('[data-showcase-panel="players"]');
+  await profile.waitFor({ state: 'visible' });
+  assert.equal(await profile.locator('.cx-player-heading h3').innerText(), 'Sam Bennett');
+  assert.match(await profile.innerText(), /7\.31/);
+  assert.match(await profile.innerText(), /Figure-8 dribble/);
+  await profile.getByRole('button', { name: /Open Sam’s workout/ }).click();
+  await page.locator('[data-showcase-panel="development"]').waitFor({ state: 'visible' });
+  assert.match(await page.locator('.coach-plan-sheet').innerText(), /Figure-8 dribble/);
   await openShowcase(page, 'club');
-  await page.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U15/ }).click();
-  assert.match(await page.locator('.cx-team-context').innerText(), /Taylor Brooks/);
+  assert.match(await club.locator('.cx-activity').innerText(), /4 of 5 players/);
+  assert.match(await club.locator('.cx-activity').innerText(), /74 min/);
+  await club.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U15/ }).click();
+  assert.equal(await club.locator('.cx-team-context h4').innerText(), 'U15 team results');
   await expandDemo(page, '#players');
   const players = page.getByRole('group', { name: 'Choose a sample player from U15', exact: true });
   await players.getByRole('button', { name: /Riley Chen/ }).click();
@@ -498,13 +556,13 @@ check('Coaches: team and player stay connected through Plan, Train and Retest', 
   await noOverflow(page, 'Coaches mobile Train');
   await steps.getByRole('button', { name: /Retest/ }).click();
   assert.match(await development.innerText(), /0\.14\s*sec faster/);
-  assert.match(await development.innerText(), /Illustrative change · Not a promised outcome/);
+  assert.match(await development.innerText(), /Change between sample testing days/);
   await screenshot(page, 'coaches-390-retest');
   await openShowcase(page, 'club');
   await page.getByRole('group', { name: 'Choose a sample team', exact: true }).getByRole('button', { name: /U17/ }).click();
   await openShowcase(page, 'development');
-  assert.equal(await page.locator('.cx-player-heading h3').innerText(), 'Morgan Adams');
-  assert.match(await development.innerText(), /Morgan Adams/);
+  assert.equal(await page.locator('.cx-player-heading h3').innerText(), 'Avery Shaw');
+  assert.match(await development.innerText(), /Avery Shaw/);
   assert.equal(await steps.getByRole('button', { name: /Plan/ }).getAttribute('aria-pressed'), 'true');
 });
 

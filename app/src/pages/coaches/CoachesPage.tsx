@@ -11,7 +11,7 @@ import { injectClarity } from "../home/clarity";
 import { ClubExplorer } from "./ClubExplorer";
 import { PlayerEvidence } from "./PlayerEvidence";
 import { DevelopmentJourney } from "./DevelopmentJourney";
-import { sampleTeams, resolveTeam, resolvePlayer } from "./coach-samples";
+import { coachSessionDate, getTeamCheckIn, getTeamTestReport, sampleTeams, resolveTeam, resolvePlayer } from "./coach-samples";
 import "../home/magic.css";
 import "../home/home.scss";
 import "../home/scrolling-home.scss";
@@ -26,17 +26,31 @@ export function CoachArrow({ down = false }: { down?: boolean }) {
   return <svg className="arrow" data-direction={down ? "down" : "right"} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={down ? "M12 4v15m-6-6 6 6 6-6" : "M4 12h15m-6-6 6 6-6 6"} stroke="currentColor" strokeWidth="1.7" /></svg>;
 }
 
-function ClubPreview() {
-  const team = sampleTeams[0], player = team.players[0];
-  return <figure className="coach-hero-workspace" aria-label="Illustrative club workspace: Northfield FC, three teams and an individual player focus">
-    <div className="coach-preview-bar"><span className="coach-mini-logo">P</span><span>Club workspace</span><span>Illustrative example</span></div>
-    <div className="coach-preview-club"><span className="coach-club-crest" aria-hidden="true">N<span>FC</span></span><div><span className="coach-micro">CLUB TESTING DAY</span><strong>Northfield FC</strong><span>Team results and player workouts</span></div><span className="coach-preview-live" aria-hidden="true" /></div>
-    <div className="coach-preview-teams">{sampleTeams.map(item => <div key={item.id} data-selected={item.id === team.id}><span>{item.name}</span><small>{item.players.length} sample players</small><span aria-hidden="true">↗</span></div>)}</div>
-    <div className="coach-preview-main">
-      <div className="coach-preview-pitch" aria-hidden="true"><svg viewBox="0 0 280 270"><rect x="20" y="18" width="240" height="232" rx="4"/><path d="M20 134H260M95 18V62H185V18M95 250V206H185V250"/><circle cx="140" cy="134" r="36"/><path className="coach-pitch-pass" d="M67 185L140 132L214 185M140 132V62"/>{[[140,62],[67,185],[214,185]].map(([x,y],i)=><g key={i}><circle className="coach-pitch-player" cx={x} cy={y} r="17"/><text x={x} y={y+4}>{[9,6,10][i]}</text></g>)}<circle className="coach-pitch-selected" cx="140" cy="132" r="23"/><text className="coach-pitch-number" x="140" y="137">{player.number}</text></svg><span>{team.name} · Selected player</span></div>
-      <div className="coach-preview-focus"><span className="coach-micro">INDIVIDUAL NEXT STEP</span><span className="coach-preview-avatar" aria-hidden="true">{player.name.split(" ").map(part=>part[0]).join("")}</span><strong>{player.name}</strong><span>{player.position} · {team.name}</span><div><small>Training focus</small><b>{player.focus}</b></div><p>{player.completedSessions} of {player.plannedSessions} sessions completed</p></div>
+function TeamReportPreview() {
+  const team = sampleTeams[0];
+  const report = getTeamTestReport(team, "dribbleLeft");
+  return <figure className="coach-hero-workspace">
+    <figcaption className="coach-report-masthead"><span className="coach-mini-logo" aria-hidden="true">P</span> Coach one-pager <small>Fictional report</small></figcaption>
+    <div className="coach-report-body">
+      <div className="coach-report-heading">
+        <span>Northfield FC · {team.name}</span>
+        <strong>Team standings</strong>
+        <p>Left dribble <span>·</span> {coachSessionDate}</p>
+      </div>
+      <dl className="coach-report-summary">
+        <div><dt>Team average</dt><dd>{report.average.toFixed(2)} <small>s</small></dd></div>
+        <div><dt>Players tested</dt><dd>{report.testedPlayers}</dd></div>
+      </dl>
+      <table className="coach-report-standings">
+        <thead><tr><th>Player</th><th>Team percentile</th><th>Time</th></tr></thead>
+        <tbody>{report.results.map(result => <tr key={result.name}>
+          <th scope="row">{result.name}</th>
+          <td><span className="coach-percentile"><i aria-hidden="true"><i style={{ width: `${result.percentile}%` }} /></i><span>{result.percentile}</span></span></td>
+          <td>{result.value.toFixed(2)} s</td>
+        </tr>)}</tbody>
+      </table>
     </div>
-    <figcaption><span className="status-dot"/>Team test <span>→</span> Player plan <span>→</span> Retest</figcaption>
+    <div className="coach-report-open">Explore this team report <span aria-hidden="true">↗</span></div>
   </figure>;
 }
 
@@ -44,14 +58,19 @@ export default function CoachesPage() {
   useThemeColor("#f1f1f3");
   useBodyBackground("#f1f1f3");
   const [teamId, setTeamId] = useState(sampleTeams[0].id);
-  const [playerId, setPlayerId] = useState(sampleTeams[0].players[0].id);
+  const [playerId, setPlayerId] = useState(() => getTeamCheckIn(sampleTeams[0]).id);
+  // A visitor can follow the report link while the server-rendered page is still loading.
+  const [reportRequest, setReportRequest] = useState(() =>
+    typeof window !== "undefined" && window.location.hash === "#club" ? 1 : 0
+  );
   const [profileRequest, setProfileRequest] = useState(0);
+  const [planRequest, setPlanRequest] = useState(0);
   const team = resolveTeam(teamId), player = resolvePlayer(teamId, playerId);
   const openPlayerProfile = (id: string) => {
     setPlayerId(id);
     setProfileRequest(request => request + 1);
   };
-  const selectTeam = (id: string) => { const next = resolveTeam(id); setTeamId(next.id); setPlayerId(next.players[0].id); };
+  const selectTeam = (id: string) => { const next = resolveTeam(id); setTeamId(next.id); setPlayerId(getTeamCheckIn(next).id); };
   useEffect(() => {
     injectClarity();
     const root = document.documentElement, previous = root.style.scrollBehavior;
@@ -59,7 +78,7 @@ export default function CoachesPage() {
     const update = () => { root.style.scrollBehavior = media.matches ? "auto" : "smooth"; };
     update(); media.addEventListener("change", update);
     const hash = window.location.hash.slice(1);
-    if (hash) document.getElementById(hash)?.scrollIntoView();
+    if (hash && hash !== "club") document.getElementById(hash)?.scrollIntoView();
     return () => { root.style.scrollBehavior = previous; media.removeEventListener("change", update); };
   }, []);
   return <MotionConfig reducedMotion="user"><div className="pt-home pt-coaches pt-revamp">
@@ -69,34 +88,41 @@ export default function CoachesPage() {
         <div className="coach-hero-copy">
           <div className="hero-title-block">
             <p className="eyebrow hero-enter"><span className="status-dot"/>For coaches and club leaders</p>
-            <h1 id="coach-hero-title" className="editorial-title"><span><span>Team</span></span>{" "}<span><span>testing.</span></span></h1>
+            <h1 id="coach-hero-title" className="editorial-title"><span><span>Team testing</span></span>{" "}<span><span>for the next</span></span>{" "}<span><span>practice.</span></span></h1>
           </div>
           <div className="hero-summary">
-            <p className="coach-hero-description hero-enter">We test your players and give you a one-page team report. See who could use a check-in, prescribe soccer workouts for each player, and follow their progress between testing days.</p>
+            <p className="coach-hero-description hero-enter">We test your squad on the field and bring the results into one coach report. See how your team compares across club age groups, choose soccer drills for individual players, and follow the work they log between tests.</p>
             <a className="hero-explore hero-enter" href={teamEnquiryHref}>
-              <span className="hero-explore-label"><ScrambleText>Talk about testing your team</ScrambleText><span className="hero-explore-track" aria-hidden="true"/></span>
+              <span className="hero-explore-label"><ScrambleText>Plan a team testing day</ScrambleText><span className="hero-explore-track" aria-hidden="true"/></span>
               <span className="hero-explore-orbit"><CoachArrow/></span>
             </a>
           </div>
         </div>
-        <RevealFrame className="coach-hero-frame"><a className="marketing-visual-link" href="#club" data-preview-link="" data-cursor="Explore your club" aria-label="Explore the club workspace"><ClubPreview/></a></RevealFrame>
-        <div className="coach-service-strip"><span><strong>Testing day</strong> team report</span><span><strong>Player workouts</strong> soccer drills</span><span><strong>Follow-up</strong> recorded sessions and retests</span></div>
+        <RevealFrame className="coach-hero-frame">
+          <a className="marketing-visual-link" href="#club" data-preview-link="" data-cursor="Open team report" aria-label="Explore the sample team report"
+            onClick={event => {
+              if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) setReportRequest(previous => previous + 1);
+            }}>
+            <TeamReportPreview />
+          </a>
+        </RevealFrame>
+        <div className="coach-service-strip"><span><strong>On the field</strong> Six soccer tests</span><span><strong>In the report</strong> Team and club comparisons</span><span><strong>Between tests</strong> Player workouts and follow-up</span></div>
       </section>
       <MarketingJourney audience="coaches" />
       <ShowcaseGallery>
         <ShowcasePair>
-          <ShowcaseChapter id="club" titleId="club-title" number="01" label="The coach one-pager" title={<>Read your <em>team report.</em></>} description="See team averages and the best recorded result for each test. The coach check-in highlights players who may need a closer look. Choose a team to explore its sample report." artwork="coaches-club" kind="club" caption="Left and right dribbling · Sprint · Change of direction · Broad jump · Vertical jump" footer={<a href="#players">Explore a player profile ↓</a>}>
+          <ShowcaseChapter id="club" titleId="club-title" number="01" label="The coach one-pager" title={<>Where does our <em>team stand?</em></>} description="Select a test to see the standings for the squad that tested together. Your practice notes give the numbers context. The development pathway shows how your team’s average compares across tested age groups at the club." artwork="coaches-club" kind="club" caption="Left and right dribble, sprint, change of direction, broad jump and vertical jump." requestToken={reportRequest} demoAnchors={["team-report"]} footer={<a href="#players">Find a player’s practice focus ↓</a>}>
             <ClubExplorer teamId={teamId} onTeamChange={selectTeam} onPlayerSelect={openPlayerProfile} />
           </ShowcaseChapter>
-          <ShowcaseChapter id="players" titleId="players-title" number="02" label="The player profile" title={<>Choose a <em>practice focus.</em></>} description="Start with a player’s result on one test. Compare it with teammates from that session and with tested age groups across the club when enough comparable results are available." artwork="coaches-evidence" kind="evidence" caption="Select a player to see a dribbling result and an individual soccer drill." requestToken={profileRequest} footer={<a href="/#tests">Explore the tests ↗</a>}>
-            <PlayerEvidence teamId={teamId} playerId={playerId} onPlayerChange={setPlayerId} />
+          <ShowcaseChapter id="players" titleId="players-title" number="02" label="The player check-in" title={<>Who needs a <em>closer look?</em></>} description="In the sample U13 squad, Sam takes longer than the team average on the left dribble. Compare his result with what you see in practice, then give him a ball-control drill for his next session." artwork="coaches-evidence" kind="evidence" caption="Explore how a coach turns one player’s result into a soccer-specific workout." requestToken={profileRequest} footer={<a href="#development">Follow the workout ↓</a>}>
+            <PlayerEvidence teamId={teamId} playerId={playerId} onPlayerChange={setPlayerId} onOpenPlan={() => setPlanRequest(previous => previous + 1)} />
           </ShowcaseChapter>
         </ShowcasePair>
         <ShowcasePair>
-          <ShowcaseChapter id="development" titleId="development-title" number="03" label="Workouts and follow-up" title={<>Follow the work. <em>Retest the skill.</em></>} description="Assign soccer drills around the player’s focus and review the sessions they log. At the next test, compare their own results to decide what to work on next." artwork="coaches-development" kind="development" caption="Follow the selected player’s plan, workout and retest.">
+          <ShowcaseChapter id="development" titleId="development-title" number="03" label="Training and follow-up" title={<>What happened <em>between tests?</em></>} description="Give the player a drill and a cue to take onto the field. See who signed in and how much workout time was recorded. Repeat the same test to decide whether to keep the focus or change it." artwork="coaches-development" kind="development" requestToken={planRequest} caption="Follow a sample player through the assigned drill and the next testing day.">
             <DevelopmentJourney key={player.id} player={player} teamName={team.name} />
           </ShowcaseChapter>
-          <ShowcaseChapter id="contact" titleId="contact-title" number="04" label="Bring PoseTek to your club" title={<>Plan a <em>testing day.</em></>} description="Tell us which teams you coach and what you want to learn about your players. We’ll discuss testing and ongoing workout support with you." artwork="coaches-contact" caption="Testing and follow-up are tailored to your teams." action={{ href: teamEnquiryHref, label: "Talk about testing your team" }} footer={<a href="/signin">Coach sign in ↗</a>} />
+          <ShowcaseChapter id="contact" titleId="contact-title" number="04" label="Club testing" title={<>Bring testing <em>to your club.</em></>} description="Tell us which squads you coach, when they train, and what you want to learn about them. We’ll plan a testing day and talk through how your staff can use the results at practice." artwork="coaches-contact" caption="Start with a conversation about your teams." action={{ href: teamEnquiryHref, label: "Plan a team testing day" }} footer={<a href="/signin">Coach sign in ↗</a>} />
         </ShowcasePair>
       </ShowcaseGallery>
     </main>
