@@ -8,9 +8,9 @@ import AdminHeader from "./AdminHeader";
 describe("admin navigation", () => {
   it("combines the directory while retaining Device performance, User issues and the account menu", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready email="admin@example.test" onSignOut={() => {}} /></MemoryRouter>);
-    for (const path of ["accounts", "programs", "analysis", "ball-striking-sessions", "drills", "ai-incidents", "device-performance", "user-issues", "feedback"]) expect(html).toContain(`href="/admin/${path}"`);
+    for (const path of ["accounts", "messaging", "programs", "analysis", "ball-striking-sessions", "drills", "ai-incidents", "device-performance", "user-issues", "feedback"]) expect(html).toContain(`href="/admin/${path}"`);
     expect(html).not.toContain('href="/admin"');
-    expect((html.match(/class="admin-section-link/g) ?? []).length).toBe(12);
+    expect((html.match(/class="admin-section-link/g) ?? []).length).toBe(13);
     expect(html).toContain("People &amp; organizations");
     expect(html).toContain("Device performance");
     expect(html.indexOf("AI incidents")).toBeLessThan(html.indexOf("Device performance"));
@@ -27,6 +27,11 @@ describe("admin navigation", () => {
     expect(html).toContain(">Overview<");
   });
 
+  it("marks the organization inbox active in the sidebar", () => {
+    const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/messaging?orgId=club"]}><AdminHeader ready onSignOut={() => {}} /></MemoryRouter>);
+    expect(html).toContain('aria-current="page" class="admin-section-link active" href="/admin/messaging?orgId=club"');
+  });
+
   it("marks Device performance active on its fleet and device routes", () => {
     for (const route of ["/admin/device-performance", "/admin/device-performance/0d5c9a1e-2b3f-4c6d-8e7f-a0b1c2d3e4f5"]) {
       const html = renderToStaticMarkup(<MemoryRouter initialEntries={[route]}><AdminHeader ready onSignOut={() => {}} /></MemoryRouter>);
@@ -37,6 +42,7 @@ describe("admin navigation", () => {
   it("does not expose ready-only navigation or account actions while signed out", () => {
     const html = renderToStaticMarkup(<MemoryRouter><AdminHeader ready={false} onSignOut={() => {}} /></MemoryRouter>);
     expect(html).not.toContain('href="/admin/analysis"');
+    expect(html).not.toContain('href="/admin/messaging"');
     expect(html).not.toContain('aria-label="Admin sections"');
     expect(html).not.toContain('aria-label="Admin account menu"');
     expect(html).not.toContain("Sign out");
@@ -46,6 +52,7 @@ describe("admin navigation", () => {
     const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/accounts?orgId=club&teamId=team"]}><AdminHeader ready onSignOut={() => {}} /></MemoryRouter>);
     expect(html).not.toContain('href="/admin?orgId=club&amp;teamId=team"');
     expect(html).toContain('href="/admin/accounts?orgId=club&amp;teamId=team"');
+    expect(html).toContain('href="/admin/messaging?orgId=club"');
     expect(html).toContain('href="/admin/analysis"');
     expect(html).toContain('href="/admin/device-performance"');
   });

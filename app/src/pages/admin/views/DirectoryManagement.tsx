@@ -1,5 +1,5 @@
 import { CoachAccessPanel } from "../../coach-reminders/CoachAccessPanel";
-import { ReminderAdmin } from "../../coach-reminders/ReminderAdmin";
+import { vacavilleId } from "../../coach-reminders/reminders";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
@@ -11,7 +11,7 @@ import { useAccountLoad } from "../lib/useAccountLoad";
 import { directorySession } from "../lib/directoryRetention";
 import type { DirectorySource } from "../lib/adminDirectory";
 import { directoryCoachPath } from "../lib/adminDirectory";
-import type { AdminDirectoryState } from "../lib/adminNavigation";
+import { adminMessagingPath, type AdminDirectoryState } from "../lib/adminNavigation";
 import { staffName } from "../lib/accountHierarchy";
 import AccessLinkCard from "../../../components/AccessLinkCard";
 import { accessLinkText, accessStatusLabel } from "../../../lib/access-link-issuer";
@@ -102,7 +102,9 @@ export default function DirectoryManagement({ org, tab, state, choose, source, o
         </tr>)}</tbody></table> : <p className="admin-empty">No teams yet. Add a team to assign players and coaches.</p>}
       </>}
       {tab === "staff" && <>
-        <CoachAccessPanel context={context}/><ReminderAdmin context={context}/>
+        <CoachAccessPanel context={context}/>
+        {context.organization?.id === vacavilleId && ["admin", "manager"].includes(context.role) &&
+          <Link className="quiet-button" to={adminMessagingPath(context.organization.id, state.preview)}>Open Messaging inbox</Link>}
         <div className="directory-toolbar"><p className="directory-result-count">{context.staff.length} staff accounts</p><button className="primary-cta" disabled={mutation.busy} onClick={event => begin({ kind: "invite" }, event.currentTarget)}>Add staff</button><button className="quiet-button" aria-label="Refresh staff" onClick={refresh}>Refresh</button></div>
         {context.staff.length ? <table className="directory-management-table"><thead><tr><th scope="col">Staff</th><th scope="col">Role & access</th><th scope="col">Teams</th><th scope="col">Actions</th></tr></thead><tbody>{context.staff.map(member => <tr key={member.userUID}>
           <td data-label="Staff"><Link to={directoryCoachPath(member.userUID, state)}><strong>{staffName(member)}</strong></Link><span className="directory-player-email">{member.email || "No email on file"}</span></td>
