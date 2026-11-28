@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { assertReportScope, expandedFailureMessage, minuteText, platformSlices, reportPayload, scopeFor, weeklySeries, workoutDurationText, workoutOutcomeSlices } from "./expanded";
+import { assertReportScope, expandedFailureMessage, minuteText, platformSlices, reportPayload, scopeFor, weeklySeries, workoutDurationText, workoutOutcomeSlices, workoutTypeLabel } from "./expanded";
 import { expandedRequest } from "./expandedQuery";
 import { previewInsights } from "./preview";
 const request = expandedRequest("", new Date("2026-09-17T04:00:00Z"));
+describe("workout type labels", () => {
+  it("names yoga Mobility, and Recovery by workoutCategory or its own key", () => {
+    expect(workoutTypeLabel("yoga")).toBe("Mobility");
+    expect(workoutTypeLabel("yoga", "recovery")).toBe("Recovery");
+    expect(workoutTypeLabel("recovery")).toBe("Recovery");
+    expect(workoutTypeLabel("core", "recovery")).toBe("Core");
+    expect(workoutTypeLabel(undefined)).toBe("Other");
+  });
+});
 describe("expanded report contract", () => {
   it("uses admin global, staff organization and explicit team scopes without defaulting coaches to global", () => {
     expect(scopeFor(request, "admin")).toEqual({ kind: "global" });

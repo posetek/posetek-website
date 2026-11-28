@@ -36,12 +36,12 @@ export const CATEGORY_STYLE: Record<FocusCategory, { name: string; icon: string;
   biking: { name: 'Biking', icon: 'directions_bike', color: '#4EDAC5', order: 0 },
   running: { name: 'Running', icon: 'directions_run', color: '#79B5FF', order: 1 },
   walking: { name: 'Walk / Hike', icon: 'hiking', color: '#E3E8EE', order: 2 },
-  soccer: { name: 'Soccer training', icon: 'sports_soccer', color: '#D1F36B', order: 3 },
+  soccer: { name: 'Soccer', icon: 'sports_soccer', color: '#D1F36B', order: 3 },
   core: { name: 'Core', icon: 'sports_gymnastics', color: '#FFA878', order: 4 },
-  gym: { name: 'Gym work', icon: 'fitness_center', color: '#FF80AD', order: 5 },
+  gym: { name: 'Strength', icon: 'fitness_center', color: '#FF80AD', order: 5 },
   hiit: { name: 'HIIT', icon: 'local_fire_department', color: '#FF6B6B', order: 6 },
-  yoga: { name: 'Yoga', icon: 'self_improvement', color: '#C7ACF7', order: 7 },
-  speed: { name: 'Speed', icon: 'bolt', color: '#FFE17B', order: 8 },
+  yoga: { name: 'Mobility', icon: 'self_improvement', color: '#C7ACF7', order: 7 },
+  speed: { name: 'Speed/agility', icon: 'bolt', color: '#FFE17B', order: 8 },
   other: { name: 'Other', icon: 'grid_view', color: '#9AA5AE', order: 9 },
 };
 const DOMAIN_NAME: Record<string, string> = {
@@ -354,7 +354,15 @@ export function planCardModel(plan: Row, logs: Row[], now = new Date()): PlanCar
 }
 
 export type SavedEntry = { id: string; source: 'adhoc' | 'personal'; workout: Row; inProgress: boolean; unavailableReason: string | null; type: string };
-export const WORKOUT_TYPE_LABELS: Record<string, string> = { field: 'On field', gym: 'Gym', core: 'Core', hiit: 'HIIT', fitness: 'Fitness', yoga: 'Yoga' };
+/** A `yoga` workout stored with `workoutCategory: "recovery"` is a Recovery session; the saved list files it as `recovery`. */
+export const WORKOUT_TYPE_LABELS: Record<string, string> = { field: 'On field', gym: 'Gym', core: 'Core', hiit: 'HIIT', fitness: 'Fitness', yoga: 'Mobility', recovery: 'Recovery' };
+
+/** The saved-workout type: the stored workout type, with Recovery split out of `yoga` by its `workoutCategory`. */
+export function savedWorkoutType(w: Row): string {
+  const type = String(w.workoutSnapshot?.workoutType ?? w.workoutType ?? w.params?.workoutType ?? 'field');
+  const category = w.workoutSnapshot?.workoutCategory ?? w.workoutCategory ?? w.params?.workoutCategory;
+  return type === 'yoga' && category === 'recovery' ? 'recovery' : type;
+}
 
 /**
  * `SavedWorkoutEntry.entries` for the web's two kinds of saved workout: the active plan's ad-hoc
@@ -362,7 +370,7 @@ export const WORKOUT_TYPE_LABELS: Record<string, string> = { field: 'On field', 
  * finished personal workout stays listed so an edited copy can be made, as the app's on-device ones do.
  */
 export function savedEntries(adhoc: Row[], adhocLogs: Record<string, Row>, personal: Row[], personalLogs: Record<string, Row>, plan: Row | null, now = new Date()): SavedEntry[] {
-  const type = (w: Row) => String(w.workoutSnapshot?.workoutType ?? w.workoutType ?? w.params?.workoutType ?? 'field');
+  const type = savedWorkoutType;
   const entries: SavedEntry[] = [];
   for (const w of adhoc) {
     if ((w.source ?? 'adhoc') !== 'adhoc') continue;

@@ -1,16 +1,20 @@
 // The editor's left pane: "they can search up drills on the left hand side,
-// sort by domain, and drag in".
+// sort by domain, and drag in". The filter is the drill's home workout
+// category (`workoutCategory` or its fallback), as in the coach "Add a drill".
 //
 // Drag is offered, and so is a plain Add button on every row — a drag-only
 // editor is unusable with a keyboard or a trackpad someone struggles with.
 // Each row shows how the drill sits against THIS athlete (age, difficulty
 // ceiling, partner, equipment) and how much of its weekly limit is left.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { fitFor } from "../../../lib/contracts/drillV2";
 import type { AthleteContext, CatalogDrill } from "../../../lib/contracts/drillV2";
-import { DOMAINS, domainLabel } from "../../../lib/contracts/types";
-import { pickerRows } from "../lib/drillPicker";
+import { domainLabel } from "../../../lib/contracts/types";
+import { DEFAULT_WORKOUT_CATEGORIES } from "../../../lib/contracts/workoutCategory";
+import type { WorkoutCategory } from "../../../lib/contracts/workoutCategory";
+import { loadWorkoutCategories } from "../../../lib/workout-category-registry";
+import { pickerCategories, pickerRows } from "../lib/drillPicker";
 
 export const DRAG_DRILL_PREFIX = "posetek-drill:";
 export const DRAG_BLOCK_PREFIX = "posetek-block:";
@@ -25,12 +29,20 @@ export interface PickerProps {
 
 export default function DrillPickerPane({ drills, athlete, exposures, onAdd }: PickerProps) {
   const [search, setSearch] = useState("");
-  const [domain, setDomain] = useState("all");
+  const [category, setCategory] = useState("all");
   const [eligibleOnly, setEligibleOnly] = useState(true);
+  const [registry, setRegistry] = useState<readonly WorkoutCategory[]>(DEFAULT_WORKOUT_CATEGORIES);
 
+  useEffect(() => {
+    let live = true;
+    void loadWorkoutCategories().then(categories => { if (live) setRegistry(categories); });
+    return () => { live = false; };
+  }, []);
+
+  const categories = useMemo(() => pickerCategories(drills, registry), [drills, registry]);
   const shown = useMemo(
-    () => pickerRows(drills, search, domain, eligibleOnly, athlete),
-    [drills, search, domain, eligibleOnly, athlete],
+    () => pickerRows(drills, search, category, eligibleOnly, athlete, registry),
+    [drills, search, category, eligibleOnly, athlete, registry],
   );
 
   return (
@@ -47,9 +59,9 @@ export default function DrillPickerPane({ drills, athlete, exposures, onAdd }: P
       </label>
 
       <label className="admin-field">
-        <select value={domain} onChange={event => setDomain(event.target.value)} aria-label="Sort by domain">
-          <option value="all">All domains</option>
-          {DOMAINS.map(value => <option key={value} value={value}>{domainLabel(value)}</option>)}
+        <select value={category} onChange={event => setCategory(event.target.value)} aria-label="Filter by category">
+          <option value="all">All categories</option>
+          {categories.map(group => <option key={group.id} value={group.id}>{group.label} ({group.count})</option>)}
         </select>
       </label>
 

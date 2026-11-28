@@ -62,11 +62,12 @@ describe('Recent workouts', () => {
     const rows = recentWorkouts(training([log('a', at)], [session('a', at)]), [], NOW);
     expect(rows.map(row => row.id)).toEqual(['workout-a', 'session-a']);
   });
-  it('falls back to the catalog, then Yoga, then Workout', () => {
+  it('falls back to the catalog, then Mobility or Recovery, then Workout', () => {
     const noName = log('c', day(0), [block('done', 2, 'b9', 'COR-1')], { workoutSnapshot: null });
     expect(workoutTitle({ ...training([noName]), catalogNames: { 'COR-1': 'Dead bug' } }, noName)).toBe('Dead bug');
     expect(drillsNeedingCatalog(training([noName]))).toEqual(['COR-1']);
-    expect(workoutTitle(training([noName]), { ...noName, sessionYoga: true })).toBe('Yoga');
+    expect(workoutTitle(training([noName]), { ...noName, sessionYoga: true })).toBe('Mobility');
+    expect(workoutTitle(training([noName]), { ...noName, sessionYoga: true, recovery: true })).toBe('Recovery');
     expect(workoutTitle(training([noName]), noName)).toBe('Workout');
     const added = log('s', day(0), [block('done', 1, 's1', 'STR-2')], { sessionBlocks: [plan({ blockId: 's1', drillId: 'STR-2', name: 'Calf raise' })] });
     expect(workoutTitle(training([added]), added)).toBe('Calf raise');
@@ -155,5 +156,14 @@ describe('Parsing the app’s documents', () => {
     expect(parseWorkoutSnapshot({ workoutId: 'w', blocks: [{ ...blocks[0], drillId: '' }] })).toBeNull();
     expect(parseWorkoutSnapshot({ workoutId: 'w', blocks, yoga: {} })).toBeNull();
     expect(parseWorkoutSnapshot({ workoutId: 'w', blocks, yoga: {}, workoutType: 'yoga', executionPolicy: 'yoga-v1' })?.yoga).toBe(true);
+  });
+  it('reads a Recovery yoga session from workoutCategory on the snapshot or the log', () => {
+    const yoga = { workoutId: 'w', blocks: [], yoga: {}, workoutType: 'yoga', executionPolicy: 'yoga-v1' };
+    const title = (data: Record<string, unknown>) => workoutTitle(training([]), parseWorkoutLog('y', { planId: 'p', startedAt: stamp(NOW), ...data })!);
+    expect(title({ workoutSnapshot: yoga })).toBe('Mobility');
+    expect(title({ workoutSnapshot: { ...yoga, workoutCategory: 'recovery' } })).toBe('Recovery');
+    expect(title({ sessionYoga: {}, workoutCategory: 'recovery' })).toBe('Recovery');
+    expect(title({ sessionYoga: {}, workoutCategory: 'yoga' })).toBe('Mobility');
+    expect(parseWorkoutSnapshot(yoga)).not.toHaveProperty('recovery');
   });
 });

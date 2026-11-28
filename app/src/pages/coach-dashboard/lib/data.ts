@@ -107,7 +107,7 @@ let catalogCache: any[] | null = null;
 // read. The catalog also carries heavy detector, keyframe and pool fields for the
 // app; none of it belongs in coach state.
 const COACH_CATALOG_FIELDS = [
-  "name", "domain", "targetQuality", "dose", "estimatedMinutes",
+  "name", "domain", "workoutCategory", "targetQuality", "dose", "estimatedMinutes",
   "execution", "intensityIntent", "cues", "status", "schemaVersion",
 ] as const;
 
@@ -136,6 +136,8 @@ export async function loadDrillCatalog(): Promise<any[]> {
   catalogCache = coachCatalogRows(snapshot.docs);
   return catalogCache;
 }
+
+export { loadWorkoutCategories } from "../../../lib/workout-category-registry";
 
 // MARK: - Plan writes
 

@@ -18,6 +18,7 @@ import {
   publishBlockedByValidation,
 } from "../../../lib/contracts/drillV2";
 import type { CatalogDrill } from "../../../lib/contracts/drillV2";
+import { categorizedCatalogDrill } from "../../../lib/contracts/workoutCategory";
 import { DOMAIN_CODES, MEDIA_SLOTS } from "../../../lib/contracts/types";
 import type { Domain, DrillStatus, MediaSlot, Position } from "../../../lib/contracts/types";
 import { ADMIN_CLIENT_VERSION } from "./identity";
@@ -27,9 +28,10 @@ const META = "drillCatalogMeta";
 
 // MARK: - Reads
 
+/** Every drill, with its home category for the workout editor's picker. Writes never carry the category. */
 export async function loadCatalog(): Promise<CatalogDrill[]> {
   const snapshot = await db.collection(CATALOG).get();
-  return snapshot.docs.map(doc => normalizeCatalogDrill(doc.id, doc.data()));
+  return snapshot.docs.map(doc => categorizedCatalogDrill(doc.id, doc.data()));
 }
 
 export async function loadDrill(drillId: string): Promise<CatalogDrill | null> {

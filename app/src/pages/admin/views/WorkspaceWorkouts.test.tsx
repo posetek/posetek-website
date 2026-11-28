@@ -15,7 +15,8 @@ describe("admin workout evidence", () => {
       { key: "bike", started: 15, completed: 15, timerMinutes: 520 }, { key: "something-new", started: 1, completed: 0, timerMinutes: 0 }] };
     const html = render(data);
     expect(html).toContain("Workouts by type");
-    for (const label of ["Field training", "Yoga", "Ride", "Other"]) expect(html).toContain(label);
+    for (const label of ["Field training", "Mobility", "Ride", "Other"]) expect(html).toContain(label);
+    expect(html).not.toContain("Yoga");
     expect(html).toContain("A saved workout without a recorded type is field training.");
     expect(html.indexOf("Workouts by type")).toBeLessThan(html.indexOf("Workout activity by week"));
     // An earlier reporting service sends no kinds: no empty chart is drawn.
