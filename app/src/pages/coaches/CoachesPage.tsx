@@ -6,7 +6,7 @@ import { useThemeColor } from "../../lib/use-theme-color";
 import { useBodyBackground } from "../../lib/use-body-background";
 import { MarketingJourney, MarketingCursor, RevealFrame } from "../home/MarketingJourney";
 import { MarketingFooter } from "../home/MarketingFooter";
-import { TEAM_ENQUIRY_HREF } from "../home/marketing-links";
+import { openDemoFromLink, TEAM_ENQUIRY_HREF } from "../home/marketing-links";
 import { injectClarity } from "../home/clarity";
 import { ClubExplorer } from "./ClubExplorer";
 import { PlayerEvidence } from "./PlayerEvidence";
@@ -87,14 +87,7 @@ export default function CoachesPage() {
         </div>
         <RevealFrame className="coach-hero-frame">
           <a className="marketing-visual-link" href="#club" data-preview-link="" data-cursor="Open team report" aria-label="Explore the sample team report"
-            onClick={event => {
-              if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-              // The unenhanced link lands on the chapter. Once interactive, the
-              // open report owns the scroll so native fragment scrolling cannot interrupt it.
-              event.preventDefault();
-              if (window.location.hash !== "#club") window.history.pushState(window.history.state, "", "#club");
-              setReportRequest(previous => previous + 1);
-            }}>
+            onClick={event => openDemoFromLink(event, () => setReportRequest(previous => previous + 1))}>
             <TeamReportPreview />
           </a>
         </RevealFrame>

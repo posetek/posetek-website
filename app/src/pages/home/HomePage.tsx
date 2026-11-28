@@ -7,6 +7,7 @@ import { useBodyBackground } from "../../lib/use-body-background";
 import { TestCards } from "./TestCards";
 import { MarketingJourney, MarketingCursor, RevealFrame } from "./MarketingJourney";
 import { MarketingFooter } from "./MarketingFooter";
+import { openDemoFromLink } from "./marketing-links";
 import { LazyHomepageDemo } from "./LazyHomepageDemo";
 import { AthleteProfile } from "./AthleteProfile";
 import { coachWorkoutRequest } from "./product/product-demo";
@@ -84,11 +85,7 @@ export default function HomePage() {
             <div className="hero-summary">
             <p className="hero-description hero-enter" style={{ "--enter-delay": "160ms" } as CSSProperties}>Your soccer tests show where you stand today. See how you compare with your team and which drill to take to your next practice.</p>
             <div className="hero-actions hero-enter" style={{ "--enter-delay": "240ms" } as CSSProperties}>
-              <a className="hero-explore" href="#profile" onClick={event => {
-                if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
-                  setProfileRequest(previous => previous + 1);
-                }
-              }}><span className="hero-explore-label"><ScrambleText>Explore a player profile</ScrambleText><span className="hero-explore-track" aria-hidden="true" /></span><span className="hero-explore-orbit" aria-hidden="true"><Arrow down /></span></a>
+              <a className="hero-explore" href="#profile" onClick={event => openDemoFromLink(event, () => setProfileRequest(previous => previous + 1))}><span className="hero-explore-label"><ScrambleText>Explore a player profile</ScrambleText><span className="hero-explore-track" aria-hidden="true" /></span><span className="hero-explore-orbit" aria-hidden="true"><Arrow down /></span></a>
             </div>
             <a className="hero-mobile-link" href="#mobile-app"><svg viewBox="0 0 16 22" fill="none" aria-hidden="true"><rect x="2" y="1" width="12" height="20" rx="3" stroke="currentColor" strokeWidth="1.3"/><path d="M6 4h4M6 18h4" stroke="currentColor" strokeLinecap="round"/></svg><ScrambleText>Explore the PoseTek mobile app</ScrambleText> <span aria-hidden="true">↗</span></a>
             </div>

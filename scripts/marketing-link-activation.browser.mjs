@@ -101,21 +101,33 @@ for (const engine of ['chromium', 'webkit']) {
     await page.locator('summary.pt-marketing-menu-button').tap();
     await activateText(page, '.pt-menu-account a[href="/signin"]', true);
   });
-  test(`${engine} phone report link scrolls to the panel on first and repeat taps`, { timeout: 30_000 }, async t => {
-    const page = await pageFor(t, engine, '/coaches/', true);
-    const link = page.getByRole('link', { name: 'Explore the sample team report' });
-    await page.locator('[data-showcase-enhanced]').waitFor();
-    for (let tap = 0; tap < 2; tap++) {
-      await link.tap();
-      await page.waitForFunction(() => {
-        const heading = document.getElementById('demo-heading-club');
-        if (document.activeElement !== heading) return false;
-        const rect = heading.getBoundingClientRect();
-        return rect.top >= 0 && rect.bottom < innerHeight / 2;
-      });
-    }
-    assert.equal(new URL(page.url()).hash, '#club');
-  });
+  for (const [route, label, chapter] of [
+    ['/', 'Explore a player profile', 'profile'],
+    ['/coaches/', 'Explore the sample team report', 'club'],
+  ]) {
+    test(`${engine} phone ${chapter} link scrolls to the panel on first and repeat taps`, { timeout: 30_000 }, async t => {
+      const page = await pageFor(t, engine, route, true);
+      const link = page.getByRole('link', { name: label });
+      await page.locator('[data-showcase-enhanced]').waitFor();
+      for (let tap = 0; tap < 2; tap++) {
+        await link.tap();
+        await page.waitForFunction(id => {
+          const heading = document.getElementById('demo-heading-' + id);
+          if (!heading || document.activeElement !== heading) return false;
+          const rect = heading.getBoundingClientRect();
+          return rect.top >= 0 && rect.bottom < innerHeight / 2;
+        }, chapter);
+        // A smooth scroll can briefly cross the panel on its way to the chapter.
+        await page.waitForTimeout(600);
+        const settled = await page.locator('#demo-heading-' + chapter).evaluate(heading => {
+          const rect = heading.getBoundingClientRect();
+          return document.activeElement === heading && rect.top >= 0 && rect.bottom < innerHeight / 2;
+        });
+        assert.ok(settled, 'The focused demo heading stays in the viewport after the tap.');
+      }
+      assert.equal(new URL(page.url()).hash, '#' + chapter);
+    });
+  }
   test(`${engine} phone closing Sign in follows one text tap`, { timeout: 20_000 }, async t => {
     const page = await pageFor(t, engine, '/', true);
     await activateText(page, '.marketing-footer-secondary', true);
