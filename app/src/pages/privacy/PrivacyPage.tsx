@@ -80,11 +80,11 @@ export default function PrivacyPage() {
             <li>We collect the information needed to run a training platform: account details, player profile information, training videos, performance results, and basic app usage and diagnostic data.</li>
             <li>Training videos and performance data are linked to the player's account so we can show progress over time.</li>
             <li>Players' data may be visible to their own club's authorized coaches and administrators. Where a club has turned on the community feed, workout and drill activity can also be seen by teammates, according to the player's sharing settings. It is not public.</li>
-            <li>AI coaching, workout generation and voice assistance send information to AI providers only after the athlete gives explicit permission in Account settings → AI sharing. Permission can be withdrawn at any time. Verified PoseTek staff administrators may also use AI features on an athlete's information for support and quality checks, with their own AI-sharing permission.</li>
+            <li>AI coaching, workout generation and voice assistance send information to AI providers only after the athlete gives explicit permission for their own profile in Account settings → AI sharing. Permission can be withdrawn at any time. AI requests by staff or linked parents and guardians for another athlete are temporarily unavailable.</li>
             <li>The camera is used for drill recording, warm-up tracking and the hands-free Watch mode. Warm-up tracking and Watch mode analyze the camera image on the phone and do not save or upload video.</li>
             <li>We do not sell personal information. We do not show third-party ads. We do not track users across other companies' apps or websites.</li>
             <li>Many of our players are minors. We require a parent or guardian's consent for players under 13, and parents can review or delete their child's information at any time.</li>
-            <li>You can request permanent deletion in the app under Profile → Account settings → Delete account. No support email is required.</li>
+            <li>You can request permanent deletion in the player workspace under Account menu (the initials button) → Account settings → Delete account. No support email is required.</li>
           </ul>
         </PolicySection>
 
@@ -94,9 +94,11 @@ export default function PrivacyPage() {
             <li><strong>Account information:</strong> name, email address, password or sign-in credentials, and account role (player, parent, coach, or club administrator).</li>
             <li><strong>Player profile information:</strong> age or date of birth, playing position, team and club affiliation, experience level, training goals, and similar details used to personalize training.</li>
             <li><strong>Training videos and images:</strong> videos you record in the app or choose to upload from your photo library, such as footage of kicks, drills, and performance tests. These videos show the player and may incidentally show other people or surroundings in the frame.</li>
+            <li><strong>Body scans:</strong> when you submit a body scan, the captured photograph is uploaded to our cloud storage for processing and linked to the athlete's profile. The resulting body-position and measurement information is used for the athlete's training and results. Body-scan photos are separate from the setting for saving drill videos.</li>
             <li><strong>Performance and training data:</strong> results from measured drills and performance tests, technique analysis results (including body-position and movement data derived from video), workouts assigned and completed, and progress over time.</li>
             <li><strong>Messages to the AI coach:</strong> the questions and requests you type or dictate when using AI features, voice transcripts used for supported voice-request routing, and the responses generated. The AI coach can also keep short notes ("memories") about your goals and preferences so later answers fit you better; you can review them, delete them one at a time or all at once, or turn memory off.</li>
             <li><strong>Voice mode:</strong> when you turn on voice mode in the iPhone app, it listens for drill commands and coaching questions and turns what you say into text. Speech recognition runs on your iPhone when the device supports it; Apple's speech service is used only if you allow it. Listening pauses while a rep is being recorded. Voice mode sends the text of what you say, not an audio recording, and text sent to AI providers is covered by the AI-sharing permission described in <a href="#ai-and-automated-processing">Section {sectionNumber("ai-and-automated-processing")}</a>.</li>
+            <li><strong>Outdoor activities and location:</strong> when you start tracking a run, walk, hike or bike ride and allow location access, the app records precise GPS coordinates on your iPhone, including while the activity continues in the background. The full route is stored on that device. Activity summaries, such as distance and duration, can be saved to your training history. If you share an outdoor activity, its summary may include a simplified route drawing with the areas around the start and finish removed; that drawing contains no latitude or longitude values.</li>
             <li><strong>Community activity:</strong> where your club has turned on the community feed, the comments and kudos you post, the athletes you connect with, and your sharing settings.</li>
             <li><strong>Coach and club input:</strong> feedback, comments, workout adjustments, and notes that coaches or administrators add to a player's profile.</li>
             <li><strong>Communications:</strong> information you send us when you contact support or submit an interest or booking form on our website.</li>
@@ -106,6 +108,7 @@ export default function PrivacyPage() {
           <ul>
             <li><strong>Identifiers:</strong> an account ID we assign to you, and app-installation or device-level identifiers generated by our service providers' software.</li>
             <li><strong>Usage data:</strong> how you interact with the Services, such as screens viewed, features used, and session times. For signed-in players this includes estimated active time and feature categories associated with the player's account, together with the order of pages viewed, selected buttons, and whether selected actions completed. Reports distinguish desktop browsers, phone or tablet browsers, and supported native iPhone builds. Verified PoseTek administrators can review these records to understand participation and navigation. Detailed named journeys expire after 90 days. Collection pauses when the app is in the background or the screen is idle. These usage reports do not contain page addresses, typed text, or screen recordings.</li>
+            <li><strong>Optional app usage sharing:</strong> PostHog analytics are disabled in App Store and TestFlight versions. Only explicitly enabled internal development tests can send screen and button names, drill categories, recording-flow stages and outcomes, app version, role and random session identifiers to PostHog when Share app usage is enabled. These events do not include your name, email, messages, performance measurements, recordings or precise location. Session replay is disabled. During those development tests, you can turn sharing off in Account settings → Share app usage. This setting is not shown in App Store or TestFlight versions. These optional analytics are separate from the account-linked usage records described above.</li>
             <li><strong>Diagnostics:</strong> crash logs and performance data, including device model and operating system version. Diagnostic media sharing is a separate, optional setting in the iPhone app and is off by default. When an eligible player enables it for their own profile, newly captured failed recordings and calibration images may be sent to PoseTek for troubleshooting. This choice applies to that account and athlete on that device, and is separate from saving successful training videos to the cloud. Coaches cannot grant it for another athlete. Turning it off prevents new diagnostic media uploads, including queued media; an upload already started may finish. Diagnostic logs still send when media sharing is off. Local recovery files may remain on the device even when sharing is off.</li>
           </ul>
 
@@ -122,11 +125,12 @@ export default function PrivacyPage() {
             </li>
             <li><strong>Microphone and speech recognition:</strong> used only for voice mode, as described above.</li>
             <li><strong>Photo library:</strong> used only when you choose to upload an existing video. We receive only the items you select.</li>
+            <li><strong>Location:</strong> used for outdoor activity tracking as described above. You can stop an activity in the app or change location permission in your device settings.</li>
           </ul>
           <p>You can change these permissions at any time in your device settings.</p>
 
           <h3>Information we do not collect</h3>
-          <p>We do not collect precise location, contacts, or advertising identifiers (IDFA), and we do not collect payment card details. The app does not offer in-app purchases. Where paid services are offered through our website, payments are processed by Stripe; we receive confirmation of payment and subscription status, not your card number or banking details.</p>
+          <p>We do not collect contacts, advertising identifiers (IDFA), or payment card details. Precise outdoor routes remain on your device; shared route drawings and activity summaries are described above. The app does not offer in-app purchases. Where paid services are offered through our website, payments are processed by Stripe; we receive confirmation of payment and subscription status, not your card number or banking details.</p>
         </PolicySection>
 
         <PolicySection id="how-we-use-information">
@@ -152,26 +156,27 @@ export default function PrivacyPage() {
           <h3>AI features and your permission</h3>
           <ul>
             <li><strong>What the AI features are:</strong> the AI coach (questions about your results and training), workout and training-plan generation, analysis of recorded reps, and voice assistance in voice mode.</li>
-            <li><strong>Permission first:</strong> the iPhone app asks for explicit permission before sending personal information through our AI gateway to an AI provider. In the app, open Account settings → AI sharing to allow, decline or withdraw permission. Until you allow it, the app's AI features stay off; recording remains available when AI sharing is off.</li>
+            <li><strong>Permission first:</strong> the iPhone app asks for explicit permission before sending personal information through our AI gateway to an AI provider. In the app, open Account settings → AI sharing to allow, decline or withdraw permission. On the athlete website, use Review AI sharing in Coach, Workouts or Account settings. Until you allow it, the app's AI features stay off; recording remains available when AI sharing is off. When the disclosure adds a provider or purpose, we ask you to review the updated choice before the earlier permission can authorize that sharing.</li>
             <li><strong>What is sent:</strong> depending on the feature, your messages, voice transcripts, athlete profile information, training history, performance measurements and reports.</li>
             <li>
               <strong>Who receives it:</strong>
               <ul>
                 <li>Google Vertex AI (Gemini models), for coaching responses, analysis and training plans;</li>
-                <li>Anthropic (Claude models), for coaching responses and checking training plans; and</li>
-                <li>TypeSafe (Jev), for routing voice requests in voice mode.</li>
+                <li>Anthropic (Claude models), for coaching responses and checking training plans;</li>
+                <li>TypeSafe (Jev), for routing voice requests in voice mode using your transcript, current screen and drill, recording state and any pending clarification; and</li>
+                <li>OpenAI, for live spoken responses. We send the text to be spoken, which may include training information and coaching responses, to generate audio. Playing bundled voice recordings does not send your information to OpenAI.</li>
               </ul>
-              We send only the information needed for each task, under agreements that prohibit those providers from using it to train their own models.
+              We send the information needed for the requested feature. Your AI-sharing choice authorizes that processing, not training a provider's models. Provider terms and account settings also govern how submitted information is handled, including retention for security, abuse prevention and legal obligations. Withdrawing permission does not immediately erase copies retained for those purposes.
             </li>
             <li><strong>Withdrawing permission:</strong> you can withdraw at any time in Account settings → AI sharing. Withdrawal stops new AI requests; requests already sent may finish, and withdrawal does not delete existing conversations or reports (deleting your account does). If account-wide withdrawal cannot be confirmed because of a connection failure, the app keeps AI sharing off on that device and asks you to retry.</li>
             <li><strong>Separate from device permissions:</strong> AI permission is separate from microphone and speech-recognition permission. Permission is not transferred to another account or device.</li>
-            <li><strong>Other people's data:</strong> a coach's, club administrator's or other staff member's permission does not authorize AI sharing of another player's information; for them, those AI features remain unavailable until athlete or guardian authority can be verified.</li>
-            <li><strong>PoseTek administrators:</strong> verified PoseTek staff administrators may use AI features on an athlete's information to provide support and check quality, with their own AI-sharing permission. That information is sent to the same AI providers, under the same limits, as described above.</li>
+            <li><strong>Other people's data:</strong> AI-sharing permission covers your own athlete profile only. AI for another athlete is temporarily unavailable to coaches, club administrators, PoseTek staff and linked parents or guardians. Account access or a guardian link does not authorize sharing that athlete's information with AI providers. These AI features remain unavailable until athlete or guardian authority can be verified; ordinary authorized access to saved workouts and results remains available.</li>
           </ul>
 
           <h3>Limits of automated feedback</h3>
           <ul>
             <li>Content generated by AI, and other feedback and plans generated by the Services, is coaching guidance only. It is not medical advice and is not a substitute for a qualified coach's or medical professional's judgment.</li>
+            <li>Your AI-sharing permission does not cover reusing individual analysis reviews, annotations or private review notes for model training or evaluation. That reuse is temporarily unavailable; human review and feedback to the athlete remain available.</li>
             <li>We may use de-identified and aggregated training and performance data to improve our own models and to build benchmarks (for example, comparing results against players of a similar age and position). This data is not used to identify any individual player.</li>
           </ul>
         </PolicySection>
@@ -195,7 +200,8 @@ export default function PrivacyPage() {
               <strong>With service providers.</strong> We use vendors that process information on our behalf under contractual confidentiality and security obligations, including:
               <ul>
                 <li>Google (Firebase and Google Cloud) for authentication, databases, file and video storage, hosting, analytics, and crash reporting;</li>
-                <li>Google (Vertex AI) and Anthropic for generating coaching responses and training plans, and TypeSafe (Jev) for supported voice-request routing (see <a href="#ai-and-automated-processing">Section {sectionNumber("ai-and-automated-processing")}</a>);</li>
+                <li>Google (Vertex AI) and Anthropic for generating coaching responses and training plans, TypeSafe (Jev) for supported voice-request routing, and OpenAI for live spoken responses (see <a href="#ai-and-automated-processing">Section {sectionNumber("ai-and-automated-processing")}</a>);</li>
+                <li>PostHog for optional app usage sharing only in explicitly enabled internal development tests, as described above;</li>
                 <li>Stripe for processing payments made through our website; and</li>
                 <li>Microsoft (Clarity) for website usage analytics, such as clicks, scrolling, and page interactions, on parts of posetek.net.</li>
               </ul>
@@ -223,7 +229,7 @@ export default function PrivacyPage() {
           <ul>
             <li>review the personal information we hold about their child;</li>
             <li>ask us to correct or delete that information, including videos;</li>
-            <li>request deletion of their child's account and all of its data, either in the app from the child's account (Profile → Account settings → Delete account) or by email;</li>
+            <li>request deletion of their child's account and all of its data, either in the app from the child's account (Account menu → Account settings → Delete account) or by email;</li>
             <li>refuse to permit further collection or use of their child's information, which will end the child's use of the Services; and</li>
             <li>withdraw consent previously given.</li>
           </ul>
@@ -259,7 +265,7 @@ export default function PrivacyPage() {
           <ul>
             <li><strong>Access and correction.</strong> You can view and update most account and profile information in the app.</li>
             <li>
-              <strong>Delete your account.</strong> In the app, open Profile → Account settings → Delete account (coaches and staff open Account settings from the account icon at the top of their home screen). Confirm your identity and the permanent deletion. This deletes:
+              <strong>Delete your account.</strong> In the player workspace, open Account menu (the initials button) → Account settings → Delete account (coaches and staff open Account settings from the account icon at the top of their home screen). Confirm your identity and the permanent deletion. This deletes:
               <ul>
                 <li>your account and sign-in;</li>
                 <li>your athlete profile and personal details;</li>
@@ -271,6 +277,7 @@ export default function PrivacyPage() {
               Deletion normally completes about a day after you confirm, and always within 30 days (see <a href="#data-retention">Data retention</a>). You can check completion using the deletion receipt on the sign-in screen. De-identified or aggregated statistics that can no longer be linked to you may remain. You may also contact <ContactEmail /> for help; email is not required to use in-app deletion, and requests by email remain available. Deletion is permanent. Deleting a coach's account does not delete their players' accounts or recordings, and removing a player from a team is not account deletion.
             </li>
             <li><strong>AI sharing.</strong> Allow, decline or withdraw AI sharing at any time in Account settings → AI sharing. In the AI coach you can review and delete its memories, or turn memory off.</li>
+            <li><strong>App usage sharing.</strong> PostHog is disabled in App Store and TestFlight versions. During an enabled internal development test, turn sharing off in Account settings → Share app usage. Turning it off stops new events; queued or sent events may remain.</li>
             <li><strong>Community feed.</strong> Where the feed is on, choose who sees your activity, whether it is shared automatically and whether rep videos can be watched, and hide individual activities.</li>
             <li><strong>Diagnostic media.</strong> Sharing diagnostic videos and images for troubleshooting is off unless you turn it on in Drill Settings, and you can turn it off at any time.</li>
             <li><strong>Permissions.</strong> You can turn off camera, microphone, speech recognition and photo library access in your device settings. Recording, warm-up tracking and Watch mode do not work without camera access, and voice mode does not work without the microphone.</li>

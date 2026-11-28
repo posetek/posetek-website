@@ -7,7 +7,7 @@ import type { RepArtifactBundle } from "../lib/repToolsData";
 import { resolveClipTiming } from "../lib/repTools";
 import { comparisonTime, eligibleEvidence, feedbackFromResult, LIMBS, manualArtifactsChanged, PHASES, phaseFrame, poseJoint, reliableFoot, reorderedFocus, selectComparisonPair, sourceEvidence, validSavedComparisons } from "../lib/analysisReview";
 import type { Phase, ReviewFeedback, ReviewFocus, ReviewNotes, TechniqueAnnotation } from "../lib/analysisReview";
-import { exportAnalysisReviews, generateAnalysis, loadAnalysisReps, loadAnnotationArtifacts, loadComparisons, loadReviewTarget, organizationAthletes, saveAnalysisReview } from "../lib/analysisReviewData";
+import { generateAnalysis, loadAnalysisReps, loadAnnotationArtifacts, loadComparisons, loadReviewTarget, organizationAthletes, saveAnalysisReview } from "../lib/analysisReviewData";
 import type { ObservedSource, ReviewTarget } from "../lib/analysisReviewData";
 import "../analysis.scss";
 
@@ -79,12 +79,6 @@ export default function AnalysisWorkspace() {
     } catch (error: any) { if (alive.current) setError(error.message); }
     finally { if (alive.current) setBusy(false); }
   }
-  async function exportDataset(all: boolean) {
-    setBusy(true); setError("");
-    try { const count = await exportAnalysisReviews(all ? players.map(row => row.id) : [playerId]); setStatus(`Downloaded ${count} approved review examples. Athlete train/evaluation splits and source versions are included.`); }
-    catch (error: any) { setError(error.message); }
-    finally { setBusy(false); }
-  }
   const selectedReps = (mode === "single" ? [repId] : [leftId, rightId]).map(id => reps.find(row => row.id === id)).filter(Boolean);
   const ready = Boolean(playerId && (mode === "single" ? repId : leftId && rightId && leftId !== rightId));
   return <div className="analysis-workspace">
@@ -101,7 +95,7 @@ export default function AnalysisWorkspace() {
         <RepSelect label="Left-foot kick" value={leftId} reps={reps.filter(rep => reliableFoot(rep) === "left")} disabled={busy} onChange={value => change(() => setPairSelection({ playerId, leftId: value, rightId }))} />
         <RepSelect label="Right-foot kick" value={rightId} reps={reps.filter(rep => reliableFoot(rep) === "right")} disabled={busy} onChange={value => change(() => setPairSelection({ playerId, leftId, rightId: value }))} />
       </>}
-      <div className="admin-form-actions"><button type="button" className="primary-cta" disabled={busy || !ready} onClick={generate}>{busy ? "Working…" : target?.result ? "Generate new analysis" : "Generate analysis"}</button>{playerId && <button type="button" className="quiet-button" disabled={busy} onClick={() => exportDataset(false)}>Export athlete reviews</button>}{players.length > 0 && <button type="button" className="quiet-button" disabled={busy || players.length > 100} onClick={() => exportDataset(true)}>Export organization reviews</button>}</div>
+      <div className="admin-form-actions"><button type="button" className="primary-cta" disabled={busy || !ready} onClick={generate}>{busy ? "Working…" : target?.result ? "Generate new analysis" : "Generate analysis"}</button></div>
       {mode === "comparison" && playerId && (!leftId || !rightId) && <p className="admin-note">A comparison needs a labeled left-foot kick and a labeled right-foot kick. Assign missing foot labels in <Link to={resultsPath(playerId, "shooting")}>rep tools</Link>.</p>}
     </section>
     {error && <p className="form-message" role="alert">{error}</p>}{status && <p className="analysis-status" role="status">{status}</p>}
@@ -119,18 +113,16 @@ function ReviewEditor({ playerId, reps, target, blocked, onDirty, onSaving, onSa
   const [feedback, setFeedback] = useState<ReviewFeedback>(previous?.feedback || feedbackFromResult(target.result));
   const [annotations, setAnnotations] = useState<TechniqueAnnotation[]>(previous?.annotations || []);
   const [notes, setNotes] = useState<ReviewNotes>(previous?.notes || { incorrect: "", missedPriorities: "", other: "" });
-  const [approved, setApproved] = useState(false);
   const [publish, setPublish] = useState(Boolean(previous?.published));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [phase, setPhase] = useState<Phase>("contact");
   const [manual, setManual] = useState(!target.result);
   const [historyId, setHistoryId] = useState("");
-  const [sourceStates, setSourceStates] = useState<Record<string, { identities: ObservedSource; ready: boolean }>>({});
+  const [sourceStates, setSourceStates] = useState<Record<string, { identities: ObservedSource }>>({});
   const [manualReset, setManualReset] = useState(false);
   const manualDrift = !manualReset && manualArtifactsChanged(previous, sourceStates);
-  const sourceLoaded = useCallback((repId: string, identities: ObservedSource, ready: boolean) => setSourceStates(current => ({ ...current, [repId]: { identities, ready } })), []);
-  const canApprove = !manualDrift && (Boolean(target.result?.jobId) || (annotations.length > 0 && reps.every(rep => sourceStates[rep.id]?.ready)));
+  const sourceLoaded = useCallback((repId: string, identities: ObservedSource) => setSourceStates(current => ({ ...current, [repId]: { identities } })), []);
   const dirty = () => onDirty(true);
   const evidence = sourceEvidence(target.result);
   const originalFeedback = feedbackFromResult(target.result);
@@ -140,14 +132,14 @@ function ReviewEditor({ playerId, reps, target, blocked, onDirty, onSaving, onSa
     setSaving(true); onSaving(true); setError("");
     try {
       if (manualDrift) throw new Error("Start a fresh manual review before saving labels for this changed recording.");
-      await saveAnalysisReview({ playerId, targetType: target.targetType, targetId: target.targetId, sourceJobId: target.result?.jobId || null, baseRevision: target.head?.revision || 0, feedback, annotations, notes, datasetApproved: approved && canApprove, publish, observedSources: Object.fromEntries(Object.entries(sourceStates).map(([key, value]) => [key, value.identities])), resetManualSource: manualReset });
+      await saveAnalysisReview({ playerId, targetType: target.targetType, targetId: target.targetId, sourceJobId: target.result?.jobId || null, baseRevision: target.head?.revision || 0, feedback, annotations, notes, datasetApproved: false, publish, observedSources: Object.fromEntries(Object.entries(sourceStates).map(([key, value]) => [key, value.identities])), resetManualSource: manualReset });
       onSaved();
     } catch (error: any) { setError(error.message); }
     finally { setSaving(false); onSaving(false); }
   }
   return <fieldset disabled={saving || blocked} className="analysis-editor-fields">
     {!sameSource && <p className="form-message">A previous review belongs to an older generation. Its history is preserved below. This draft starts from the current original.</p>}
-    {manualDrift && <section className="admin-card"><p className="form-message">The recording changed since the saved manual review. Those annotations belong to the earlier source, which remains in history.</p><button className="quiet-button" type="button" onClick={() => { setManualReset(true); setFeedback({ summary: "", focusAreas: [] }); setAnnotations([]); setNotes({ incorrect: "", missedPriorities: "", other: "" }); setApproved(false); setPublish(false); dirty(); }}>Start fresh manual review</button></section>}
+    {manualDrift && <section className="admin-card"><p className="form-message">The recording changed since the saved manual review. Those annotations belong to the earlier source, which remains in history.</p><button className="quiet-button" type="button" onClick={() => { setManualReset(true); setFeedback({ summary: "", focusAreas: [] }); setAnnotations([]); setNotes({ incorrect: "", missedPriorities: "", other: "" }); setPublish(false); dirty(); }}>Start fresh manual review</button></section>}
     <section className="admin-card analysis-evidence">
       <div className="analysis-card-heading"><div><h2>{target.targetType === "comparison" ? "Compare both feet" : "Inspect this kick"}</h2><p className="admin-note">Phase buttons pause each kick at its own event. All limbs refer to the athlete’s physical left and right.</p></div><label className="analysis-check"><input type="checkbox" checked={manual} onChange={event => setManual(event.target.checked)} />Annotation tools</label></div>
       <div className="analysis-phase-tabs" role="group" aria-label="Kick phase">{PHASES.map(key => <button key={key} type="button" className={`quiet-button ${phase === key ? "active" : ""}`} onClick={() => setPhase(key)}>{phaseLabel(key)}</button>)}</div>
@@ -170,21 +162,20 @@ function ReviewEditor({ playerId, reps, target, blocked, onDirty, onSaving, onSa
         <button type="button" className="quiet-button" disabled={feedback.focusAreas.length >= 12} onClick={() => { dirty(); setFeedback(current => ({ ...current, focusAreas: [...current.focusAreas, { id: `focus_${crypto.randomUUID()}`, rank: current.focusAreas.length + 1, title: "", observation: "", cue: "", whyItMatters: "", evidenceIds: [] }] })); }}>Add priority</button>
       </section>
     </div>
-    <section className="admin-card"><h2>Private review notes</h2><p className="admin-note">These notes stay in the admin review and approved dataset. They are never included in athlete feedback.</p><div className="analysis-notes">{([['incorrect', 'What the agent got wrong'], ['missedPriorities', 'What it should have focused on'], ['other', 'Other context']] as const).map(([key, label]) => <label key={key} className="admin-field"><span>{label}</span><textarea maxLength={6000} value={notes[key]} onChange={event => { dirty(); setNotes(current => ({ ...current, [key]: event.target.value })); }} /></label>)}</div>
-      {annotations.length > 0 && reps.some(rep => !Number.isInteger(target.result?.provenance?.sources?.[rep.id]?.frameCount)) && <p className="admin-note">The source record does not include every clip’s frame count. Verify frame annotations against the recording before approving this example; unverified frame bounds are retained in its source history.</p>}
-      <label className="analysis-check"><input type="checkbox" checked={approved && canApprove} disabled={!canApprove} onChange={event => { dirty(); setApproved(event.target.checked); }} />Approve this revision for training and evaluation examples</label>
-      {!canApprove && <p className="admin-note">Manual training examples require a frame annotation and verified source pose, recorded FPS and image dimensions. You can save and publish this review while approval is unavailable.</p>}
+    <section className="admin-card"><h2>Private review notes</h2><p className="admin-note">These notes stay in the private admin review. They are never included in athlete feedback.</p><div className="analysis-notes">{([['incorrect', 'What the agent got wrong'], ['missedPriorities', 'What it should have focused on'], ['other', 'Other context']] as const).map(([key, label]) => <label key={key} className="admin-field"><span>{label}</span><textarea maxLength={6000} value={notes[key]} onChange={event => { dirty(); setNotes(current => ({ ...current, [key]: event.target.value })); }} /></label>)}</div>
+      {annotations.length > 0 && reps.some(rep => !Number.isInteger(target.result?.provenance?.sources?.[rep.id]?.frameCount)) && <p className="admin-note">The source record does not include every clip’s frame count. Verify frame annotations against the recording before publishing feedback; unverified frame bounds are retained in its source history.</p>}
+      <p className="admin-note">Training and evaluation reuse is temporarily unavailable while athlete permission and data-use controls are verified. You can still save reviews and publish feedback to the athlete.</p>
       <label className="analysis-check"><input type="checkbox" checked={publish} onChange={event => { dirty(); setPublish(event.target.checked); }} />Publish this reviewed feedback to the athlete</label>
-      <p className="admin-note">Each save creates a new immutable revision. Dataset approval must be chosen for this save. Saving without publication removes the published correction for this target.</p>
+      <p className="admin-note">Each save creates a new immutable revision. Saving without publication removes the published correction for this target.</p>
       {error && <p className="form-message" role="alert">{error}</p>}<button className="primary-cta" type="button" disabled={saving} onClick={save}>{saving ? "Saving review…" : `Save revision ${(target.head?.revision || 0) + 1}`}</button>
     </section>
-    {target.history.length > 0 && <section className="admin-card"><h2>Review history</h2><select aria-label="Saved review revision" value={historyId} onChange={event => setHistoryId(event.target.value)}><option value="">Choose revision to inspect</option>{target.history.map(row => <option key={row.reviewId} value={row.reviewId}>Revision {row.revision} · {row.reviewerEmail} · {row.datasetApproved ? "approved dataset" : "excluded from dataset"}</option>)}</select>{historical && <pre>{pretty(historical)}</pre>}</section>}
+    {target.history.length > 0 && <section className="admin-card"><h2>Review history</h2><select aria-label="Saved review revision" value={historyId} onChange={event => setHistoryId(event.target.value)}><option value="">Choose revision to inspect</option>{target.history.map(row => <option key={row.reviewId} value={row.reviewId}>Revision {row.revision} · {row.reviewerEmail} · {row.datasetApproved ? "previously approved; export unavailable" : "excluded from dataset"}</option>)}</select>{historical && <pre>{pretty(historical)}</pre>}</section>}
   </fieldset>;
 }
 
 function formatReading(value: unknown, units: string) { return typeof value === "number" && Number.isFinite(value) ? `${Number(value.toFixed(3))} ${units || ""}` : "—"; }
 
-function AnnotationViewer({ playerId, rep, result, phase, enabled, annotations, onAdd, onSource }: { playerId: string; rep: any; result: any; phase: Phase; enabled: boolean; annotations: TechniqueAnnotation[]; onAdd: (value: TechniqueAnnotation) => void; onSource: (repId: string, identities: ObservedSource, ready: boolean) => void }) {
+function AnnotationViewer({ playerId, rep, result, phase, enabled, annotations, onAdd, onSource }: { playerId: string; rep: any; result: any; phase: Phase; enabled: boolean; annotations: TechniqueAnnotation[]; onAdd: (value: TechniqueAnnotation) => void; onSource: (repId: string, identities: ObservedSource) => void }) {
   const [bundle, setBundle] = useState<RepArtifactBundle | null>(null);
   const [error, setError] = useState("");
   const [frame, setFrame] = useState(0);
@@ -199,13 +190,10 @@ function AnnotationViewer({ playerId, rep, result, phase, enabled, annotations, 
     loadAnnotationArtifacts(playerId, rep).then(value => {
       if (!live) return;
       setBundle(value);
-      const metadata = value.metadata || {}, capture = value.reprocessContext?.capture || {};
+      const metadata = value.metadata || {};
       const width = metadata.videoDisplayWidth ?? metadata.frameWidth, height = metadata.videoDisplayHeight ?? metadata.frameHeight;
       if (typeof width === "number" && width > 0 && typeof height === "number" && height > 0) setAspect(width / height);
-      const fps = metadata.framesPerSecond ?? capture.clipFramesPerSecondUsed;
-      const frames = Array.isArray(value.pose) ? value.pose : value.pose?.frames;
-      const ready = Boolean(value.sourceIdentities["pose.json"] && Array.isArray(frames) && frames.length > 0 && typeof fps === "number" && fps > 0 && width > 0 && height > 0);
-      onSource(rep.id, value.sourceIdentities, ready);
+      onSource(rep.id, value.sourceIdentities);
     }).catch(error => { if (live) setError(error.message); });
     return () => { live = false; };
   }, [playerId, rep, onSource]);

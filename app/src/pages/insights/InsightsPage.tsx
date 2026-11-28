@@ -1,5 +1,5 @@
 import { coachReportOrganization, coachReportRoute } from "../../lib/coach-report-route";
-import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { lazy, Suspense, useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { auth } from "../../lib/firebase";
 import { clubCall, getClubContext, type ClubContext } from "../../lib/organization-data";
@@ -9,7 +9,7 @@ import { useForegroundReport } from '../../lib/foreground-report';
 import { loadAuthorizedReport } from "./lib/loadReport";
 import ExpandedReport from "./ExpandedReport";
 import OrganizationHeader from "../organization/OrganizationHeader";
-import AdminInsightsLayout from "./AdminInsightsLayout";
+import AdminInsightsLayout, { AdminReportHeading } from "./AdminInsightsLayout";
 import CoachRoster from "./CoachRoster";
 import CoachOverviewSnapshot from "./CoachOverviewSnapshot";
 import PlayerFilters from "./PlayerFilters";
@@ -63,13 +63,16 @@ export function InsightTabs({ request, onChange, coach = false, playerName = "Pl
   return <div className="coach-tab-row"><nav ref={tabs} className="insights-tabs" aria-label={coach ? "Coach workspace" : "Insights views"} role="tablist" onKeyDown={keyboard}>{views.map(view => <button key={view} type="button" role="tab" tabIndex={request.view === view ? 0 : -1} aria-selected={request.view === view} aria-controls="insights-report" id={`insights-tab-${view}`} onClick={() => onChange({ view })}>{view === "player" ? playerName : view === "usage" && coach ? "Active use" : view[0].toUpperCase() + view.slice(1)}</button>)}</nav>{coach && request.playerId && <button className="coach-close-player" type="button" aria-label={`Close ${playerName} tab`} onClick={onClosePlayer}>×</button>}</div>;
 }
 
-export function InsightsControls({ choices, request, scope, loading, hideScope = false, coach = false, onChange, onRefresh }: {
+const reportDateFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" });
+
+export function InsightsControls({ choices, request, scope, loading, hideScope = false, coach = false, adminFilters, onChange, onRefresh }: {
   choices: InsightChoices;
   request: ExpandedRequest;
   scope: InsightScope;
   loading: boolean;
   hideScope?: boolean;
   coach?: boolean;
+  adminFilters?: { open: boolean; toggle: () => void };
   onChange: (patch: Partial<ExpandedRequest>) => void;
   onRefresh: () => void;
 }) {
@@ -77,12 +80,20 @@ export function InsightsControls({ choices, request, scope, loading, hideScope =
   const organization = choices.organizations.find(org => org.id === orgId);
   const [dates, setDates] = useState({ start: request.startDate, end: request.endDate });
   const [dateError, setDateError] = useState("");
+  const controlsId = useId();
   useEffect(() => setDates({ start: request.startDate, end: request.endDate }), [request.startDate, request.endDate]);
   const today = dateInZone(new Date(), request.timezone);
   const preset = request.startDate === shiftDate(request.endDate, 1 - request.weeks * 7) ? request.weeks : 0;
 
   return <section className="insights-controls" aria-label="Report scope and dates">
-    <div className="insights-control-row">
+    {adminFilters && (
+      <button className="insights-filter-disclosure" type="button" aria-expanded={adminFilters.open}
+        aria-controls={controlsId} onClick={adminFilters.toggle}>
+        <strong>Report filters</strong>
+        <span>{reportDateFormat.formatRange(new Date(request.startDate), new Date(request.endDate))}</span>
+      </button>
+    )}
+    <div id={controlsId} className="insights-control-row">
       {!hideScope && scope.kind !== "coachRoster" && <>
         <label>Organization<select value={orgId} onChange={event => onChange({ orgId: event.target.value || undefined, teamId: undefined, coachId: undefined, ...clearPlayerFilters() })}>{choices.global && <option value="">All organizations</option>}{choices.organizations.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</select></label>
         <label>Team<select value={teamId} disabled={!organization} onChange={event => onChange({ teamId: event.target.value || undefined, teamAssignment: "" })}>{!coach && <option value="">{organization?.role === "coach" ? "All assigned teams" : "All teams + unassigned"}</option>}{coach && !teamId && <option value="" disabled>Choose a team</option>}{organization?.teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}</select></label>
@@ -118,6 +129,7 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
   const [response, setResponse] = useState<{ key: string; data: ExpandedInsights } | null>(null);
   const [choices, setChoices] = useState<InsightChoices | null>(null), [context, setContext] = useState<ClubContext | null>(null);
   const [scope, setScope] = useState<InsightScope | null>(null), [role, setRole] = useState<InsightAccess | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
   const [loading, setLoading] = useState(true), [error, setError] = useState(""), [accessDenied, setAccessDenied] = useState(false);
   const [retry, setRetry] = useState(0), [playerLabel, setPlayerLabel] = useState({ id: "", name: "Player" });
@@ -248,14 +260,16 @@ export function InsightsWorkspace({ uid, embedded = false }: { uid: string; embe
     navigate(`/programs?${params}`);
   }
   const content = <>
-    <section className={`insights-heading${embedded ? " admin-overview-heading" : ""}`}>
-      {!embedded && <p className="eyebrow">{coach ? "Team Insights" : "Insights"}</p>}
-      <h1>{embedded ? "Overview" : report?.scope.label || (scope?.kind === "global" ? "All organizations" : "Team Insights")}</h1>
-      <p>{embedded && (report?.scope.label || "")} {coach ? "Your roster, player progress and training in one place." : "Understand your roster, successful testing, completed workouts and estimated active use."}</p>
-    </section>
+    {embedded || role === "admin" ? <AdminReportHeading uid={uid} scope={report?.scope.label} overview={activeView === "overview"} /> : (
+      <section className="insights-heading">
+        <p className="eyebrow">{coach ? "Team Insights" : "Insights"}</p>
+        <h1>{report?.scope.label || (scope?.kind === "global" ? "All organizations" : "Team Insights")}</h1>
+        <p>{coach ? "Your roster, player progress and training in one place." : "Understand your roster, successful testing, completed workouts and estimated active use."}</p>
+      </section>
+    )}
     {coach && currentScope && (currentScope.kind === "team" || currentScope.kind === "organization") && currentScope.organizationId === coachReportOrganization &&
       <Link className="quiet-button" to={coachReportRoute(currentScope.organizationId, currentScope.kind === "team" ? currentScope.teamId : undefined)}>Open coach report</Link>}
-    {choices && currentScope && activeView !== "community" && <InsightsControls choices={choices} request={request} scope={currentScope} loading={loading} hideScope={embedded} coach={coach} onChange={change} onRefresh={refresh} />}
+    {choices && currentScope && activeView !== "community" && <InsightsControls choices={choices} request={request} scope={currentScope} loading={loading} hideScope={embedded} coach={coach} adminFilters={embedded || role === "admin" ? { open: filtersOpen, toggle: () => setFiltersOpen(open => !open) } : undefined} onChange={change} onRefresh={refresh} />}
     <InsightTabs request={{ ...request, view: activeView }} onChange={change} coach={coach} playerName={playerName} onClosePlayer={closePlayer} />
     {["overview", "testing", "player"].includes(activeView) && <div className="insights-toolbar"><p className="insights-note">Testing coverage</p><div className="insights-toggle" aria-label="Testing coverage period"><button type="button" aria-pressed={request.testingWindow === "cumulative"} onClick={() => change({ testingWindow: "cumulative" })}>Through selected end</button><button type="button" aria-pressed={request.testingWindow === "period"} onClick={() => change({ testingWindow: "period" })}>Selected period only</button></div></div>}
     {error && <div className="insights-message error" role="alert"><p>{error}</p><button className="quiet-button" type="button" onClick={refresh}>Retry Insights</button></div>}

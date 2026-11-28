@@ -1,8 +1,10 @@
 // Local Vite-only fixture. The real admin UI/read hooks run against invented,
 // in-memory data; no Auth account, Firebase service, or persisted record exists.
 export const firebaseFixtureModule = `export { auth, db, cloud, storage, directorySource, default } from '/scripts/admin-activity-fixtures/runtime.ts';`;
-export function activityFixtureDocument() {
-  return `<!doctype html><html lang="en"><head><title>PoseTek · Synthetic admin activity preview</title><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><script type="module">import RefreshRuntime from '/@react-refresh';RefreshRuntime.injectIntoGlobalHook(window);window.$RefreshReg$=()=>{};window.$RefreshSig$=()=>type=>type;window.__vite_plugin_react_preamble_installed__=true;const { mountActivityFixture }=await import('/scripts/admin-activity-fixtures/mount.tsx');mountActivityFixture();</script></body></html>`;
+export function activityFixtureDocument(interactive = false, fontPath) {
+  const entry = interactive ? "workspace-entry.ts" : "mount.tsx";
+  const font = fontPath ? `<style>@font-face{font-family:"Material Symbols Outlined";font-style:normal;font-weight:100 700;font-display:swap;src:url("${fontPath}") format("woff2")}</style>` : '';
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>PoseTek · Synthetic admin activity preview</title><meta name="viewport" content="width=device-width,initial-scale=1">${font}</head><body><script type="module">import RefreshRuntime from '/@react-refresh';RefreshRuntime.injectIntoGlobalHook(window);window.$RefreshReg$=()=>{};window.$RefreshSig$=()=>type=>type;window.__vite_plugin_react_preamble_installed__=true;const { mountActivityFixture }=await import('/scripts/admin-activity-fixtures/${entry}');mountActivityFixture();</script></body></html>`;
 }
 export async function installActivityFixture(context, origin, options = {}) {
   const base = new URL(origin);

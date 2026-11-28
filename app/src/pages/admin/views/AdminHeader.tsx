@@ -74,8 +74,19 @@ export default function AdminHeader({ ready, email, uid = "", preview = false, o
   return <>
     <header className="admin-workspace__toolbar">
       {ready && <button ref={opener} className="admin-workspace__menu" type="button" aria-label="Open admin navigation" aria-expanded={drawer} aria-controls="admin-navigation" onClick={() => { restoreFocus.current = true; setDrawerRoute(route); }}><Icon name="menu" /></button>}
-      <Link className="admin-workspace__brand" to={toolPath("/admin/accounts")} aria-label="PoseTek people and organizations"><img className="admin-workspace__mark" src="/brand/posetek-p.svg" alt="" width="36" height="36" /><span>POSETEK</span><span className="admin-workspace__badge">Admin</span></Link>
-      {ready && <><ToolSearch key={route} toolPath={toolPath} /><details ref={account} className="admin-workspace__account" onKeyDown={event => {
+      <Link className="admin-workspace__brand" to={toolPath("/admin/accounts")} aria-label="PoseTek people and organizations">
+        <img className="admin-workspace__mark" src="/brand/posetek-p.svg" alt="" width="36" height="36" />
+        <span className="admin-workspace__brand-text">
+          <span className="admin-workspace__wordmark">PoseTek</span>
+          <span className="admin-workspace__edition"><span>Admin</span>{preview && <small>Sample data</small>}</span>
+        </span>
+      </Link>
+      {ready && <>
+        <div className="admin-workspace__context" aria-label="Current workspace">
+          <span>{context.section}</span><Icon name="chevron_right" /><strong>{context.title}</strong>
+        </div>
+        <ToolSearch key={route} toolPath={toolPath} />
+        <details ref={account} className="admin-workspace__account" onKeyDown={event => {
         if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
       }}>
         <summary aria-label="Admin account menu" title={email}><span className="admin-workspace__avatar">{(email || "A")[0].toUpperCase()}</span><Icon name="expand_more" /></summary>
@@ -85,14 +96,28 @@ export default function AdminHeader({ ready, email, uid = "", preview = false, o
     {ready && <>
       {mobile && drawer && <div className="admin-workspace__backdrop" aria-hidden="true" onClick={() => dismiss()} />}
       <aside ref={rail} id="admin-navigation" className={`admin-workspace__rail${drawer ? " is-open" : ""}`} inert={mobile && !drawer} role={mobile && drawer ? "dialog" : undefined} aria-modal={mobile && drawer ? true : undefined} aria-label="Admin navigation">
-        <div className="admin-workspace__rail-intro"><div><span>POSETEK WORKSPACE</span><strong>Administration</strong></div><button type="button" className="admin-workspace__drawer-close" aria-label="Close admin navigation" onClick={() => dismiss()}><Icon name="close" /></button></div>
+        <div className="admin-workspace__rail-intro">
+          <strong>Administration</strong>
+          <button type="button" className="admin-workspace__drawer-close" aria-label="Close admin navigation" onClick={() => dismiss()}><Icon name="close" /></button>
+        </div>
         <nav aria-label="Admin sections">
-          <NavLink to={overviewPath} onClick={() => dismiss(false)} className={({ isActive }) => `admin-workspace__overview${isActive ? " active" : ""}`}>Overview</NavLink>
-          {ADMIN_WORKSPACE_GROUPS.map(group => <section className="admin-workspace__nav-group" key={group.label}><h2>{group.label}</h2>{group.tools.map(tool => <NavLink key={tool.path} to={toolPath(tool.path)} onClick={() => dismiss(false)} className={({ isActive }) => `admin-section-link${isActive ? " active" : ""}`}><Icon name={tool.icon} /><span>{tool.label}</span></NavLink>)}</section>)}
+          {ADMIN_WORKSPACE_GROUPS.map(group => (
+            <section className="admin-workspace__nav-group" key={group.label}>
+              <h2>{group.label}</h2>
+              {group.label === "Workspace" && (
+                <NavLink to={overviewPath} onClick={() => dismiss(false)} className={({ isActive }) => `admin-section-link${isActive ? " active" : ""}`}>
+                  <Icon name="space_dashboard" />Overview
+                </NavLink>
+              )}
+              {group.tools.map(tool => (
+                <NavLink key={tool.path} to={toolPath(tool.path)} onClick={() => dismiss(false)} className={({ isActive }) => `admin-section-link${isActive ? " active" : ""}`}>
+                  <Icon name={tool.icon} /><span>{tool.label}</span>
+                </NavLink>
+              ))}
+            </section>
+          ))}
         </nav>
-        <div className="admin-workspace__rail-footer"><span className="admin-workspace__status-dot" aria-hidden="true" /><span>PoseTek administration</span></div>
       </aside>
-      <div className="admin-workspace__context" aria-label="Current workspace"><span><Icon name={context.icon} /><span>{context.section}</span><Icon name="chevron_right" /><strong>{context.title}</strong></span>{preview && <span className="admin-workspace__preview">Preview · sample data</span>}</div>
     </>}
   </>;
 }
@@ -111,11 +136,11 @@ function ToolSearch({ toolPath }: { toolPath(path: string): string }) {
     return () => document.removeEventListener("keydown", shortcut);
   }, []);
   return <div className="admin-workspace__search" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false); }}>
-    <Icon name="search" /><input ref={input} type="search" aria-label="Find an admin tool" placeholder="Find an admin tool…" value={query} autoComplete="off" role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls={open ? "admin-tool-results" : undefined} aria-activedescendant={open && selected >= 0 && tools[selected] ? `admin-tool-${selected}` : undefined} onFocus={() => setOpen(true)} onChange={event => { setQuery(event.target.value); setSelected(-1); setOpen(true); }} onKeyDown={event => {
+    <Icon name="search" /><input ref={input} type="search" aria-label="Find an admin tool" placeholder="Find tools" value={query} autoComplete="off" role="combobox" aria-autocomplete="list" aria-expanded={open} aria-controls={open ? "admin-tool-results" : undefined} aria-activedescendant={open && selected >= 0 && tools[selected] ? `admin-tool-${selected}` : undefined} onFocus={() => setOpen(true)} onChange={event => { setQuery(event.target.value); setSelected(-1); setOpen(true); }} onKeyDown={event => {
       if (event.key === "Escape") { event.preventDefault(); setOpen(false); setSelected(-1); }
       if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); setOpen(true); setSelected(value => tools.length ? value < 0 ? event.key === "ArrowDown" ? 0 : tools.length - 1 : (value + (event.key === "ArrowDown" ? 1 : -1) + tools.length) % tools.length : -1); }
       if (event.key === "Enter" && open && tools.length) { event.preventDefault(); navigate(toolPath(tools[Math.max(0, selected)].path)); setOpen(false); }
     }} /><kbd aria-hidden="true">/</kbd>
-    {open && <div className="admin-workspace__search-panel"><p>Admin tools <span>Navigation only</span></p><ul id="admin-tool-results" role="listbox" aria-label="Matching admin tools">{tools.map((tool, index) => <li id={`admin-tool-${index}`} key={tool.path} role="option" aria-selected={selected === index} onMouseEnter={() => setSelected(index)}><Link to={toolPath(tool.path)} tabIndex={-1} onMouseDown={event => event.preventDefault()}><Icon name={tool.icon} /><span><strong>{tool.label}</strong><small>{tool.description}</small></span><Icon name="north_east" /></Link></li>)}</ul>{!tools.length && <div className="admin-workspace__search-empty">No matching tools. Try “players”, “workouts” or “access”.</div>}</div>}
+    {open && <div className="admin-workspace__search-panel"><p>Admin tools</p><ul id="admin-tool-results" role="listbox" aria-label="Matching admin tools">{tools.map((tool, index) => <li id={`admin-tool-${index}`} key={tool.path} role="option" aria-selected={selected === index} onMouseEnter={() => setSelected(index)}><Link to={toolPath(tool.path)} tabIndex={-1} onMouseDown={event => event.preventDefault()}><Icon name={tool.icon} /><span><strong>{tool.label}</strong><small>{tool.description}</small></span><Icon name="north_east" /></Link></li>)}</ul>{!tools.length && <div className="admin-workspace__search-empty">No matching tools. Try “players”, “workouts” or “access”.</div>}</div>}
   </div>;
 }

@@ -4,13 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("../../../lib/organization-data", () => ({ getClubContext: vi.fn(), subscribeClubContextInvalidation: vi.fn() }));
 import AdminHeader from "./AdminHeader";
 import AdminWorkspace from "./AdminWorkspace";
+import { AdminReportHeading } from "../../insights/AdminInsightsLayout";
 describe("single admin workspace header", () => {
   it("has one People & organizations destination and an Overview entry to Insights", () => {
     const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/admin/accounts?orgId=club&reportView=usage"]}>
       <AdminHeader ready uid="fixture-admin" email="fixture@posetek.test" onSignOut={() => {}} />
     </MemoryRouter>);
     expect(html).toContain('aria-label="PoseTek people and organizations"');
-    expect(html).toMatch(/href="\/insights\?from=organization&amp;view=overview"[^>]*>Overview<\/a>/);
+    expect(html).toContain('href="/insights?from=organization&amp;view=overview"');
     expect(html).toContain("People &amp; organizations"); expect(html).toContain(">Overview<");
     expect(html).toContain('href="/admin/accounts?orgId=club&amp;reportView=usage"');
     expect(html).not.toContain('Admin organization scope');
@@ -30,9 +31,12 @@ describe("single admin workspace header", () => {
     expect(html).not.toContain('aria-label="Search all players"');
     expect(html).not.toContain('aria-modal="true"');
   });
-  it("adds Overview shortcuts around the existing report content only for the admin Insights wrapper", () => {
-    const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/insights?view=overview"]}><AdminWorkspace ready uid="fixture-admin" insights onSignOut={() => {}}><section>Existing report evidence</section></AdminWorkspace></MemoryRouter>);
+  it("gives the admin report one scoped heading and retains its shortcut navigation", () => {
+    const html = renderToStaticMarkup(<MemoryRouter initialEntries={["/insights?view=overview"]}><AdminWorkspace ready uid="fixture-admin" insights onSignOut={() => {}}><AdminReportHeading uid="fixture-admin" scope="All organizations" overview /><section>Existing report evidence</section></AdminWorkspace></MemoryRouter>);
     expect(html).toContain('aria-label="Overview shortcuts"');
+    expect(html.match(/<h1>/g)).toHaveLength(1);
+    expect(html).toContain("Club overview");
+    expect(html).toContain("All organizations");
     expect(html).toContain("Existing report evidence");
     expect(html).toContain('id="admin-main"');
     const gated = renderToStaticMarkup(<MemoryRouter><AdminWorkspace ready={false} insights onSignOut={() => {}}>Access required</AdminWorkspace></MemoryRouter>);

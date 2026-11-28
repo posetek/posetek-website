@@ -14,22 +14,33 @@ beforeEach(() => {
     setItem: (key: string, value: string) => harness.storage.set(key, value), removeItem: (key: string) => harness.storage.delete(key) });
 });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
-const reply = (allowed: boolean) => new Response(JSON.stringify({ version: 1, allowed }));
+const reply = (allowed: boolean) => new Response(JSON.stringify({ version: 2, allowed }));
 
 describe('explicit account-scoped AI sharing', () => {
   it('sends only the explicit choice to the fixed endpoint and accepts an exact receipt', async () => {
     harness.fetch.mockResolvedValue(reply(true));
     await setAISharing(true);
     expect(harness.fetch).toHaveBeenCalledWith('/api/ai-consent', expect.objectContaining({ method: 'POST', cache: 'no-store', credentials: 'omit',
-      headers: { Authorization: 'Bearer synthetic-token', 'Content-Type': 'application/json' }, body: '{"version":1,"allowed":true}' }));
+      headers: { Authorization: 'Bearer synthetic-token', 'Content-Type': 'application/json' }, body: '{"version":2,"allowed":true}' }));
     expect(harness.storage.size).toBe(0);
   });
   it('fails closed on HTML fallback, malformed acknowledgement and server refusal', async () => {
     for (const response of [new Response('<html>App</html>'), new Response('{"allowed":true}'),
+      new Response('{"version":1,"allowed":true}'),
       new Response('{"error":{"code":"unauthenticated","message":"Sign in again"}}', { status: 401 })]) {
       harness.fetch.mockResolvedValueOnce(response);
       await expect(setAISharing(true)).rejects.toThrow();
     }
+  });
+  it('preserves an earlier browser withdrawal until the new disclosure is acknowledged', async () => {
+    harness.storage.set(`posetek:ai-sharing-off:v1:${harness.user.uid}`, 'true');
+    expect(() => assertAISharingEnabled(harness.user.uid)).toThrow('AI sharing is off');
+    harness.fetch.mockResolvedValueOnce(new Response('{"version":1,"allowed":true}'));
+    await expect(setAISharing(true)).rejects.toThrow('Permission could not be confirmed');
+    expect(() => assertAISharingEnabled(harness.user.uid)).toThrow('AI sharing is off');
+    harness.fetch.mockResolvedValueOnce(reply(true));
+    await setAISharing(true);
+    expect(() => assertAISharingEnabled(harness.user.uid)).not.toThrow();
   });
   it('keeps new coach calls off after failed withdrawal until an allow is acknowledged', async () => {
     harness.fetch.mockRejectedValueOnce(new TypeError('Offline'));

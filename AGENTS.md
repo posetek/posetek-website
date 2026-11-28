@@ -22,11 +22,19 @@ switch wrappers to bypass them. See [the local lane](docs/engineering/WORKFLOW.m
 Check Netlify's currently published deploy before assembling a whole-site
 artifact. Capture that deploy's inventory and preserve the files and routing
 outside the approved change. The
-[production receipt](docs/releases/receipts/ADMIN_USAGE_JOURNEY_FIXES_PRODUCTION.json)
+[production receipt](docs/releases/receipts/ADMIN_DIRECTORY_AND_CLUB_REPORTING_PRODUCTION.json)
 pins the current protected baseline, application runtime and preserved sign-in
 runtime. One-pager releases
 also use the current published deploy to carry forward the app and sign-in
 entry. Keep `[skip netlify]` on every source and receipt merge.
+
+## Admin directory and club reporting — November 24, 2026
+
+Production `6b0628df406fa1fc2213ad25` serves runtime `5d6afaa` from website PR #179. Administrators can select a club directly, combine directory filters, and open report scope and dates on phones. The forest-green navigation groups the existing tools and preserves keyboard focus. The release updated the application entry and added 16 hashed assets. The protected baseline contains 3,016 files and 37 local recovery mappings. [Production receipt](docs/releases/receipts/ADMIN_DIRECTORY_AND_CLUB_REPORTING_PRODUCTION.json)
+
+## Player Stats team comparisons — November 23, 2026
+
+Production `6b04fd8896e9795b3e78fca2` serves runtime `acb1e65` from website PR #177 with the backend comparison update from PR #200. Player Stats uses the saved score for the selected side and the report’s authorized team average. Signed-in checks covered six side selections across three players. The protected baseline contains 3,000 files and 37 local recovery mappings. [Production receipt](docs/releases/receipts/PLAYER_STATS_TEAM_COMPARISONS_PRODUCTION.json)
 
 ## Usage and Journey fixes — November 17, 2026
 

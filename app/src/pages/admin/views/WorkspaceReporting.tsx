@@ -20,12 +20,12 @@ export type WorkspaceSummaryProps = WorkspaceMetricState & { accountCount?: numb
 const views: [WorkspaceReportView, string][] = [["overview", "Overview"], ["testing", "Testing"], ["workouts", "Workouts"], ["usage", "Usage"]];
 
 /** Scope identity stays above the tabs; only evidence, never identity, waits for reporting. */
-export function WorkspaceScopeHeader({ data, accountCount, scopeLabel, children, accountScopeIsSubset = false }: Omit<WorkspaceSummaryProps, "data"> & { data: ExpandedReportSummary | null; breadcrumb?: ReactNode; children: ReactNode; accountScopeIsSubset?: boolean }) {
+export function WorkspaceScopeHeader({ data, accountCount, scopeLabel, children, action, accountScopeIsSubset = false }: Omit<WorkspaceSummaryProps, "data"> & { data: ExpandedReportSummary | null; breadcrumb?: ReactNode; children: ReactNode; action?: ReactNode; accountScopeIsSubset?: boolean }) {
   const completeScope = Boolean(data) && !accountScopeIsSubset;
   const count = completeScope ? data!.roster.total : accountCount;
   return <header className="workspace-scope-header" aria-label="Selected organization and team">
     <div className="workspace-scope-heading"><div><h2>{scopeLabel}</h2></div>
-      {count !== undefined && <span className="workspace-scope-count">{count.toLocaleString()} {!completeScope && "loaded "}{count === 1 ? "player" : "players"}</span>}</div>
+      {count !== undefined && <span className="workspace-scope-count">{count.toLocaleString()} {!completeScope && "loaded "}{count === 1 ? "player" : "players"}</span>}{action}</div>
     {children}
   </header>;
 }

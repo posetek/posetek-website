@@ -1,0 +1,185 @@
+{
+  "status": "published-and-verified",
+  "source": {
+    "websitePullRequest": "https://github.com/posetek/posetek-website/pull/179",
+    "websiteHead": "a3d2c2a4744a7143981457422ac9de82c59a140d",
+    "websiteMerge": "61df4e78bdcb3dd0528d79797b46bd17236abf68",
+    "runtimeBranch": "runtime/admin-unslop-20261124",
+    "runtimeCommit": "5d6afaa6793c88a95f372b6a626292cd8aa5dd32",
+    "predecessorRuntime": "acb1e658cd483e80dbd5d307776b756aa7c3499c",
+    "runtimeApplicationFiles": 12,
+    "runtimeTestFiles": 3,
+    "predecessorAssetMatches": 179,
+    "runtimeCompatibility": "Retains the serving tool list and its directory tab implementation. The source-only Ball striking tool stays held."
+  },
+  "deployment": {
+    "site": "posetek.net",
+    "previous": "6b04fd8896e9795b3e78fca2",
+    "preview": "6b0628773b6b96241725bbf8",
+    "production": "6b0628df406fa1fc2213ad25",
+    "publishedAtUtc": "2026-11-25T00:16:32.567Z",
+    "netlifyTitle": "Admin directory and club reporting • GitHub PR #179 • 61df4e78bdcb3dd0528d79797b46bd17236abf68",
+    "previousEntrySha256": "2bd0d9482d9575cb54189e7a1859a93510aa188e48cae6349c88d59cea5b4297",
+    "productionEntrySha256": "046dec527bc752cf73498aaa8b1aad9455ff487d9ce3c2d350d4f3edab14434f"
+  },
+  "preservation": {
+    "previousServedFiles": 3002,
+    "unchangedPriorServedFiles": 3001,
+    "replacedPriorServedFiles": [
+      "/application.html"
+    ],
+    "addedHashedAssets": [
+      "/_astro/admin-directory-lightning.bjkailw9.js",
+      "/_astro/admin-directory-lightning.cgffgdry.css",
+      "/_astro/admin-lightning-surfaces.c8adcwbi.css",
+      "/_astro/admin-lightning-surfaces.d9tlboyk.js",
+      "/_astro/adminpage.bmpc7ghd.js",
+      "/_astro/adminrecentworkouts.yha3xgef.js",
+      "/_astro/applicationroot.dkger3uu.js",
+      "/_astro/coachdetail.bvrp11uh.js",
+      "/_astro/drillform.czbue2g7.js",
+      "/_astro/insights.ckcdu3fx.css",
+      "/_astro/insights.f077hubk.js",
+      "/_astro/insightspage.dq2atjx9.js",
+      "/_astro/monitoraccounts.bvkytleg.js",
+      "/_astro/playerdetail.cko00v0n.js",
+      "/_astro/supportpage.tr0hwtno.js",
+      "/_astro/workouteditor.c6fpbsih.js"
+    ],
+    "removedFiles": 0,
+    "productionServedFiles": 3018,
+    "providerRecords": 3019,
+    "unchangedEncryptedReports": 114,
+    "unchangedReportReader": true,
+    "unchangedSignInEntry": true,
+    "unchangedPlatformConfigSha1": "696de7c78bf08055ee4eeba3acd0da89a24f9cab",
+    "unchangedFunctionBindings": true,
+    "priorInventorySha256": "5be2087af12abd4bf6e18ba517265161760b6e4ac37f9c849bed0746fe422f3f",
+    "productionInventorySha256": "ec65fde98784f32ea934c1a1e6edfac9e91bd76ccd8b1c132114fa2864174b6a",
+    "sha256InventoryDigestFormat": "Sort paths by Unicode code point and hash UTF-8 lines of path, tab, SHA-1, tab, decimal size and LF.",
+    "baselineFiles": 3016,
+    "localRecoveryMappings": 37,
+    "preservedSignInRuntime": {
+      "document": "/player-signin.html",
+      "documentSha256": "89e48fef64cad8824de8285afb1a83190366e1641a6861c399825cc92f31ee9c",
+      "component": "/_astro/PlayerSignInRoot.BT-I_chF.js",
+      "componentSha256": "af58760443157913df6f7c2ae29672f0c49542501c83aeebea5af8df08dea2f7"
+    }
+  },
+  "verification": {
+    "sourceAppTestsPassed": 2974,
+    "sourcePullRequestChecks": {
+      "policy": "SUCCESS",
+      "dependencies": "SUCCESS",
+      "unit": "SUCCESS",
+      "server": "SUCCESS",
+      "build": "SUCCESS",
+      "ci": "SUCCESS"
+    },
+    "servingRuntimeUnitTests": {
+      "passed": 2676,
+      "failed": 3,
+      "baselineComparison": "All three existing AdminReportingCards comparison assertions had identical expected and received values on the preceding production runtime."
+    },
+    "servingRuntimeBrowserAssertions": {
+      "admin-directory": 696,
+      "admin-workspace": 200
+    },
+    "coachBrowserTestsPassed": 7,
+    "compiledCandidateLocalComponentChecks": {
+      "chromium": [
+        "compiled directory heading rendered",
+        "two query filters applied in one dialog and focus restored",
+        "desktop shell navigation visible"
+      ],
+      "webkit": [
+        "compiled directory heading rendered",
+        "two query filters applied in one dialog and focus restored",
+        "mobile drawer focuses Close and Escape restores opener"
+      ]
+    },
+    "signedInLocalPreview": {
+      "scope": "Exact release document and runtime assets served on loopback, using an existing authorized production-data session.",
+      "checks": [
+        "signed-in admin directory and five club rows",
+        "player lookup control",
+        "accepted runtime tool catalog",
+        "two simultaneous filters and focus return",
+        "four overview shortcuts",
+        "populated Overview and Testing panels"
+      ],
+      "productionBusinessEditsPerformed": 0
+    },
+    "previewAndProduction": {
+      "routes": [
+        "/",
+        "/coaches/",
+        "/application.html",
+        "/admin",
+        "/admin/accounts",
+        "/admin/result-validation",
+        "/insights",
+        "/athlete?userType=player&view=stats",
+        "/support",
+        "/signin",
+        "/player-signin.html",
+        "/privacy",
+        "/report/",
+        "/feedback.html",
+        "/coach-join.html"
+      ],
+      "verifiedAssetResponsesPerSite": 18,
+      "guestBrowserSmoke": {
+        "preview": {
+          "chromium": {
+            "userInterfaceChecks": 21,
+            "assetHashChecks": 8,
+            "pageErrors": 0
+          },
+          "webkit": {
+            "userInterfaceChecks": 21,
+            "assetHashChecks": 8,
+            "pageErrors": 0
+          }
+        },
+        "production": {
+          "chromium": {
+            "userInterfaceChecks": 21,
+            "assetHashChecks": 8,
+            "pageErrors": 0
+          },
+          "webkit": {
+            "userInterfaceChecks": 21,
+            "assetHashChecks": 8,
+            "pageErrors": 0
+          }
+        }
+      },
+      "guestBrowserWriteRequestsForwarded": 0
+    },
+    "hostedSignedInCheck": {
+      "origin": "https://posetek.net",
+      "session": "existing signed-in administrator",
+      "checks": [
+        "fresh reload in authenticated production domain",
+        "directory loaded 5 real clubs and player lookup",
+        "both division and age retained in one dialog",
+        "Done restored trigger focus",
+        "Club overview and all 4 shortcuts rendered",
+        "Overview and Testing populated"
+      ],
+      "recordsEdited": 0,
+      "limitations": [
+        "Record save operations and original-video playback were outside the live release check."
+      ]
+    },
+    "baselineReconciliation": "passed",
+    "ordinaryPreservationBuild": "passed",
+    "localPreservationTestsPassed": 53
+  },
+  "recovery": {
+    "precedingProductionDeployId": "6b04fd8896e9795b3e78fca2",
+    "precedingRuntime": "acb1e658cd483e80dbd5d307776b756aa7c3499c",
+    "instruction": "Use the preceding verified deployment and its receipt for website recovery. Re-inventory the live site before another release."
+  }
+}

@@ -14,7 +14,7 @@ import { previewInsights, previewInsightPlayer, previewPlayerSummary } from "./l
 import { EXERCISES } from "./lib/expanded";
 import type { InsightAccess } from "./lib/expanded";
 import OrganizationHeader from "../organization/OrganizationHeader";
-import AdminInsightsLayout from "./AdminInsightsLayout";
+import AdminInsightsLayout, { AdminReportHeading } from "./AdminInsightsLayout";
 import { adminPlayerLinkFromReport } from "../admin/lib/adminNavigation";
 
 export default function InsightsPreview({ embedded = false }: { embedded?: boolean }) {
@@ -25,6 +25,7 @@ export default function InsightsPreview({ embedded = false }: { embedded?: boole
     setRequest(value => ({ ...value, ...target }));
   }, [location.search]);
   const page = request.page;
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [, refreshPreview] = useState(0);
   const [state, setState] = useState("normal"), [role, setRole] = useState<InsightAccess>(embedded ? "admin" : "coach");
   const data = previewInsights(request, page, state, role);
@@ -46,8 +47,16 @@ export default function InsightsPreview({ embedded = false }: { embedded?: boole
   const summary = selected ? previewPlayerSummary(selected) : null;
   const content = <>
     {!embedded && request.view !== "player" && <div className="insights-preview-controls"><label>Preview role<select value={role} onChange={event => { setRole(event.target.value as InsightAccess); change({ orgId: event.target.value === "admin" ? undefined : "northfield", teamId: event.target.value === "coach" ? "harbor" : undefined }); }}><option value="admin">Admin</option><option value="manager">Manager</option><option value="coach">Assigned coach</option></select></label><label>Preview state<select value={state} onChange={event => { setState(event.target.value); setRequest(value => ({ ...value, page: 0 })); }}><option value="normal">Recorded data</option><option value="empty">Empty roster</option><option value="unavailable">Testing unavailable</option><option value="longNames">Long player names</option><option value="uncollected">Usage not collected</option><option value="loading">Loading</option><option value="error">Load failure</option></select></label></div>}
-    {request.view !== "player" && <section className={`insights-heading${embedded ? " admin-overview-heading" : ""}`}><p className="eyebrow">{embedded ? "Admin" : coach ? "Team Insights" : "Insights"}</p><h1>{embedded ? "Overview" : data.scope.label}</h1>{coach && <p>Your roster, player progress and training in one place.</p>}{!coach && <p>{embedded ? `${data.scope.label} · ` : ""}Understand your roster, successful testing, completed workouts and estimated active use.</p>}</section>}
-    {request.view !== "player" && <InsightsControls choices={data.choices} request={request} scope={data.scope} loading={state === "loading"} hideScope={embedded} coach={coach} onChange={change} onRefresh={() => { setState("normal"); refreshPreview(value => value + 1); }} />}
+    {request.view !== "player" && (embedded || role === "admin" ? (
+      <AdminReportHeading uid="preview-admin" scope={data.scope.label} overview={request.view === "overview"} />
+    ) : (
+      <section className="insights-heading">
+        <p className="eyebrow">{coach ? "Team Insights" : "Insights"}</p>
+        <h1>{data.scope.label}</h1>
+        <p>{coach ? "Your roster, player progress and training in one place." : "Understand your roster, successful testing, completed workouts and estimated active use."}</p>
+      </section>
+    ))}
+    {request.view !== "player" && <InsightsControls choices={data.choices} request={request} scope={data.scope} loading={state === "loading"} hideScope={embedded} coach={coach} adminFilters={embedded || role === "admin" ? { open: filtersOpen, toggle: () => setFiltersOpen(open => !open) } : undefined} onChange={change} onRefresh={() => { setState("normal"); refreshPreview(value => value + 1); }} />}
     <InsightTabs request={request} onChange={change} coach={coach} playerName={selected ? `${comparison.player.firstName} ${comparison.player.lastName}` : "Player unavailable"} onClosePlayer={() => change({ view: "overview", playerId: "" })} />
     {["overview", "testing", "player"].includes(request.view) && <div className="insights-toolbar"><p className="insights-note">Testing coverage</p><div className="insights-toggle" aria-label="Testing coverage period"><button aria-pressed={request.testingWindow === "cumulative"} onClick={() => change({ testingWindow: "cumulative" })}>Through selected end</button><button aria-pressed={request.testingWindow === "period"} onClick={() => change({ testingWindow: "period" })}>Selected period only</button></div></div>}
     {state === "loading" ? <p role="status">Loading complete Insights…</p> : state === "error" ? <div role="alert"><p>Insights could not be loaded. Retry or choose another scope.</p><button className="quiet-button" onClick={() => setState("normal")}>Retry Insights</button></div> : <div id="insights-report" role="tabpanel" aria-labelledby={`insights-tab-${request.view}`}>{coach && request.view === "overview" && <><PlayerFilters data={data} request={request} onChange={change} /><CoachOverviewSnapshot key={JSON.stringify([role, request.orgId, request.teamId, data.scope.kind])} data={data} playerLink={playerLink} /><CoachRoster preview data={data} search={request.rosterSearch} page={page} onSearch={rosterSearch => change({ rosterSearch })} onPrevious={() => change({ page: page - 1 })} onNext={() => change({ page: page + 1 })} playerLink={playerLink} /></>}

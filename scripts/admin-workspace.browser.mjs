@@ -46,8 +46,10 @@ for (const [engine, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
         check(await page.locator('.admin-workspace__account').evaluate(element => !element.open), 'Escape closes the account menu');
         if (mobile) {
           const open = page.getByRole('button', { name: 'Open admin navigation' });
-          await activate(open);
+          const close = page.getByRole('button', { name: 'Close admin navigation' });
+          await open.press('Enter');
           await page.getByRole('dialog', { name: 'Admin navigation' }).waitFor();
+          check(await close.evaluate(element => element === document.activeElement), 'opening the drawer by keyboard focuses its close button');
           check(await page.locator('#admin-main').evaluate(element => element.inert), 'drawer makes the background inert');
           await page.screenshot({ path: join(out, `${name}-${width}-drawer.png`), fullPage: false });
           await page.keyboard.press('Shift+Tab');
@@ -56,11 +58,14 @@ for (const [engine, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
           check(await page.locator('#admin-navigation').evaluate(element => element.contains(document.activeElement)), 'drawer contains forward keyboard focus');
           await page.keyboard.press('Escape');
           check(await open.evaluate(element => element === document.activeElement), 'Escape restores the drawer opener');
+          await page.emulateMedia({ reducedMotion: 'reduce' });
           await activate(open);
+          check(await close.evaluate(element => element === document.activeElement), 'opening the drawer with reduced motion focuses its close button');
           await activate(page.getByRole('navigation', { name: 'Admin sections' }).getByRole('link', { name: 'App feedback', exact: true }));
           await page.waitForURL(/\/admin\/feedback/);
           check(await open.getAttribute('aria-expanded') === 'false', 'navigation closes the drawer');
           check(await page.locator('#admin-main').evaluate(element => !element.inert && element === document.activeElement), 'navigation restores and focuses main content');
+          await page.emulateMedia({ reducedMotion: 'no-preference' });
           await activate(open);
           await page.setViewportSize({ width: 1440, height: 960 });
           await page.waitForFunction(() => !document.querySelector('#admin-main').inert);
@@ -71,7 +76,7 @@ for (const [engine, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
         await page.goto(new URL('/insights?preview=1', base).href);
         await page.getByLabel('Preview role').selectOption('admin');
         await page.getByRole('navigation', { name: 'Overview shortcuts' }).waitFor();
-        await page.locator('.admin-workspace__welcome-mark').evaluate(image => image.decode());
+        check(await page.locator('#admin-main h1').count() === 1 && await page.getByRole('heading', { level: 1, name: 'Club overview' }).isVisible(), 'Overview has one report heading');
         check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Overview has no horizontal overflow');
         await page.screenshot({ path: join(out, `${name}-${width}-overview.png`), fullPage: false });
         await page.getByLabel('Preview role').selectOption('manager');
